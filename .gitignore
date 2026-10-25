@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+vendor/
+ransumku/node_modules/
+ransumku/vendor/
+
+# Environment
+.env
+.env.backup
+.env.production
+ransumku/.env
+ransumku/.env.backup
+ransumku/.env.production
+
+# SQLite database
+*.sqlite
+*.sqlite-journal
+ransumku/database/*.sqlite
+ransumku/database/*.sqlite-journal
+
+# Logs & caches
+*.log
+npm_install.log
+.phpunit.result.cache
+.phpunit.cache/
+ransumku/storage/logs/*.log
+ransumku/storage/framework/cache/*
+ransumku/storage/framework/sessions/*
+ransumku/storage/framework/views/*
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

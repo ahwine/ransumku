@@ -1,0 +1,53 @@
+<?php
+
+use App\Http\Controllers\AssistantController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\LogController;
+use App\Http\Controllers\RationController;
+use App\Http\Controllers\StandardController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware('guest')->group(function () {
+    Route::get('/masuk', [AuthController::class, 'masukForm'])->name('masuk');
+    Route::post('/masuk', [AuthController::class, 'masuk'])->middleware('throttle:10,1');
+    Route::get('/daftar', [AuthController::class, 'daftarForm'])->name('daftar');
+    Route::post('/daftar', [AuthController::class, 'daftar']);
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/keluar', [AuthController::class, 'keluar'])->name('keluar');
+    Route::get('/onboarding', [AuthController::class, 'onboardingForm'])->name('onboarding');
+    Route::post('/onboarding', [AuthController::class, 'onboarding']);
+
+    Route::middleware('farm')->group(function () {
+        Route::get('/', [HomeController::class, 'beranda'])->name('beranda');
+        Route::get('/lainnya', [HomeController::class, 'lainnya'])->name('lainnya');
+        Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
+        Route::post('/demo/isi', [HomeController::class, 'isiDemo'])->name('demo.isi');
+
+        // Modul A: Peracik Ransum
+        Route::get('/ransum', [RationController::class, 'index'])->name('ransum.index');
+        Route::get('/ransum/baru', [RationController::class, 'create'])->name('ransum.create');
+        Route::post('/ransum', [RationController::class, 'store'])->name('ransum.store');
+        Route::get('/ransum/{ration}', [RationController::class, 'show'])->name('ransum.show');
+        Route::post('/ransum/{ration}/hitung-ulang', [RationController::class, 'hitungUlang'])->name('ransum.hitung-ulang');
+        Route::post('/ransum/{ration}/jelaskan', [RationController::class, 'jelaskan'])->name('ransum.jelaskan');
+        Route::delete('/ransum/{ration}', [RationController::class, 'destroy'])->name('ransum.destroy');
+
+        Route::resource('bahan', IngredientController::class)->parameters(['bahan' => 'ingredient'])->except('show');
+        Route::resource('acuan', StandardController::class)->parameters(['acuan' => 'standard'])->except('show');
+
+        // Modul B: Buku Kandang
+        Route::get('/catatan', [LogController::class, 'index'])->name('catatan.index');
+        Route::post('/catatan', [LogController::class, 'store'])->name('catatan.store');
+        Route::delete('/catatan/{log}', [LogController::class, 'destroy'])->name('catatan.destroy');
+        Route::post('/pembelian', [LogController::class, 'simpanPembelian'])->name('pembelian.store');
+
+        // Modul C: Asisten
+        Route::get('/asisten', [AssistantController::class, 'index'])->name('asisten.index');
+        Route::post('/asisten/chat', [AssistantController::class, 'chat'])->name('asisten.chat')->middleware('throttle:20,1');
+        Route::post('/asisten/baca', [AssistantController::class, 'bacaPeringatan'])->name('asisten.baca');
+    });
+});

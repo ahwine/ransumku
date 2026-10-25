@@ -1,0 +1,180 @@
+# Prompt Desain RansumKu untuk Google Stitch
+
+**Cara pakai:**
+1. Pilih mode **Mobile** (portrait) di Stitch.
+2. Kirim **Prompt 0** dulu untuk menetapkan gaya.
+3. Kirim Prompt 1–10 satu per satu, satu layar per prompt.
+4. Setelah selesai, minta versi Desktop dengan prompt di bagian akhir.
+
+Prompt ditulis dalam bahasa Inggris karena Stitch lebih akurat, tetapi semua teks di layar harus Bahasa Indonesia (sudah diminta di prompt).
+
+---
+
+## Prompt 0: Design System (kirim pertama)
+
+```
+Design a mobile-first web app called "RansumKu", an Indonesian-language tool
+for small-scale laying-hen (ayam petelur) farmers who mix their own feed.
+Users are non-technical farmers using budget Android phones, so the UI must be
+simple, warm, trustworthy, with big tap targets and large readable text.
+
+Style:
+- Friendly agritech look, clean and modern, NOT a dense admin panel.
+- Color palette: primary deep green (#2F6B3A), secondary warm egg-yolk amber
+  (#F2B134), background warm off-white (#FAF8F2), cards white with soft
+  shadow and 16px rounded corners, text charcoal (#222). Alert colors:
+  red (#D64545) for danger, amber for warning, green for OK.
+- Font: Plus Jakarta Sans (or Inter), body 16px minimum, headings bold.
+- Buttons: large (min 48px high), fully rounded, primary green filled,
+  secondary outlined. Use clear icons (Lucide style) with labels.
+- Bottom navigation bar with 5 items: Beranda, Ransum, Catatan, Asisten,
+  Lainnya. Active item highlighted in green.
+- All UI text in Bahasa Indonesia. Money in Rupiah format (Rp 304.400).
+- Cost figures always carry a small "estimasi" label.
+- Subtle micro-details: egg and wheat motif icons, no heavy illustrations.
+```
+
+---
+
+## Prompt 1: Login & Daftar
+
+```
+Create the Login screen for RansumKu. Top: logo (green egg icon + "RansumKu")
+and tagline "Racik pakan hemat, kandang sehat". Fields: Email, Kata sandi
+(with show/hide). Big green button "Masuk". Link "Belum punya akun? Daftar".
+Soft illustrated header with a hen and wheat in warm tones. Also create the
+matching Daftar screen (Nama, Email, Kata sandi, Konfirmasi) with button
+"Buat Akun".
+```
+
+## Prompt 2: Onboarding Kandang
+
+```
+Create a 2-step onboarding screen "Data Kandang". Progress indicator on top.
+Fields: Nama kandang, Jumlah ayam (number stepper with big +/- buttons),
+Fase ayam (3 selectable cards: Starter, Grower, Produksi; Produksi
+preselected). Button "Lanjut". Helper text: "Data ini bisa diubah kapan saja."
+```
+
+## Prompt 3: Beranda (Dashboard Ringkas)
+
+```
+Create the Beranda (home) screen. Top: greeting "Halo, Pak Budi" and farm
+name "Kandang Maju Jaya · 200 ayam". Below, in order:
+1. Alert card (amber/red) "Peringatan dini": "Pakan naik 3 hari berturut-turut
+   sementara telur turun" with button "Lihat detail" and a small disclaimer
+   line "Ini perkiraan dari pola data, bukan diagnosis."
+2. Three stat cards in a row: "Biaya ransum terakhir (estimasi) Rp 7.610/kg",
+   "Biaya pakan per kg telur", "Telur hari ini 168 butir".
+3. Two big action buttons: "Hitung Ransum" (green) and "Catat Hari Ini" (amber).
+4. Mini chart card "7 hari terakhir" with a line for telur and a bar for pakan.
+5. Reminder banner: "Harga bahan terakhir diperbarui 9 hari lalu. Perbarui
+   harga" (warning style).
+Bottom navigation visible with Beranda active.
+```
+
+## Prompt 4: Hitung Ransum (Form)
+
+```
+Create the "Racik Ransum" input screen. Sections as cards:
+1. "Bahan" list: each row has ingredient name (Jagung, Dedak, Konsentrat,
+   Kapur), editable "Harga/kg" field, editable "Stok (kg)" field, and a small
+   "diperbarui 2 hari lalu" label. Button "+ Tambah bahan".
+2. "Jumlah campuran": segmented toggle between "Langsung kg" and "Untuk berapa
+   hari". In day mode show: Jumlah hari, Jumlah ayam, Konsumsi per ekor per
+   hari (0,11 kg, label "perkiraan, dapat diubah") and a computed total.
+3. "Acuan gizi target": dropdown "SNI 2016 (kutipan jurnal)" with a small
+   expandable summary of targets.
+Sticky bottom big green button "Hitung Ransum".
+```
+
+## Prompt 5: Hasil Ransum
+
+```
+Create the "Hasil Ransum" screen. Top summary card: "Total biaya (estimasi)
+Rp 304.400" and "Rp 7.610 per kg (estimasi)". Then:
+1. Recipe table: Bahan, Persen, Kg, Biaya, with a horizontal stacked bar
+   showing composition by ingredient color.
+2. "Cek Gizi" card: rows Protein, Kalsium, Fosfor, Energi each showing value
+   vs target with green check or red cross icons.
+3. "Sisa stok" and "Daftar belanja" card: shows shortage in kg and estimated
+   cost if stock is insufficient, with a friendly empty state if sufficient.
+4. Note line: "Potensi hemat bergantung harga dan stok. Ini bukan klaim pasti."
+Buttons: "Jelaskan hasil ini" (AI sparkle icon), "Hitung Ulang", "Simpan".
+```
+
+## Prompt 6: Ransum Tidak Layak (Error Ramah)
+
+```
+Create a friendly "Ransum belum bisa disusun" screen. Show which nutrient is
+not met (e.g., Protein kurang 1,2%) as red chips, then a "Saran" card:
+"Tambah bahan sumber protein atau naikkan stok konsentrat", with buttons
+"Ubah bahan" and "Ubah stok". No technical error text. Calm, helpful tone.
+```
+
+## Prompt 7: Riwayat Ransum
+
+```
+Create the "Riwayat Ransum" list screen. Cards for each saved recipe with
+date, total kg, cost per kg (estimasi), a tiny composition bar, and a
+"Pakai lagi" button (reuse the percentages for another amount). Filter chips:
+Semua, Minggu ini, Bulan ini.
+```
+
+## Prompt 8: Catatan Harian & Dashboard
+
+```
+Create two screens.
+A) "Catat Hari Ini": quick form (1-2 minutes). Fields: Tanggal, Pakan terpakai
+(kg), Jumlah telur (butir), Berat telur (kg, opsional), Ayam mati, Biaya lain
+(opsional), Catatan. Large number inputs, button "Simpan Catatan".
+B) "Dashboard Kandang": tabs Minggu / Bulan. Cards with charts: Konsumsi pakan
+(line), Produksi telur (bar), Biaya pakan (line), Efisiensi: biaya pakan per
+kg telur and rasio pakan per butir. A "Laporan Mingguan" summary card with
+totals and a button "Catat Pembelian" showing estimasi vs biaya nyata
+difference (green if lower, red if higher).
+```
+
+## Prompt 9: Asisten Cerdas
+
+```
+Create the "Asisten" screen with two tabs: "Peringatan" and "Tanya".
+Peringatan tab: alert cards with level (Waspada/Perhatian), message, date,
+and always this disclaimer: "Ini perkiraan dari pola data, bukan diagnosis.
+Periksa ayam langsung atau hubungi dokter hewan."
+Tanya tab: simple chat UI with chat bubbles (user green, assistant white),
+suggested question chips ("Kenapa komposisi ini dipilih?", "Bahan pengganti
+jagung?"), input field and send button. Small note: "Angka dihitung program,
+bukan AI."
+```
+
+## Prompt 10: Data Bahan, Acuan, Tentang
+
+```
+Create three screens.
+A) "Data Bahan": list of ingredients with search; detail/edit form with
+Protein %, Kalsium %, Fosfor %, Serat kasar %, Energi (kkal/kg), Harga
+default, Sumber, Catatan. Yellow warning banner: "Nilai gizi dapat diedit;
+sesuaikan dengan label kemasan atau tabel komposisi bahan pakan resmi."
+B) "Acuan Gizi": editable standards with name, year, protein min, kalsium
+min-maks, fosfor min-maks, serat maks, energi min, sumber.
+C) "Tentang & Batasan": explains the app is a calculation aid, not yet tested
+on real chickens, AI alerts are indications not diagnoses, prices are farmer
+input not predictions. Includes a "Isi data demo" button in a "Pengaturan" card.
+```
+
+---
+
+## Prompt Tambahan: Versi Desktop
+
+```
+Take the existing RansumKu mobile screens and adapt them to a responsive
+desktop layout (1280px): replace bottom navigation with a left sidebar,
+keep the same colors and components, arrange stat cards in a grid, and put
+charts side by side. Keep large readable text.
+```
+
+## Tips Iterasi
+- Kalau hasil terlalu ramai, tambahkan: *"Simplify, more whitespace, fewer elements."*
+- Kalau warna melenceng: *"Strictly use the palette: #2F6B3A, #F2B134, #FAF8F2."*
+- Setelah desain jadi, ekspor screenshot atau kode HTML dari Stitch dan kirim ke saya. Saya akan mengonversinya ke Blade/Livewire dan Tailwind v4 di Fase 1.

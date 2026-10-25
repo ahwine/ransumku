@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Asisten Cerdas - RansumKu</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline": "#71796f",
+            "on-primary-fixed": "#002108",
+            "surface-container-lowest": "#ffffff",
+            "primary-container": "#2f6b3a",
+            "surface-container": "#f0eded",
+            "tertiary": "#900e1a",
+            "surface-container-high": "#eae7e7",
+            "subtle-border": "#E8E4DA",
+            "canvas-bg": "#FAF8F2",
+            "surface-container-low": "#f6f3f2",
+            "surface": "#fcf9f8",
+            "on-tertiary-fixed-variant": "#8f0d19",
+            "on-tertiary-fixed": "#410005",
+            "on-surface": "#1b1c1c",
+            "on-tertiary-container": "#ffceca",
+            "secondary-container": "#fdbb3e",
+            "on-primary-fixed-variant": "#135224",
+            "outline-variant": "#c0c9bd",
+            "tertiary-fixed": "#ffdad7",
+            "surface-tint": "#2e6a39",
+            "status-danger": "#D64545",
+            "secondary-fixed": "#ffdeac",
+            "primary": "#145224",
+            "error-container": "#ffdad6",
+            "error": "#ba1a1a",
+            "on-primary": "#ffffff",
+            "surface-bright": "#fcf9f8",
+            "status-success": "#2F6B3A",
+            "tertiary-container": "#b22b2e",
+            "on-error-container": "#93000a",
+            "tertiary-fixed-dim": "#ffb3ae",
+            "text-muted": "#6E6B65",
+            "on-secondary-fixed": "#281900",
+            "surface-dim": "#dcd9d9",
+            "on-tertiary": "#ffffff",
+            "on-primary-container": "#a8e9ac",
+            "inverse-surface": "#303030",
+            "primary-fixed": "#b1f2b4",
+            "background": "#fcf9f8",
+            "inverse-primary": "#96d69a",
+            "primary-fixed-dim": "#96d69a",
+            "on-secondary-fixed-variant": "#5f4100",
+            "on-secondary": "#ffffff",
+            "on-error": "#ffffff",
+            "surface-variant": "#e5e2e1",
+            "surface-container-highest": "#e5e2e1",
+            "secondary": "#7e5700",
+            "on-secondary-container": "#6e4c00",
+            "status-warning": "#F2B134",
+            "secondary-fixed-dim": "#fdbb3e",
+            "on-surface-variant": "#414940",
+            "on-background": "#1b1c1c",
+            "inverse-on-surface": "#f3f0ef",
+            "surface-card": "#FFFFFF"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "1rem",
+            "space-lg": "1.5rem",
+            "margin": "1rem",
+            "space-sm": "0.5rem",
+            "gutter-desktop": "1.5rem",
+            "space-xl": "2rem",
+            "margin-desktop": "2rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem"
+          },
+          "fontFamily": {
+            "label-lg": ["Plus Jakarta Sans"],
+            "label-sm": ["Plus Jakarta Sans"],
+            "headline-xl-mobile": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "body-lg": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "headline-xl": ["Plus Jakarta Sans"],
+            "currency-display": ["Plus Jakarta Sans"],
+            "headline-sm": ["Plus Jakarta Sans"],
+            "body-bold": ["Plus Jakarta Sans"],
+            "label-md": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"]
+          },
+          "fontSize": {
+            "label-lg": ["15px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "700" }],
+            "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "currency-display": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill-icon {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Subtle touch highlight optimization for budget Android */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    .elevation-level-1 {
+      box-shadow: 0 4px 16px -2px rgba(34, 34, 34, 0.05), 0 2px 6px -1px rgba(34, 34, 34, 0.03);
+    }
+    .elevation-nav {
+      box-shadow: 0 -4px 16px rgba(34, 34, 34, 0.05);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-canvas-bg text-on-surface antialiased min-h-screen flex flex-col font-body-md select-none">
+<!-- TOP APP BAR -->
+<header class="sticky top-0 z-40 bg-surface shadow-sm px-margin">
+<div class="flex justify-between items-center w-full h-14">
+<div class="flex items-center gap-space-sm">
+<button aria-label="Kembali" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container active:scale-95 transition-transform duration-150 text-on-surface" type="button">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-headline-sm font-headline-sm text-primary tracking-tight">RansumKu</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary border border-primary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mr-1"></span>
+              Aktif
+            </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button aria-label="Bantuan" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container active:scale-95 transition-transform duration-150 text-on-surface-variant" type="button">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</div>
+</header>
+<!-- SCREEN MAIN CONTAINER -->
+<main class="flex-1 w-full max-w-md mx-auto px-margin pt-space-md pb-24 space-y-space-md">
+<!-- SUB-HEADER CONTEXT CARD -->
+<div class="bg-surface-card rounded-xl p-space-md border border-subtle-border elevation-level-1 flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div>
+<h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">Asisten Cerdas</h1>
+<p class="text-label-md font-label-md text-text-muted mt-0.5">Analisis Pola Kandang &amp; Tanya Jawab</p>
+</div>
+<div class="w-11 h-11 rounded-full bg-status-success/10 flex items-center justify-center text-status-success border border-status-success/20">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-subtle-border/60">
+<span class="material-symbols-outlined text-text-muted text-[18px]" data-icon="home_work">home_work</span>
+<span class="text-label-md font-label-md text-on-surface font-semibold">Kandang Maju Jaya · 200 Ayam</span>
+</div>
+</div>
+<!-- SEGMENTED NAVIGATION TABS -->
+<div class="grid grid-cols-2 p-1 bg-surface-container rounded-full border border-subtle-border" role="tablist">
+<button aria-selected="true" class="h-11 flex items-center justify-center gap-2 rounded-full bg-surface-card text-primary font-bold shadow-sm transition-all duration-150 active:scale-98" id="tab-btn-alert" role="tab">
+<span class="text-label-lg font-label-lg">Peringatan</span>
+<span class="px-2 py-0.5 text-label-sm font-label-sm rounded-full bg-tertiary-container text-white leading-none">2 Baru</span>
+</button>
+<button aria-selected="false" class="h-11 flex items-center justify-center gap-2 rounded-full text-text-muted font-bold transition-all duration-150 hover:text-on-surface active:scale-98" id="tab-btn-chat" role="tab">
+<span class="text-label-lg font-label-lg">Tanya</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="chat">chat</span>
+</button>
+</div>
+<!-- SECTION 1: PERINGATAN DINI POLA KANDANG -->
+<section class="space-y-space-sm">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-status-warning fill-icon text-[20px]" data-icon="warning">warning</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Peringatan Dini Pola Kandang</h2>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted">Real-time sinkron</span>
+</div>
+<!-- Alert Card 1: Level 'Waspada' -->
+<article class="bg-surface-card rounded-xl p-space-md border border-subtle-border elevation-level-1 flex flex-col gap-space-sm">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-label-sm bg-tertiary text-white">
+<span class="material-symbols-outlined text-[14px]" data-icon="priority_high">priority_high</span>
+              Waspada
+            </span>
+<span class="text-label-sm font-label-sm text-text-muted">24 Mei 2024 · 08:30 WIB</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant text-[20px]" data-icon="notifications_active">notifications_active</span>
+</div>
+<div>
+<h3 class="text-body-bold font-body-bold text-on-surface leading-snug">
+            Konsumsi pakan naik 3 hari berturut-turut sementara produksi telur turun
+          </h3>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1.5 leading-relaxed bg-surface-container-low p-2.5 rounded-lg border border-subtle-border/80">
+            Pakan rata-rata naik <strong class="text-on-surface">+1.8 kg/hari</strong>, sedangkan telur turun dari <strong class="text-on-surface">178 ke 168 butir</strong>. Kemungkinan stres panas atau kebocoran tempat pakan.
+          </p>
+</div>
+<!-- Mandatory Disclaimer Banner -->
+<div class="flex items-start gap-2 bg-amber-500/10 border border-status-warning/30 p-2.5 rounded-lg">
+<span class="material-symbols-outlined text-status-warning text-[18px] shrink-0 mt-0.5" data-icon="lightbulb">lightbulb</span>
+<p class="text-label-md font-label-md text-on-surface-variant italic">
+            Ini perkiraan dari pola data, bukan diagnosis. Periksa ayam langsung atau hubungi dokter hewan.
+          </p>
+</div>
+<!-- Action Buttons -->
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<button class="min-h-[48px] px-3 rounded-full bg-status-success text-white font-bold text-label-lg font-label-lg flex items-center justify-center gap-1.5 active:bg-[#26572F] transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="checklist">checklist</span>
+<span>Periksa Kandang</span>
+</button>
+<button class="min-h-[48px] px-3 rounded-full border-2 border-status-success text-status-success font-bold text-label-lg font-label-lg flex items-center justify-center gap-1.5 hover:bg-status-success/5 active:scale-98 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="support_agent">support_agent</span>
+<span>Konsultasikan</span>
+</button>
+</div>
+</article>
+<!-- Alert Card 2: Level 'Perhatian' -->
+<article class="bg-surface-card rounded-xl p-space-md border border-subtle-border elevation-level-1 flex flex-col gap-space-sm">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-label-sm bg-status-warning text-on-surface font-extrabold">
+<span class="material-symbols-outlined text-[14px]" data-icon="error">error</span>
+              Perhatian
+            </span>
+<span class="text-label-sm font-label-sm text-text-muted">23 Mei 2024 · 19:15 WIB</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant text-[20px]" data-icon="trending_up">trending_up</span>
+</div>
+<div>
+<h3 class="text-body-bold font-body-bold text-on-surface leading-snug">
+            Biaya pakan per kg telur meningkat +4.0%
+          </h3>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1.5 leading-relaxed bg-surface-container-low p-2.5 rounded-lg border border-subtle-border/80">
+            Biaya pakan per kg telur saat ini <strong class="text-on-surface">Rp 18.200</strong> (naik Rp 700 dari pekan lalu akibat kenaikan harga jagung pipil).
+          </p>
+</div>
+<!-- Mandatory Disclaimer Banner -->
+<div class="flex items-start gap-2 bg-amber-500/10 border border-status-warning/30 p-2.5 rounded-lg">
+<span class="material-symbols-outlined text-status-warning text-[18px] shrink-0 mt-0.5" data-icon="lightbulb">lightbulb</span>
+<p class="text-label-md font-label-md text-on-surface-variant italic">
+            Ini perkiraan dari pola data, bukan diagnosis. Periksa ayam langsung atau hubungi dokter hewan.
+          </p>
+</div>
+<!-- Action Button -->
+<div class="pt-1">
+<button class="w-full min-h-[48px] px-4 rounded-full border-2 border-status-success text-status-success font-bold text-label-lg font-label-lg flex items-center justify-center gap-2 hover:bg-status-success/5 active:scale-98 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="tune">tune</span>
+<span>Cek Formulasi Alternatif</span>
+</button>
+</div>
+</article>
+</section>
+<!-- SECTION 2: TANYA AHLI RANSUMKU (CHAT INTERFACE) -->
+<section class="space-y-space-sm pt-2">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[22px]" data-icon="forum">forum</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Tanya Ahli RansumKu</h2>
+</div>
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-status-success bg-status-success/10 px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse"></span>
+          Siaga Bantu
+        </span>
+</div>
+<!-- Trust & Calculation Note Header Banner -->
+<div class="bg-surface-card rounded-xl p-3 border border-subtle-border elevation-level-1 flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[18px]" data-icon="calculate">calculate</span>
+</div>
+<p class="text-label-md font-label-md text-on-surface-variant">
+<strong class="text-on-surface">Transparan:</strong> Angka dihitung program, bukan AI. Rekomendasi nutrisi berdasar standar SNI.
+        </p>
+</div>
+<!-- Interactive Chat Card Container -->
+<div class="bg-surface-card rounded-xl border border-subtle-border p-space-md elevation-level-1 space-y-space-md">
+<!-- Conversation Thread -->
+<div class="space-y-space-md">
+<!-- User Chat Bubble (Deep green #2F6B3A background, white text, right-aligned) -->
+<div class="flex flex-col items-end pl-6">
+<div class="bg-[#2F6B3A] text-white p-3.5 rounded-2xl rounded-tr-xs shadow-sm max-w-[92%]">
+<p class="text-body-md font-body-md leading-relaxed text-white">
+                Kenapa persentase konsentrat dinaikkan jadi 26,3% di racikan kemarin?
+              </p>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted mt-1 pr-1">Kemarin · 14:10</span>
+</div>
+<!-- Assistant Chat Bubble (Clean white background, subtle border, left-aligned) -->
+<div class="flex items-start gap-2.5 pr-4">
+<div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 border border-primary-container shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="smart_toy">smart_toy</span>
+</div>
+<div class="flex flex-col items-start">
+<div class="bg-surface-container-low text-on-surface p-3.5 rounded-2xl rounded-tl-xs border border-subtle-border max-w-[95%]">
+<p class="text-body-md font-body-md leading-relaxed">
+                  Berdasarkan standar SNI 2016, ayam fase produksi membutuhkan minimal 17% Protein Kasar. Dengan kualitas jagung lokal saat ini (PK 8,5%), penambahan konsentrat diperlukan agar produksi telur tetap di atas 85%.
+                </p>
+<div class="mt-2 pt-2 border-t border-subtle-border/60 flex items-center gap-1.5 text-label-sm font-label-sm text-text-muted">
+<span class="material-symbols-outlined text-[15px]" data-icon="verified">verified</span>
+<span>Formula Ransum Mandiri 2024</span>
+</div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted mt-1 pl-1">Kemarin · 14:11</span>
+</div>
+</div>
+</div>
+<!-- Suggestion Chips Carousel / Stack -->
+<div class="pt-2">
+<p class="text-label-sm font-label-sm text-text-muted mb-2 px-0.5">Pertanyaan Sering Diajukan Peternak:</p>
+<div class="flex flex-wrap gap-2">
+<button class="min-h-[40px] px-3.5 py-1.5 rounded-full bg-canvas-bg border border-subtle-border text-label-md font-label-md text-on-surface hover:border-primary active:scale-95 transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="help">help</span>
+<span>Kenapa komposisi ini dipilih?</span>
+</button>
+<button class="min-h-[40px] px-3.5 py-1.5 rounded-full bg-canvas-bg border border-subtle-border text-label-md font-label-md text-on-surface hover:border-primary active:scale-95 transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px] text-status-warning" data-icon="swap_horiz">swap_horiz</span>
+<span>Bahan pengganti jagung?</span>
+</button>
+<button class="min-h-[40px] px-3.5 py-1.5 rounded-full bg-canvas-bg border border-subtle-border text-label-md font-label-md text-on-surface hover:border-primary active:scale-95 transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px] text-tertiary" data-icon="thermostat">thermostat</span>
+<span>Cara atasi pakan boros cuaca panas?</span>
+</button>
+</div>
+</div>
+<!-- Chat Input Form Field -->
+<div class="pt-2">
+<form class="flex items-center gap-2" onsubmit="event.preventDefault();">
+<div class="relative flex-1">
+<input class="w-full min-h-[52px] pl-4 pr-10 py-3 rounded-full bg-canvas-bg border-1.5 border-subtle-border text-body-md font-body-md text-on-surface placeholder:text-text-muted focus:border-2 focus:border-primary focus:ring-0 transition-all" placeholder="Tulis pertanyaan seputar pakan &amp; kandang..." type="text"/>
+<button aria-label="Lampirkan foto" class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-text-muted hover:text-primary" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="add_photo_alternate">add_photo_alternate</span>
+</button>
+</div>
+<button aria-label="Kirim Pesan" class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-md active:scale-95 transition-transform duration-150 shrink-0 hover:bg-[#26572F]" type="submit">
+<span class="material-symbols-outlined text-[22px]" data-icon="send">send</span>
+</button>
+</form>
+<div class="flex items-center justify-center gap-1.5 mt-2 text-label-sm font-label-sm text-text-muted">
+<span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span>
+<span>Data kandang tersimpan aman di perangkat Anda</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- SHARED COMPONENT: BottomNavBar (Fixed docked full-width bottom-0) -->
+<!-- Active state strictly assigned to index 3 ('Asisten') -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 pb-safe bg-surface-card dark:bg-surface-container-high border-t border-subtle-border dark:border-outline-variant elevation-nav">
+<!-- Tab 1: Beranda (Inactive) -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant py-1 active:scale-95 transition-transform duration-150 hover:text-primary dark:hover:text-inverse-primary w-16" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">Beranda</span>
+</a>
+<!-- Tab 2: Ransum (Inactive) -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant py-1 active:scale-95 transition-transform duration-150 hover:text-primary dark:hover:text-inverse-primary w-16" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="science">science</span>
+<span class="text-label-sm font-label-sm mt-0.5">Ransum</span>
+</a>
+<!-- Tab 3: Catatan (Inactive) -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant py-1 active:scale-95 transition-transform duration-150 hover:text-primary dark:hover:text-inverse-primary w-16" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="edit_note">edit_note</span>
+<span class="text-label-sm font-label-sm mt-0.5">Catatan</span>
+</a>
+<!-- Tab 4: Asisten (ACTIVE - Mandatory highlighted primary green #2F6B3A) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-inverse-primary font-bold py-1 active:scale-95 transition-transform duration-150 relative w-16" href="#">
+<span class="absolute -top-1 w-6 h-1 bg-primary rounded-full"></span>
+<span class="material-symbols-outlined fill-icon text-[24px]" data-icon="smart_toy">smart_toy</span>
+<span class="text-label-sm font-label-sm mt-0.5">Asisten</span>
+</a>
+<!-- Tab 5: Lainnya (Inactive) -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant py-1 active:scale-95 transition-transform duration-150 hover:text-primary dark:hover:text-inverse-primary w-16" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="more_horiz">more_horiz</span>
+<span class="text-label-sm font-label-sm mt-0.5">Lainnya</span>
+</a>
+</nav>
+</body></html>

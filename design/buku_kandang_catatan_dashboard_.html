@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Buku Kandang - RansumKu</title>
+<!-- Plus Jakarta Sans Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "status-danger": "#D64545",
+            "on-secondary": "#ffffff",
+            "on-primary": "#ffffff",
+            "tertiary-fixed-dim": "#ffb3ae",
+            "background": "#fcf9f8",
+            "on-primary-fixed-variant": "#135224",
+            "subtle-border": "#E8E4DA",
+            "tertiary": "#900e1a",
+            "surface": "#fcf9f8",
+            "surface-variant": "#e5e2e1",
+            "on-secondary-fixed": "#281900",
+            "surface-container": "#f0eded",
+            "surface-tint": "#2e6a39",
+            "on-primary-fixed": "#002108",
+            "tertiary-container": "#b22b2e",
+            "error": "#ba1a1a",
+            "on-tertiary-fixed": "#410005",
+            "on-surface": "#1b1c1c",
+            "inverse-on-surface": "#f3f0ef",
+            "error-container": "#ffdad6",
+            "on-background": "#1b1c1c",
+            "outline": "#71796f",
+            "surface-container-high": "#eae7e7",
+            "on-tertiary-fixed-variant": "#8f0d19",
+            "surface-card": "#FFFFFF",
+            "surface-container-highest": "#e5e2e1",
+            "secondary-fixed-dim": "#fdbb3e",
+            "primary": "#145224",
+            "on-error-container": "#93000a",
+            "surface-dim": "#dcd9d9",
+            "surface-bright": "#fcf9f8",
+            "on-tertiary-container": "#ffceca",
+            "on-secondary-fixed-variant": "#5f4100",
+            "status-warning": "#F2B134",
+            "status-success": "#2F6B3A",
+            "secondary-fixed": "#ffdeac",
+            "on-tertiary": "#ffffff",
+            "canvas-bg": "#FAF8F2",
+            "text-muted": "#6E6B65",
+            "secondary-container": "#fdbb3e",
+            "tertiary-fixed": "#ffdad7",
+            "on-primary-container": "#a8e9ac",
+            "primary-fixed": "#b1f2b4",
+            "outline-variant": "#c0c9bd",
+            "on-secondary-container": "#6e4c00",
+            "on-surface-variant": "#414940",
+            "surface-container-low": "#f6f3f2",
+            "inverse-primary": "#96d69a",
+            "primary-fixed-dim": "#96d69a",
+            "inverse-surface": "#303030",
+            "primary-container": "#2f6b3a",
+            "on-error": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "secondary": "#7e5700"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "margin-desktop": "2rem",
+            "space-xs": "0.25rem",
+            "gutter": "1rem",
+            "space-lg": "1.5rem",
+            "gutter-desktop": "1.5rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "space-xl": "2rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Plus Jakarta Sans"],
+            "body-lg": ["Plus Jakarta Sans"],
+            "currency-display": ["Plus Jakarta Sans"],
+            "label-md": ["Plus Jakarta Sans"],
+            "headline-xl-mobile": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "body-bold": ["Plus Jakarta Sans"],
+            "headline-sm": ["Plus Jakarta Sans"],
+            "headline-xl": ["Plus Jakarta Sans"],
+            "label-sm": ["Plus Jakarta Sans"],
+            "label-lg": ["Plus Jakarta Sans"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "currency-display": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "700" }],
+            "label-lg": ["15px", { "lineHeight": "20px", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      background-color: #FAF8F2;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1;
+    }
+    .shadow-level-1 {
+      box-shadow: 0 4px 16px -2px rgba(34, 34, 34, 0.05), 0 2px 6px -1px rgba(34, 34, 34, 0.03);
+    }
+    .shadow-bottom-bar {
+      box-shadow: 0 -4px 16px rgba(34, 34, 34, 0.04);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-canvas-bg text-on-surface antialiased min-h-screen pb-24">
+<!-- Top App Bar (Shared Component Anchored) -->
+<header class="sticky top-0 z-40 bg-surface shadow-sm w-full">
+<div class="flex justify-between items-center w-full px-margin h-14">
+<div class="flex items-center gap-space-sm">
+<button aria-label="Kembali" class="w-10 h-10 flex items-center justify-center rounded-full text-primary hover:bg-surface-container active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<div>
+<h1 class="text-headline-sm font-headline-sm text-primary leading-tight tracking-tight">Buku Kandang</h1>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-label-sm font-label-sm text-text-muted">Kandang Maju Jaya · 200 Ayam</span>
+<span class="inline-flex items-center px-1.5 py-0.2 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-[10px] font-bold">Aktif</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button aria-label="Riwayat Kalender" class="w-10 h-10 flex items-center justify-center rounded-full text-text-muted hover:bg-surface-container active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined">calendar_month</span>
+</button>
+<button aria-label="Bantuan" class="w-10 h-10 flex items-center justify-center rounded-full text-text-muted hover:bg-surface-container active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+</div>
+<!-- Segmented Navigation Tabs -->
+<div class="px-margin pb-2 bg-surface">
+<div class="grid grid-cols-2 p-1 bg-surface-container rounded-xl gap-1">
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-label-md bg-surface-card text-primary shadow-sm transition-all duration-150 active:scale-95" id="tab-dashboard" onclick="switchView('dashboard')">
+<span class="material-symbols-outlined text-[18px]">bar_chart</span>
+<span>Dashboard</span>
+<span class="w-2 h-2 rounded-full bg-status-success"></span>
+</button>
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-medium text-label-md text-text-muted hover:text-on-surface transition-all duration-150 active:scale-95" id="tab-form" onclick="switchView('form')">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+<span>Catat Hari Ini</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Canvas Container -->
+<main class="px-margin pt-space-md space-y-space-md max-w-xl mx-auto">
+<!-- Timeframe Filter Toggle -->
+<div class="flex items-center justify-between">
+<div class="inline-flex p-1 bg-surface-card rounded-full border border-subtle-border shadow-level-1">
+<button class="px-4 py-1.5 rounded-full text-label-md font-bold bg-primary-container text-on-primary shadow-sm transition-colors" id="filter-week" onclick="setTimeframe('week')">
+          Minggu Ini
+        </button>
+<button class="px-4 py-1.5 rounded-full text-label-md font-semibold text-text-muted hover:text-on-surface transition-colors" id="filter-month" onclick="setTimeframe('month')">
+          Bulan Ini
+        </button>
+</div>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-text-muted">
+<span class="material-symbols-outlined text-[16px] text-primary">event_available</span>
+<span>18 - 24 Mei 2024</span>
+</div>
+</div>
+<!-- SECTION 1: Ringkasan & Laporan Mingguan Card -->
+<section class="bg-surface-card rounded-2xl p-space-md border border-subtle-border shadow-level-1">
+<div class="flex items-center justify-between pb-3 border-b border-subtle-border">
+<div>
+<span class="text-label-sm font-label-sm text-text-muted uppercase">Pekan ke-42 Produksi</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Laporan Mingguan</h2>
+</div>
+<div class="px-2.5 py-1 bg-primary-fixed rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-on-primary-fixed-variant">check_circle</span>
+<span class="text-label-sm font-label-sm text-on-primary-fixed-variant">98.5% Lengkap</span>
+</div>
+</div>
+<!-- Key Metrics 2x2 Bento -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-sm">
+<div class="p-3 bg-surface-container-low rounded-xl">
+<div class="flex items-center justify-between text-text-muted mb-1">
+<span class="text-label-sm font-label-sm">Total Telur</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">egg</span>
+</div>
+<div class="text-headline-md font-headline-md text-on-surface">1.182 <span class="text-label-md font-label-md font-normal text-text-muted">butir</span></div>
+<div class="text-label-sm font-label-sm text-text-muted mt-0.5">≈ 73,8 kg telur</div>
+</div>
+<div class="p-3 bg-surface-container-low rounded-xl">
+<div class="flex items-center justify-between text-text-muted mb-1">
+<span class="text-label-sm font-label-sm">Total Pakan</span>
+<span class="material-symbols-outlined text-[18px] text-primary">grain</span>
+</div>
+<div class="text-headline-md font-headline-md text-on-surface">161,5 <span class="text-label-md font-label-md font-normal text-text-muted">kg</span></div>
+<div class="text-label-sm font-label-sm text-text-muted mt-0.5">Rata-rata 23,1 kg/hari</div>
+</div>
+</div>
+<!-- Real Cost vs Model Cost Comparison Strip -->
+<div class="mt-space-sm p-3.5 bg-canvas-bg rounded-xl border border-subtle-border">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+<span class="text-text-muted">Biaya Pakan Nyata vs Estimasi</span>
+<span class="px-2 py-0.5 bg-on-primary-container/25 text-status-success rounded font-bold text-label-sm flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">trending_down</span>
+            Hemat Rp 20.000 (-1,6%)
+          </span>
+</div>
+<div class="flex items-baseline justify-between">
+<div>
+<span class="text-label-sm font-label-sm text-text-muted">Biaya Nyata: </span>
+<span class="text-headline-sm font-headline-sm text-on-surface font-extrabold">Rp 1.228.000</span>
+</div>
+<div class="text-right">
+<span class="text-label-sm font-label-sm text-text-muted">Estimasi: </span>
+<span class="text-label-md font-label-md line-through text-text-muted">Rp 1.248.000</span>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<div class="mt-space-md pt-1">
+<button class="w-full h-12 flex items-center justify-center gap-2 rounded-full border-2 border-primary-container text-primary font-bold text-body-bold hover:bg-primary-fixed/20 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+<span>+ Catat Pembelian Bahan</span>
+</button>
+<p class="text-center text-label-sm font-label-sm text-text-muted mt-2">
+          Bandingkan estimasi racikan vs struk beli nyata di toko
+        </p>
+</div>
+</section>
+<!-- SECTION 2: Efisiensi Kandang Card -->
+<section class="bg-surface-card rounded-2xl p-space-md border border-subtle-border shadow-level-1">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">speed</span>
+</div>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Indikator Efisiensi Produksi</h2>
+<p class="text-label-sm font-label-sm text-text-muted">Kalkulasi performa pakan dan produktivitas ayam</p>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<!-- Metric 1 -->
+<div class="p-3.5 bg-surface-container-low rounded-xl border border-subtle-border">
+<div class="flex items-center justify-between mb-1">
+<span class="text-label-sm font-label-sm text-text-muted">Biaya pakan / kg telur <span class="italic font-normal">(estimasi)</span></span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-bold bg-primary-fixed text-on-primary-fixed-variant">Bagus</span>
+</div>
+<div class="text-headline-lg font-currency-display text-primary mt-1">
+            Rp 16.640 <span class="text-label-md font-label-md font-normal text-text-muted">/kg</span>
+</div>
+<div class="flex items-center gap-1.5 mt-2">
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 78%"></div>
+</div>
+<span class="text-[11px] font-bold text-text-muted whitespace-nowrap">Target ≤ 17.500</span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="p-3.5 bg-surface-container-low rounded-xl border border-subtle-border">
+<div class="flex items-center justify-between mb-1">
+<span class="text-label-sm font-label-sm text-text-muted">Rasio pakan per butir</span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-bold bg-secondary-fixed text-on-secondary-fixed-variant">Normal</span>
+</div>
+<div class="text-headline-lg font-currency-display text-on-surface mt-1">
+            136 <span class="text-label-md font-label-md font-normal text-text-muted">gram /butir</span>
+</div>
+<div class="flex items-center justify-between mt-2 text-label-sm font-label-sm text-text-muted">
+<span>FCR setara: <strong class="text-on-surface">2.18</strong></span>
+<span>Standar: 130-140g</span>
+</div>
+</div>
+</div>
+<!-- Agronomist Advice Box -->
+<div class="mt-space-sm p-3 bg-secondary-fixed/30 rounded-xl border border-secondary-fixed flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">lightbulb</span>
+<div>
+<span class="text-label-sm font-bold text-secondary">Saran Ahli RansumKu</span>
+<p class="text-label-md font-body-md text-on-surface mt-0.5 leading-snug">
+            Rasio konversi pakan stabil. Pertahankan jadwal pemberian pakan 2x sehari (07.00 &amp; 15.30 WIB) untuk mencegah stres cuaca panas.
+          </p>
+</div>
+</div>
+</section>
+<!-- SECTION 3: Charts Section (Visual Data Cards) -->
+<section class="space-y-space-md">
+<!-- Card A: Konsumsi Pakan Harian -->
+<div class="bg-surface-card rounded-2xl p-space-md border border-subtle-border shadow-level-1">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Konsumsi Pakan Harian</h3>
+<span class="text-label-sm font-label-sm text-text-muted">Rata-rata 23,1 kg / 200 ekor</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px]">show_chart</span>
+</div>
+<!-- Mobile Line/Trend Sparkline Representation -->
+<div class="relative pt-4 pb-2">
+<div class="grid grid-cols-7 gap-1 items-end h-32 px-1 border-b border-subtle-border pb-1">
+<!-- Day 1: 22.0 -->
+<div class="flex flex-col items-center justify-end h-full group">
+<span class="text-[10px] font-bold text-text-muted mb-1">22.0</span>
+<div class="w-full max-w-[28px] bg-primary-fixed hover:bg-primary rounded-t-lg transition-all" style="height: 65%;"></div>
+<span class="text-label-sm font-label-sm text-text-muted mt-1.5">Sen</span>
+</div>
+<!-- Day 2: 22.4 -->
+<div class="flex flex-col items-center justify-end h-full group">
+<span class="text-[10px] font-bold text-text-muted mb-1">22.4</span>
+<div class="w-full max-w-[28px] bg-primary-fixed hover:bg-primary rounded-t-lg transition-all" style="height: 69%;"></div>
+<span class="text-label-sm font-label-sm text-text-muted mt-1.5">Sel</span>
+</div>
+<!-- Day 3: 23.1 -->
+<div class="flex flex-col items-center justify-end h-full group">
+<span class="text-[10px] font-bold text-text-muted mb-1">23.1</span>
+<div class="w-full max-w-[28px] bg-primary-fixed hover:bg-primary rounded-t-lg transition-all" style="height: 76%;"></div>
+<span class="text-label-sm font-label-sm text-text-muted mt-1.5">Rab</span>
+</div>
+<!-- Day 4: 23.8 -->
+<div class="flex flex-col items-center justify-end h-full group">
+<span class="text-[10px] font-bold text-primary mb-1">23.8</span>
+<div class="w-full max-w-[28px] bg-primary rounded-t-lg transition-all" style="height: 84%;"></div>
+<span class="text-label-sm font-label-sm text-on-surface font-bold mt-1.5">Kam</span>
+</div>
+<!-- Day 5: 23.5 -->
+<div class="flex flex-col items-center justify-end h-full group">
+<span class="text-[10px] font-bold text-text-muted mb-1">23.5</span>
+<div class="w-full max-w-[28px] bg-primary-fixed hover:bg-primary rounded-t-lg transition-all" style="height: 80%;"></div>
+<span class="text-label-sm font-label-sm text-text-muted mt-1.5">Jum</span>
+</div>
+<!-- Day 6: 23.2 -->
+<div class="flex flex-col items-center justify-end h-full group">
+<span class="text-[10px] font-bold text-text-muted mb-1">23.2</span>
+<div class="w-full max-w-[28px] bg-primary-fixed hover:bg-primary rounded-t-lg transition-all" style="height: 77%;"></div>
+<span class="text-label-sm font-label-sm text-text-muted mt-1.5">Sab</span>
+</div>
+<!-- Day 7: 23.5 -->
+<div class="flex flex-col items-center justify-end h-full group">
+<span class="text-[10px] font-bold text-text-muted mb-1">23.5</span>
+<div class="w-full max-w-[28px] bg-primary-container rounded-t-lg transition-all" style="height: 80%;"></div>
+<span class="text-label-sm font-label-sm text-primary font-bold mt-1.5">Min</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-2 text-[11px] text-text-muted">
+<span>Standar normal: 115 - 120 g/ekor/hari</span>
+<span class="font-bold text-status-success">Kondisi Ideal</span>
+</div>
+</div>
+</div>
+<!-- Card B: Produksi Telur -->
+<div class="bg-surface-card rounded-2xl p-space-md border border-subtle-border shadow-level-1">
+<div class="flex items-center justify-between mb-2">
+<div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Produksi Telur (Butir)</h3>
+<span class="text-label-sm font-label-sm text-text-muted">Rentang: 165 - 176 butir/hari (Hen-Day 84%)</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[22px]">egg</span>
+</div>
+<div class="grid grid-cols-7 gap-1.5 pt-3 pb-1 border-b border-subtle-border items-end h-28">
+<div class="flex flex-col items-center h-full justify-end">
+<span class="text-[10px] text-text-muted">165</span>
+<div class="w-full bg-secondary-fixed rounded-t" style="height: 70%;"></div>
+<span class="text-[10px] font-semibold text-text-muted mt-1">S</span>
+</div>
+<div class="flex flex-col items-center h-full justify-end">
+<span class="text-[10px] text-text-muted">168</span>
+<div class="w-full bg-secondary-fixed rounded-t" style="height: 73%;"></div>
+<span class="text-[10px] font-semibold text-text-muted mt-1">S</span>
+</div>
+<div class="flex flex-col items-center h-full justify-end">
+<span class="text-[10px] text-text-muted">172</span>
+<div class="w-full bg-secondary-fixed rounded-t" style="height: 82%;"></div>
+<span class="text-[10px] font-semibold text-text-muted mt-1">R</span>
+</div>
+<div class="flex flex-col items-center h-full justify-end">
+<span class="text-[10px] text-text-muted">176</span>
+<div class="w-full bg-status-warning rounded-t" style="height: 92%;"></div>
+<span class="text-[10px] font-bold text-on-surface mt-1">K</span>
+</div>
+<div class="flex flex-col items-center h-full justify-end">
+<span class="text-[10px] text-text-muted">170</span>
+<div class="w-full bg-secondary-fixed rounded-t" style="height: 78%;"></div>
+<span class="text-[10px] font-semibold text-text-muted mt-1">J</span>
+</div>
+<div class="flex flex-col items-center h-full justify-end">
+<span class="text-[10px] text-text-muted">167</span>
+<div class="w-full bg-secondary-fixed rounded-t" style="height: 72%;"></div>
+<span class="text-[10px] font-semibold text-text-muted mt-1">S</span>
+</div>
+<div class="flex flex-col items-center h-full justify-end">
+<span class="text-[10px] font-bold text-on-surface">174</span>
+<div class="w-full bg-secondary-container rounded-t" style="height: 86%;"></div>
+<span class="text-[10px] font-bold text-secondary mt-1">M</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-2 text-[11px] text-text-muted">
+<span>Puncak bertelur: Kamis (176 butir)</span>
+<span class="text-secondary font-bold">HD 87.0%</span>
+</div>
+</div>
+<!-- Card C: Tren Biaya Pakan -->
+<div class="bg-surface-card rounded-2xl p-space-md border border-subtle-border shadow-level-1">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Tren Biaya Pakan Harian</h3>
+<span class="text-label-sm font-label-sm text-text-muted">Biaya rata-rata Rp 175.400 /hari</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px]">payments</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
+<div>
+<div class="text-label-sm font-label-sm text-text-muted">Harga Campuran Saat Ini</div>
+<div class="text-headline-sm font-headline-sm text-on-surface font-extrabold mt-0.5">Rp 7.600 <span class="text-label-md font-label-md font-normal text-text-muted">/kg pakan</span></div>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center px-2 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded text-label-sm font-bold">
+              Formula Stabil
+            </span>
+<div class="text-[10px] text-text-muted mt-1">Jagung + Konsentrat + Bekatul</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: Quick Form "Catat Hari Ini" -->
+<section class="bg-surface-card rounded-2xl p-space-md border-2 border-primary/20 shadow-level-1 scroll-mt-20" id="section-form">
+<div class="flex items-center justify-between pb-3 border-b border-subtle-border">
+<div class="flex items-center gap-2">
+<div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[20px]">edit_calendar</span>
+</div>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Catat Hari Ini</h2>
+<p class="text-label-sm font-label-sm text-text-muted">Pencatatan Cepat 1-2 Menit</p>
+</div>
+</div>
+<span class="text-label-sm font-bold text-primary bg-primary-fixed px-2.5 py-1 rounded-full">
+          24 Mei 2024
+        </span>
+</div>
+<form class="space-y-4 pt-4" onsubmit="event.preventDefault(); alert('Catatan berhasil disimpan ke Buku Kandang!');">
+<!-- Tanggal -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">
+            Tanggal Pencatatan
+          </label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-text-muted text-[20px]">calendar_today</span>
+<input class="w-full h-[52px] pl-11 pr-4 bg-surface-container-low rounded-xl border border-subtle-border text-body-md font-medium text-on-surface focus:outline-none focus:border-primary" readonly="" type="text" value="Hari ini, Jumat 24 Mei 2024"/>
+</div>
+</div>
+<!-- Pakan Terpakai (kg) with Stepper -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="text-label-md font-label-md text-on-surface">
+              Pakan Terpakai <span class="text-status-danger">*</span>
+</label>
+<span class="text-label-sm text-text-muted">Estimasi standar: 23,0 kg</span>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Kurang 0.5 kg" class="w-12 h-[52px] rounded-xl bg-surface-container border border-subtle-border flex items-center justify-center text-headline-sm font-bold active:scale-95 transition-transform" onclick="adjustValue('input-pakan', -0.5, 1)" type="button">
+              -
+            </button>
+<div class="relative flex-1">
+<input class="w-full h-[52px] text-center font-bold text-headline-sm text-on-surface rounded-xl border border-subtle-border focus:border-primary focus:ring-0" id="input-pakan" step="0.1" type="number" value="23.5"/>
+<span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-label-md font-bold text-text-muted">kg</span>
+</div>
+<button aria-label="Tambah 0.5 kg" class="w-12 h-[52px] rounded-xl bg-surface-container border border-subtle-border flex items-center justify-center text-headline-sm font-bold active:scale-95 transition-transform" onclick="adjustValue('input-pakan', 0.5, 1)" type="button">
+              +
+            </button>
+</div>
+</div>
+<!-- Jumlah Telur (butir) with Stepper -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="text-label-md font-label-md text-on-surface">
+              Jumlah Telur Panen <span class="text-status-danger">*</span>
+</label>
+<span class="text-label-sm text-text-muted">Kemarin: 174 butir</span>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Kurang 1 butir" class="w-12 h-[52px] rounded-xl bg-surface-container border border-subtle-border flex items-center justify-center text-headline-sm font-bold active:scale-95 transition-transform" onclick="adjustValue('input-telur', -1, 0)" type="button">
+              -
+            </button>
+<div class="relative flex-1">
+<input class="w-full h-[52px] text-center font-bold text-headline-sm text-on-surface rounded-xl border border-subtle-border focus:border-primary focus:ring-0" id="input-telur" step="1" type="number" value="170"/>
+<span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-label-md font-bold text-text-muted">butir</span>
+</div>
+<button aria-label="Tambah 1 butir" class="w-12 h-[52px] rounded-xl bg-surface-container border border-subtle-border flex items-center justify-center text-headline-sm font-bold active:scale-95 transition-transform" onclick="adjustValue('input-telur', 1, 0)" type="button">
+              +
+            </button>
+</div>
+</div>
+<!-- Two Columns: Berat Total & Kematian -->
+<div class="grid grid-cols-2 gap-3">
+<!-- Berat Total Telur (opsional) -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">
+              Berat Total <span class="text-text-muted font-normal">(opsional)</span>
+</label>
+<div class="relative">
+<input class="w-full h-[52px] pr-9 pl-3 font-semibold text-body-bold text-on-surface rounded-xl border border-subtle-border focus:border-primary focus:ring-0" placeholder="10.5" step="0.1" type="number" value="10.6"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-label-sm font-bold text-text-muted">kg</span>
+</div>
+</div>
+<!-- Ayam Mati / Afkir -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">
+              Mati / Afkir
+            </label>
+<div class="relative">
+<input class="w-full h-[52px] pr-12 pl-3 font-semibold text-body-bold text-on-surface rounded-xl border border-subtle-border focus:border-primary focus:ring-0" id="input-mati" min="0" step="1" type="number" value="0"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-label-sm font-bold text-text-muted">ekor</span>
+</div>
+</div>
+</div>
+<!-- Biaya Lain (opsional) -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">
+            Biaya Lain-lain <span class="text-text-muted font-normal">(Vitamin/Vaksin/Listrik)</span>
+</label>
+<div class="relative">
+<span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-label-md font-bold text-text-muted">Rp</span>
+<input class="w-full h-[52px] pl-10 pr-4 font-semibold text-body-bold text-on-surface rounded-xl border border-subtle-border focus:border-primary focus:ring-0" placeholder="0" type="number"/>
+</div>
+</div>
+<!-- Catatan Tambahan (opsional) -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">
+            Catatan Harian <span class="text-text-muted font-normal">(opsional)</span>
+</label>
+<textarea class="w-full p-3 text-body-md rounded-xl border border-subtle-border focus:border-primary focus:ring-0 text-on-surface" placeholder="Contoh: Kondisi cuaca panas terik siang hari, ayam minum banyak, feses normal..." rows="2"></textarea>
+</div>
+<!-- Notice & Disclaimer Banner -->
+<div class="p-3 bg-primary-fixed/20 rounded-xl border border-primary-fixed flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">verified_user</span>
+<p class="text-label-sm font-label-sm text-on-primary-fixed-variant leading-tight">
+            Data ini langsung memperbarui laporan FCR mingguan dan stok bahan baku pakan Anda secara otomatis.
+          </p>
+</div>
+<!-- Primary Submit Button -->
+<button class="w-full min-h-[52px] py-3.5 px-6 rounded-full bg-primary-container text-on-primary font-bold text-body-bold flex items-center justify-center gap-2 hover:bg-primary shadow-md active:scale-95 transition-all" type="submit">
+<span class="material-symbols-outlined text-[22px]">check_circle</span>
+<span>Simpan Catatan Hari Ini</span>
+</button>
+</form>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Shared Component Anchored) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 pb-safe bg-surface-card border-t border-subtle-border shadow-bottom-bar">
+<!-- Tab 1: Beranda -->
+<a class="flex flex-col items-center justify-center text-text-muted py-1 flex-1 transition-colors hover:text-primary active:scale-95" href="#beranda">
+<span class="material-symbols-outlined text-[22px]">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">Beranda</span>
+</a>
+<!-- Tab 2: Ransum -->
+<a class="flex flex-col items-center justify-center text-text-muted py-1 flex-1 transition-colors hover:text-primary active:scale-95" href="#ransum">
+<span class="material-symbols-outlined text-[22px]">science</span>
+<span class="text-label-sm font-label-sm mt-0.5">Ransum</span>
+</a>
+<!-- Tab 3: Catatan (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold py-1 flex-1 relative transition-colors active:scale-95" href="#catatan">
+<div class="w-8 h-1 bg-primary rounded-full absolute -top-2"></div>
+<span class="material-symbols-outlined fill text-[22px] text-primary">edit_note</span>
+<span class="text-label-sm font-label-sm mt-0.5 text-primary">Catatan</span>
+</a>
+<!-- Tab 4: Asisten -->
+<a class="flex flex-col items-center justify-center text-text-muted py-1 flex-1 transition-colors hover:text-primary active:scale-95" href="#asisten">
+<span class="material-symbols-outlined text-[22px]">smart_toy</span>
+<span class="text-label-sm font-label-sm mt-0.5">Asisten</span>
+</a>
+<!-- Tab 5: Lainnya -->
+<a class="flex flex-col items-center justify-center text-text-muted py-1 flex-1 transition-colors hover:text-primary active:scale-95" href="#lainnya">
+<span class="material-symbols-outlined text-[22px]">more_horiz</span>
+<span class="text-label-sm font-label-sm mt-0.5">Lainnya</span>
+</a>
+</nav>
+<!-- Interactive Logic for Mobile Farm Usability -->
+<script>
+    function adjustValue(inputId, delta, decimals) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      let val = parseFloat(input.value) || 0;
+      val = Math.max(0, val + delta);
+      input.value = decimals > 0 ? val.toFixed(decimals) : Math.round(val);
+    }
+
+    function switchView(view) {
+      const tabDash = document.getElementById('tab-dashboard');
+      const tabForm = document.getElementById('tab-form');
+      const formSection = document.getElementById('section-form');
+
+      if (view === 'form') {
+        tabForm.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-label-md bg-surface-card text-primary shadow-sm transition-all duration-150 active:scale-95";
+        tabDash.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-medium text-label-md text-text-muted hover:text-on-surface transition-all duration-150 active:scale-95";
+        if (formSection) {
+          formSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else {
+        tabDash.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-label-md bg-surface-card text-primary shadow-sm transition-all duration-150 active:scale-95";
+        tabForm.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-medium text-label-md text-text-muted hover:text-on-surface transition-all duration-150 active:scale-95";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function setTimeframe(tf) {
+      const btnWeek = document.getElementById('filter-week');
+      const btnMonth = document.getElementById('filter-month');
+      if (tf === 'week') {
+        btnWeek.className = "px-4 py-1.5 rounded-full text-label-md font-bold bg-primary-container text-on-primary shadow-sm transition-colors";
+        btnMonth.className = "px-4 py-1.5 rounded-full text-label-md font-semibold text-text-muted hover:text-on-surface transition-colors";
+      } else {
+        btnMonth.className = "px-4 py-1.5 rounded-full text-label-md font-bold bg-primary-container text-on-primary shadow-sm transition-colors";
+        btnWeek.className = "px-4 py-1.5 rounded-full text-label-md font-semibold text-text-muted hover:text-on-surface transition-colors";
+      }
+    }
+  </script>
+</body></html>

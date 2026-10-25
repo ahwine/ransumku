@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hasil Racik Ransum - RansumKu</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "canvas-bg": "#FAF8F2",
+            "error": "#ba1a1a",
+            "outline-variant": "#c0c9bd",
+            "secondary-fixed-dim": "#fdbb3e",
+            "on-background": "#1b1c1c",
+            "background": "#fcf9f8",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-highest": "#e5e2e1",
+            "surface-card": "#FFFFFF",
+            "surface-variant": "#e5e2e1",
+            "surface-container-low": "#f6f3f2",
+            "on-error": "#ffffff",
+            "tertiary-fixed": "#ffdad7",
+            "on-tertiary-fixed-variant": "#8f0d19",
+            "inverse-surface": "#303030",
+            "tertiary-container": "#b22b2e",
+            "primary-fixed": "#b1f2b4",
+            "surface-dim": "#dcd9d9",
+            "on-primary-container": "#a8e9ac",
+            "tertiary": "#900e1a",
+            "on-primary": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-surface": "#1b1c1c",
+            "on-error-container": "#93000a",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed-dim": "#ffb3ae",
+            "status-danger": "#D64545",
+            "secondary": "#7e5700",
+            "primary-container": "#2f6b3a",
+            "on-surface-variant": "#414940",
+            "on-secondary-fixed": "#281900",
+            "on-primary-fixed": "#002108",
+            "surface-container-high": "#eae7e7",
+            "subtle-border": "#E8E4DA",
+            "on-tertiary": "#ffffff",
+            "status-warning": "#F2B134",
+            "surface-container": "#f0eded",
+            "on-secondary-fixed-variant": "#5f4100",
+            "outline": "#71796f",
+            "inverse-primary": "#96d69a",
+            "text-muted": "#6E6B65",
+            "inverse-on-surface": "#f3f0ef",
+            "surface-tint": "#2e6a39",
+            "surface-bright": "#fcf9f8",
+            "on-primary-fixed-variant": "#135224",
+            "on-tertiary-container": "#ffceca",
+            "secondary-container": "#fdbb3e",
+            "on-secondary-container": "#6e4c00",
+            "primary": "#145224",
+            "surface": "#fcf9f8",
+            "secondary-fixed": "#ffdeac",
+            "on-tertiary-fixed": "#410005",
+            "status-success": "#2F6B3A",
+            "primary-fixed-dim": "#96d69a"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "margin-desktop": "2rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "gutter-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Plus Jakarta Sans"],
+            "label-md": ["Plus Jakarta Sans"],
+            "headline-xl-mobile": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "label-lg": ["Plus Jakarta Sans"],
+            "headline-xl": ["Plus Jakarta Sans"],
+            "currency-display": ["Plus Jakarta Sans"],
+            "label-sm": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "body-lg": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "body-bold": ["Plus Jakarta Sans"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "label-lg": ["15px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "currency-display": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "700" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+            "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #FAF8F2;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-card-shadow {
+      box-shadow: 0 4px 16px -2px rgba(34, 34, 34, 0.05), 0 2px 6px -1px rgba(34, 34, 34, 0.03);
+    }
+    .custom-bottom-shadow {
+      box-shadow: 0 -4px 16px rgba(34, 34, 34, 0.04);
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-canvas-bg text-on-surface min-h-screen flex flex-col justify-between selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top App Bar (Shared Component Anchor) -->
+<header class="sticky top-0 z-40 bg-surface dark:bg-surface border-b border-subtle-border dark:border-outline-variant shadow-sm dark:shadow-none flex justify-between items-center w-full px-margin h-14">
+<button aria-label="Kembali" class="w-10 h-10 -ml-1 rounded-full flex items-center justify-center text-primary dark:text-inverse-primary hover:bg-surface-container active:scale-95 transition-transform duration-150" type="button">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<div class="flex flex-col items-center text-center">
+<h1 class="text-headline-sm font-headline-sm text-primary dark:text-inverse-primary tracking-tight">
+        Hasil Racik Ransum
+      </h1>
+<span class="text-[11px] leading-[14px] text-text-muted font-medium">
+        RansumKu Racik Mandiri
+      </span>
+</div>
+<button aria-label="Bantuan" class="w-10 h-10 -mr-1 rounded-full flex items-center justify-center text-text-muted hover:bg-surface-container active:scale-95 transition-transform duration-150" type="button">
+<span class="material-symbols-outlined text-[22px]">help_outline</span>
+</button>
+</header>
+<!-- Subheader Kandang Status Strip -->
+<section class="bg-surface-card border-b border-subtle-border px-margin py-2.5 flex items-center justify-between">
+<div class="flex items-center space-x-2 overflow-hidden">
+<span class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-status-success animate-pulse"></span>
+<div class="truncate">
+<p class="text-label-md font-label-md text-on-surface truncate">
+          Kandang Maju Jaya · 200 Ayam
+        </p>
+<p class="text-label-sm font-label-sm text-text-muted">
+          Total campuran batch: <span class="font-bold text-on-surface">40,0 kg</span>
+</p>
+</div>
+</div>
+<span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-fixed text-on-primary-fixed">
+      Fase Layer
+    </span>
+</section>
+<!-- Price Recency Info Pill -->
+<div class="px-margin pt-3">
+<div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-surface-container-low border border-subtle-border text-text-muted w-fit text-[11px]">
+<span class="material-symbols-outlined text-[15px] text-secondary">update</span>
+<span>Harga bahan terakhir diperbarui 2 hari lalu · Estimasi lokal</span>
+</div>
+</div>
+<!-- Main Scrollable Canvas Content -->
+<main class="flex-1 px-margin pt-3 pb-28 space-y-4 max-w-lg mx-auto w-full">
+<!-- 1. Top Summary Card -->
+<section class="bg-primary text-on-primary rounded-2xl p-5 shadow-lg relative overflow-hidden">
+<div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-primary-container opacity-40 pointer-events-none blur-xl"></div>
+<div class="flex items-start justify-between relative z-10">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-primary-fixed-dim">Total Biaya (estimasi)</span>
+<div class="text-headline-xl-mobile font-headline-xl-mobile text-on-primary mt-0.5">
+            Rp 304.400
+          </div>
+</div>
+<div class="bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-xl border border-white/15 text-right">
+<span class="text-[10px] uppercase font-bold text-white/80 block">Biaya / Kg</span>
+<span class="text-label-lg font-label-lg text-secondary-fixed font-extrabold">Rp 7.610</span>
+</div>
+</div>
+<!-- Badge Penghematan Komersial -->
+<div class="mt-4 pt-3.5 border-t border-white/15 flex items-center justify-between relative z-10">
+<div class="flex items-center space-x-2">
+<div class="w-7 h-7 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">trending_down</span>
+</div>
+<p class="text-label-md font-label-md text-white/95 leading-snug">
+            Hemat <span class="text-secondary-fixed font-bold">~Rp 890/kg</span> dibanding pakan jadi
+          </p>
+</div>
+<span class="text-[11px] font-bold px-2 py-0.5 rounded bg-status-success text-white ml-2 flex-shrink-0">
+          -10,5%
+        </span>
+</div>
+</section>
+<!-- 2. Resep Bahan & Stacked Composition Bar -->
+<section class="bg-surface-card rounded-2xl p-4 border border-subtle-border custom-card-shadow space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Komposisi Resep Ransum</h2>
+<p class="text-label-sm font-label-sm text-text-muted">Target adukan: 40,0 kg</p>
+</div>
+<span class="material-symbols-outlined text-primary text-[24px]">scale</span>
+</div>
+<!-- Segmented Visual Stacked Bar -->
+<div class="space-y-1.5">
+<div class="w-full h-4 rounded-full flex overflow-hidden bg-surface-container p-0.5 gap-0.5">
+<div class="h-full rounded-l-full bg-[#EAB308] transition-all duration-300" style="width: 49.5%;" title="Jagung Giling 49,5%"></div>
+<div class="h-full bg-[#D97706] transition-all duration-300" style="width: 19.0%;" title="Dedak Padi 19,0%"></div>
+<div class="h-full bg-[#22C55E] transition-all duration-300" style="width: 26.3%;" title="Konsentrat 26,3%"></div>
+<div class="h-full rounded-r-full bg-[#94A3B8] transition-all duration-300" style="width: 5.2%;" title="Kapur / Kerang 5,2%"></div>
+</div>
+<!-- Legend Strip -->
+<div class="grid grid-cols-2 gap-y-1 gap-x-2 pt-1 text-[11px] text-text-muted">
+<div class="flex items-center space-x-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#EAB308] flex-shrink-0"></span>
+<span class="truncate">Jagung (49,5%)</span>
+</div>
+<div class="flex items-center space-x-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#22C55E] flex-shrink-0"></span>
+<span class="truncate">Konsentrat (26,3%)</span>
+</div>
+<div class="flex items-center space-x-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#D97706] flex-shrink-0"></span>
+<span class="truncate">Dedak (19,0%)</span>
+</div>
+<div class="flex items-center space-x-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#94A3B8] flex-shrink-0"></span>
+<span class="truncate">Kapur (5,2%)</span>
+</div>
+</div>
+</div>
+<!-- Ingredient Table / Structured Card Rows -->
+<div class="border-t border-subtle-border pt-3 space-y-2.5">
+<!-- Item 1: Jagung -->
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low/60 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-2.5">
+<div class="w-2 h-8 rounded-full bg-[#EAB308]"></div>
+<div>
+<p class="text-body-bold font-body-bold text-[14px] leading-tight text-on-surface">Jagung Giling</p>
+<p class="text-[12px] text-text-muted">Rp 6.500/kg · 49,5%</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-body-bold font-body-bold text-[15px] text-on-surface">19,8 kg</p>
+<p class="text-[12px] text-primary font-bold">Rp 128.700</p>
+</div>
+</div>
+<!-- Item 2: Konsentrat -->
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low/60 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-2.5">
+<div class="w-2 h-8 rounded-full bg-[#22C55E]"></div>
+<div>
+<p class="text-body-bold font-body-bold text-[14px] leading-tight text-on-surface">Konsentrat 124</p>
+<p class="text-[12px] text-text-muted">Rp 13.000/kg · 26,3%</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-body-bold font-body-bold text-[15px] text-on-surface">10,5 kg</p>
+<p class="text-[12px] text-primary font-bold">Rp 136.500</p>
+</div>
+</div>
+<!-- Item 3: Dedak -->
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low/60 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-2.5">
+<div class="w-2 h-8 rounded-full bg-[#D97706]"></div>
+<div>
+<p class="text-body-bold font-body-bold text-[14px] leading-tight text-on-surface">Dedak Padi</p>
+<p class="text-[12px] text-text-muted">Rp 4.500/kg · 19,0%</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-body-bold font-body-bold text-[15px] text-on-surface">7,6 kg</p>
+<p class="text-[12px] text-primary font-bold">Rp 34.200</p>
+</div>
+</div>
+<!-- Item 4: Kapur -->
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low/60 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center space-x-2.5">
+<div class="w-2 h-8 rounded-full bg-[#94A3B8]"></div>
+<div>
+<p class="text-body-bold font-body-bold text-[14px] leading-tight text-on-surface">Kapur / Kerang</p>
+<p class="text-[12px] text-text-muted">Rp 2.500/kg · 5,2%</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-body-bold font-body-bold text-[15px] text-on-surface">2,1 kg</p>
+<p class="text-[12px] text-primary font-bold">Rp 5.000</p>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Kartu Cek Gizi Target (Acuan SNI 2016) -->
+<section class="bg-surface-card rounded-2xl p-4 border border-subtle-border custom-card-shadow space-y-3.5">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center space-x-1.5">
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Cek Gizi Target</h2>
+<span class="bg-status-success/15 text-status-success text-[10px] font-extrabold px-1.5 py-0.5 rounded">SNI 2016</span>
+</div>
+<p class="text-label-sm font-label-sm text-text-muted">Standar ayam petelur fase produksi 1</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-status-success/10 flex items-center justify-center text-status-success">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div class="divide-y divide-subtle-border">
+<!-- Nutrisi 1: Protein Kasar -->
+<div class="py-2.5 flex items-center justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-body-bold font-body-bold text-[14px] text-on-surface">Protein Kasar (PK)</span>
+<span class="text-[11px] font-semibold text-text-muted">Min 17,0%</span>
+</div>
+<p class="text-headline-sm font-headline-sm text-status-success text-[16px]">17,2%</p>
+</div>
+<div class="flex items-center space-x-1.5 bg-status-success/10 text-status-success px-2.5 py-1 rounded-full text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>Memenuhi</span>
+</div>
+</div>
+<!-- Nutrisi 2: Energi Metabolisme -->
+<div class="py-2.5 flex items-center justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-body-bold font-body-bold text-[14px] text-on-surface">Energi Metabolisme</span>
+<span class="text-[11px] font-semibold text-text-muted">Min 2.700 kkal</span>
+</div>
+<p class="text-headline-sm font-headline-sm text-status-success text-[16px]">2.720 <span class="text-[12px] font-normal text-text-muted">kkal/kg</span></p>
+</div>
+<div class="flex items-center space-x-1.5 bg-status-success/10 text-status-success px-2.5 py-1 rounded-full text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>Optimal</span>
+</div>
+</div>
+<!-- Nutrisi 3: Kalsium -->
+<div class="py-2.5 flex items-center justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-body-bold font-body-bold text-[14px] text-on-surface">Kalsium (Ca)</span>
+<span class="text-[11px] font-semibold text-text-muted">3,25% - 4,20%</span>
+</div>
+<p class="text-headline-sm font-headline-sm text-status-success text-[16px]">3,65%</p>
+</div>
+<div class="flex items-center space-x-1.5 bg-status-success/10 text-status-success px-2.5 py-1 rounded-full text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>Sesuai</span>
+</div>
+</div>
+<!-- Nutrisi 4: Fosfor -->
+<div class="py-2.5 flex items-center justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-body-bold font-body-bold text-[14px] text-on-surface">Fosfor Tersedia (P)</span>
+<span class="text-[11px] font-semibold text-text-muted">Min 0,45%</span>
+</div>
+<p class="text-headline-sm font-headline-sm text-status-success text-[16px]">0,48%</p>
+</div>
+<div class="flex items-center space-x-1.5 bg-status-success/10 text-status-success px-2.5 py-1 rounded-full text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>Sesuai</span>
+</div>
+</div>
+<!-- Nutrisi 5: Serat Kasar -->
+<div class="py-2.5 flex items-center justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-body-bold font-body-bold text-[14px] text-on-surface">Serat Kasar (SK)</span>
+<span class="text-[11px] font-semibold text-text-muted">Maks 7,0%</span>
+</div>
+<p class="text-headline-sm font-headline-sm text-status-success text-[16px]">5,4%</p>
+</div>
+<div class="flex items-center space-x-1.5 bg-status-success/10 text-status-success px-2.5 py-1 rounded-full text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>Aman</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. Sisa Stok & Kesiapan Gudang -->
+<section class="bg-surface-card rounded-2xl p-4 border border-subtle-border custom-card-shadow space-y-3">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Kesiapan Gudang</h2>
+<p class="text-label-sm font-label-sm text-text-muted">Simulasi setelah adukan 40 kg diambil</p>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[22px]">inventory_2</span>
+</div>
+<!-- Banner Status Cepat Gudang -->
+<div class="bg-primary-fixed/30 border border-primary-fixed rounded-xl p-3 flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-status-success text-[20px]" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+<p class="text-label-md font-label-md text-on-surface">
+          Semua bahan tersedia di gudang! Siap diaduk.
+        </p>
+</div>
+<!-- List Stok Berkurang -->
+<div class="grid grid-cols-2 gap-2.5 pt-1">
+<!-- Jagung -->
+<div class="p-2.5 rounded-xl border border-subtle-border bg-surface-container-low/40">
+<p class="text-[11px] text-text-muted">Jagung (Stok 50 kg)</p>
+<p class="text-body-bold font-body-bold text-[14px] text-on-surface mt-0.5">Sisa 30,2 kg</p>
+<span class="inline-block text-[10px] text-status-success font-bold mt-1">Cukup Aman</span>
+</div>
+<!-- Dedak -->
+<div class="p-2.5 rounded-xl border border-subtle-border bg-surface-container-low/40">
+<p class="text-[11px] text-text-muted">Dedak (Stok 30 kg)</p>
+<p class="text-body-bold font-body-bold text-[14px] text-on-surface mt-0.5">Sisa 22,4 kg</p>
+<span class="inline-block text-[10px] text-status-success font-bold mt-1">Cukup Aman</span>
+</div>
+<!-- Konsentrat -->
+<div class="p-2.5 rounded-xl border border-status-warning/40 bg-status-warning/5">
+<p class="text-[11px] text-text-muted">Konsentrat (Stok 20 kg)</p>
+<p class="text-body-bold font-body-bold text-[14px] text-on-surface mt-0.5">Sisa 9,5 kg</p>
+<span class="inline-block text-[10px] text-secondary font-bold mt-1">Perlu Restok 2 Hari</span>
+</div>
+<!-- Kapur -->
+<div class="p-2.5 rounded-xl border border-subtle-border bg-surface-container-low/40">
+<p class="text-[11px] text-text-muted">Kapur (Stok 10 kg)</p>
+<p class="text-body-bold font-body-bold text-[14px] text-on-surface mt-0.5">Sisa 7,9 kg</p>
+<span class="inline-block text-[10px] text-status-success font-bold mt-1">Cukup Aman</span>
+</div>
+</div>
+</section>
+<!-- 5. Disclaimer Informatif RansumKu -->
+<section class="bg-surface-container-low/80 border border-subtle-border rounded-xl p-3 flex items-start space-x-2.5 text-text-muted">
+<span class="material-symbols-outlined text-[18px] text-secondary flex-shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="text-label-sm font-label-sm leading-relaxed">
+        Potensi hemat bergantung harga dan stok aktual. Ini kalkulasi pendukung keputusan praktis, bukan klaim pasti.
+      </p>
+</section>
+<!-- 6. Action Buttons Group -->
+<section class="space-y-3 pt-2">
+<!-- AI Insight Explainer Button -->
+<button class="w-full h-12 rounded-full border border-primary-container/30 bg-primary-fixed/20 hover:bg-primary-fixed/40 text-primary font-body-bold text-[15px] flex items-center justify-center space-x-2 active:scale-[0.98] transition-transform" type="button">
+<span class="material-symbols-outlined text-[20px] text-status-success" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span>Jelaskan hasil racikan ini</span>
+</button>
+<!-- Primary & Outlined Dual Action -->
+<div class="grid grid-cols-2 gap-3">
+<button class="h-12 rounded-full border-2 border-primary text-primary font-body-bold text-[15px] hover:bg-primary-fixed/10 active:scale-[0.98] transition-all flex items-center justify-center space-x-1.5" type="button">
+<span class="material-symbols-outlined text-[18px]">replay</span>
+<span>Hitung Ulang</span>
+</button>
+<button class="h-12 rounded-full bg-status-success hover:bg-primary text-on-primary font-body-bold text-[15px] shadow-md shadow-primary/20 active:scale-[0.98] transition-all flex items-center justify-center space-x-1.5" type="button">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+<span>Simpan Resep</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Persistent Bottom Navigation Bar (Shared Component Anchor) -->
+<!-- Contextual Active: 'Ransum' (Matching index 1 from JSON) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 pb-safe bg-surface-card dark:bg-surface-container-high border-t border-subtle-border dark:border-outline-variant custom-bottom-shadow">
+<!-- Tab 1: Beranda -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant py-1 hover:text-primary dark:hover:text-inverse-primary active:scale-95 transition-transform duration-150 flex-1" href="#">
+<span class="material-symbols-outlined text-[22px]">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">Beranda</span>
+</a>
+<!-- Tab 2: Ransum (ACTIVE TAB) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-inverse-primary font-bold py-1 active:scale-95 transition-transform duration-150 flex-1 relative" href="#">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">science</span>
+<span class="text-label-sm font-label-sm mt-0.5 text-primary dark:text-inverse-primary">Ransum</span>
+<span class="absolute top-0 w-8 h-1 bg-primary rounded-full"></span>
+</a>
+<!-- Tab 3: Catatan -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant py-1 hover:text-primary dark:hover:text-inverse-primary active:scale-95 transition-transform duration-150 flex-1" href="#">
+<span class="material-symbols-outlined text-[22px]">edit_note</span>
+<span class="text-label-sm font-label-sm mt-0.5">Catatan</span>
+</a>
+<!-- Tab 4: Asisten -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant py-1 hover:text-primary dark:hover:text-inverse-primary active:scale-95 transition-transform duration-150 flex-1" href="#">
+<span class="material-symbols-outlined text-[22px]">smart_toy</span>
+<span class="text-label-sm font-label-sm mt-0.5">Asisten</span>
+</a>
+<!-- Tab 5: Lainnya -->
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant py-1 hover:text-primary dark:hover:text-inverse-primary active:scale-95 transition-transform duration-150 flex-1" href="#">
+<span class="material-symbols-outlined text-[22px]">more_horiz</span>
+<span class="text-label-sm font-label-sm mt-0.5">Lainnya</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RansumKu - Racik Ransum</title>
+<!-- Plus Jakarta Sans Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-background": "#1b1c1c",
+            "on-tertiary-fixed-variant": "#8f0d19",
+            "tertiary-container": "#b22b2e",
+            "on-surface": "#1b1c1c",
+            "inverse-primary": "#96d69a",
+            "on-primary-fixed-variant": "#135224",
+            "subtle-border": "#E8E4DA",
+            "error-container": "#ffdad6",
+            "surface-bright": "#fcf9f8",
+            "canvas-bg": "#FAF8F2",
+            "text-muted": "#6E6B65",
+            "on-secondary-fixed": "#281900",
+            "surface-container-highest": "#e5e2e1",
+            "on-primary": "#ffffff",
+            "surface-variant": "#e5e2e1",
+            "status-success": "#2F6B3A",
+            "inverse-on-surface": "#f3f0ef",
+            "secondary-fixed-dim": "#fdbb3e",
+            "primary": "#145224",
+            "outline-variant": "#c0c9bd",
+            "primary-fixed": "#b1f2b4",
+            "on-error-container": "#93000a",
+            "surface-container-low": "#f6f3f2",
+            "error": "#ba1a1a",
+            "on-surface-variant": "#414940",
+            "on-primary-fixed": "#002108",
+            "surface-container-high": "#eae7e7",
+            "on-primary-container": "#a8e9ac",
+            "primary-fixed-dim": "#96d69a",
+            "tertiary-fixed": "#ffdad7",
+            "status-danger": "#D64545",
+            "surface-dim": "#dcd9d9",
+            "surface-container": "#f0eded",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#6e4c00",
+            "on-tertiary-container": "#ffceca",
+            "surface-card": "#FFFFFF",
+            "primary-container": "#2f6b3a",
+            "on-tertiary-fixed": "#410005",
+            "secondary": "#7e5700",
+            "on-error": "#ffffff",
+            "secondary-fixed": "#ffdeac",
+            "status-warning": "#F2B134",
+            "tertiary": "#900e1a",
+            "inverse-surface": "#303030",
+            "surface": "#fcf9f8",
+            "surface-tint": "#2e6a39",
+            "secondary-container": "#fdbb3e",
+            "on-tertiary": "#ffffff",
+            "tertiary-fixed-dim": "#ffb3ae",
+            "background": "#fcf9f8",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed-variant": "#5f4100",
+            "outline": "#71796f"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "space-lg": "1.5rem",
+            "margin-desktop": "2rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "gutter-desktop": "1.5rem",
+            "space-md": "1rem",
+            "space-xl": "2rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "body-bold": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "headline-xl": ["Plus Jakarta Sans"],
+            "label-lg": ["Plus Jakarta Sans"],
+            "label-md": ["Plus Jakarta Sans"],
+            "currency-display": ["Plus Jakarta Sans"],
+            "body-lg": ["Plus Jakarta Sans"],
+            "headline-xl-mobile": ["Plus Jakarta Sans"],
+            "label-sm": ["Plus Jakarta Sans"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "700"}],
+            "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+            "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+            "body-bold": ["16px", {"lineHeight": "24px", "fontWeight": "700"}],
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+            "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+            "label-lg": ["15px", {"lineHeight": "20px", "fontWeight": "600"}],
+            "label-md": ["13px", {"lineHeight": "18px", "fontWeight": "600"}],
+            "currency-display": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "headline-xl-mobile": ["26px", {"lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "800"}],
+            "label-sm": ["11px", {"lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "700"}]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    .card-shadow {
+      box-shadow: 0 4px 16px -2px rgba(34, 34, 34, 0.05), 0 2px 6px -1px rgba(34, 34, 34, 0.03);
+    }
+    .sticky-bar-shadow {
+      box-shadow: 0 -8px 20px rgba(34, 34, 34, 0.06);
+    }
+    .bottom-nav-shadow {
+      box-shadow: 0 -4px 16px rgba(34, 34, 34, 0.04);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-canvas-bg text-on-surface antialiased min-h-screen pb-44 select-none">
+<!-- TOP APP BAR -->
+<header class="sticky top-0 z-40 bg-surface shadow-sm">
+<div class="flex justify-between items-center w-full px-margin h-14">
+<div class="flex items-center space-x-2">
+<button aria-label="Kembali" class="w-10 h-10 -ml-1 flex items-center justify-center rounded-full hover:bg-surface-container active:scale-95 transition-transform duration-150 text-primary">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<span class="text-headline-md font-headline-md text-primary tracking-tight">RansumKu</span>
+</div>
+<div class="flex items-center space-x-1">
+<button aria-label="Bantuan" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container active:scale-95 transition-transform duration-150 text-primary">
+<span class="material-symbols-outlined text-[22px]">help_outline</span>
+</button>
+</div>
+</div>
+</header>
+<!-- SCREEN HEADER TITLE & FARM BADGE -->
+<section class="px-margin pt-4 pb-2">
+<div class="flex items-start justify-between">
+<div>
+<h1 class="text-headline-xl-mobile font-headline-xl-mobile text-on-surface">Racik Ransum</h1>
+<p class="text-body-md font-body-md text-text-muted mt-0.5">Atur takaran pakan &amp; hitung formulasi optimal</p>
+</div>
+</div>
+<!-- Farm Badge Info -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 mt-3 rounded-full bg-surface-card border border-subtle-border card-shadow">
+<span class="material-symbols-outlined text-primary text-[18px]">roofing</span>
+<span class="text-label-md font-label-md text-on-surface">Kandang Maju Jaya</span>
+<span class="w-1 h-1 rounded-full bg-text-muted"></span>
+<span class="text-label-md font-label-md text-text-muted">200 Ayam</span>
+</div>
+</section>
+<!-- MAIN INTERACTIVE CANVAS -->
+<main class="px-margin space-y-4 mt-2">
+<!-- CARD 1: DAFTAR BAHAN BAKU & STOK -->
+<section class="bg-surface-card rounded-xl p-4 border border-subtle-border card-shadow">
+<!-- Header -->
+<div class="flex items-center justify-between pb-3 border-b border-subtle-border">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">inventory_2</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Daftar Bahan Pakan</h2>
+</div>
+<span class="px-2.5 py-0.5 bg-primary-container/15 text-primary rounded-full text-label-sm font-label-sm">4 Bahan Aktif</span>
+</div>
+<!-- Helper Alert Badge -->
+<div class="mt-3 p-2.5 bg-surface-container-low rounded-lg border border-subtle-border flex items-start gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px] shrink-0 mt-0.5">info</span>
+<p class="text-label-md font-label-md text-text-muted">Pastikan harga dan stok sesuai kondisi gudang Anda saat ini.</p>
+</div>
+<!-- Ingredient Rows List -->
+<div class="mt-4 space-y-3">
+<!-- Ingredient a: Jagung Giling -->
+<div class="p-3 bg-surface-container-lowest rounded-xl border border-subtle-border space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed/50 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">grain</span>
+</div>
+<div>
+<h3 class="text-body-bold font-body-bold text-on-surface">Jagung Giling</h3>
+<span class="text-label-sm font-label-sm text-text-muted">Diperbarui 2 hari lalu</span>
+</div>
+</div>
+<button class="text-text-muted hover:text-error p-1">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="bg-canvas-bg rounded-lg p-2 border border-subtle-border">
+<label class="text-label-sm font-label-sm text-text-muted block">Harga / kg</label>
+<div class="flex items-center justify-between mt-0.5">
+<span class="text-body-bold font-body-bold text-on-surface">Rp 6.500</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">edit</span>
+</div>
+</div>
+<div class="bg-canvas-bg rounded-lg p-2 border border-subtle-border">
+<label class="text-label-sm font-label-sm text-text-muted block">Stok Gudang</label>
+<div class="flex items-center justify-between mt-0.5">
+<span class="text-body-bold font-body-bold text-on-surface">50 kg</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">inventory</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Ingredient b: Dedak Padi -->
+<div class="p-3 bg-surface-container-lowest rounded-xl border border-subtle-border space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed/50 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">agriculture</span>
+</div>
+<div>
+<h3 class="text-body-bold font-body-bold text-on-surface">Dedak Padi</h3>
+<span class="text-label-sm font-label-sm text-text-muted">Diperbarui 2 hari lalu</span>
+</div>
+</div>
+<button class="text-text-muted hover:text-error p-1">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="bg-canvas-bg rounded-lg p-2 border border-subtle-border">
+<label class="text-label-sm font-label-sm text-text-muted block">Harga / kg</label>
+<div class="flex items-center justify-between mt-0.5">
+<span class="text-body-bold font-body-bold text-on-surface">Rp 4.500</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">edit</span>
+</div>
+</div>
+<div class="bg-canvas-bg rounded-lg p-2 border border-subtle-border">
+<label class="text-label-sm font-label-sm text-text-muted block">Stok Gudang</label>
+<div class="flex items-center justify-between mt-0.5">
+<span class="text-body-bold font-body-bold text-on-surface">30 kg</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">inventory</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Ingredient c: Konsentrat Petelur 124 -->
+<div class="p-3 bg-surface-container-lowest rounded-xl border border-subtle-border space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">egg</span>
+</div>
+<div>
+<h3 class="text-body-bold font-body-bold text-on-surface">Konsentrat Petelur 124</h3>
+<span class="text-label-sm font-label-sm text-text-muted">Diperbarui 2 hari lalu</span>
+</div>
+</div>
+<button class="text-text-muted hover:text-error p-1">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="bg-canvas-bg rounded-lg p-2 border border-subtle-border">
+<label class="text-label-sm font-label-sm text-text-muted block">Harga / kg</label>
+<div class="flex items-center justify-between mt-0.5">
+<span class="text-body-bold font-body-bold text-on-surface">Rp 13.000</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">edit</span>
+</div>
+</div>
+<div class="bg-canvas-bg rounded-lg p-2 border border-subtle-border">
+<label class="text-label-sm font-label-sm text-text-muted block">Stok Gudang</label>
+<div class="flex items-center justify-between mt-0.5">
+<span class="text-body-bold font-body-bold text-on-surface">20 kg</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">inventory</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Ingredient d: Tepung Kulit Kerang / Kapur -->
+<div class="p-3 bg-surface-container-lowest rounded-xl border border-subtle-border space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">diamond</span>
+</div>
+<div>
+<h3 class="text-body-bold font-body-bold text-on-surface">Tepung Kulit Kerang / Kapur</h3>
+<span class="text-label-sm font-label-sm text-text-muted">Diperbarui 2 hari lalu</span>
+</div>
+</div>
+<button class="text-text-muted hover:text-error p-1">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="bg-canvas-bg rounded-lg p-2 border border-subtle-border">
+<label class="text-label-sm font-label-sm text-text-muted block">Harga / kg</label>
+<div class="flex items-center justify-between mt-0.5">
+<span class="text-body-bold font-body-bold text-on-surface">Rp 2.500</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">edit</span>
+</div>
+</div>
+<div class="bg-canvas-bg rounded-lg p-2 border border-subtle-border">
+<label class="text-label-sm font-label-sm text-text-muted block">Stok Gudang</label>
+<div class="flex items-center justify-between mt-0.5">
+<span class="text-body-bold font-body-bold text-on-surface">10 kg</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted">inventory</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Button + Tambah Bahan Lain -->
+<button class="w-full mt-4 h-12 rounded-full border-2 border-primary text-primary font-body-bold text-body-bold flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-primary/5">
+<span class="material-symbols-outlined text-[20px]">add</span>
+        Tambah Bahan Lain
+      </button>
+</section>
+<!-- CARD 2: JUMLAH CAMPURAN RANSUM -->
+<section class="bg-surface-card rounded-xl p-4 border border-subtle-border card-shadow space-y-4">
+<div class="flex items-center gap-2 pb-2 border-b border-subtle-border">
+<span class="material-symbols-outlined text-primary text-[22px]">calculate</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Jumlah Campuran Ransum</h2>
+</div>
+<!-- Segmented Toggle Control -->
+<div class="p-1 bg-surface-container-low rounded-full flex gap-1 border border-subtle-border">
+<button class="flex-1 py-2 text-center rounded-full text-label-md font-label-md text-text-muted hover:text-on-surface transition-colors">
+          Langsung kg
+        </button>
+<button class="flex-1 py-2 text-center rounded-full bg-primary-container text-on-primary text-label-md font-label-md shadow-sm">
+          Untuk berapa hari
+        </button>
+</div>
+<!-- Active Mode: "Untuk berapa hari" Fields -->
+<div class="space-y-3.5">
+<!-- Field 1: Jumlah hari racikan (Stepper + Chips) -->
+<div>
+<label class="text-label-md font-label-md text-on-surface block mb-1">Jumlah hari racikan</label>
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center bg-canvas-bg rounded-full border border-subtle-border p-1 w-44">
+<button class="w-10 h-10 rounded-full bg-surface-card flex items-center justify-center text-on-surface active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<div class="flex-1 text-center font-headline-md text-headline-md text-primary">
+                3 <span class="text-label-md font-label-md text-text-muted">hari</span>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-card flex items-center justify-center text-on-surface active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Quick Chips -->
+<div class="flex gap-1.5 flex-1 justify-end">
+<button class="px-3 py-2 rounded-full border border-subtle-border text-label-md font-label-md bg-canvas-bg text-text-muted active:scale-95">1 hari</button>
+<button class="px-3 py-2 rounded-full border border-primary text-label-md font-label-md bg-primary-fixed/30 text-primary font-bold">3 hari</button>
+<button class="px-3 py-2 rounded-full border border-subtle-border text-label-md font-label-md bg-canvas-bg text-text-muted active:scale-95">7 hari</button>
+</div>
+</div>
+</div>
+<!-- Field 2: Jumlah populasi ayam -->
+<div>
+<div class="flex justify-between items-center mb-1">
+<label class="text-label-md font-label-md text-on-surface">Jumlah populasi ayam</label>
+<span class="text-label-sm font-label-sm text-status-success font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Dari Profil
+            </span>
+</div>
+<div class="h-[52px] bg-canvas-bg rounded-xl border border-subtle-border px-3.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted text-[20px]">group</span>
+<span class="text-body-bold font-body-bold text-on-surface">200</span>
+</div>
+<span class="text-label-md font-label-md text-text-muted">ekor</span>
+</div>
+</div>
+<!-- Field 3: Konsumsi pakan per ekor -->
+<div>
+<label class="text-label-md font-label-md text-on-surface block mb-1">Konsumsi pakan per ekor</label>
+<div class="h-[52px] bg-canvas-bg rounded-xl border border-subtle-border px-3.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted text-[20px]">scale</span>
+<span class="text-body-bold font-body-bold text-on-surface">0,11</span>
+</div>
+<span class="text-label-md font-label-md text-text-muted">kg (110 gram)</span>
+</div>
+<div class="flex items-center gap-1 mt-1 text-text-muted">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span class="text-label-sm font-label-sm">Perkiraan standar layer, dapat diubah sesuai riwayat kandang.</span>
+</div>
+</div>
+<!-- Computed Total Calculation Box (Egg Yolk Highlight) -->
+<div class="p-3.5 rounded-xl bg-secondary-fixed/30 border-2 border-status-warning/60 space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-label-md font-label-md text-on-surface font-semibold">Total Ransum yang Diperlukan:</span>
+<span class="text-headline-md font-headline-md text-primary">66,0 kg</span>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm text-text-muted pt-1 border-t border-status-warning/30">
+<span>200 ekor × 0,11 kg × 3 hari</span>
+<span class="font-bold text-on-surface">Kebutuhan per hari: 22,0 kg</span>
+</div>
+</div>
+</div>
+</section>
+<!-- CARD 3: ACUAN STANDAR GIZI TARGET -->
+<section class="bg-surface-card rounded-xl p-4 border border-subtle-border card-shadow space-y-3">
+<div class="flex items-center justify-between pb-2 border-b border-subtle-border">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">fact_check</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Acuan Standar Gizi Target</h2>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[20px]">tune</span>
+</div>
+<!-- Dropdown Selector -->
+<div>
+<label class="text-label-sm font-label-sm text-text-muted block mb-1">Standar Acuan Formulasi</label>
+<div class="h-12 bg-canvas-bg rounded-xl border border-subtle-border px-3.5 flex items-center justify-between cursor-pointer active:bg-surface-container">
+<span class="text-label-md font-label-md text-on-surface truncate pr-2">SNI 2016 - Ayam Petelur Fase Produksi (Kutipan Jurnal)</span>
+<span class="material-symbols-outlined text-text-muted text-[20px] shrink-0">expand_more</span>
+</div>
+</div>
+<!-- Expandable Target Summary Panel -->
+<div class="bg-surface-container-low rounded-xl p-3 border border-subtle-border space-y-2.5">
+<div class="text-label-sm font-label-sm text-primary uppercase font-bold tracking-wider">Target Nutrisi Minimal / Maksimal</div>
+<div class="grid grid-cols-2 gap-2 text-label-md font-label-md">
+<div class="p-2 bg-surface-card rounded-lg border border-subtle-border">
+<span class="text-text-muted block text-label-sm font-label-sm">Protein Kasar (PK)</span>
+<span class="font-body-bold text-body-bold text-on-surface">Min 17,0%</span>
+</div>
+<div class="p-2 bg-surface-card rounded-lg border border-subtle-border">
+<span class="text-text-muted block text-label-sm font-label-sm">Energi Metabolisme</span>
+<span class="font-body-bold text-body-bold text-on-surface">Min 2.700 kkal</span>
+</div>
+<div class="p-2 bg-surface-card rounded-lg border border-subtle-border">
+<span class="text-text-muted block text-label-sm font-label-sm">Kalsium (Ca)</span>
+<span class="font-body-bold text-body-bold text-on-surface">3,25% - 4,20%</span>
+</div>
+<div class="p-2 bg-surface-card rounded-lg border border-subtle-border">
+<span class="text-text-muted block text-label-sm font-label-sm">Fosfor Tersedia (P)</span>
+<span class="font-body-bold text-body-bold text-on-surface">Min 0,45%</span>
+</div>
+</div>
+<div class="p-2 bg-surface-card rounded-lg border border-subtle-border flex justify-between items-center">
+<span class="text-text-muted text-label-sm font-label-sm">Serat Kasar (SK)</span>
+<span class="font-body-bold text-body-bold text-on-surface">Maks 7,0%</span>
+</div>
+<div class="flex items-center gap-1.5 pt-1 text-text-muted">
+<span class="material-symbols-outlined text-[16px] text-secondary">verified</span>
+<span class="text-label-sm font-label-sm">Standar acuan nasional untuk ayam petelur komersial fase bertelur.</span>
+</div>
+</div>
+</section>
+</main>
+<!-- STICKY BOTTOM ACTION BAR -->
+<div class="fixed bottom-16 left-0 w-full z-40 bg-surface-card/95 backdrop-blur-md px-margin py-2.5 sticky-bar-shadow">
+<div class="max-w-md mx-auto">
+<button class="w-full h-[52px] bg-primary-container text-on-primary rounded-full font-headline-sm text-headline-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md hover:bg-primary">
+<span class="material-symbols-outlined text-[24px]">calculate</span>
+        Hitung Ransum Sekarang
+      </button>
+<div class="flex items-center justify-center gap-1 mt-1 text-center">
+<span class="material-symbols-outlined text-[13px] text-text-muted">info</span>
+<span class="text-label-sm font-label-sm text-text-muted">Biaya bersifat estimasi kalkulasi praktis pakan mandiri.</span>
+</div>
+</div>
+</div>
+<!-- PERSISTENT BOTTOM NAVIGATION BAR -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 pb-safe bg-surface-card bottom-nav-shadow">
+<!-- Item 1: Beranda -->
+<a class="flex flex-col items-center justify-center text-text-muted py-1 hover:text-primary active:scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined text-[22px]">home</span>
+<span class="text-label-sm font-label-sm">Beranda</span>
+</a>
+<!-- Item 2: Ransum (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold py-1 active:scale-95 transition-transform duration-150 relative" href="#">
+<div class="w-8 h-1 bg-primary rounded-full absolute -top-1"></div>
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">science</span>
+<span class="text-label-sm font-label-sm">Ransum</span>
+</a>
+<!-- Item 3: Catatan -->
+<a class="flex flex-col items-center justify-center text-text-muted py-1 hover:text-primary active:scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined text-[22px]">edit_note</span>
+<span class="text-label-sm font-label-sm">Catatan</span>
+</a>
+<!-- Item 4: Asisten -->
+<a class="flex flex-col items-center justify-center text-text-muted py-1 hover:text-primary active:scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined text-[22px]">smart_toy</span>
+<span class="text-label-sm font-label-sm">Asisten</span>
+</a>
+<!-- Item 5: Lainnya -->
+<a class="flex flex-col items-center justify-center text-text-muted py-1 hover:text-primary active:scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined text-[22px]">more_horiz</span>
+<span class="text-label-sm font-label-sm">Lainnya</span>
+</a>
+</nav>
+</body></html>
