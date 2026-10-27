@@ -1,35 +1,32 @@
-# Dependencies
-node_modules/
-vendor/
-ransumku/node_modules/
-ransumku/vendor/
-
-# Environment
+*.log
+.DS_Store
 .env
 .env.backup
 .env.production
-ransumku/.env
-ransumku/.env.backup
-ransumku/.env.production
-
+.phpactor.json
+.phpunit.result.cache
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+_ide_helper.php
+Homestead.json
+Homestead.yaml
+Thumbs.db
 # SQLite database
 *.sqlite
 *.sqlite-journal
-ransumku/database/*.sqlite
-ransumku/database/*.sqlite-journal
-
-# Logs & caches
-*.log
-npm_install.log
-.phpunit.result.cache
-.phpunit.cache/
-ransumku/storage/logs/*.log
-ransumku/storage/framework/cache/*
-ransumku/storage/framework/sessions/*
-ransumku/storage/framework/views/*
-
-# OS & IDE
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
+database/*.sqlite
+database/*.sqlite-journal

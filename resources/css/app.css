@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* Token desain disesuaikan dengan AgriVision Tech (AgriVision Agritech Design System) */
+@theme {
+    --font-sans: 'Poppins', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-canvas: #f4f6f5;
+    --color-card: #ffffff;
+    --color-line: #e0ebe4;
+    --color-muted: #5c7a6d;
+    --color-ink: #053b26;
+    --color-primary: #002415;
+    --color-primary-container: #053b26;
+    --color-brand: #116a3a;
+    --color-brand-dark: #053b26;
+    --color-brand-soft: #d1fae5;
+    --color-lime: #9cf973;
+    --color-amber: #fdb134;
+    --color-amber-soft: #fef3c7;
+    --color-amber-ink: #d97706;
+    --color-danger: #ba1a1a;
+    --color-danger-ink: #93000a;
+    --color-danger-soft: #ffdad6;
+    --color-surface: #eef3f0;
+    --color-surface-2: #eaefec;
+    --color-table-stripe: #f8fbf9;
+
+    --text-h-xl: 26px;
+    --text-h-xl--line-height: 34px;
+    --text-h-xl--font-weight: 800;
+    --text-h-lg: 24px;
+    --text-h-lg--line-height: 32px;
+    --text-h-lg--font-weight: 700;
+    --text-h-md: 20px;
+    --text-h-md--line-height: 28px;
+    --text-h-md--font-weight: 700;
+    --text-h-sm: 18px;
+    --text-h-sm--line-height: 24px;
+    --text-h-sm--font-weight: 700;
+    --text-money: 24px;
+    --text-money--line-height: 32px;
+    --text-money--font-weight: 800;
+    --text-lbl: 13px;
+    --text-lbl--line-height: 18px;
+    --text-lbl--font-weight: 600;
+    --text-tiny: 11px;
+    --text-tiny--line-height: 16px;
+    --text-tiny--font-weight: 700;
+}
+
+@layer base {
+    html, body { background-color: var(--color-canvas); }
+    body { font-size: 16px; line-height: 24px; color: var(--color-ink); -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { display: none; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+    .icon-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+}
+
+@layer components {
+    .card {
+        @apply bg-card rounded-2xl p-4 border border-line;
+        box-shadow: 0 4px 16px -2px rgba(0, 36, 21, 0.04), 0 2px 6px -1px rgba(0, 36, 21, 0.02);
+    }
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer;
+    }
+    .btn-primary {
+        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer bg-brand text-white hover:bg-brand-dark shadow-[0_4px_14px_rgba(0,36,21,0.18)];
+    }
+    .btn-amber {
+        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer bg-amber text-primary hover:bg-[#feb235] shadow-[0_4px_14px_rgba(253,177,52,0.25)];
+    }
+    .btn-outline {
+        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer border border-line text-ink bg-white hover:bg-surface shadow-[0_2px_6px_rgba(0,36,21,0.04)];
+    }
+    .btn-danger {
+        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer bg-danger text-white shadow-sm;
+    }
+    .btn-sm {
+        @apply min-h-10 px-4 text-sm;
+    }
+    .field {
+        @apply w-full min-h-[52px] px-4 rounded-xl bg-white border border-line text-base font-medium outline-none transition text-ink focus:border-brand focus:ring-2 focus:ring-brand/15;
+    }
+    .lbl {
+        @apply block text-lbl text-muted font-semibold mb-1;
+    }
+    .chip {
+        @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-tiny font-bold;
+    }
+    .notice {
+        @apply rounded-xl p-3 flex gap-2 items-start text-sm border border-line/60;
+    }
+    .tag-est {
+        @apply text-tiny px-2 py-0.5 rounded-full bg-surface text-muted font-bold tracking-wide;
+    }
+
+    /* AgriVision Status Badges */
+    .badge {
+        @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-tiny font-semibold whitespace-nowrap;
+    }
+    .badge-dot {
+        @apply w-1.5 h-1.5 rounded-full shrink-0;
+    }
+
+    /* Apple-style Segmented Control Slider */
+    .tab-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        margin: 0;
+        padding: 0;
+        border-radius: 9999px;
+        background-color: var(--color-brand);
+        box-shadow: 0 2px 8px -1px rgba(0, 36, 21, 0.25), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0;
+        will-change: transform, width, height;
+        transition: transform 320ms cubic-bezier(0.25, 1, 0.5, 1),
+                    width 320ms cubic-bezier(0.25, 1, 0.5, 1),
+                    height 320ms cubic-bezier(0.25, 1, 0.5, 1),
+                    opacity 150ms ease;
+    }
+
+    .tab-slider.is-ready {
+        opacity: 1;
+    }
+
+    /* Apple-style horizontal sliding animations for tab content panels */
+    @keyframes tabSlideFromRight {
+        from {
+            opacity: 0;
+            transform: translate3d(28px, 0, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    @keyframes tabSlideFromLeft {
+        from {
+            opacity: 0;
+            transform: translate3d(-28px, 0, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    .tab-slide-right {
+        animation: tabSlideFromRight 280ms cubic-bezier(0.25, 1, 0.5, 1) both;
+    }
+
+    .tab-slide-left {
+        animation: tabSlideFromLeft 280ms cubic-bezier(0.25, 1, 0.5, 1) both;
+    }
+}

@@ -16,14 +16,15 @@
 @endphp
 
 <div data-tabs class="space-y-4">
-    <div class="grid grid-cols-3 gap-1 p-1 rounded-full bg-surface-2 text-center text-sm font-bold">
-        <button type="button" data-tab="form" class="py-2.5 rounded-full transition {{ $tabAktif === 'form' ? 'bg-brand text-white' : 'text-muted' }}">
+    <div data-tab-nav class="relative grid grid-cols-3 gap-1 p-1 rounded-full bg-surface-2 text-center text-sm font-bold select-none">
+        <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
+        <button type="button" data-tab="form" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'form' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
             Catat Harian
         </button>
-        <button type="button" data-tab="dashboard" class="py-2.5 rounded-full transition {{ $tabAktif === 'dashboard' ? 'bg-brand text-white' : 'text-muted' }}">
+        <button type="button" data-tab="dashboard" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'dashboard' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
             Dashboard
         </button>
-        <button type="button" data-tab="beli" class="py-2.5 rounded-full transition {{ $tabAktif === 'beli' ? 'bg-brand text-white' : 'text-muted' }}">
+        <button type="button" data-tab="beli" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'beli' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
             Belanja Pakan
         </button>
     </div>

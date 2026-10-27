@@ -18,11 +18,12 @@
 @endphp
 
 <div data-tabs class="space-y-4">
-    <div class="grid grid-cols-2 gap-1 p-1 rounded-full bg-surface-2 text-center text-sm font-bold">
-        <button type="button" data-tab="peringatan" class="py-2.5 rounded-full transition {{ $tabAktif === 'peringatan' ? 'bg-brand text-white' : 'text-muted' }}">
+    <div data-tab-nav class="relative grid grid-cols-2 gap-1 p-1 rounded-full bg-surface-2 text-center text-sm font-bold select-none">
+        <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
+        <button type="button" data-tab="peringatan" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'peringatan' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
             Peringatan Dini ({{ $alerts->where('dibaca', false)->count() }})
         </button>
-        <button type="button" data-tab="tanya" class="py-2.5 rounded-full transition {{ $tabAktif === 'tanya' ? 'bg-brand text-white' : 'text-muted' }}">
+        <button type="button" data-tab="tanya" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'tanya' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
             Tanya Asisten AI
         </button>
     </div>
