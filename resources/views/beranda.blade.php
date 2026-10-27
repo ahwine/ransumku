@@ -7,45 +7,62 @@
     {{-- Card Utama Dashboard Berisi Header & 4 Kuadran (Cross-Border Layout sesuai Referensi) --}}
     <div class="bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
 
-        {{-- 1. Baris Atas: Breadcrumb, Filters & Action Buttons --}}
-        <div class="p-5 md:p-6 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="space-y-2.5">
-                <div class="flex items-center gap-2 text-base md:text-lg font-bold text-ink">
-                    <span>Pencatatan produksi</span>
-                    <span class="text-muted font-normal">&gt;</span>
-                    <div class="relative inline-block">
-                        <button type="button" class="text-brand font-bold flex items-center gap-1 hover:underline">
-                            {{ $farm->nama ?? 'Kandang 1A' }}
-                            <span class="material-symbols-outlined text-[18px]">expand_more</span>
-                        </button>
-                    </div>
+        {{-- 1. Baris Atas: Identitas Kandang, Smart Badges & Action Buttons --}}
+        <div class="p-5 md:p-6 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+            <div class="space-y-2">
+                {{-- Nama Kandang & Indikator Aktif --}}
+                <div class="flex items-center gap-2.5">
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-lime opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-brand"></span>
+                    </span>
+                    <h1 class="text-lg md:text-xl font-black text-ink tracking-tight">
+                        {{ $farm->nama ?? 'Kandang Maju Jaya' }}
+                    </h1>
                 </div>
 
+                {{-- Smart Status Badges --}}
                 <div class="flex flex-wrap items-center gap-2 text-xs">
-                    <label class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-line bg-surface text-ink cursor-pointer font-semibold">
-                        <input type="radio" name="farm_select" checked class="accent-brand w-3.5 h-3.5" />
-                        <span>Rosa</span>
-                    </label>
-                    <label class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-line bg-white text-muted cursor-pointer font-semibold">
-                        <input type="radio" name="farm_select" class="accent-brand w-3.5 h-3.5" />
-                        <span>Sastro</span>
-                    </label>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full border border-brand/30 bg-brand-soft/40 text-brand font-semibold">
-                        {{ today()->translatedFormat('d F Y') }}
+                    {{-- Badge Populasi --}}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-line bg-surface text-ink font-semibold">
+                        <span class="material-symbols-outlined text-[15px] text-brand">egg</span>
+                        <span>{{ number_format($farm->jumlah_ayam ?? 200, 0, ',', '.') }} Ekor</span>
                     </span>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full border border-line bg-surface-2 text-muted font-semibold">
-                        Hisex
+
+                    {{-- Badge Fase --}}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-line bg-surface text-ink font-semibold">
+                        <span class="material-symbols-outlined text-[15px] text-brand">layers</span>
+                        <span>Fase {{ ucfirst($farm->fase ?? 'Produksi') }}</span>
                     </span>
+
+                    {{-- Smart Daily Log Status --}}
+                    @php
+                        $sudahCatatHariIni = $hariIni && $hariIni->tanggal->isToday();
+                    @endphp
+                    @if ($sudahCatatHariIni)
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-brand/30 bg-brand-soft/50 text-brand font-bold">
+                            <span class="material-symbols-outlined text-[15px]">check_circle</span>
+                            <span>Data Hari Ini Lengkap</span>
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-amber-300 bg-amber-50 text-amber-800 font-bold">
+                            <span class="material-symbols-outlined text-[15px] text-amber-600">schedule</span>
+                            <span>Belum Dicatat Hari Ini</span>
+                        </span>
+                    @endif
                 </div>
             </div>
 
-            <div class="flex items-center gap-2.5 self-start md:self-center">
-                <a href="{{ route('catatan.index', ['tab' => 'dashboard']) }}" class="px-4 py-2 rounded-full text-xs font-bold text-white bg-[#D97706] hover:bg-[#B45309] shadow-sm transition">
-                    Pending
-                </a>
-                <a href="{{ route('catatan.index') }}" class="px-5 py-2 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark shadow-sm transition flex items-center gap-1">
-                    <span>Input</span>
+            {{-- Sisi Kanan: Tanggal & Tombol CTA Utama --}}
+            <div class="flex flex-wrap items-center gap-3 self-start md:self-center">
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-line bg-surface text-xs font-semibold text-muted">
+                    <span class="material-symbols-outlined text-[16px] text-brand">calendar_today</span>
+                    <span>{{ today()->translatedFormat('l, d F Y') }}</span>
+                </span>
+
+                <a href="{{ route('catatan.index') }}" class="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark shadow-sm hover:shadow transition-all active:scale-95">
                     <span class="material-symbols-outlined text-[16px]">add</span>
+                    <span>Catat Data Harian</span>
                 </a>
             </div>
         </div>
@@ -60,28 +77,28 @@
                 <div class="p-5 md:p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <h2 class="text-sm font-bold text-ink">
-                            Produksi Telur <span class="text-brand font-semibold text-xs ml-1 hover:underline cursor-pointer">{{ $farm->nama ?? 'kandang 1A' }}</span>
+                            Produksi Telur
                         </h2>
                     </div>
 
                     <div>
                         <div class="flex flex-wrap items-baseline gap-2">
-                            <span class="text-xl md:text-2xl font-black text-ink">{{ Fmt::num($totalTelurIni > 0 ? $totalTelurIni : 7034, 0) }} butir</span>
-                            <span class="text-muted font-bold text-sm">&gt; {{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni * 1000 : 408000, 0) }} gram</span>
+                            <span class="text-xl md:text-2xl font-black text-ink">{{ Fmt::num($totalTelurIni > 0 ? $totalTelurIni : 170, 0) }} butir</span>
+                            <span class="text-muted font-bold text-sm">&gt; {{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni * 1000 : 10540, 0) }} gram</span>
                             <span class="text-muted font-bold text-sm">&gt; {{ $rataGrTelur }}gr/butir</span>
-                            <span class="text-xs font-black text-brand ml-1">({{ $hdPersen > 0 ? $hdPersen : 201 }}%)</span>
+                            <span class="text-xs font-black text-brand ml-1">({{ $hdPersen > 0 ? $hdPersen : 85.0 }}% HD)</span>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4 mt-3 max-w-xs text-xs">
                             <div class="space-y-0.5">
                                 <span class="text-muted block text-tiny">Telur utuh</span>
-                                <strong class="text-base text-ink font-black">{{ Fmt::num($telurUtuh > 0 ? $telurUtuh : 7000, 0) }}</strong>
-                                <span class="text-muted block text-tiny">{{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni * 0.995 * 1000 : 406000, 0) }} gr</span>
+                                <strong class="text-base text-ink font-black">{{ Fmt::num($telurUtuh > 0 ? $telurUtuh : 168, 0) }}</strong>
+                                <span class="text-muted block text-tiny">{{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni * 0.995 * 1000 : 10416, 0) }} gr</span>
                             </div>
                             <div class="space-y-0.5">
-                                <span class="text-muted block text-tiny">Telur bentes</span>
-                                <strong class="text-base text-ink font-black">{{ Fmt::num($telurBentes > 0 ? $telurBentes : 34, 0) }}</strong>
-                                <span class="text-muted block text-tiny">{{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni * 0.005 * 1000 : 2000, 0) }} gr</span>
+                                <span class="text-muted block text-tiny">Telur bentes/retak</span>
+                                <strong class="text-base text-ink font-black">{{ Fmt::num($telurBentes > 0 ? $telurBentes : 2, 0) }}</strong>
+                                <span class="text-muted block text-tiny">{{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni * 0.005 * 1000 : 124, 0) }} gr</span>
                             </div>
                         </div>
                     </div>
@@ -95,7 +112,7 @@
                 <div class="p-5 md:p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <h2 class="text-sm font-bold text-ink">
-                            Pakan <span class="text-brand font-semibold text-xs ml-1 hover:underline cursor-pointer">{{ $farm->nama ?? 'kandang 1A' }}</span>
+                            Pakan Harian
                         </h2>
                         <div class="text-right">
                             <span class="text-tiny text-muted block leading-none">Standar pakan</span>
@@ -105,17 +122,17 @@
 
                     <div>
                         <div class="flex flex-wrap items-baseline gap-2">
-                            <span class="text-xl md:text-2xl font-black text-ink">{{ Fmt::num($totalPakanIni > 0 ? $totalPakanIni : 3000, 0) }} kg</span>
-                            <span class="text-muted font-bold text-sm">&gt; {{ $gramPerEkor > 0 ? $gramPerEkor : 85.7 }} gram/ekor</span>
-                            <span class="text-xs font-black text-brand ml-1">↑ 2.4 % vs last week</span>
+                            <span class="text-xl md:text-2xl font-black text-ink">{{ Fmt::num($totalPakanIni > 0 ? $totalPakanIni : 22, 1) }} kg</span>
+                            <span class="text-muted font-bold text-sm">&gt; {{ $gramPerEkor > 0 ? $gramPerEkor : 110.0 }} gram/ekor</span>
+                            <span class="text-xs font-black text-brand ml-1">↑ 2.4% vs standar</span>
                         </div>
                     </div>
 
                     <div class="flex items-center gap-4 pt-2">
-                        {{-- Lingkaran Hijau 100% Omega/Nutrisi --}}
+                        {{-- Lingkaran Hijau 100% Kecukupan Pakan --}}
                         <div class="w-24 h-24 rounded-full bg-brand text-white flex flex-col items-center justify-center text-center shadow-md shrink-0">
-                            <span class="text-lg font-black leading-none">100 %</span>
-                            <span class="text-[10px] font-semibold tracking-wider mt-1 opacity-90">Omega</span>
+                            <span class="text-lg font-black leading-none">100%</span>
+                            <span class="text-[9px] font-semibold tracking-wider mt-1 opacity-90">Kecukupan</span>
                         </div>
 
                         <div class="flex-1 h-40">
@@ -133,35 +150,35 @@
                 <div class="p-5 md:p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <h2 class="text-sm font-bold text-ink">
-                            Populasi Ayam <span class="text-brand font-semibold text-xs ml-1 hover:underline cursor-pointer">{{ $farm->nama ?? 'kandang 1A' }}</span>
+                            Populasi Ayam
                         </h2>
-                        <a href="{{ route('lainnya') }}" class="px-3 py-1 rounded-full bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-sm transition">
-                            pindah
-                        </a>
+                        <span class="px-2.5 py-1 rounded-full bg-surface border border-line text-muted text-[11px] font-semibold">
+                            Fase {{ ucfirst($farm->fase ?? 'Produksi') }}
+                        </span>
                     </div>
 
                     <div>
                         <div class="flex items-baseline gap-2">
-                            <span class="text-xl md:text-2xl font-black text-ink">{{ Fmt::num($farm->jumlah_ayam > 0 ? $farm->jumlah_ayam : 34999, 0) }} ekor</span>
-                            <span class="text-xs font-black text-brand ml-1">↑ 2.4 % vs last week</span>
+                            <span class="text-xl md:text-2xl font-black text-ink">{{ Fmt::num($farm->jumlah_ayam > 0 ? $farm->jumlah_ayam : 200, 0) }} ekor</span>
+                            <span class="text-xs font-semibold text-muted ml-1">Populasi Aktif</span>
                         </div>
 
                         <div class="grid grid-cols-4 gap-2 mt-3 text-center text-xs">
                             <div class="space-y-0.5">
-                                <span class="text-muted block text-tiny">Mati</span>
-                                <strong class="text-base text-ink font-black">{{ $totalMatiIni > 0 ? $totalMatiIni : 1 }}</strong>
+                                <span class="text-muted block text-tiny">Hidup</span>
+                                <strong class="text-base text-ink font-black">{{ max(0, ($farm->jumlah_ayam ?? 200) - $totalMatiIni) }}</strong>
+                            </div>
+                            <div class="space-y-0.5">
+                                <span class="text-muted block text-tiny">Mati Hari Ini</span>
+                                <strong class="text-base {{ $totalMatiIni > 0 ? 'text-danger' : 'text-ink' }} font-black">{{ $totalMatiIni }}</strong>
                             </div>
                             <div class="space-y-0.5">
                                 <span class="text-muted block text-tiny">Afkir</span>
                                 <strong class="text-base text-ink font-black">-</strong>
                             </div>
                             <div class="space-y-0.5">
-                                <span class="text-muted block text-tiny">Pindah</span>
-                                <strong class="text-base text-ink font-black">400</strong>
-                            </div>
-                            <div class="space-y-0.5">
-                                <span class="text-muted block text-tiny">Terima</span>
-                                <strong class="text-base text-ink font-black">-</strong>
+                                <span class="text-muted block text-tiny">Mortalitas</span>
+                                <strong class="text-base text-ink font-black">{{ round(($totalMatiIni / max(1, $farm->jumlah_ayam ?? 200)) * 100, 1) }}%</strong>
                             </div>
                         </div>
                     </div>
@@ -175,7 +192,7 @@
                 <div class="p-5 md:p-6 space-y-4">
                     <div class="flex items-center justify-between">
                         <h2 class="text-sm font-bold text-ink">
-                            Ratio <span class="text-brand font-semibold text-xs ml-1 hover:underline cursor-pointer">{{ $farm->nama ?? 'kandang 1A' }}</span>
+                            Rasio & Efisiensi
                         </h2>
                     </div>
 
@@ -185,17 +202,17 @@
                             {{-- Bubble 1: Egg Mass (Teal/Aquamarine) --}}
                             <div class="absolute top-1 right-2 w-24 h-24 rounded-full bg-[#2DD4BF] text-white flex flex-col items-center justify-center text-center p-2 shadow-sm z-10">
                                 <span class="text-[10px] font-semibold leading-none opacity-95">Egg Mass</span>
-                                <strong class="text-base font-black mt-1 leading-none">{{ $eggMass > 0 ? $eggMass : '11,7' }}</strong>
+                                <strong class="text-base font-black mt-1 leading-none">{{ $eggMass > 0 ? $eggMass : '52,7' }}</strong>
                             </div>
-                            {{-- Bubble 2: FC (Rosy Pink) --}}
+                            {{-- Bubble 2: FCR (Rosy Pink) --}}
                             <div class="absolute top-8 left-1 w-24 h-24 rounded-full bg-[#FB7185] text-white flex flex-col items-center justify-center text-center p-2 shadow-sm z-20">
-                                <span class="text-[10px] font-semibold leading-none opacity-95">FC</span>
-                                <strong class="text-base font-black mt-1 leading-none">{{ $fcr > 0 ? $fcr : '7.4' }}</strong>
+                                <span class="text-[10px] font-semibold leading-none opacity-95">FCR</span>
+                                <strong class="text-base font-black mt-1 leading-none">{{ $fcr > 0 ? $fcr : '2.09' }}</strong>
                             </div>
-                            {{-- Bubble 3: Standart FC (Lavender/Purple) --}}
+                            {{-- Bubble 3: Standar FCR (Lavender/Purple) --}}
                             <div class="absolute bottom-1 right-8 w-24 h-24 rounded-full bg-[#818CF8] text-white flex flex-col items-center justify-center text-center p-2 shadow-sm z-0">
-                                <span class="text-[10px] font-semibold leading-none opacity-95 text-center">Standart<br/>FC</span>
-                                <strong class="text-base font-black mt-1 leading-none">7.6</strong>
+                                <span class="text-[10px] font-semibold leading-none opacity-95 text-center">Standar<br/>FCR</span>
+                                <strong class="text-base font-black mt-1 leading-none">2.15</strong>
                             </div>
                         </div>
 

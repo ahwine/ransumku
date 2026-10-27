@@ -3,8 +3,14 @@
 @section('isi')
 <h1 class="text-h-xl">Tentang & Batasan</h1>
 
-<div class="card space-y-2">
-    <h2 class="text-h-sm">Apa itu RansumKu?</h2>
+<div class="card space-y-3">
+    <div class="flex items-center gap-3 pb-2 border-b border-line/60">
+        <img src="{{ asset('images/logo.png') }}" alt="Logo RansumKu" class="w-12 h-12 object-contain rounded-full shadow-sm shrink-0" />
+        <div>
+            <h2 class="text-h-sm text-ink leading-tight">Apa itu RansumKu?</h2>
+            <p class="text-xs text-muted">Smart Poultry Farming & Optimasi Ransum Mandiri</p>
+        </div>
+    </div>
     <p>RansumKu adalah <strong>alat bantu hitung</strong> untuk peternak ayam petelur skala kecil yang meramu pakan sendiri: menghitung ransum termurah yang memenuhi target gizi, mencatat pakan, telur, dan biaya harian, serta memberi peringatan dini.</p>
 </div>
 
