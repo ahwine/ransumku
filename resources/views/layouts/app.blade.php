@@ -142,7 +142,7 @@
                 <span class="material-symbols-outlined icon-fill text-[20px]">check_circle</span><span>{{ session('ok') }}</span>
             </div>
         @endif
-        @if ($errors->any())
+        @if (isset($errors) && $errors->any())
             <div class="notice bg-danger-soft text-danger-ink" role="alert">
                 <span class="material-symbols-outlined icon-fill text-[20px]">error</span>
                 <ul class="list-disc ml-4">@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
