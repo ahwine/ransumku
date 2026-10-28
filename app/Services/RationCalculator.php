@@ -13,7 +13,11 @@ use Illuminate\Support\Facades\DB;
  */
 class RationCalculator
 {
-    public function __construct(private RationOptimizer $optimizer) {}
+    public function __construct(
+        private RationOptimizer $optimizer,
+        private FeedConversionService $converter,
+        private RationSafetyValidator $safetyValidator
+    ) {}
 
     public function hitung(Farm $farm, float $totalKg, ?int $hari, NutrientStandard $std): Ration
     {
@@ -29,6 +33,10 @@ class RationCalculator
             'fosfor' => (float) $fi->ingredient->fosfor,
             'serat' => (float) $fi->ingredient->serat,
             'energi' => (float) $fi->ingredient->energi,
+            'bk' => (float) ($fi->ingredient->bk ?? 88.0),
+            'min_persen' => $fi->min_persen !== null ? (float) $fi->min_persen : (float) ($fi->ingredient->min_persen ?? 0.0),
+            'max_persen' => $fi->max_persen !== null ? (float) $fi->max_persen : (float) ($fi->ingredient->max_persen ?? 100.0),
+            'catatan_keamanan' => $fi->ingredient->catatan_keamanan,
         ])->values()->all();
 
         $target = $std->toTarget();
@@ -63,6 +71,7 @@ class RationCalculator
         ];
 
         $detail = ['belanja' => $belanja, 'ideal_layak' => $ideal['feasible']];
+        $asFed = null;
 
         if ($hasil['feasible']) {
             $data['total_biaya'] = (int) round($hasil['total_biaya']);
@@ -72,6 +81,12 @@ class RationCalculator
                 'nama' => $it['nama'],
                 'sisa_kg' => round(($stokMap[$it['id']]['stok'] ?? 0) - $it['kg'], 2),
             ])->all();
+
+            $asFed = $this->converter->convertToAsFed($hasil['items']);
+            $safety = $this->safetyValidator->validate($hasil['items'], $hasil['gizi'], $target);
+
+            $detail['as_fed'] = $asFed;
+            $detail['keamanan'] = $safety;
         } elseif ($ideal['feasible']) {
             $detail['ideal'] = [
                 'total_biaya' => (int) round($ideal['total_biaya']),
@@ -82,14 +97,19 @@ class RationCalculator
         }
         $data['hasil'] = $detail;
 
-        return DB::transaction(function () use ($farm, $data, $hasil) {
+        return DB::transaction(function () use ($farm, $data, $hasil, $asFed) {
             $ration = $farm->rations()->create($data);
+            $asFedMap = isset($asFed['items']) ? collect($asFed['items'])->keyBy('nama') : collect();
             foreach ($hasil['items'] as $it) {
+                $asFedItem = $asFedMap->get($it['nama']);
                 $ration->items()->create([
                     'ingredient_id' => $it['id'],
                     'nama' => $it['nama'],
                     'kg' => round($it['kg'], 3),
                     'persen' => round($it['persen'], 3),
+                    'bk' => (float) ($it['bk'] ?? 88.0),
+                    'kg_as_fed' => $asFedItem ? round($asFedItem['kg_as_fed'], 3) : null,
+                    'persen_as_fed' => $asFedItem ? round($asFedItem['persen_as_fed'], 3) : null,
                     'harga_saat_hitung' => (int) $it['harga'],
                     'biaya' => (int) round($it['biaya']),
                 ]);

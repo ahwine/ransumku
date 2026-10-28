@@ -17,7 +17,7 @@ class RationOptimizer
 
     /**
      * @param  array<int,array{id:int|string,nama:string,harga:float,stok:float|null,protein:float,kalsium:float,fosfor:float,serat:float,energi:float}>  $ingredients
-     *         stok null = tidak dibatasi.
+     *                                                                                                                                                                  stok null = tidak dibatasi.
      * @param  array{protein_min:float,kalsium_min:float,kalsium_max:float,fosfor_min:float,fosfor_max:float,serat_max:?float,energi_min:float}  $target
      * @return array{feasible:bool,items:array,total_biaya:float,biaya_per_kg:float,gizi:array,pesan:array}
      */
@@ -44,12 +44,26 @@ class RationOptimizer
         // total berat = jumlah campuran
         $rows[] = [array_fill(0, $n, 1.0), '=', $totalKg];
 
-        // tiap bahan <= stok
+        // tiap bahan <= stok, <= batas maksimum persen, dan >= batas minimum persen
         foreach ($ingredients as $k => $ing) {
             if ($ing['stok'] !== null) {
                 $r = $nol;
                 $r[$k] = 1.0;
                 $rows[] = [$r, '<=', (float) $ing['stok']];
+            }
+
+            $maxP = isset($ing['max_persen']) && $ing['max_persen'] !== null ? (float) $ing['max_persen'] : null;
+            if ($maxP !== null && $maxP < 100.0) {
+                $r = $nol;
+                $r[$k] = 1.0;
+                $rows[] = [$r, '<=', (float) (($maxP / 100.0) * $totalKg)];
+            }
+
+            $minP = isset($ing['min_persen']) && $ing['min_persen'] !== null ? (float) $ing['min_persen'] : null;
+            if ($minP !== null && $minP > 0.0) {
+                $r = $nol;
+                $r[$k] = 1.0;
+                $rows[] = [$r, '>=', (float) (($minP / 100.0) * $totalKg)];
             }
         }
 
@@ -103,6 +117,10 @@ class RationOptimizer
                 'nama' => $ing['nama'],
                 'kg' => $kg,
                 'persen' => $kg / $totalKg * 100,
+                'bk' => (float) ($ing['bk'] ?? 88.0),
+                'min_persen' => (float) ($ing['min_persen'] ?? 0.0),
+                'max_persen' => (float) ($ing['max_persen'] ?? 100.0),
+                'catatan_keamanan' => $ing['catatan_keamanan'] ?? null,
                 'harga' => $ing['harga'],
                 'biaya' => $biaya,
             ];
@@ -155,6 +173,43 @@ class RationOptimizer
             $pesan[] = sprintf(
                 'Stok total bahan (%s kg) kurang dari jumlah campuran (%s kg). Tambah stok sekitar %s kg atau kurangi jumlah campuran.',
                 $this->fmt($stokTotal), $this->fmt($totalKg), $this->fmt($totalKg - $stokTotal)
+            );
+
+            return $pesan;
+        }
+
+        $sumMin = 0.0;
+        $sumMax = 0.0;
+        foreach ($ingredients as $ing) {
+            $minP = isset($ing['min_persen']) && $ing['min_persen'] !== null ? (float) $ing['min_persen'] : 0.0;
+            $maxP = isset($ing['max_persen']) && $ing['max_persen'] !== null ? (float) $ing['max_persen'] : 100.0;
+            $sumMin += $minP;
+            $sumMax += $maxP;
+
+            if ($minP > 0.0 && $ing['stok'] !== null) {
+                $minKg = ($minP / 100.0) * $totalKg;
+                if ((float) $ing['stok'] + 1e-9 < $minKg) {
+                    $pesan[] = sprintf(
+                        'Bahan %s memerlukan minimal %s kg (batas min %s%%), tetapi stok yang tersedia hanya %s kg.',
+                        $ing['nama'], $this->fmt($minKg), $this->fmt($minP), $this->fmt((float) $ing['stok'])
+                    );
+                }
+            }
+        }
+
+        if ($sumMin > 100.0 + 1e-9) {
+            $pesan[] = sprintf(
+                'Total batas minimum penggunaan bahan (%s%%) melebihi 100%%. Kurangi batas minimum bahan.',
+                $this->fmt($sumMin)
+            );
+
+            return $pesan;
+        }
+
+        if ($sumMax + 1e-9 < 100.0) {
+            $pesan[] = sprintf(
+                'Total batas maksimum penggunaan bahan (%s%%) kurang dari 100%%. Naikkan batas maksimum bahan agar campuran 100%% bisa dicapai.',
+                $this->fmt($sumMax)
             );
 
             return $pesan;
@@ -230,7 +285,7 @@ class RationOptimizer
     /**
      * Minimalkan c·x dengan batasan baris [koef[], tipe('<=','>=','='), rhs], x >= 0.
      *
-     * @return array<int,float>|null  solusi x, atau null bila tidak layak
+     * @return array<int,float>|null solusi x, atau null bila tidak layak
      */
     private function simplex(array $c, array $rows): ?array
     {

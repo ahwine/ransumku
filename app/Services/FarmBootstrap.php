@@ -15,18 +15,19 @@ use App\Models\NutrientStandard;
 class FarmBootstrap
 {
     public const SUMBER = 'Angka ilustrasi (bukan data resmi)';
+
     public const CATATAN = 'Sesuaikan dengan label kemasan atau tabel komposisi bahan pakan resmi.';
 
-    /** nama, protein, kalsium, fosfor, serat, energi, harga, stok demo, aktif */
+    /** nama, protein, kalsium, fosfor, serat, energi, harga, stok demo, aktif, bk, min_persen, max_persen, catatan_keamanan */
     public static function templates(): array
     {
         return [
-            ['Jagung', 8.5, 0.03, 0.28, 2.2, 3300, 6500, 50, true],
-            ['Dedak', 12, 0.10, 1.2, 11, 2400, 4500, 30, true],
-            ['Konsentrat', 38, 5.0, 1.5, 6, 2300, 13000, 20, true],
-            ['Kapur', 0, 38, 0, 0, 0, 2500, 10, true],
-            ['Bungkil kedelai', 44, 0.30, 0.65, 6, 2230, 9500, 0, false],
-            ['Menir', 8, 0.05, 0.30, 1, 3200, 5500, 0, false],
+            ['Jagung', 8.5, 0.03, 0.28, 2.2, 3300, 6500, 50, true, 86.0, 0.0, 65.0, 'Batas wajar 50-65% untuk menjaga variasi sumber asam amino.'],
+            ['Dedak', 12, 0.10, 1.2, 11, 2400, 4500, 30, true, 88.0, 0.0, 30.0, 'Maksimal 25-30% pada ayam petelur agar serat kasar dan asam fitat tidak berlebih.'],
+            ['Konsentrat', 38, 5.0, 1.5, 6, 2300, 13000, 20, true, 90.0, 0.0, 40.0, 'Konsentrat komersial umumnya dirancang 30-35% dalam ransum layer.'],
+            ['Kapur', 0, 38, 0, 0, 0, 2500, 10, true, 99.0, 0.0, 10.0, 'Maksimal 8-10% sebagai sumber kalsium utama pembentukan kerabang telur.'],
+            ['Bungkil kedelai', 44, 0.30, 0.65, 6, 2230, 9500, 0, false, 89.0, 0.0, 30.0, 'Sumber protein nabati bermutu tinggi, batas aman 25-30%.'],
+            ['Menir', 8, 0.05, 0.30, 1, 3200, 5500, 0, false, 88.0, 0.0, 35.0, 'Sumber energi pengganti jagung, aman hingga 30-35%.'],
         ];
     }
 
@@ -52,10 +53,11 @@ class FarmBootstrap
         if (Ingredient::whereNull('farm_id')->exists()) {
             return;
         }
-        foreach (self::templates() as [$nama, $p, $ca, $f, $s, $e, $h]) {
+        foreach (self::templates() as [$nama, $p, $ca, $f, $s, $e, $h, $stok, $aktif, $bk, $min, $max, $catatanKeamanan]) {
             Ingredient::create([
                 'farm_id' => null, 'nama' => $nama, 'protein' => $p, 'kalsium' => $ca, 'fosfor' => $f,
                 'serat' => $s, 'energi' => $e, 'harga_default' => $h,
+                'bk' => $bk, 'min_persen' => $min, 'max_persen' => $max, 'catatan_keamanan' => $catatanKeamanan,
                 'sumber' => self::SUMBER, 'catatan' => self::CATATAN,
             ]);
         }
@@ -67,14 +69,23 @@ class FarmBootstrap
     {
         $this->seedTemplates();
 
-        foreach (self::templates() as [$nama, $p, $ca, $f, $s, $e, $h, $stok, $aktif]) {
+        foreach (self::templates() as [$nama, $p, $ca, $f, $s, $e, $h, $stok, $aktif, $bk, $min, $max, $catatanKeamanan]) {
             $ing = $farm->ingredients()->firstOrCreate(['nama' => $nama], [
                 'protein' => $p, 'kalsium' => $ca, 'fosfor' => $f, 'serat' => $s, 'energi' => $e,
-                'harga_default' => $h, 'sumber' => self::SUMBER, 'catatan' => self::CATATAN,
+                'harga_default' => $h, 'bk' => $bk, 'min_persen' => $min, 'max_persen' => $max,
+                'catatan_keamanan' => $catatanKeamanan,
+                'sumber' => self::SUMBER, 'catatan' => self::CATATAN,
             ]);
             FarmIngredient::firstOrCreate(
                 ['farm_id' => $farm->id, 'ingredient_id' => $ing->id],
-                ['harga' => $h, 'stok_kg' => $denganStok ? $stok : 0, 'aktif' => $aktif, 'harga_updated_at' => now()]
+                [
+                    'harga' => $h,
+                    'stok_kg' => $denganStok ? $stok : 0,
+                    'min_persen' => $min,
+                    'max_persen' => $max,
+                    'aktif' => $aktif,
+                    'harga_updated_at' => now(),
+                ]
             );
         }
 

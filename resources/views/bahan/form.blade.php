@@ -43,6 +43,35 @@
         </div>
     </div>
 
+    {{-- Fitur 2 & 3: Kadar Bahan Kering (BK) dan Ambang Batas Aman --}}
+    <div class="rounded-xl border border-line bg-surface/50 p-3 space-y-3">
+        <div class="flex items-center gap-1.5 font-bold text-sm text-primary">
+            <span class="material-symbols-outlined text-[18px]">verified</span>
+            <span>Bahan Kering & Batas Aman Penggunaan</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+            <div>
+                <label class="lbl" for="bk">Bahan Kering / BK (%)</label>
+                <input id="bk" name="bk" type="number" step="0.1" min="1" max="100" class="field" value="{{ old('bk', $bahan->bk ?? 88.0) }}" required>
+                <span class="text-tiny text-muted">Jagung ~86%, Dedak ~88%</span>
+            </div>
+            <div>
+                <label class="lbl" for="min_persen">Min Ransum (%)</label>
+                <input id="min_persen" name="min_persen" type="number" step="0.1" min="0" max="100" class="field" value="{{ old('min_persen', $bahan->min_persen ?? 0.0) }}">
+                <span class="text-tiny text-muted">Batas minimal</span>
+            </div>
+            <div>
+                <label class="lbl" for="max_persen">Maks Aman (%)</label>
+                <input id="max_persen" name="max_persen" type="number" step="0.1" min="0" max="100" class="field" value="{{ old('max_persen', $bahan->max_persen ?? 100.0) }}" required>
+                <span class="text-tiny text-muted">Dedak max 30%, Kapur 10%</span>
+            </div>
+        </div>
+        <div>
+            <label class="lbl" for="catatan_keamanan">Peringatan Keamanan / Antinutrisi (Opsional)</label>
+            <input id="catatan_keamanan" name="catatan_keamanan" type="text" class="field" value="{{ old('catatan_keamanan', $bahan->catatan_keamanan) }}" placeholder="Contoh: Dedak dibatasi 25% untuk mencegah asam fitat berlebih">
+        </div>
+    </div>
+
     <div>
         <label class="lbl" for="harga_default">Harga Acuan / Default (Rp/kg)</label>
         <input id="harga_default" name="harga_default" type="number" min="0" step="50" class="field" value="{{ old('harga_default', $bahan->harga_default ?? 0) }}" required>

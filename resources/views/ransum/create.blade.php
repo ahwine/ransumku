@@ -21,7 +21,11 @@
             <div class="rounded-xl border border-line p-3 space-y-2 {{ $fi->aktif ? '' : 'bg-surface/60' }}">
                 <label class="flex items-center gap-2 font-bold">
                     <input type="checkbox" name="bahan[{{ $fi->id }}][aktif]" value="1" class="w-5 h-5 accent-brand" @checked(old("bahan.{$fi->id}.aktif", $fi->aktif))>
-                    {{ $fi->ingredient->nama }}
+                    <span>{{ $fi->ingredient->nama }}</span>
+                    <span class="chip bg-brand/10 text-brand text-[11px] font-semibold">BK {{ Fmt::num($fi->ingredient->bk ?? 88, 0) }}%</span>
+                    @if (($fi->max_persen ?? $fi->ingredient->max_persen ?? 100) < 100)
+                        <span class="chip bg-amber-soft/60 text-amber-ink text-[11px] font-semibold">Maks {{ Fmt::num($fi->max_persen ?? $fi->ingredient->max_persen, 0) }}%</span>
+                    @endif
                     <span class="ml-auto text-tiny font-bold {{ $fi->hargaUsang() ? 'text-danger' : 'text-muted' }}">
                         {{ $fi->harga_updated_at ? 'diperbarui '.$fi->harga_updated_at->diffForHumans() : 'belum pernah diperbarui' }}
                     </span>
@@ -36,6 +40,25 @@
                         <input id="s{{ $fi->id }}" name="bahan[{{ $fi->id }}][stok]" type="number" min="0" step="0.5" inputmode="decimal" class="field" value="{{ old("bahan.{$fi->id}.stok", (float) $fi->stok_kg) }}">
                     </div>
                 </div>
+                <details class="text-xs text-muted pt-0.5">
+                    <summary class="cursor-pointer text-brand hover:underline font-semibold flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[15px]">tune</span>
+                        <span>Batas Ambang Penggunaan (% Ransum)</span>
+                    </summary>
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <div>
+                            <label class="lbl !text-tiny" for="min{{ $fi->id }}">Min Penggunaan (%)</label>
+                            <input id="min{{ $fi->id }}" name="bahan[{{ $fi->id }}][min_persen]" type="number" min="0" max="100" step="0.5" class="field !min-h-9 !py-1 text-xs" value="{{ old("bahan.{$fi->id}.min_persen", $fi->min_persen ?? $fi->ingredient->min_persen ?? 0) }}">
+                        </div>
+                        <div>
+                            <label class="lbl !text-tiny" for="max{{ $fi->id }}">Maks Aman (%)</label>
+                            <input id="max{{ $fi->id }}" name="bahan[{{ $fi->id }}][max_persen]" type="number" min="0" max="100" step="0.5" class="field !min-h-9 !py-1 text-xs" value="{{ old("bahan.{$fi->id}.max_persen", $fi->max_persen ?? $fi->ingredient->max_persen ?? 100) }}">
+                        </div>
+                    </div>
+                    @if ($fi->ingredient->catatan_keamanan)
+                        <p class="text-tiny text-muted mt-1 italic">{{ $fi->ingredient->catatan_keamanan }}</p>
+                    @endif
+                </details>
             </div>
         @endforeach
         <a href="{{ route('bahan.create') }}" class="btn-outline btn-sm w-full"><span class="material-symbols-outlined">add</span>Tambah bahan</a>

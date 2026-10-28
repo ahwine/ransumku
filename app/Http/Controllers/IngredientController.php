@@ -18,6 +18,10 @@ class IngredientController extends Controller
             'serat' => 'required|numeric|min:0|max:100',
             'energi' => 'required|integer|min:0|max:10000',
             'harga_default' => 'required|integer|min:0',
+            'bk' => 'nullable|numeric|min:1|max:100',
+            'min_persen' => 'nullable|numeric|min:0|max:100',
+            'max_persen' => 'nullable|numeric|min:0|max:100',
+            'catatan_keamanan' => 'nullable|string|max:255',
             'sumber' => 'nullable|string|max:255',
             'catatan' => 'nullable|string|max:1000',
         ];
@@ -46,8 +50,14 @@ class IngredientController extends Controller
 
         // Langsung masuk daftar bahan kandang (stok 0, nonaktif sampai dipilih di form ransum)
         FarmIngredient::create([
-            'farm_id' => $farm->id, 'ingredient_id' => $ing->id, 'harga' => $ing->harga_default,
-            'stok_kg' => 0, 'aktif' => false, 'harga_updated_at' => now(),
+            'farm_id' => $farm->id,
+            'ingredient_id' => $ing->id,
+            'harga' => $ing->harga_default,
+            'stok_kg' => 0,
+            'min_persen' => $ing->min_persen,
+            'max_persen' => $ing->max_persen,
+            'aktif' => false,
+            'harga_updated_at' => now(),
         ]);
 
         return redirect()->route('bahan.index')->with('ok', 'Bahan ditambahkan. Isi stoknya di halaman Racik Ransum.');
