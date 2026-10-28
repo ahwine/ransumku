@@ -766,15 +766,7 @@ async function hapusSemua() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Format semua pesan yang ada di layar
-    document.querySelectorAll('.ai-content-box').forEach(el => {
-        const raw = el.getAttribute('data-raw');
-        if (raw) {
-            el.innerHTML = formatAiMarkdown(raw);
-        }
-    });
-
-    // 2. Cegah native submit pada input teks dengan tombol Enter
+    // Cegah native submit pada input teks dengan tombol Enter
     const inputPesan = document.getElementById('input-pesan');
     if (inputPesan) {
         inputPesan.addEventListener('keydown', (e) => {
