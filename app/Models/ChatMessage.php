@@ -10,4 +10,5 @@ class ChatMessage extends Model
     protected $guarded = [];
 
     public function farm(): BelongsTo { return $this->belongsTo(Farm::class); }
+    public function session(): BelongsTo { return $this->belongsTo(ChatSession::class, 'chat_session_id'); }
 }
