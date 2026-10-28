@@ -47,7 +47,11 @@ Route::middleware('auth')->group(function () {
 
         // Modul C: Asisten
         Route::get('/asisten', [AssistantController::class, 'index'])->name('asisten.index');
-        Route::post('/asisten/chat', [AssistantController::class, 'chat'])->name('asisten.chat')->middleware('throttle:20,1');
+        Route::post('/asisten/chat', [AssistantController::class, 'chat'])->name('asisten.chat')->middleware('throttle:60,1');
+        Route::delete('/asisten/chat', [AssistantController::class, 'hapusChat'])->name('asisten.chat.destroy');
+        Route::match(['get', 'post'], '/asisten/session/baru', [AssistantController::class, 'baru'])->name('asisten.session.baru');
+        Route::post('/asisten/session/{session}/pin', [AssistantController::class, 'pinSession'])->name('asisten.session.pin');
+        Route::delete('/asisten/session/{session}', [AssistantController::class, 'hapusSession'])->name('asisten.session.destroy');
         Route::post('/asisten/baca', [AssistantController::class, 'bacaPeringatan'])->name('asisten.baca');
     });
 });

@@ -17,8 +17,8 @@ return [
     */
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
-        'timeout' => 20,
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
+        'timeout' => 60,
     ],
 
     // Perkiraan umum (dapat diubah peternak)

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\FarmBootstrap;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -134,21 +133,8 @@ class HomeController extends Controller
         ));
     }
 
-    public function lainnya()
-    {
-        return view('lainnya', ['farm' => $this->farm()]);
-    }
-
     public function tentang()
     {
         return view('tentang');
-    }
-
-    /** Setel ulang data kandang ini ke data demo (hanya data milik user sendiri). */
-    public function isiDemo(Request $r, FarmBootstrap $boot)
-    {
-        $boot->resetDemo($this->farm());
-
-        return redirect()->route('beranda')->with('ok', 'Data demo sudah diisi ulang. Peringatan dini akan muncul di beranda.');
     }
 }

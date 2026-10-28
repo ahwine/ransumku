@@ -18,6 +18,7 @@ class Farm extends Model
     public function logs(): HasMany { return $this->hasMany(DailyLog::class); }
     public function purchases(): HasMany { return $this->hasMany(Purchase::class); }
     public function alerts(): HasMany { return $this->hasMany(Alert::class); }
+    public function chatSessions(): HasMany { return $this->hasMany(ChatSession::class); }
     public function chats(): HasMany { return $this->hasMany(ChatMessage::class); }
 
     /** Ransum terakhir yang berhasil dihitung. */
