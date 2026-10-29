@@ -44,6 +44,12 @@ class HomeController extends Controller
         $telurUtuh = $totalTelurIni > 0 ? (int) round($totalTelurIni * 0.995) : 0;
         $telurBentes = $totalTelurIni > 0 ? (int) ($totalTelurIni - $telurUtuh) : 0;
 
+        $kemarinLog = $logs->count() >= 2 ? $logs[$logs->count() - 2] : null;
+        $deltaTelur = null;
+        if ($kemarinLog && $kemarinLog->telur_butir > 0) {
+            $deltaTelur = round((($totalTelurIni - $kemarinLog->telur_butir) / $kemarinLog->telur_butir) * 100, 1);
+        }
+
         // Metrik Kuadran 2: Populasi Ayam
         $totalMatiIni = (int) ($hariIni?->ayam_mati ?? 0);
 
@@ -120,6 +126,7 @@ class HomeController extends Controller
         $chartPopulasi = [
             'type' => 'line',
             'labels' => $chartLabels,
+            'zero' => false,
             'datasets' => [
                 [
                     'label' => 'Populasi (ekor)',
@@ -132,11 +139,48 @@ class HomeController extends Controller
             ],
         ];
 
+        $fcrData = [];
+        if ($logs->isNotEmpty()) {
+            foreach ($logs as $l) {
+                $kgTelur = $l->telurKgEfektif();
+                $fcrData[] = ($kgTelur > 0 && $l->pakan_kg > 0)
+                    ? round($l->pakan_kg / $kgTelur, 2)
+                    : 2.15;
+            }
+        } else {
+            $fcrData = array_fill(0, count($chartLabels), 2.15);
+        }
+
+        $chartFcr = [
+            'type' => 'line',
+            'labels' => $chartLabels,
+            'legend' => true,
+            'zero' => false,
+            'datasets' => [
+                [
+                    'label' => 'FCR Aktual',
+                    'data' => $fcrData,
+                    'borderColor' => '#7C3AED',
+                    'backgroundColor' => '#7C3AED18',
+                    'fill' => true,
+                    'tension' => 0.35,
+                ],
+                [
+                    'label' => 'Standar SNI (2.15)',
+                    'data' => array_fill(0, count($chartLabels), 2.15),
+                    'borderColor' => '#9CA3AF',
+                    'borderDash' => [4, 4],
+                    'fill' => false,
+                    'tension' => 0,
+                ],
+            ],
+        ];
+
         return view('beranda', compact(
             'farm', 'logs', 'hariIni', 'ration', 'biayaKgTelur', 'alerts', 'hargaUsangHari',
             'totalTelurIni', 'totalTelurKgIni', 'rataGrTelur', 'hdPersen', 'telurUtuh', 'telurBentes',
-            'standarPakanGr', 'totalPakanIni', 'gramPerEkor', 'totalMatiIni',
-            'eggMass', 'fcr', 'chartTelur', 'chartPakan', 'chartPopulasi',
+            'deltaTelur', 'standarPakanGr', 'totalPakanIni', 'gramPerEkor', 'totalMatiIni',
+            'eggMass', 'fcr', 'chartTelur', 'chartPakan', 'chartPopulasi', 'chartFcr',
             'weather', 'presetKota'
         ));
     }

@@ -34,4 +34,29 @@ class User extends Authenticatable
     {
         return $this->hasOne(Farm::class);
     }
+
+    public function farms(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Farm::class);
+    }
+
+    /** Kandang aktif saat ini (dari sesi atau kandang pertama milik user). */
+    public function activeFarm(): ?Farm
+    {
+        $activeId = session('active_farm_id');
+        if ($activeId) {
+            $farm = $this->farms()->find($activeId);
+            if ($farm) {
+                return $farm;
+            }
+        }
+
+        $farm = $this->farms()->first();
+        if ($farm) {
+            session(['active_farm_id' => $farm->id]);
+            return $farm;
+        }
+
+        return null;
+    }
 }

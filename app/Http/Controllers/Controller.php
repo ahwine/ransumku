@@ -6,10 +6,10 @@ use App\Models\Farm;
 
 abstract class Controller
 {
-    /** Kandang milik user yang sedang login. */
+    /** Kandang aktif milik user yang sedang login. */
     protected function farm(): Farm
     {
-        return auth()->user()->farm;
+        return auth()->user()->activeFarm() ?? auth()->user()->farm;
     }
 
     /** Otorisasi: model harus milik kandang user (selain itu 404). */

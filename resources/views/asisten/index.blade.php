@@ -778,6 +778,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     scrollToBottom();
+
+    // Auto-fill & auto-submit jika diarahkan dari kartu peringatan dashboard (?tanya=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tanyaParam = urlParams.get('tanya');
+    if (tanyaParam) {
+        setTimeout(() => {
+            isiDanKirim(tanyaParam);
+        }, 350);
+    }
 });
 </script>
 

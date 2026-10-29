@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FarmController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\LogController;
@@ -25,6 +26,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [HomeController::class, 'beranda'])->name('beranda');
         Route::post('/kandang/lokasi', [HomeController::class, 'updateLokasi'])->name('kandang.lokasi');
         Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
+
+        // Modul Manajemen Kandang (Multi-Farm) & Profil Peternak
+        Route::get('/kandang', [FarmController::class, 'index'])->name('kandang.index');
+        Route::post('/kandang', [FarmController::class, 'store'])->name('kandang.store');
+        Route::post('/kandang/switch', [FarmController::class, 'switchFarm'])->name('kandang.switch');
+        Route::put('/kandang/{farm}', [FarmController::class, 'update'])->name('kandang.update');
+        Route::delete('/kandang/{farm}', [FarmController::class, 'destroy'])->name('kandang.destroy');
+        Route::post('/profil', [FarmController::class, 'updateProfile'])->name('profil.update');
 
         // Modul A: Peracik Ransum
         Route::get('/ransum', [RationController::class, 'index'])->name('ransum.index');

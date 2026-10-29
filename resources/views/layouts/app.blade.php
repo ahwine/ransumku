@@ -15,12 +15,10 @@
 </head>
 <body class="min-h-screen bg-[#EBF1EB] text-ink antialiased">
 @php
-    $farmNav = auth()->user()?->farm;
-    $cuacaNav = null;
+    $farmNav = auth()->user()?->activeFarm() ?? auth()->user()?->farm;
+    $unreadAlertsCount = 0;
     if ($farmNav) {
-        try {
-            $cuacaNav = app(\App\Services\WeatherService::class)->getWeather($farmNav);
-        } catch (\Throwable $e) {}
+        $unreadAlertsCount = $farmNav->alerts()->where('dibaca', false)->count();
     }
 @endphp
 
@@ -42,25 +40,25 @@
     <div class="mb-5">
         <span class="px-3 text-[11px] font-black uppercase tracking-wider text-brand block mb-2">MENU UTAMA</span>
         <nav class="space-y-1">
-            <a href="{{ route('beranda') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('beranda') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+            <a href="{{ route('beranda') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('beranda') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('beranda') ? 'text-brand' : '' }}">dashboard</span>
                 <span>Dashboard</span>
             </a>
-            <a href="{{ route('catatan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('catatan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+            <a href="{{ route('catatan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('catatan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('catatan.*') ? 'text-brand' : '' }}">description</span>
                 <span>Buku Kandang</span>
             </a>
-            <a href="{{ route('ransum.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('ransum.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+            <a href="{{ route('ransum.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('ransum.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('ransum.*') ? 'text-brand' : '' }}">calculate</span>
                 <span>Peracik Ransum</span>
             </a>
-            <a href="{{ route('asisten.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('asisten.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+            <a href="{{ route('asisten.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('asisten.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('asisten.*') ? 'text-brand' : '' }}">smart_toy</span>
                     <span>Asisten Cerdas</span>
                 </div>
                 @if (($alertCount = $farmNav?->alerts()->where('dibaca', false)->count() ?? 0) > 0)
-                    <span class="px-2 py-0.5 rounded-full bg-danger text-white text-[10px] font-bold">{{ $alertCount }}</span>
+                    <span class="w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-xs ring-2 ring-white">{{ $alertCount > 9 ? '9+' : $alertCount }}</span>
                 @endif
             </a>
         </nav>
@@ -70,66 +68,66 @@
     <div class="mb-5">
         <span class="px-3 text-[11px] font-black uppercase tracking-wider text-brand block mb-2">PENGATURAN</span>
         <nav class="space-y-1">
-            <a href="{{ route('bahan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('bahan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+            <a href="{{ route('kandang.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('kandang.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('kandang.*') ? 'text-brand' : '' }}">cottage</span>
+                <span>Kelola Kandang</span>
+            </a>
+            <a href="{{ route('bahan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('bahan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('bahan.*') ? 'text-brand' : '' }}">inventory_2</span>
                 <span>Bahan Pakan</span>
             </a>
-            <a href="{{ route('acuan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('acuan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+            <a href="{{ route('acuan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('acuan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('acuan.*') ? 'text-brand' : '' }}">fact_check</span>
                 <span>Acuan Gizi (SNI)</span>
             </a>
-            <a href="{{ route('tentang') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('tentang') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+            <a href="{{ route('tentang') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('tentang') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('tentang') ? 'text-brand' : '' }}">help_outline</span>
                 <span>Tentang RansumKu</span>
             </a>
         </nav>
     </div>
 
-    {{-- Info Farm & Logout di Bagian Bawah Sidebar --}}
-    @if ($farmNav)
-        <div class="mt-auto card !p-3 text-xs bg-surface/60 border-line">
-            <div class="flex items-center gap-2 mb-1">
-                <span class="w-2 h-2 rounded-full bg-lime"></span>
-                <p class="font-bold text-ink truncate">{{ $farmNav->nama }}</p>
-            </div>
-            <p class="text-[11px] text-muted">{{ number_format($farmNav->jumlah_ayam, 0, ',', '.') }} ayam · {{ ucfirst($farmNav->fase) }}</p>
-            <form method="POST" action="{{ route('keluar') }}" class="mt-2 pt-2 border-t border-line/60">@csrf
-                <button class="text-danger font-bold text-tiny cursor-pointer hover:underline">Keluar</button>
-            </form>
-        </div>
-    @endif
+    {{-- Tombol Logout / Keluar di Bagian Bawah Sidebar (Merah Transparan Modern Tanpa Info Farm Redundan) --}}
+    <div class="mt-auto pt-4 border-t border-line/70">
+        <form method="POST" action="{{ route('keluar') }}">
+            @csrf
+            <button type="submit" class="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 hover:text-rose-700 border border-rose-500/20 font-bold text-xs transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.98] group" title="Keluar dari sesi akun">
+                <span class="material-symbols-outlined text-[18px] transition-transform duration-200 group-hover:-translate-x-0.5">logout</span>
+                <span>Keluar</span>
+            </button>
+        </form>
+    </div>
 </aside>
 
-{{-- 2. Top Bar Desktop (Sesuai Referensi: Search + User + Clock) --}}
-<header class="hidden lg:flex fixed top-0 left-64 right-0 h-16 bg-[#EBF1EB]/90 backdrop-blur-md z-30 px-8 items-center justify-between">
-    <div class="relative w-80">
-        <input type="text" placeholder="Search" class="w-full bg-white border border-line rounded-full py-2 pl-4 pr-10 text-xs text-ink placeholder:text-muted focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 shadow-sm" />
-        <span class="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-muted text-[18px]">search</span>
+{{-- 2. Top Bar Desktop / Navbar (Solid White Navbar dengan Breadcrumb & Pill Badges) --}}
+<header class="hidden lg:flex fixed top-0 left-64 right-0 h-16 bg-white border-b border-line shadow-2xs z-30 px-8 items-center justify-between">
+    {{-- Sisi Kiri: Breadcrumb / Judul Halaman Aktif (Menggantikan searchbar) --}}
+    <div class="flex items-center gap-2.5">
+        <span class="text-sm font-extrabold text-ink tracking-tight">@yield('judul', 'Dashboard')</span>
+        <span class="text-muted/60 text-xs">•</span>
+        <span class="text-xs font-medium text-muted">{{ $farmNav->nama ?? 'Kandang Maju Jaya' }}</span>
     </div>
 
-    <div class="flex items-center gap-3">
-        @if ($cuacaNav)
-            {{-- Weather & Heat Stress Indicator Pill --}}
-            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 border border-line/60 shadow-sm text-xs font-semibold text-ink" title="Cuaca: {{ $cuacaNav['cuaca_teks'] }} · Lokasi: {{ $cuacaNav['kota'] }} · THI: {{ $cuacaNav['thi'] }} ({{ $cuacaNav['thi_kategori'] }})">
-                <span class="material-symbols-outlined text-[18px] {{ $cuacaNav['icon_color'] }}">{{ $cuacaNav['icon'] }}</span>
-                <span>{{ $cuacaNav['suhu'] }}°C</span>
-                <span class="text-muted text-[11px] font-normal">RH {{ $cuacaNav['kelembaban'] }}%</span>
-                <span class="w-1.5 h-1.5 rounded-full {{ $cuacaNav['thi_level'] === 'danger' ? 'bg-danger' : ($cuacaNav['thi_level'] === 'warning' ? 'bg-amber-500' : 'bg-lime') }}"></span>
-                <span class="text-[10px] font-bold uppercase tracking-wider {{ $cuacaNav['thi_level'] === 'danger' ? 'text-danger' : ($cuacaNav['thi_level'] === 'warning' ? 'text-amber-700' : 'text-brand') }}">
-                    THI {{ $cuacaNav['thi'] }} · {{ $cuacaNav['thi_kategori_singkat'] }}
-                </span>
-            </div>
-        @endif
+    {{-- Sisi Kanan: Lonceng Notifikasi & Akun Pill Badge --}}
+    <div class="flex items-center gap-2.5">
 
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-line/60 text-xs font-semibold text-ink shadow-sm">
-            <span class="w-6 h-6 rounded-full bg-brand/15 text-brand flex items-center justify-center">
-                <span class="material-symbols-outlined text-[16px]">person</span>
-            </span>
+        {{-- Ikon Lonceng Notifikasi (Opsi A: Direct Link ke Pusat Peringatan dengan Unread Counter) --}}
+        <a href="{{ route('asisten.index', ['tab' => 'peringatan']) }}"
+           class="relative w-9 h-9 rounded-full bg-surface hover:bg-surface-2 border border-line flex items-center justify-center text-ink hover:text-brand transition shadow-2xs group cursor-pointer"
+           title="Pusat Peringatan & Notifikasi Kandang ({{ $unreadAlertsCount }} belum dibaca)">
+            <span class="material-symbols-outlined text-[19px] transition-transform group-hover:scale-110">notifications</span>
+            @if ($unreadAlertsCount > 0)
+                <span class="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-white text-[9px] font-black shadow-sm ring-2 ring-white">
+                    {{ $unreadAlertsCount > 9 ? '9+' : $unreadAlertsCount }}
+                </span>
+            @endif
+        </a>
+
+        {{-- Akun Pill Badge --}}
+        <a href="{{ route('kandang.index') }}" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface hover:bg-surface-2 border border-line text-xs font-semibold text-ink shadow-2xs transition cursor-pointer" title="Kelola Multi-Kandang">
+            <span class="material-symbols-outlined text-[18px] text-brand">person</span>
             <span>{{ auth()->user()->name ?? 'Peternak' }}</span>
-        </div>
-        <button type="button" class="w-8 h-8 rounded-full bg-white/80 border border-line/60 flex items-center justify-center text-brand hover:bg-white transition shadow-sm" title="Jam / Riwayat">
-            <span class="material-symbols-outlined text-[18px]">schedule</span>
-        </button>
+        </a>
     </div>
 </header>
 
@@ -137,22 +135,22 @@
 <header class="lg:hidden fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-b border-line">
     <div class="h-16 px-4 flex items-center justify-between max-w-lg mx-auto">
         <a href="{{ route('beranda') }}" class="flex items-center gap-2.5">
-            <img src="{{ asset('images/logo.png') }}" alt="Logo RansumKu" class="w-8 h-8 object-contain rounded-full shadow-sm shrink-0" />
+            <img src="{{ asset('images/logo.png') }}" alt="Logo RansumKu" class="w-8 h-8 object-contain rounded-lg shadow-2xs shrink-0" />
             <div class="flex items-baseline gap-1.5">
                 <span class="text-xl font-black text-brand">RansumKu</span>
                 <span class="text-xs text-muted font-bold">· @yield('judul', 'Dashboard')</span>
             </div>
         </a>
         <div class="flex items-center gap-2">
-            @if ($cuacaNav)
-                <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface border border-line text-xs font-bold text-ink" title="{{ $cuacaNav['cuaca_teks'] }} · THI {{ $cuacaNav['thi'] }}">
-                    <span class="material-symbols-outlined text-[15px] {{ $cuacaNav['icon_color'] }}">{{ $cuacaNav['icon'] }}</span>
-                    <span>{{ $cuacaNav['suhu'] }}°C</span>
-                </div>
-            @endif
-            <div class="w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center" aria-label="Akun">
-                <span class="material-symbols-outlined text-[18px]">person</span>
-            </div>
+            <a href="{{ route('asisten.index', ['tab' => 'peringatan']) }}" class="relative w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center cursor-pointer" aria-label="Notifikasi">
+                <span class="material-symbols-outlined text-[18px]">notifications</span>
+                @if ($unreadAlertsCount > 0)
+                    <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-white"></span>
+                @endif
+            </a>
+            <a href="{{ route('kandang.index') }}" class="w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center cursor-pointer" aria-label="Kelola Kandang" title="Kelola Kandang">
+                <span class="material-symbols-outlined text-[18px]">cottage</span>
+            </a>
         </div>
     </div>
 </header>

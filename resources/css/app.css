@@ -64,46 +64,46 @@
 
 @layer components {
     .card {
-        @apply bg-card rounded-2xl p-4 border border-line;
-        box-shadow: 0 4px 16px -2px rgba(0, 36, 21, 0.04), 0 2px 6px -1px rgba(0, 36, 21, 0.02);
+        @apply bg-card rounded-xl p-4 md:p-5 border border-line;
+        box-shadow: 0 1px 3px 0 rgba(0, 36, 21, 0.04), 0 1px 2px -1px rgba(0, 36, 21, 0.02);
     }
     .btn {
-        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer;
+        @apply inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-lg font-bold text-sm transition active:scale-[.98] cursor-pointer;
     }
     .btn-primary {
-        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer bg-brand text-white hover:bg-brand-dark shadow-[0_4px_14px_rgba(0,36,21,0.18)];
+        @apply inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-lg font-bold text-sm transition active:scale-[.98] cursor-pointer bg-brand text-white hover:bg-brand-dark shadow-xs hover:shadow-sm;
     }
     .btn-amber {
-        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer bg-amber text-primary hover:bg-[#feb235] shadow-[0_4px_14px_rgba(253,177,52,0.25)];
+        @apply inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-lg font-bold text-sm transition active:scale-[.98] cursor-pointer bg-amber text-primary hover:bg-[#feb235] shadow-xs;
     }
     .btn-outline {
-        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer border border-line text-ink bg-white hover:bg-surface shadow-[0_2px_6px_rgba(0,36,21,0.04)];
+        @apply inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-lg font-bold text-sm transition active:scale-[.98] cursor-pointer border border-line text-ink bg-white hover:bg-surface shadow-2xs;
     }
     .btn-danger {
-        @apply inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-full font-bold text-base transition active:scale-[.98] cursor-pointer bg-danger text-white shadow-sm;
+        @apply inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-lg font-bold text-sm transition active:scale-[.98] cursor-pointer bg-danger text-white shadow-xs;
     }
     .btn-sm {
-        @apply min-h-10 px-4 text-sm;
+        @apply min-h-9 px-3.5 text-xs rounded-lg;
     }
     .field {
-        @apply w-full min-h-[52px] px-4 rounded-xl bg-white border border-line text-base font-medium outline-none transition text-ink focus:border-brand focus:ring-2 focus:ring-brand/15;
+        @apply w-full min-h-[46px] px-3.5 rounded-lg bg-white border border-line text-sm font-medium outline-none transition text-ink focus:border-brand focus:ring-2 focus:ring-brand/15;
     }
     .lbl {
         @apply block text-lbl text-muted font-semibold mb-1;
     }
     .chip {
-        @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-tiny font-bold;
+        @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-tiny font-bold;
     }
     .notice {
-        @apply rounded-xl p-3 flex gap-2 items-start text-sm border border-line/60;
+        @apply rounded-lg p-3 flex gap-2 items-start text-sm border border-line/60;
     }
     .tag-est {
-        @apply text-tiny px-2 py-0.5 rounded-full bg-surface text-muted font-bold tracking-wide;
+        @apply text-tiny px-2 py-0.5 rounded-md bg-surface text-muted font-bold tracking-wide;
     }
 
     /* AgriVision Status Badges */
     .badge {
-        @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-tiny font-semibold whitespace-nowrap;
+        @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-tiny font-semibold whitespace-nowrap;
     }
     .badge-dot {
         @apply w-1.5 h-1.5 rounded-full shrink-0;
