@@ -92,10 +92,25 @@ class AnomalyDetector
     public function evaluate(Farm $farm): void
     {
         foreach ($this->deteksi($farm) as $a) {
-            Alert::firstOrCreate(
-                ['farm_id' => $farm->id, 'jenis' => $a['jenis'], 'tanggal_data' => $a['tanggal']],
-                ['pesan' => $a['pesan'], 'level' => $a['level']]
-            );
+            $alert = Alert::where('farm_id', $farm->id)
+                ->where('jenis', $a['jenis'])
+                ->whereDate('tanggal_data', $a['tanggal'])
+                ->first();
+
+            if ($alert) {
+                $alert->update([
+                    'pesan' => $a['pesan'],
+                    'level' => $a['level'],
+                ]);
+            } else {
+                Alert::create([
+                    'farm_id' => $farm->id,
+                    'jenis' => $a['jenis'],
+                    'tanggal_data' => $a['tanggal'],
+                    'pesan' => $a['pesan'],
+                    'level' => $a['level'],
+                ]);
+            }
         }
     }
 

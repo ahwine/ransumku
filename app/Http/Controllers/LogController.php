@@ -28,14 +28,32 @@ class LogController extends Controller
 
         $laporan = $this->laporanMingguan($farm, $harga);
 
-        $form = $farm->logs()->whereDate('tanggal', $r->query('tanggal', today()->toDateString()))->first() ?? new DailyLog(['tanggal' => today()]);
+        $selectedDate = $r->query('tanggal', today()->toDateString());
+        $form = $farm->logs()->whereDate('tanggal', $selectedDate)->first() ?? new DailyLog(['tanggal' => \Illuminate\Support\Carbon::parse($selectedDate)]);
+        $isEdit = $farm->logs()->whereDate('tanggal', $selectedDate)->exists();
         $riwayat = $farm->logs()->orderByDesc('tanggal')->limit(10)->get();
+
+        $yesterdayDate = today()->subDay()->toDateString();
+        $yesterdayLog = $farm->logs()->whereDate('tanggal', $yesterdayDate)->first();
+        $jumlahAyam = max(1, (int) $farm->jumlah_ayam);
+
+        // Peta ringkas catatan untuk deteksi ganti tanggal di form
+        $existingLogs = $farm->logs()->latest('tanggal')->limit(30)->get()->mapWithKeys(function ($l) {
+            return [$l->tanggal->toDateString() => [
+                'pakan_kg' => (float) $l->pakan_kg,
+                'telur_butir' => (int) $l->telur_butir,
+                'telur_kg' => $l->telur_kg !== null ? (float) $l->telur_kg : null,
+                'ayam_mati' => (int) $l->ayam_mati,
+                'biaya_lain' => (int) $l->biaya_lain,
+                'catatan' => (string) ($l->catatan ?? ''),
+            ]];
+        });
 
         $beli = $farm->purchases()->with('ingredient')->latest('tanggal')->latest('id')->limit(8)->get();
         $bahan = $farm->ingredients()->orderBy('nama')->get();
         $selisihTotal = $beli->sum(fn ($p) => ($p->harga_nyata - $p->harga_estimasi) * $p->kg);
 
-        return view('catatan.index', compact('rentang', 'grafik', 'laporan', 'form', 'riwayat', 'beli', 'bahan', 'selisihTotal', 'harga'));
+        return view('catatan.index', compact('farm', 'rentang', 'grafik', 'laporan', 'form', 'isEdit', 'riwayat', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam'));
     }
 
     public function store(Request $r, AnomalyDetector $detector)
@@ -52,10 +70,16 @@ class LogController extends Controller
         $data['ayam_mati'] = $data['ayam_mati'] ?? 0;
         $data['biaya_lain'] = $data['biaya_lain'] ?? 0;
 
-        $this->farm()->logs()->updateOrCreate(['tanggal' => $data['tanggal']], $data);
+        $log = $this->farm()->logs()->whereDate('tanggal', $data['tanggal'])->first();
+        if ($log) {
+            $log->update($data);
+        } else {
+            $this->farm()->logs()->create($data);
+        }
+
         $detector->evaluate($this->farm());
 
-        return redirect()->route('catatan.index')->with('ok', 'Catatan tersimpan.');
+        return redirect()->route('catatan.index', ['tab' => 'form'])->with('ok', 'Catatan harian berhasil disimpan!');
     }
 
     public function destroy(DailyLog $log)
@@ -72,15 +96,35 @@ class LogController extends Controller
             'kg' => 'required|numeric|min:0.1|max:100000',
             'harga_nyata' => 'required|integer|min:0',
             'tanggal' => 'required|date|before_or_equal:today',
+            'tambah_stok' => 'nullable|boolean',
         ]);
 
         $farm = $this->farm();
         $ing = $farm->ingredients()->findOrFail($data['ingredient_id']);
         $est = (int) ($farm->farmIngredients()->where('ingredient_id', $ing->id)->value('harga') ?? $ing->harga_default);
 
-        $farm->purchases()->create($data + ['harga_estimasi' => $est]);
+        $farm->purchases()->create([
+            'ingredient_id' => $data['ingredient_id'],
+            'kg' => $data['kg'],
+            'harga_nyata' => $data['harga_nyata'],
+            'harga_estimasi' => $est,
+            'tanggal' => $data['tanggal'],
+        ]);
 
-        return redirect()->route('catatan.index', ['tab' => 'beli'])->with('ok', 'Pembelian dicatat.');
+        $msg = 'Pembelian bahan berhasil dicatat!';
+        if ($r->boolean('tambah_stok')) {
+            $farmIng = $farm->farmIngredients()->where('ingredient_id', $ing->id)->first();
+            if ($farmIng) {
+                $farmIng->increment('stok_kg', $data['kg']);
+                $farmIng->update([
+                    'harga' => $data['harga_nyata'],
+                    'harga_updated_at' => now(),
+                ]);
+                $msg = 'Pembelian dicatat & stok gudang berhasil ditambahkan!';
+            }
+        }
+
+        return redirect()->route('catatan.index', ['tab' => 'beli'])->with('ok', $msg);
     }
 
     private function chart(string $type, array $labels, string $label, array $data, string $warna): array

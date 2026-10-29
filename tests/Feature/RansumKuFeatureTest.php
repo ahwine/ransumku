@@ -90,4 +90,44 @@ class RansumKuFeatureTest extends TestCase
             'role' => 'user',
         ]);
     }
+
+    public function test_simpan_dan_perbarui_catatan_harian_tanpa_duplicate_key_error(): void
+    {
+        $user = User::where('email', 'demo@ransumku.test')->first();
+        $this->actingAs($user);
+
+        // 1. Simpan catatan hari ini
+        $response1 = $this->post(route('catatan.store'), [
+            'tanggal' => today()->toDateString(),
+            'pakan_kg' => 22.0,
+            'telur_butir' => 170,
+            'telur_kg' => 10.5,
+            'ayam_mati' => 0,
+            'biaya_lain' => 0,
+            'catatan' => 'Pencatatan pertama',
+        ]);
+        $response1->assertRedirect(route('catatan.index', ['tab' => 'form']));
+        $this->assertDatabaseHas('daily_logs', [
+            'farm_id' => $user->farm->id,
+            'telur_butir' => 170,
+        ]);
+
+        // 2. Perbarui catatan tanggal yang sama persis (harus update, bukan duplicate error)
+        $response2 = $this->post(route('catatan.store'), [
+            'tanggal' => today()->toDateString(),
+            'pakan_kg' => 23.0,
+            'telur_butir' => 180,
+            'telur_kg' => 11.2,
+            'ayam_mati' => 0,
+            'biaya_lain' => 0,
+            'catatan' => 'Pencatatan diperbarui',
+        ]);
+        $response2->assertRedirect(route('catatan.index', ['tab' => 'form']));
+        $this->assertDatabaseHas('daily_logs', [
+            'farm_id' => $user->farm->id,
+            'pakan_kg' => 23.0,
+            'telur_butir' => 180,
+            'catatan' => 'Pencatatan diperbarui',
+        ]);
+    }
 }
