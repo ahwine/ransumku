@@ -15,18 +15,20 @@
     $tabAktif = request()->query('tab', 'form');
 @endphp
 
-<div data-tabs class="space-y-4">
-    <div data-tab-nav class="relative grid grid-cols-3 gap-1 p-1 rounded-full bg-surface-2 text-center text-sm font-bold select-none">
-        <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
-        <button type="button" data-tab="form" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'form' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
-            Catat Harian
-        </button>
-        <button type="button" data-tab="dashboard" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'dashboard' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
-            Dashboard
-        </button>
-        <button type="button" data-tab="beli" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'beli' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
-            Belanja Pakan
-        </button>
+<div data-tabs class="space-y-5">
+    <div class="flex justify-center">
+        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-3 gap-1 p-1.5 rounded-full text-center text-xs sm:text-sm font-bold select-none w-full max-w-md">
+            <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
+            <button type="button" data-tab="form" class="relative z-10 py-2 sm:py-2.5 px-2 sm:px-3 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
+                Catat Harian
+            </button>
+            <button type="button" data-tab="dashboard" class="relative z-10 py-2 sm:py-2.5 px-2 sm:px-3 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
+                Dashboard
+            </button>
+            <button type="button" data-tab="beli" class="relative z-10 py-2 sm:py-2.5 px-2 sm:px-3 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
+                Belanja Pakan
+            </button>
+        </div>
     </div>
 
     {{-- Panel 1: Form Catatan Harian --}}

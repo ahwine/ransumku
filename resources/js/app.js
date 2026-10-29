@@ -109,8 +109,8 @@ function initSlidingTabs() {
         };
 
         const activeBtn = buttons.find((b) => b.classList.contains('active-tab')) ||
+            buttons.find((b) => b.classList.contains('bg-white')) ||
             buttons.find((b) => b.classList.contains('bg-brand')) ||
-            buttons.find((b) => !b.classList.contains('text-muted') && b.classList.contains('text-white')) ||
             buttons[0];
 
         let currentIndex = buttons.indexOf(activeBtn);
@@ -126,14 +126,14 @@ function initSlidingTabs() {
             buttons.forEach((b) => {
                 const isActive = b === targetBtn;
                 b.classList.toggle('active-tab', isActive);
-                b.classList.remove('bg-brand');
+                b.classList.remove('bg-brand', 'bg-white', 'shadow-xs', 'shadow-sm', 'text-white');
 
                 if (isActive) {
-                    b.classList.remove('text-muted', 'hover:text-ink');
-                    b.classList.add('text-white', 'font-bold');
+                    b.classList.remove('text-muted');
+                    b.classList.add('text-ink', 'font-bold');
                 } else {
-                    b.classList.remove('text-white');
-                    b.classList.add('text-muted', 'hover:text-ink', 'font-bold');
+                    b.classList.remove('text-ink');
+                    b.classList.add('text-muted', 'hover:text-ink', 'font-semibold');
                 }
             });
 
@@ -178,6 +178,10 @@ function initSlidingTabs() {
         switchTab(activeBtn, false);
         slider.classList.add('is-ready');
 
+        // Double check position on next tick to handle any font/layout shifts
+        requestAnimationFrame(() => updateSlider(activeBtn, false));
+        setTimeout(() => updateSlider(activeBtn, false), 50);
+
         window.addEventListener('resize', () => {
             const currentActive = buttons.find((b) => b.classList.contains('active-tab')) || buttons[0];
             updateSlider(currentActive, false);
@@ -192,7 +196,11 @@ function initSlidingTabs() {
     });
 }
 
-initSlidingTabs();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSlidingTabs);
+} else {
+    initSlidingTabs();
+}
 
 // Mode jumlah campuran: kg langsung / berdasarkan hari
 document.querySelectorAll('input[name="mode"]').forEach((r) => {
