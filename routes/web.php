@@ -23,9 +23,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('farm')->group(function () {
         Route::get('/', [HomeController::class, 'beranda'])->name('beranda');
-        Route::get('/lainnya', [HomeController::class, 'lainnya'])->name('lainnya');
         Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
-        Route::post('/demo/isi', [HomeController::class, 'isiDemo'])->name('demo.isi');
 
         // Modul A: Peracik Ransum
         Route::get('/ransum', [RationController::class, 'index'])->name('ransum.index');
