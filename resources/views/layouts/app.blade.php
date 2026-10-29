@@ -72,10 +72,6 @@
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('acuan.*') ? 'text-brand' : '' }}">fact_check</span>
                 <span>Acuan Gizi (SNI)</span>
             </a>
-            <a href="{{ route('lainnya') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('lainnya') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('lainnya') ? 'text-brand' : '' }}">tune</span>
-                <span>Pengaturan Demo</span>
-            </a>
             <a href="{{ route('tentang') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition {{ request()->routeIs('tentang') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('tentang') ? 'text-brand' : '' }}">help_outline</span>
                 <span>Tentang RansumKu</span>
@@ -106,13 +102,12 @@
     </div>
 
     <div class="flex items-center gap-3">
-        <a href="{{ route('lainnya') }}" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 hover:bg-white border border-line/60 transition text-xs font-semibold text-ink shadow-sm">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-line/60 text-xs font-semibold text-ink shadow-sm">
             <span class="w-6 h-6 rounded-full bg-brand/15 text-brand flex items-center justify-center">
                 <span class="material-symbols-outlined text-[16px]">person</span>
             </span>
             <span>{{ auth()->user()->name ?? 'Peternak' }}</span>
-            <span class="material-symbols-outlined text-[16px] text-muted">expand_more</span>
-        </a>
+        </div>
         <button type="button" class="w-8 h-8 rounded-full bg-white/80 border border-line/60 flex items-center justify-center text-brand hover:bg-white transition shadow-sm" title="Jam / Riwayat">
             <span class="material-symbols-outlined text-[18px]">schedule</span>
         </button>
@@ -129,9 +124,9 @@
                 <span class="text-xs text-muted font-bold">· @yield('judul', 'Dashboard')</span>
             </div>
         </a>
-        <a href="{{ route('lainnya') }}" class="w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center hover:bg-surface-2 transition" aria-label="Akun">
+        <div class="w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center" aria-label="Akun">
             <span class="material-symbols-outlined text-[18px]">person</span>
-        </a>
+        </div>
     </div>
 </header>
 
@@ -173,9 +168,9 @@
             <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('asisten.*') ? 'icon-fill' : '' }}">smart_toy</span>
             <span class="text-[10px] mt-0.5">Asisten</span>
         </a>
-        <a href="{{ route('lainnya') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('lainnya|bahan.*|acuan.*|tentang') ? 'text-brand font-bold' : 'text-muted' }}">
-            <span class="material-symbols-outlined text-[22px]">more_horiz</span>
-            <span class="text-[10px] mt-0.5">Lainnya</span>
+        <a href="{{ route('bahan.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('bahan.*|acuan.*|tentang') ? 'text-brand font-bold' : 'text-muted' }}">
+            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('bahan.*|acuan.*|tentang') ? 'icon-fill' : '' }}">inventory_2</span>
+            <span class="text-[10px] mt-0.5">Bahan</span>
         </a>
     </div>
 </nav>
