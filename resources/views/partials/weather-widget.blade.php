@@ -5,12 +5,18 @@
     $dampakAyam = $weather['dampak_ayam'] ?? ($weather['deskripsi_risiko'] ?? 'Kondisi fisiologi ayam terpantau aman.');
 @endphp
 <div class="space-y-4">
-    {{-- Baris 1: Header Cuaca Ramping (Judul & Timestamp Bersih Tanpa Badge Duplikat) --}}
-    <div class="flex items-center justify-between pb-3 border-b border-line">
-        <span class="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>
-            <span>Cuaca Mikro Kandang</span>
-        </span>
+    {{-- Baris 1: Header Cuaca Ramping (Judul, Sumber Data, & Timestamp Bersih) --}}
+    <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-line">
+        <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>
+                <span>Cuaca Mikro Kandang</span>
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface border border-line text-[11px] font-medium text-muted">
+                <span class="w-1.5 h-1.5 rounded-full {{ ($weather['sumber'] ?? '') === 'sensor' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500' }}"></span>
+                <span>{{ ($weather['sumber'] ?? '') === 'sensor' ? 'Sensor IoT Kandang' : 'Open-Meteo' }}</span>
+            </span>
+        </div>
         <span class="text-tiny font-medium text-muted">Pembaruan: {{ $weather['updated_at'] }}</span>
     </div>
 
@@ -160,8 +166,17 @@
             </div>
 
             {{-- Dampak Fisiologi Ayam Petelur --}}
-            <div class="flex items-center gap-2 pt-2 border-t border-line/60 text-xs">
-                <span class="material-symbols-outlined text-[16px] text-amber-600 shrink-0">info</span>
+            <div class="flex items-start gap-2 pt-1 border-t border-line/60 text-xs">
+                <span class="w-5 h-5 rounded-md bg-brand/10 text-brand grid place-items-center shrink-0 mt-0.5" title="Kondisi Fisiologi Unggas">
+                    <svg class="w-3.5 h-3.5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 7h.01" />
+                        <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+                        <path d="m20 7 2 .5-2 .5" />
+                        <path d="M10 18v3" />
+                        <path d="M14 17.75V21" />
+                        <path d="M7 18a6 6 0 0 0 3.84-10.61" />
+                    </svg>
+                </span>
                 <p class="text-ink font-medium leading-relaxed">
                     <strong class="font-bold">Kondisi Ayam:</strong> {{ $dampakAyam }}
                 </p>

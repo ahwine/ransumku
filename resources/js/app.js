@@ -88,7 +88,7 @@ function initSlidingTabs() {
             if (!animate) {
                 slider.style.transition = 'none';
             } else {
-                slider.style.transition = 'transform 320ms cubic-bezier(0.25, 1, 0.5, 1), width 320ms cubic-bezier(0.25, 1, 0.5, 1), height 320ms cubic-bezier(0.25, 1, 0.5, 1), opacity 150ms ease';
+                slider.style.transition = 'transform 340ms cubic-bezier(0.25, 1, 0.5, 1), width 340ms cubic-bezier(0.25, 1, 0.5, 1), height 340ms cubic-bezier(0.25, 1, 0.5, 1)';
             }
 
             const x = targetBtn.offsetLeft;
@@ -103,14 +103,14 @@ function initSlidingTabs() {
             if (!animate) {
                 void slider.offsetHeight; // Force reflow
                 requestAnimationFrame(() => {
-                    slider.style.transition = 'transform 320ms cubic-bezier(0.25, 1, 0.5, 1), width 320ms cubic-bezier(0.25, 1, 0.5, 1), height 320ms cubic-bezier(0.25, 1, 0.5, 1), opacity 150ms ease';
+                    slider.style.transition = 'transform 340ms cubic-bezier(0.25, 1, 0.5, 1), width 340ms cubic-bezier(0.25, 1, 0.5, 1), height 340ms cubic-bezier(0.25, 1, 0.5, 1)';
                 });
             }
         };
 
         const activeBtn = buttons.find((b) => b.classList.contains('active-tab')) ||
+            buttons.find((b) => b.classList.contains('bg-white')) ||
             buttons.find((b) => b.classList.contains('bg-brand')) ||
-            buttons.find((b) => !b.classList.contains('text-muted') && b.classList.contains('text-white')) ||
             buttons[0];
 
         let currentIndex = buttons.indexOf(activeBtn);
@@ -126,14 +126,14 @@ function initSlidingTabs() {
             buttons.forEach((b) => {
                 const isActive = b === targetBtn;
                 b.classList.toggle('active-tab', isActive);
-                b.classList.remove('bg-brand');
+                b.classList.remove('bg-brand', 'bg-white', 'shadow-xs', 'shadow-sm', 'text-white');
 
                 if (isActive) {
-                    b.classList.remove('text-muted', 'hover:text-ink');
-                    b.classList.add('text-white', 'font-bold');
+                    b.classList.remove('text-muted');
+                    b.classList.add('text-ink', 'font-bold');
                 } else {
-                    b.classList.remove('text-white');
-                    b.classList.add('text-muted', 'hover:text-ink', 'font-bold');
+                    b.classList.remove('text-ink');
+                    b.classList.add('text-muted', 'hover:text-ink', 'font-semibold');
                 }
             });
 
@@ -164,7 +164,12 @@ function initSlidingTabs() {
                 // Ignore url parse errors
             }
 
-            window.dispatchEvent(new Event('resize'));
+            // Resize Chart.js instances cleanly if visible
+            setTimeout(() => {
+                if (window.Chart && window.Chart.instances) {
+                    Object.values(window.Chart.instances).forEach((ci) => ci.resize());
+                }
+            }, 60);
         };
 
         buttons.forEach((btn) => {
@@ -178,9 +183,19 @@ function initSlidingTabs() {
         switchTab(activeBtn, false);
         slider.classList.add('is-ready');
 
+        // Double check position on next tick to handle any font/layout shifts
+        requestAnimationFrame(() => updateSlider(activeBtn, false));
+        setTimeout(() => updateSlider(activeBtn, false), 50);
+
+        let prevW = window.innerWidth;
+        let prevH = window.innerHeight;
         window.addEventListener('resize', () => {
-            const currentActive = buttons.find((b) => b.classList.contains('active-tab')) || buttons[0];
-            updateSlider(currentActive, false);
+            if (window.innerWidth !== prevW || window.innerHeight !== prevH) {
+                prevW = window.innerWidth;
+                prevH = window.innerHeight;
+                const currentActive = buttons.find((b) => b.classList.contains('active-tab')) || buttons[0];
+                updateSlider(currentActive, false);
+            }
         });
 
         if (document.fonts?.ready) {
@@ -192,7 +207,11 @@ function initSlidingTabs() {
     });
 }
 
-initSlidingTabs();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSlidingTabs);
+} else {
+    initSlidingTabs();
+}
 
 // Mode jumlah campuran: kg langsung / berdasarkan hari
 document.querySelectorAll('input[name="mode"]').forEach((r) => {
@@ -214,3 +233,98 @@ const hitungHari = () => {
 };
 ['jumlah_hari', 'jumlah_ayam', 'konsumsi'].forEach((id) => document.getElementById(id)?.addEventListener('input', hitungHari));
 hitungHari();
+
+// Custom Floating Dropdown (Sentra Peternakan & City Selector)
+window.toggleCustomDropdown = function (dropdownId, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+
+    const menu = container.querySelector('.dropdown-menu');
+    const caret = container.querySelector('.dropdown-caret');
+    const trigger = container.querySelector('.dropdown-trigger');
+    const isOpen = menu && !menu.classList.contains('hidden');
+
+    // Close all custom dropdowns first
+    document.querySelectorAll('.custom-dropdown-container').forEach((c) => {
+        const m = c.querySelector('.dropdown-menu');
+        const crt = c.querySelector('.dropdown-caret');
+        const trg = c.querySelector('.dropdown-trigger');
+        if (m) m.classList.add('hidden');
+        c.classList.remove('z-50');
+        const sec = c.closest('[data-dropdown-section]');
+        if (sec) sec.style.zIndex = '';
+        if (crt) crt.classList.remove('rotate-180');
+        if (trg) {
+            trg.setAttribute('aria-expanded', 'false');
+            trg.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
+        }
+    });
+
+    if (!isOpen && menu) {
+        menu.classList.remove('hidden');
+        container.classList.add('z-50');
+        const sec = container.closest('[data-dropdown-section]');
+        if (sec) sec.style.zIndex = '999';
+        if (caret) caret.classList.add('rotate-180');
+        if (trigger) {
+            trigger.setAttribute('aria-expanded', 'true');
+            trigger.classList.add('ring-2', 'ring-brand/20', 'border-brand');
+        }
+    }
+};
+
+window.selectCustomDropdownKota = function (dropdownId, value) {
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+
+    const form = container.querySelector('form');
+    const hiddenInput = container.querySelector('input[name="kota"]');
+    if (hiddenInput && form) {
+        hiddenInput.value = value;
+        form.submit();
+    }
+};
+
+// Global event: Click outside closes any active dropdown
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-dropdown-container')) {
+        document.querySelectorAll('.custom-dropdown-container').forEach((c) => {
+            const m = c.querySelector('.dropdown-menu');
+            const crt = c.querySelector('.dropdown-caret');
+            const trg = c.querySelector('.dropdown-trigger');
+            if (m) m.classList.add('hidden');
+            c.classList.remove('z-50');
+            const sec = c.closest('[data-dropdown-section]');
+            if (sec) sec.style.zIndex = '';
+            if (crt) crt.classList.remove('rotate-180');
+            if (trg) {
+                trg.setAttribute('aria-expanded', 'false');
+                trg.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
+            }
+        });
+    }
+});
+
+// Global event: Escape key closes any active dropdown
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.custom-dropdown-container').forEach((c) => {
+            const m = c.querySelector('.dropdown-menu');
+            const crt = c.querySelector('.dropdown-caret');
+            const trg = c.querySelector('.dropdown-trigger');
+            if (m) m.classList.add('hidden');
+            c.classList.remove('z-50');
+            const sec = c.closest('[data-dropdown-section]');
+            if (sec) sec.style.zIndex = '';
+            if (crt) crt.classList.remove('rotate-180');
+            if (trg) {
+                trg.setAttribute('aria-expanded', 'false');
+                trg.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
+            }
+        });
+    }
+});
+

@@ -8,7 +8,7 @@
     <div class="bg-white rounded-xl border border-line shadow-2xs overflow-hidden">
 
         {{-- 1. Baris Atas: Identitas Kandang & Toolbar Metrik --}}
-        <div class="p-4 md:p-5 border-b border-line space-y-3 bg-white">
+        <div data-dropdown-section class="p-4 md:p-5 border-b border-line space-y-3 bg-white relative z-30">
             {{-- Header Baris Atas: Nama Kandang di Kiri & Tombol Aksi Sejajar Horizontal di Kanan --}}
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h1 class="text-lg md:text-xl font-extrabold text-ink tracking-tight whitespace-nowrap flex items-center gap-2">
@@ -33,20 +33,10 @@
             </div>
 
             {{-- Baris Bawah: 4 Badges Metadata Konteks & Status Kandang --}}
-            <div class="flex flex-wrap items-center gap-2 text-xs">
-                {{-- 1. Badge Kota Sentra Peternakan --}}
+            <div class="flex flex-wrap items-center gap-2 text-xs relative z-40">
+                {{-- 1. Dropdown Pilih Sentra Peternakan --}}
                 @if (isset($presetKota))
-                    <form method="POST" action="{{ route('kandang.lokasi') }}" class="inline-flex items-center">
-                        @csrf
-                        <div class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full border border-line bg-surface hover:bg-surface-2 transition text-xs font-semibold text-ink shadow-2xs cursor-pointer" title="Ubah lokasi sentra kandang">
-                            <span class="material-symbols-outlined text-[15px] text-brand">location_on</span>
-                            <select name="kota" onchange="this.form.submit()" class="bg-transparent text-xs font-bold text-ink focus:outline-none cursor-pointer pr-1">
-                                @foreach ($presetKota as $k => $p)
-                                    <option value="{{ $k }}" @selected(($farm->lokasi_kota ?? 'Surabaya') === $k)>{{ $p['nama'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </form>
+                    @include('partials.dropdown-lokasi', ['idSuffix' => 'topbar', 'btnClass' => 'bg-surface hover:bg-surface-2 border-line text-ink'])
                 @endif
 
                 {{-- 2. Badge Tanggal --}}
@@ -71,13 +61,13 @@
 
         {{-- Widget Visual Cuaca Mikro & Indeks Stres Panas (THI) Kandang --}}
         @if (isset($weather))
-            <div class="border-b border-line p-5 md:p-6 bg-white">
+            <div class="border-b border-line p-5 md:p-6 bg-white relative z-10">
                 @include('partials.weather-widget')
             </div>
         @endif
 
         {{-- 2. 4-Kuadran Grid Analitikal Sempurna 2x2 (Stock Market / Financial Terminal Style) --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y divide-line">
+        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y divide-line relative z-0">
 
             {{-- Kuadran 1: Produksi Telur (Top-Left) --}}
             <div class="p-5 md:p-6 space-y-3.5 border-b border-line lg:border-r">

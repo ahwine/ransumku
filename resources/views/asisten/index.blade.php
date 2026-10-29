@@ -31,12 +31,12 @@
 @endphp
 
 <div data-tabs class="space-y-4">
-    <div data-tab-nav class="relative grid grid-cols-2 gap-1 p-1 rounded-full bg-surface-2 text-center text-sm font-bold select-none">
+    <div data-tab-nav class="tab-segmented-track relative grid grid-cols-2 gap-1 p-1.5 rounded-full text-center text-xs sm:text-sm font-bold select-none w-full">
         <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
-        <button type="button" data-tab="tanya" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'tanya' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
+        <button type="button" data-tab="tanya" class="relative z-10 py-2.5 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
             Tanya Asisten AI
         </button>
-        <button type="button" data-tab="peringatan" class="relative z-10 py-2.5 rounded-full transition-colors duration-200 cursor-pointer {{ $tabAktif === 'peringatan' ? 'active-tab bg-brand text-white' : 'text-muted hover:text-ink' }}">
+        <button type="button" data-tab="peringatan" class="relative z-10 py-2.5 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
             Peringatan Dini ({{ $alerts->where('dibaca', false)->count() }})
         </button>
     </div>
