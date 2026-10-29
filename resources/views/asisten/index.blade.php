@@ -55,11 +55,11 @@
         @endif
 
         {{-- ChatGPT Interface Window --}}
-        <div class="card !p-0 overflow-hidden border border-[#2b352f] shadow-lg grid grid-cols-1 md:grid-cols-12 min-h-[640px] rounded-2xl bg-[#171c19] text-[#e3e8e5]">
+        <div class="card !p-0 overflow-hidden border border-[#2b352f] shadow-lg flex flex-col md:flex-row min-h-[660px] rounded-2xl bg-[#171c19] text-[#e3e8e5] chatgpt-layout-container">
             
-            {{-- Left Sidebar: ChatGPT Navigation (Pinned & Recents) --}}
-            <aside class="md:col-span-4 lg:col-span-4 bg-[#121614] border-r border-[#26312a] flex flex-col justify-between select-none">
-                <div class="p-3.5 space-y-3.5">
+            {{-- Left Sidebar: ChatGPT Navigation (Pinned & Recents & Akun) --}}
+            <aside class="chatgpt-sidebar w-full md:w-72 lg:w-80 shrink-0 bg-[#121614] border-b md:border-b-0 md:border-r border-[#26312a] flex flex-col justify-between select-none">
+                <div class="p-3.5 space-y-3.5 flex-1 flex flex-col min-h-0">
                     {{-- Tombol + Obrolan Baru --}}
                     <button type="button" onclick="mulaiObrolanBaru()" class="w-full py-2.5 px-3.5 rounded-xl bg-[#1d2520] hover:bg-[#253029] border border-[#2f3d34] text-white text-xs font-semibold flex items-center justify-between transition-all duration-150 shadow-xs cursor-pointer group">
                         <div class="flex items-center gap-2">
@@ -145,7 +145,7 @@
                 </div>
 
                 {{-- Footer Sidebar: Profil Pengguna (Sesuai Screenshot ChatGPT) --}}
-                <div class="p-3 border-t border-[#26312a] bg-[#0e1210] flex items-center justify-between text-xs">
+                <div class="p-3 border-t border-[#26312a] bg-[#0e1210] flex items-center justify-between text-xs shrink-0">
                     <div class="flex items-center gap-2.5 truncate min-w-0 pr-2">
                         <div class="w-8 h-8 rounded-full bg-[#1b2b21] border border-[#2f4236] text-lime grid place-items-center font-bold text-xs shrink-0 shadow-xs">
                             {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
@@ -162,7 +162,7 @@
             </aside>
 
             {{-- Right Main Chat Screen --}}
-            <main class="md:col-span-8 lg:col-span-8 flex flex-col justify-between bg-[#171c19] p-3 md:p-4">
+            <main class="chatgpt-main flex-1 flex flex-col justify-between bg-[#171c19] p-3 md:p-4 min-w-0">
                 
                 {{-- Top Chat Header --}}
                 <div class="flex items-center justify-between pb-3 border-b border-[#26312a] mb-2">
@@ -782,6 +782,25 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
+@media (min-width: 768px) {
+    .chatgpt-layout-container {
+        display: flex !important;
+        flex-direction: row !important;
+        min-height: 660px !important;
+    }
+    .chatgpt-sidebar {
+        width: 300px !important;
+        min-width: 300px !important;
+        max-width: 300px !important;
+        border-right: 1px solid #26312a !important;
+        border-bottom: none !important;
+        flex-shrink: 0 !important;
+    }
+    .chatgpt-main {
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+    }
+}
 .custom-scrollbar::-webkit-scrollbar {
     width: 5px;
 }
