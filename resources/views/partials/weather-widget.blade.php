@@ -5,18 +5,12 @@
     $dampakAyam = $weather['dampak_ayam'] ?? ($weather['deskripsi_risiko'] ?? 'Kondisi fisiologi ayam terpantau aman.');
 @endphp
 <div class="space-y-4">
-    {{-- Baris 1: Header Cuaca Ramping (Judul, Sumber Data, & Timestamp Bersih) --}}
-    <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-line">
-        <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>
-                <span>Cuaca Mikro Kandang</span>
-            </span>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface border border-line text-[11px] font-medium text-muted">
-                <span class="w-1.5 h-1.5 rounded-full {{ ($weather['sumber'] ?? '') === 'sensor' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500' }}"></span>
-                <span>{{ ($weather['sumber'] ?? '') === 'sensor' ? 'Sensor IoT Kandang' : 'Open-Meteo' }}</span>
-            </span>
-        </div>
+    {{-- Baris 1: Header Cuaca Ramping (Judul & Timestamp Bersih) --}}
+    <div class="flex items-center justify-between gap-2 pb-3 border-b border-line">
+        <span class="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>
+            <span>Cuaca Mikro Kandang</span>
+        </span>
         <span class="text-tiny font-medium text-muted">Pembaruan: {{ $weather['updated_at'] }}</span>
     </div>
 
@@ -129,27 +123,31 @@
             </div>
 
             {{-- Visual Bar Gauge THI Unggas (Rentang 60 - 90+) --}}
-            <div class="space-y-1 pt-1">
+            <div class="space-y-1 pt-2">
                 {{-- Pin Marker Posisi THI Saat Ini (Di Atas Bar, Menunjuk ke Titik Nilai) --}}
-                <div class="relative w-full h-4">
+                <div class="relative w-full h-6">
                     <div class="absolute bottom-0 -translate-x-1/2 flex flex-col items-center transition-all duration-500" style="left: {{ $thiPercent }}%;">
-                        <span class="text-[9px] font-black text-ink whitespace-nowrap leading-none bg-surface border border-line px-1.5 py-0.5 rounded shadow-2xs">
-                            THI {{ $weather['thi'] }}
+                        <span class="text-[11px] font-extrabold text-white whitespace-nowrap leading-none bg-ink px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
+                            <span>THI {{ $weather['thi'] }}</span>
                         </span>
-                        <span class="w-1.5 h-1.5 rotate-45 bg-ink -mt-1"></span>
+                        {{-- Segitiga Panah Menunjuk Langsung ke Bar --}}
+                        <div class="w-0 h-0 border-x-4 border-x-transparent border-t-[5px] border-t-ink"></div>
                     </div>
                 </div>
 
                 {{-- Bar Warna THI: 40% Nyaman, 20% Waspada, 20% Kritis, 20% Bahaya --}}
-                <div class="relative w-full h-2 rounded-full bg-slate-100 overflow-hidden shadow-inner flex">
-                    <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Nyaman: THI < 72"></div>
+                <div class="relative w-full h-2.5 rounded-full bg-slate-100 overflow-visible shadow-inner flex">
+                    <div class="h-full bg-emerald-500 rounded-l-full" style="width: 40%;" title="Zona Nyaman: THI < 72"></div>
                     <div class="h-full bg-amber-400" style="width: 20%;" title="Waspada Panas: THI 72 - 78"></div>
                     <div class="h-full bg-orange-500" style="width: 20%;" title="Kritis Heat Stress: THI 78 - 84"></div>
-                    <div class="h-full bg-rose-600" style="width: 20%;" title="Bahaya Ekstrem: THI ≥ 84"></div>
+                    <div class="h-full bg-rose-600 rounded-r-full" style="width: 20%;" title="Bahaya Ekstrem: THI ≥ 84"></div>
+
+                    {{-- Titik Indikator Presisi Tepat di Atas Bar --}}
+                    <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white border-2 border-ink shadow-sm pointer-events-none transition-all duration-500" style="left: {{ $thiPercent }}%;"></div>
                 </div>
 
                 {{-- Label Skala THI: Masing-masing Tepat Sejajar di Bawah Segmen Warnanya --}}
-                <div class="flex w-full text-[8px] sm:text-[9px] text-muted font-medium pt-0.5 select-none">
+                <div class="flex w-full text-[9px] sm:text-[10px] text-muted font-semibold pt-1 select-none">
                     <div style="width: 40%;" class="text-center truncate">
                         <span>&lt; 72 (Nyaman)</span>
                     </div>
@@ -167,16 +165,7 @@
 
             {{-- Dampak Fisiologi Ayam Petelur --}}
             <div class="flex items-start gap-2 pt-1 border-t border-line/60 text-xs">
-                <span class="w-5 h-5 rounded-md bg-brand/10 text-brand grid place-items-center shrink-0 mt-0.5" title="Kondisi Fisiologi Unggas">
-                    <svg class="w-3.5 h-3.5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M16 7h.01" />
-                        <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
-                        <path d="m20 7 2 .5-2 .5" />
-                        <path d="M10 18v3" />
-                        <path d="M14 17.75V21" />
-                        <path d="M7 18a6 6 0 0 0 3.84-10.61" />
-                    </svg>
-                </span>
+                <span class="material-symbols-outlined text-[17px] text-muted shrink-0 mt-0.5" aria-hidden="true">info</span>
                 <p class="text-ink font-medium leading-relaxed">
                     <strong class="font-bold">Kondisi Ayam:</strong> {{ $dampakAyam }}
                 </p>
