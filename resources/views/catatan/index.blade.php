@@ -176,10 +176,16 @@
         <div class="card space-y-2.5">
             <div class="flex items-center justify-between pb-1 border-b border-line/60">
                 <h2 class="text-h-sm">10 Catatan Terakhir</h2>
-                <button type="button" id="btn-export-csv" class="text-xs text-brand font-bold flex items-center gap-1 hover:underline cursor-pointer">
-                    <span class="material-symbols-outlined text-[16px]">download</span>
-                    Unduh CSV
-                </button>
+                <div class="flex items-center gap-3">
+                    <button type="button" id="btn-buka-laporan-modal-form" class="text-xs text-brand font-bold flex items-center gap-1 hover:underline cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">print</span>
+                        Cetak Laporan A4
+                    </button>
+                    <button type="button" id="btn-export-csv" class="text-xs text-muted font-bold flex items-center gap-1 hover:text-ink hover:underline cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">download</span>
+                        Unduh CSV
+                    </button>
+                </div>
             </div>
 
             <div class="divide-y divide-line/60 text-sm">
@@ -233,16 +239,22 @@
         {{-- Filter Rentang & Aksi Ekspor --}}
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-                <span class="text-lbl text-muted">Rentang grafik:</span>
+                <span class="text-lbl text-muted">Rentang data:</span>
                 <div class="flex gap-1 bg-surface-2 p-1 rounded-full text-xs font-bold">
                     <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'minggu']) }}" class="px-3 py-1.5 rounded-full {{ $rentang === 7 ? 'bg-brand text-white shadow-xs' : 'text-muted' }}">7 Hari</a>
                     <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'bulan']) }}" class="px-3 py-1.5 rounded-full {{ $rentang === 30 ? 'bg-brand text-white shadow-xs' : 'text-muted' }}">30 Hari</a>
                 </div>
             </div>
-            <button type="button" id="btn-copy-wa" class="btn-outline btn-sm text-xs font-bold text-emerald-800 border-emerald-300 hover:bg-emerald-50 flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px] text-emerald-600">share</span>
-                Salin Ringkasan ke WhatsApp
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" id="btn-buka-laporan-modal" class="btn-primary btn-sm text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer">
+                    <span class="material-symbols-outlined text-[17px]">print</span>
+                    Cetak Laporan Resmi (PDF/A4)
+                </button>
+                <button type="button" id="btn-copy-wa" class="btn-outline btn-sm text-xs font-bold text-emerald-800 border-emerald-300 hover:bg-emerald-50 flex items-center gap-1.5 cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px] text-emerald-600">share</span>
+                    Salin ke WhatsApp
+                </button>
+            </div>
         </div>
 
         {{-- Laporan Mingguan Ringkas --}}
@@ -284,44 +296,44 @@
         </div>
 
         {{-- 4 Grafik Chart.js --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="card space-y-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-buku-grafik-container>
+            <div class="card space-y-2 buku-card-fadein">
                 <div class="flex items-center justify-between">
                     <h3 class="font-bold text-sm">Konsumsi Pakan (kg)</h3>
                     <span class="material-symbols-outlined text-amber-ink text-[20px]">inventory</span>
                 </div>
                 <div class="h-48">
-                    <canvas data-chart='@json($grafik['pakan'])' aria-label="Grafik pakan"></canvas>
+                    <canvas data-buku-chart='@json($grafik['pakan'])' data-chart-name="pakan" aria-label="Grafik pakan"></canvas>
                 </div>
             </div>
 
-            <div class="card space-y-2">
+            <div class="card space-y-2 buku-card-fadein">
                 <div class="flex items-center justify-between">
                     <h3 class="font-bold text-sm">Produksi Telur (butir)</h3>
                     <span class="material-symbols-outlined text-brand text-[20px]">egg</span>
                 </div>
                 <div class="h-48">
-                    <canvas data-chart='@json($grafik['telur'])' aria-label="Grafik telur"></canvas>
+                    <canvas data-buku-chart='@json($grafik['telur'])' data-chart-name="telur" aria-label="Grafik telur"></canvas>
                 </div>
             </div>
 
-            <div class="card space-y-2">
+            <div class="card space-y-2 buku-card-fadein">
                 <div class="flex items-center justify-between">
                     <h3 class="font-bold text-sm">Biaya Pakan Harian <span class="tag-est">estimasi</span></h3>
                     <span class="material-symbols-outlined text-primary text-[20px]">payments</span>
                 </div>
                 <div class="h-48">
-                    <canvas data-chart='@json($grafik['biaya'])' aria-label="Grafik biaya pakan"></canvas>
+                    <canvas data-buku-chart='@json($grafik['biaya'])' data-chart-name="biaya" aria-label="Grafik biaya pakan"></canvas>
                 </div>
             </div>
 
-            <div class="card space-y-2">
+            <div class="card space-y-2 buku-card-fadein">
                 <div class="flex items-center justify-between">
                     <h3 class="font-bold text-sm">Efisiensi: Biaya per Kg Telur <span class="tag-est">estimasi</span></h3>
                     <span class="material-symbols-outlined text-danger text-[20px]">monitoring</span>
                 </div>
                 <div class="h-48">
-                    <canvas data-chart='@json($grafik['efisiensi'])' aria-label="Grafik efisiensi"></canvas>
+                    <canvas data-buku-chart='@json($grafik['efisiensi'])' data-chart-name="efisiensi" aria-label="Grafik efisiensi"></canvas>
                 </div>
             </div>
         </div>
@@ -416,6 +428,237 @@
             </div>
         </div>
     </section>
+</div>
+
+{{-- Modal Pratinjau & Dokumen Cetak Laporan Resmi A4/PDF --}}
+<div id="modal-laporan-resmi" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-xs p-2 sm:p-5 flex flex-col items-center">
+    {{-- Modal Toolbar (Hanya Tampil di Layar Monitor, Tersembunyi Otomatis Saat Cetak) --}}
+    <div class="modal-toolbar max-w-4xl w-full bg-slate-900 text-white rounded-2xl p-3 sm:px-5 sm:py-3.5 mb-4 shadow-2xl flex flex-wrap items-center justify-between gap-3 border border-slate-700/80">
+        <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-brand flex items-center justify-center text-white shadow-xs">
+                <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+            </div>
+            <div>
+                <h3 class="font-bold text-sm leading-tight text-white flex items-center gap-1.5">
+                    Pratinjau Laporan Resmi Buku Kandang (A4)
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-soft/20 text-lime border border-lime/30">Siap Cetak / PDF</span>
+                </h3>
+                <p class="text-[11px] text-slate-300">Format standar kertas A4 · Rekapitulasi {{ $rentang }} Hari · {{ $farm->nama }}</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" id="btn-cetak-dokumen" class="px-4 py-2 rounded-xl bg-brand hover:bg-brand-dark text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">print</span>
+                Cetak / Simpan PDF
+            </button>
+            <button type="button" id="btn-tutup-laporan-modal" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1 transition cursor-pointer" title="Tutup pratinjau (Esc)">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+                Tutup
+            </button>
+        </div>
+    </div>
+
+    {{-- Dokumen Laporan Kertas A4 Formal --}}
+    <div id="dokumen-laporan-resmi" class="dokumen-kertas-a4 max-w-4xl w-full rounded-2xl p-6 sm:p-10 text-slate-900 space-y-5 bg-white">
+        {{-- KOP SURAT RESMI PETERNAKAN --}}
+        <div class="border-b-[3px] border-double border-slate-900 pb-3">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-14 h-14 rounded-2xl bg-brand text-white flex items-center justify-center font-black text-2xl shadow-sm shrink-0 border border-brand-dark">
+                        <img src="{{ asset('images/logo.png') }}" alt="Logo RansumKu" class="w-12 h-12 object-contain rounded-xl" onerror="this.outerHTML='<span class=\'material-symbols-outlined text-[32px]\'>egg</span>'">
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-950 uppercase">RansumKu — Smart Poultry Farm</h1>
+                            <span class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-800 border border-slate-300 uppercase">Dokumen Resmi</span>
+                        </div>
+                        <p class="text-xs sm:text-sm font-bold text-brand uppercase tracking-wider">Laporan Rekapitulasi Operasional Buku Kandang Layer</p>
+                        <p class="text-[11px] text-slate-500">Sistem Pencatatan Produksi Telur, Konsumsi Pakan, dan Efisiensi Terpadu</p>
+                    </div>
+                </div>
+                <div class="text-right text-[11px] text-slate-600 shrink-0">
+                    <p class="font-bold text-slate-900 font-mono">REF: BK-{{ $farm->id }}-{{ now()->format('Ymd') }}</p>
+                    <p>Dicetak: {{ now()->translatedFormat('d M Y, H:i') }} WIB</p>
+                    <p class="font-mono text-[10px] text-slate-400">STATUS: TERVERIFIKASI</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Kalkulasi Agregat Laporan --}}
+        @php
+            $totalPakan = (float) $logs->sum('pakan_kg');
+            $totalTelurButir = (int) $logs->sum('telur_butir');
+            $totalTelurKg = (float) $logs->sum(fn ($l) => $l->telurKgEfektif());
+            $totalMati = (int) $logs->sum('ayam_mati');
+            $totalBiayaPakan = $totalPakan * $harga;
+            $totalBiayaLain = (int) $logs->sum('biaya_lain');
+            $totalBiayaSemua = $totalBiayaPakan + $totalBiayaLain;
+            $hariCount = max(1, $logs->count());
+            $avgHdp = ($jumlahAyam > 0 && $hariCount > 0) ? ($totalTelurButir / ($jumlahAyam * $hariCount)) * 100 : 0;
+            $avgFeedPerBird = ($jumlahAyam > 0 && $hariCount > 0) ? ($totalPakan * 1000) / ($jumlahAyam * $hariCount) : 0;
+            $avgFcr = $totalTelurKg > 0 ? $totalPakan / $totalTelurKg : 0;
+            $avgCostPerKgTelur = $totalTelurKg > 0 ? $totalBiayaPakan / $totalTelurKg : 0;
+            $persenKematian = $jumlahAyam > 0 ? ($totalMati / $jumlahAyam) * 100 : 0;
+        @endphp
+
+        {{-- METADATA INFORMASI KANDANG --}}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <div>
+                <span class="text-slate-500 block text-[10.5px] uppercase font-semibold">Nama Peternakan / Kandang</span>
+                <strong class="text-slate-900 text-sm font-extrabold block truncate">{{ $farm->nama }}</strong>
+            </div>
+            <div>
+                <span class="text-slate-500 block text-[10.5px] uppercase font-semibold">Populasi Ayam</span>
+                <strong class="text-slate-900 text-sm font-extrabold block">{{ number_format($jumlahAyam, 0, ',', '.') }} Ekor</strong>
+            </div>
+            <div>
+                <span class="text-slate-500 block text-[10.5px] uppercase font-semibold">Periode Rekapitulasi</span>
+                <strong class="text-slate-900 text-sm font-extrabold block">{{ $rentang }} Hari ({{ $logs->first()?->tanggal?->format('d/m/Y') ?? '-' }} – {{ $logs->last()?->tanggal?->format('d/m/Y') ?? '-' }})</strong>
+            </div>
+            <div>
+                <span class="text-slate-500 block text-[10.5px] uppercase font-semibold">Penanggung Jawab</span>
+                <strong class="text-slate-900 text-sm font-extrabold block truncate">{{ auth()->user()->name ?? 'Peternak' }}</strong>
+            </div>
+        </div>
+
+        {{-- KARTU RINGKASAN PERFORMA (EXECUTIVE SUMMARY) --}}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
+            <div class="p-2.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                <span class="text-slate-500 text-[11px] block">Total Produksi Telur</span>
+                <strong class="text-base text-slate-950 font-black block">{{ number_format($totalTelurButir, 0, ',', '.') }} <span class="text-xs font-normal">butir</span></strong>
+                <span class="text-[10.5px] text-slate-600 block mt-0.5">Estimasi {{ number_format($totalTelurKg, 1, ',', '.') }} kg</span>
+            </div>
+            <div class="p-2.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                <span class="text-slate-500 text-[11px] block">Konsumsi Pakan</span>
+                <strong class="text-base text-slate-950 font-black block">{{ number_format($totalPakan, 1, ',', '.') }} <span class="text-xs font-normal">kg</span></strong>
+                <span class="text-[10.5px] text-slate-600 block mt-0.5">Rata-rata {{ number_format($avgFeedPerBird, 0) }} g/ekor/hari</span>
+            </div>
+            <div class="p-2.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                <span class="text-slate-500 text-[11px] block">HDP & FCR Rata-rata</span>
+                <strong class="text-base text-slate-950 font-black block">HDP {{ number_format($avgHdp, 1, ',', '.') }}%</strong>
+                <span class="text-[10.5px] text-slate-600 block mt-0.5">FCR: {{ number_format($avgFcr, 2, ',', '.') }}</span>
+            </div>
+            <div class="p-2.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                <span class="text-slate-500 text-[11px] block">Est. Biaya Pakan & Mortalitas</span>
+                <strong class="text-base text-slate-950 font-black block">Rp {{ number_format($totalBiayaPakan, 0, ',', '.') }}</strong>
+                <span class="text-[10.5px] {{ $totalMati > 0 ? 'text-rose-600 font-bold' : 'text-slate-600' }} block mt-0.5">Mati: {{ $totalMati }} ekor ({{ number_format($persenKematian, 2) }}%)</span>
+            </div>
+        </div>
+
+        {{-- TABEL REKAPITULASI HARIAN RESMI --}}
+        <div class="overflow-x-auto">
+            <table class="print-table w-full text-xs text-left border-collapse border border-slate-300">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-900 font-bold text-center">
+                        <th class="py-1.5 px-2 border border-slate-300 w-8">No</th>
+                        <th class="py-1.5 px-2 border border-slate-300 w-24">Tanggal</th>
+                        <th class="py-1.5 px-2 border border-slate-300">Pakan (kg)</th>
+                        <th class="py-1.5 px-2 border border-slate-300">g/Ekor</th>
+                        <th class="py-1.5 px-2 border border-slate-300">Telur (btr)</th>
+                        <th class="py-1.5 px-2 border border-slate-300">Telur (kg)</th>
+                        <th class="py-1.5 px-2 border border-slate-300">HDP (%)</th>
+                        <th class="py-1.5 px-2 border border-slate-300">FCR</th>
+                        <th class="py-1.5 px-2 border border-slate-300">Mati</th>
+                        <th class="py-1.5 px-2 border border-slate-300">Biaya Pakan</th>
+                        <th class="py-1.5 px-2 border border-slate-300">Catatan / Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($logs as $idx => $l)
+                        @php
+                            $rowHdp = $jumlahAyam > 0 ? ($l->telur_butir / $jumlahAyam) * 100 : 0;
+                            $rowGr = $jumlahAyam > 0 ? ($l->pakan_kg * 1000) / $jumlahAyam : 0;
+                            $rowKg = $l->telurKgEfektif();
+                            $rowFcr = $rowKg > 0 ? $l->pakan_kg / $rowKg : 0;
+                            $rowBiaya = $l->pakan_kg * $harga;
+                        @endphp
+                        <tr class="{{ $idx % 2 === 1 ? 'bg-slate-50/80' : 'bg-white' }} page-break-avoid">
+                            <td class="py-1.5 px-2 border border-slate-300 text-center font-mono">{{ $idx + 1 }}</td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-center font-semibold text-slate-900">{{ $l->tanggal->translatedFormat('d/m/Y') }}</td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-right font-mono">{{ number_format($l->pakan_kg, 1, ',', '.') }}</td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-right font-mono">{{ round($rowGr) }}</td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-right font-mono font-bold">{{ number_format($l->telur_butir, 0, ',', '.') }}</td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-right font-mono">{{ number_format($rowKg, 1, ',', '.') }}</td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-center font-mono font-bold {{ $rowHdp >= 80 ? 'text-emerald-700' : ($rowHdp >= 65 ? 'text-teal-700' : 'text-amber-700') }}">
+                                {{ number_format($rowHdp, 1, ',', '.') }}%
+                            </td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-center font-mono">{{ number_format($rowFcr, 2, ',', '.') }}</td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-center font-mono {{ $l->ayam_mati > 0 ? 'text-rose-600 font-bold' : 'text-slate-400' }}">
+                                {{ $l->ayam_mati > 0 ? $l->ayam_mati : '-' }}
+                            </td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-right font-mono">Rp {{ number_format($rowBiaya, 0, ',', '.') }}</td>
+                            <td class="py-1.5 px-2 border border-slate-300 text-slate-600 text-[10.5px]">
+                                {{ $l->catatan ? Str::limit($l->catatan, 35) : '-' }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="11" class="py-4 text-center text-slate-400 border border-slate-300 italic">Belum ada catatan pada periode ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                <tfoot>
+                    <tr class="bg-slate-200/90 text-slate-950 font-black border-t-2 border-slate-600 page-break-avoid">
+                        <td colspan="2" class="py-2 px-2 border border-slate-300 text-center uppercase text-[11px]">TOTAL / RATA-RATA</td>
+                        <td class="py-2 px-2 border border-slate-300 text-right font-mono">{{ number_format($totalPakan, 1, ',', '.') }}</td>
+                        <td class="py-2 px-2 border border-slate-300 text-right font-mono">{{ round($avgFeedPerBird) }}</td>
+                        <td class="py-2 px-2 border border-slate-300 text-right font-mono">{{ number_format($totalTelurButir, 0, ',', '.') }}</td>
+                        <td class="py-2 px-2 border border-slate-300 text-right font-mono">{{ number_format($totalTelurKg, 1, ',', '.') }}</td>
+                        <td class="py-2 px-2 border border-slate-300 text-center font-mono">{{ number_format($avgHdp, 1, ',', '.') }}%</td>
+                        <td class="py-2 px-2 border border-slate-300 text-center font-mono">{{ number_format($avgFcr, 2, ',', '.') }}</td>
+                        <td class="py-2 px-2 border border-slate-300 text-center font-mono">{{ $totalMati }}</td>
+                        <td class="py-2 px-2 border border-slate-300 text-right font-mono">Rp {{ number_format($totalBiayaPakan, 0, ',', '.') }}</td>
+                        <td class="py-2 px-2 border border-slate-300 text-center text-[10.5px] font-semibold text-slate-700">{{ $hariCount }} Hari Rekap</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        {{-- CATATAN EVALUASI DAN LEMBAR PENGESAHAN TANDA TANGAN RESMI --}}
+        <div class="pt-3 page-break-avoid space-y-4">
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-start gap-2">
+                <span class="material-symbols-outlined text-brand text-[18px] shrink-0">verified</span>
+                <div>
+                    <strong>Catatan Evaluasi Teknis:</strong>
+                    @if ($avgHdp >= 80)
+                        Produktivitas bertelur sangat prima (Rata-rata HDP {{ number_format($avgHdp, 1) }}% berada di atas target standar layer komersial). Efisiensi pakan terpantau terkendali dengan baik.
+                    @elseif ($avgHdp >= 68)
+                        Produktivitas bertelur dalam kategori normal (HDP {{ number_format($avgHdp, 1) }}%). Pertahankan konsistensi formulasi ransum dan biosekuriti kandang.
+                    @else
+                        Produktivitas bertelur memerlukan perhatian (HDP {{ number_format($avgHdp, 1) }}% di bawah standar). Dianjurkan meninjau formulasi nutrisi ransum dan kenyamanan mikroklimat kandang.
+                    @endif
+                </div>
+            </div>
+
+            <div class="flex justify-between items-end pt-3 text-xs text-slate-900">
+                <div class="text-center w-56">
+                    <p class="text-slate-500 mb-1">Dicatat & Disusun Oleh,</p>
+                    <p class="font-bold">Operator / Petugas Kandang</p>
+                    <div class="h-16 flex items-end justify-center pb-1">
+                        <span class="text-[11px] text-slate-300 italic">( Tanda Tangan )</span>
+                    </div>
+                    <p class="font-bold border-t border-slate-400 pt-1"><u>{{ auth()->user()->name ?? 'Operator Kandang' }}</u></p>
+                    <p class="text-[10px] text-slate-500">Petugas Pencatatan Harian</p>
+                </div>
+
+                <div class="text-center w-56">
+                    <p class="text-slate-500 mb-1">{{ $farm->nama }}, {{ now()->translatedFormat('d F Y') }}</p>
+                    <p class="font-bold">Mengetahui & Menyetujui,</p>
+                    <div class="h-16 flex items-end justify-center pb-1">
+                        <span class="text-[11px] text-slate-300 italic">( Tanda Tangan & Stempel )</span>
+                    </div>
+                    <p class="font-bold border-t border-slate-400 pt-1"><u>Pimpinan / Pemilik Peternakan</u></p>
+                    <p class="text-[10px] text-slate-500">{{ $farm->nama }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- FOOTER OTENTIKASI SISTEM --}}
+        <div class="border-t border-slate-200 pt-2 text-[9.5px] text-slate-400 flex items-center justify-between">
+            <span>Dokumen resmi diterbitkan otomatis oleh <strong>RansumKu Smart Poultry Farm System</strong>.</span>
+            <span>Halaman 1 dari 1 · Verifikasi: {{ substr(md5($farm->id . $farm->nama . now()->toDateString()), 0, 10) }}</span>
+        </div>
+    </div>
 </div>
 
 {{-- Skrip Interaktivitas Smart Buku Kandang --}}
@@ -666,6 +909,52 @@ document.addEventListener('DOMContentLoaded', function () {
             document.body.removeChild(link);
         });
     }
+
+    // Modal Pratinjau & Cetak Laporan Resmi A4/PDF
+    const modalLaporan = document.getElementById('modal-laporan-resmi');
+    const btnBukaLaporan = document.getElementById('btn-buka-laporan-modal');
+    const btnBukaLaporanForm = document.getElementById('btn-buka-laporan-modal-form');
+    const btnTutupLaporan = document.getElementById('btn-tutup-laporan-modal');
+    const btnCetakDokumen = document.getElementById('btn-cetak-dokumen');
+
+    function bukaModalLaporan() {
+        if (modalLaporan) {
+            modalLaporan.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function tutupModalLaporan() {
+        if (modalLaporan) {
+            modalLaporan.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (btnBukaLaporan) btnBukaLaporan.addEventListener('click', bukaModalLaporan);
+    if (btnBukaLaporanForm) btnBukaLaporanForm.addEventListener('click', bukaModalLaporan);
+    if (btnTutupLaporan) btnTutupLaporan.addEventListener('click', tutupModalLaporan);
+
+    if (btnCetakDokumen) {
+        btnCetakDokumen.addEventListener('click', function () {
+            window.print();
+        });
+    }
+
+    // Tutup modal jika klik di luar area dokumen atau tombol Esc
+    if (modalLaporan) {
+        modalLaporan.addEventListener('click', function (e) {
+            if (e.target === modalLaporan) {
+                tutupModalLaporan();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modalLaporan && !modalLaporan.classList.contains('hidden')) {
+            tutupModalLaporan();
+        }
+    });
 
     // Jalankan kalkulasi awal saat halaman dimuat
     updateLivePreview();

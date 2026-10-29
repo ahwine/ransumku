@@ -53,7 +53,7 @@ class LogController extends Controller
         $bahan = $farm->ingredients()->orderBy('nama')->get();
         $selisihTotal = $beli->sum(fn ($p) => ($p->harga_nyata - $p->harga_estimasi) * $p->kg);
 
-        return view('catatan.index', compact('farm', 'rentang', 'grafik', 'laporan', 'form', 'isEdit', 'riwayat', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam'));
+        return view('catatan.index', compact('farm', 'rentang', 'logs', 'grafik', 'laporan', 'form', 'isEdit', 'riwayat', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam'));
     }
 
     public function store(Request $r, AnomalyDetector $detector)
@@ -132,7 +132,23 @@ class LogController extends Controller
         return [
             'type' => $type,
             'labels' => $labels,
-            'datasets' => [['label' => $label, 'data' => $data, 'borderColor' => $warna, 'backgroundColor' => $type === 'bar' ? $warna : $warna.'22', 'fill' => $type === 'line', 'tension' => .35, 'borderRadius' => 6]],
+            'datasets' => [
+                [
+                    'label' => $label,
+                    'data' => $data,
+                    'borderColor' => $warna,
+                    'backgroundColor' => $type === 'bar' ? $warna : $warna.'22',
+                    'fill' => $type === 'line',
+                    'tension' => .35,
+                    'borderWidth' => 2.75,
+                    'pointRadius' => 4,
+                    'pointHoverRadius' => 6,
+                    'pointBackgroundColor' => '#FFFFFF',
+                    'pointBorderColor' => $warna,
+                    'pointBorderWidth' => 2,
+                    'borderRadius' => 6,
+                ],
+            ],
         ];
     }
 

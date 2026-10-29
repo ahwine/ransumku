@@ -60,6 +60,295 @@ document.querySelectorAll('canvas[data-chart]').forEach((el) => {
     });
 });
 
+// =========================================================================
+// KHUSUS HALAMAN BUKU KANDANG: Animasi Progresif Kiri ke Kanan (4 Grafik)
+// Terisolasi 100% menggunakan data-buku-chart, tidak menyentuh halaman lain
+// =========================================================================
+const bukuSweepClipPlugin = {
+    id: 'bukuSweepClip',
+    beforeDatasetDraw(chart, args) {
+        if (chart.config.type !== 'line') return;
+        if (!chart._isSweepActive) return;
+
+        const progress = chart._sweepProgress !== undefined ? chart._sweepProgress : 1;
+        if (progress >= 1) return;
+
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+
+        const clipWidth = (chartArea.right - chartArea.left) * Math.max(0, Math.min(1, progress));
+        const currentRight = chartArea.left + clipWidth;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(chartArea.left - 4, chartArea.top - 14, Math.max(0, clipWidth + 4), chartArea.height + 28);
+        ctx.clip();
+        chart._isClipped = true;
+
+        // Titik data muncul saat sapuan garis mencapai titik tersebut
+        if (args.meta && args.meta.data) {
+            const baseRadius = chart.data.datasets[args.index]?.pointRadius ?? 4;
+            args.meta.data.forEach((pt) => {
+                const dist = currentRight - pt.x;
+                if (dist < 0) {
+                    pt.options.radius = 0;
+                } else if (dist < 22) {
+                    const bloom = Math.sin((dist / 22) * (Math.PI / 2));
+                    pt.options.radius = baseRadius * bloom;
+                } else {
+                    pt.options.radius = baseRadius;
+                }
+            });
+        }
+    },
+    afterDatasetDraw(chart) {
+        if (chart._isClipped) {
+            chart.ctx.restore();
+            chart._isClipped = false;
+        }
+    }
+};
+
+// Helper: Animasi garis bergerak dari kiri ke kanan (Progressive Line Drawing)
+function animateBukuLine(chart, delayMs = 0, durationMs = 1200) {
+    if (!chart || !chart.ctx) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        chart._sweepProgress = 1;
+        chart._isSweepActive = false;
+        chart.update('none');
+        return;
+    }
+
+    if (chart._sweepRaf) {
+        cancelAnimationFrame(chart._sweepRaf);
+        chart._sweepRaf = null;
+    }
+
+    chart._sweepProgress = 0;
+    chart._isSweepActive = true;
+    chart.draw();
+
+    let start = null;
+
+    function step(now) {
+        if (!start) start = now;
+        const elapsed = now - start;
+
+        if (elapsed < delayMs) {
+            chart._sweepProgress = 0;
+            chart.draw();
+            chart._sweepRaf = requestAnimationFrame(step);
+            return;
+        }
+
+        const animElapsed = elapsed - delayMs;
+        const rawT = Math.min(1, animElapsed / durationMs);
+
+        // Ease-out cubic: halus dan bertahap
+        const easeT = 1 - Math.pow(1 - rawT, 3);
+
+        chart._sweepProgress = easeT;
+        chart.draw();
+
+        if (rawT < 1) {
+            chart._sweepRaf = requestAnimationFrame(step);
+        } else {
+            chart._sweepProgress = 1;
+            chart._isSweepActive = false;
+            if (chart.data?.datasets?.[0] && chart.getDatasetMeta(0)?.data) {
+                const baseRadius = chart.data.datasets[0].pointRadius ?? 4;
+                chart.getDatasetMeta(0).data.forEach((pt) => {
+                    pt.options.radius = baseRadius;
+                });
+            }
+            chart.draw();
+            chart._sweepRaf = null;
+        }
+    }
+
+    chart._sweepRaf = requestAnimationFrame(step);
+}
+
+// Helper: Animasi batang muncul satu per satu dari baseline kiri ke kanan
+function animateBukuBar(chart, delayMs = 280) {
+    if (!chart || !chart.ctx) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        chart.update('none');
+        return;
+    }
+
+    if (chart._barTimer) {
+        clearTimeout(chart._barTimer);
+        chart._barTimer = null;
+    }
+
+    chart.reset(); // Batang ditahan di baseline 0
+
+    chart._barTimer = setTimeout(() => {
+        chart.options.animation = {
+            duration: 650,
+            easing: 'easeOutQuart',
+        };
+        chart.options.animations = {
+            y: {
+                type: 'number',
+                duration: 650,
+                easing: 'easeOutQuart',
+                delay(ctx) {
+                    if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
+                    return ctx.index * 75; // Jeda 75ms antar-batang dari kiri ke kanan
+                }
+            }
+        };
+        chart.update();
+    }, delayMs);
+}
+
+// Inisialisasi 4 grafik Buku Kandang
+const bukuChartsMap = {};
+
+document.querySelectorAll('canvas[data-buku-chart]').forEach((el) => {
+    const cfg = JSON.parse(el.dataset.bukuChart);
+    const chartName = el.dataset.chartName;
+
+    const chart = new Chart(el, {
+        type: cfg.type,
+        data: { labels: cfg.labels, datasets: cfg.datasets },
+        plugins: cfg.type === 'line' ? [bukuSweepClipPlugin] : [],
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false, // Animasi dikendalikan oleh orkestrator terkoordinasi
+            plugins: {
+                legend: {
+                    display: cfg.legend ?? false,
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 14,
+                        font: { size: 11, family: "'Plus Jakarta Sans', 'Poppins', sans-serif" },
+                        color: '#5C7A6D'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#002415',
+                    titleFont: { family: "'Plus Jakarta Sans', sans-serif" },
+                    bodyFont: { family: "'Plus Jakarta Sans', sans-serif" },
+                    cornerRadius: 8,
+                    padding: 8
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 10, family: "'Plus Jakarta Sans', 'Poppins', sans-serif" },
+                        color: '#5C7A6D'
+                    }
+                },
+                y: {
+                    beginAtZero: cfg.zero ?? true,
+                    border: { dash: [3, 3] },
+                    grid: {
+                        color: '#E0EBE4',
+                        drawTicks: false
+                    },
+                    ticks: {
+                        font: { size: 10, family: "'Plus Jakarta Sans', 'Poppins', sans-serif" },
+                        color: '#9CA3AF',
+                        padding: 6,
+                        callback(val) {
+                            if (val >= 1000000) return (val / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
+                            if (val >= 10000) return (val / 1000).toLocaleString('id-ID') + ' rb';
+                            return val.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+        },
+    });
+
+    if (chartName) {
+        bukuChartsMap[chartName] = chart;
+    }
+    el._bukuChartInstance = chart;
+});
+
+// Orkestrasi urutan animasi 4 grafik Buku Kandang
+function triggerBukuKandangOrchestration() {
+    const container = document.querySelector('[data-buku-grafik-container]');
+    if (!container) return;
+
+    // Periksa apakah tab dashboard sedang aktif
+    const panel = container.closest('[data-panel]');
+    if (panel && panel.classList.contains('hidden')) return;
+
+    // 1. Fade-in halus pada kartu grafik
+    const cards = container.querySelectorAll('.buku-card-fadein');
+    cards.forEach((c) => {
+        c.style.animation = 'none';
+        void c.offsetHeight; // trigger reflow
+        c.style.animation = '';
+    });
+
+    // Resize instans grafik jika diperlukan
+    Object.values(bukuChartsMap).forEach((ci) => {
+        if (ci) ci.resize();
+    });
+
+    // 2. Grafik Konsumsi Pakan (delay: 80ms, durasi: 1200ms)
+    if (bukuChartsMap.pakan) {
+        animateBukuLine(bukuChartsMap.pakan, 80, 1200);
+    }
+
+    // 3. Grafik Produksi Telur (batang muncul berurutan dari kiri ke kanan, delay: 280ms)
+    if (bukuChartsMap.telur) {
+        animateBukuBar(bukuChartsMap.telur, 280);
+    }
+
+    // 4. Grafik Biaya Pakan Harian (delay: 480ms, durasi: 1200ms)
+    if (bukuChartsMap.biaya) {
+        animateBukuLine(bukuChartsMap.biaya, 480, 1200);
+    }
+
+    // 5. Grafik Efisiensi: Biaya per Kg Telur (delay: 680ms, durasi: 1200ms)
+    if (bukuChartsMap.efisiensi) {
+        animateBukuLine(bukuChartsMap.efisiensi, 680, 1200);
+    }
+}
+
+window.__triggerBukuKandangAnimation = triggerBukuKandangOrchestration;
+
+// IntersectionObserver untuk memicu animasi satu kali saat pertama kali terlihat
+let hasAnimatedBukuOnView = false;
+const bukuContainerEl = document.querySelector('[data-buku-grafik-container]');
+if (bukuContainerEl) {
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const panel = bukuContainerEl.closest('[data-panel]');
+                    if (!panel || !panel.classList.contains('hidden')) {
+                        if (!hasAnimatedBukuOnView) {
+                            hasAnimatedBukuOnView = true;
+                            triggerBukuKandangOrchestration();
+                        }
+                    }
+                }
+            });
+        }, { threshold: 0.15 });
+
+        observer.observe(bukuContainerEl);
+    } else {
+        setTimeout(triggerBukuKandangOrchestration, 200);
+    }
+}
+
 // Apple-style Sliding Segmented Tabs ([data-tabs])
 function initSlidingTabs() {
     const tabGroups = document.querySelectorAll('[data-tabs]');
@@ -170,6 +459,12 @@ function initSlidingTabs() {
                     Object.values(window.Chart.instances).forEach((ci) => ci.resize());
                 }
             }, 60);
+
+            if (tabId === 'dashboard' && typeof window.__triggerBukuKandangAnimation === 'function') {
+                setTimeout(() => {
+                    window.__triggerBukuKandangAnimation();
+                }, 75);
+            }
         };
 
         buttons.forEach((btn) => {

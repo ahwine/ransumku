@@ -221,4 +221,146 @@
     .tab-slide-left {
         animation: tabSlideFromLeft 280ms cubic-bezier(0.25, 1, 0.5, 1) both;
     }
+
+    /* Animasi fade-in halus khusus kartu grafik Buku Kandang */
+    @keyframes bukuCardFadeIn {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 6px, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    .buku-card-fadein {
+        animation: bukuCardFadeIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        will-change: transform, opacity;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .buku-card-fadein {
+            animation: none !important;
+            transform: none !important;
+            opacity: 1 !important;
+        }
+    }
+
+    /* Pratinjau Kertas A4 di Layar */
+    .dokumen-kertas-a4 {
+        background: #ffffff;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+}
+
+/* ============================================================
+   Gaya Cetak Laporan Resmi A4 / PDF (Buku Kandang)
+   ============================================================ */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm 12mm 12mm 12mm;
+    }
+
+    /* Sembunyikan elemen navigasi dan kontrol aplikasi */
+    aside,
+    header,
+    nav,
+    .notice,
+    [data-tab-nav],
+    #mode-status-banner,
+    #live-preview-box,
+    form,
+    [data-buku-grafik-container],
+    .no-print,
+    .modal-toolbar,
+    .modal-backdrop-blur {
+        display: none !important;
+    }
+
+    html, body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-family: 'Plus Jakarta Sans', Arial, sans-serif !important;
+        font-size: 10.5pt !important;
+        line-height: 1.4 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    main {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Tampilkan modal sebagai halaman cetak normal */
+    #modal-laporan-resmi {
+        position: static !important;
+        display: block !important;
+        inset: auto !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        z-index: auto !important;
+    }
+
+    #modal-laporan-resmi > div {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    #dokumen-laporan-resmi {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+    }
+
+    /* Format tabel dokumen cetak */
+    .print-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 8.5pt !important;
+    }
+
+    .print-table th,
+    .print-table td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 4px 6px !important;
+    }
+
+    .print-table th {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+    }
+
+    .print-table tr:nth-child(even) td {
+        background-color: #f8fafc !important;
+    }
+
+    .print-table tfoot td {
+        background-color: #e2e8f0 !important;
+        font-weight: 800 !important;
+        border-top: 2px solid #64748b !important;
+    }
+
+    .page-break-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
 }
