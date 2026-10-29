@@ -158,7 +158,10 @@
                         <div class="flex flex-wrap items-baseline gap-2">
                             <span class="text-xl md:text-2xl font-black text-ink">{{ Fmt::num($totalPakanIni > 0 ? $totalPakanIni : 22, 1) }} kg</span>
                             <span class="text-muted font-bold text-sm">&gt; {{ $gramPerEkor > 0 ? $gramPerEkor : 110.0 }} gram/ekor</span>
-                            <span class="text-xs font-black text-brand ml-1">↑ 2.4% vs standar</span>
+                            <span class="inline-flex items-center gap-0.5 text-xs font-black text-brand ml-1">
+                                <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                                <span>2.4% vs standar</span>
+                            </span>
                         </div>
                     </div>
 

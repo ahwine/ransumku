@@ -180,7 +180,16 @@
 
             {{-- Dampak Fisiologi Ayam Petelur --}}
             <div class="flex items-start gap-2 pt-1 border-t border-line/60 text-xs">
-                <span class="text-[15px] shrink-0">🐔</span>
+                <span class="w-5 h-5 rounded-md bg-brand/10 text-brand grid place-items-center shrink-0 mt-0.5" title="Kondisi Fisiologi Unggas">
+                    <svg class="w-3.5 h-3.5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 7h.01" />
+                        <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+                        <path d="m20 7 2 .5-2 .5" />
+                        <path d="M10 18v3" />
+                        <path d="M14 17.75V21" />
+                        <path d="M7 18a6 6 0 0 0 3.84-10.61" />
+                    </svg>
+                </span>
                 <p class="text-ink font-medium leading-relaxed">
                     <strong class="font-bold">Kondisi Ayam:</strong> {{ $dampakAyam }}
                 </p>

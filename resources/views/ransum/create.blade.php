@@ -120,7 +120,10 @@
                 </ul>
             </details>
         @endforeach
-        <a href="{{ route('acuan.index') }}" class="text-sm text-brand font-bold">Kelola acuan gizi →</a>
+        <a href="{{ route('acuan.index') }}" class="inline-flex items-center gap-1 text-sm text-brand font-bold hover:underline">
+            <span>Kelola acuan gizi</span>
+            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+        </a>
     </section>
 
     <div class="fixed bottom-16 inset-x-0 z-30 px-4 pb-3 pt-2 bg-gradient-to-t from-canvas via-canvas/95 to-transparent lg:static lg:p-0 lg:bg-none">
