@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('farm')->group(function () {
         Route::get('/', [HomeController::class, 'beranda'])->name('beranda');
+        Route::post('/kandang/lokasi', [HomeController::class, 'updateLokasi'])->name('kandang.lokasi');
         Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
 
         // Modul A: Peracik Ransum
@@ -53,3 +54,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/asisten/baca', [AssistantController::class, 'bacaPeringatan'])->name('asisten.baca');
     });
 });
+
+// Webhook / API IoT Kandang (ESP32 / DHT22 Sensor Suhu & Kelembaban)
+Route::post('/api/kandang/{farm}/sensor', [HomeController::class, 'terimaSensorIot'])
+    ->name('api.kandang.sensor')
+    ->middleware('throttle:120,1');

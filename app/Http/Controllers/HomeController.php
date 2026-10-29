@@ -2,13 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Farm;
+use App\Services\WeatherService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
-    public function beranda()
+    public function beranda(WeatherService $weatherService)
     {
         $farm = $this->farm();
+        $weather = $weatherService->getWeather($farm);
+        $presetKota = WeatherService::PRESET_KOTA;
 
         $logs = $farm->logs()->orderByDesc('tanggal')->limit(7)->get()->reverse()->values();
         $hariIni = $farm->logs()->orderByDesc('tanggal')->first();
@@ -129,8 +136,80 @@ class HomeController extends Controller
             'farm', 'logs', 'hariIni', 'ration', 'biayaKgTelur', 'alerts', 'hargaUsangHari',
             'totalTelurIni', 'totalTelurKgIni', 'rataGrTelur', 'hdPersen', 'telurUtuh', 'telurBentes',
             'standarPakanGr', 'totalPakanIni', 'gramPerEkor', 'totalMatiIni',
-            'eggMass', 'fcr', 'chartTelur', 'chartPakan', 'chartPopulasi'
+            'eggMass', 'fcr', 'chartTelur', 'chartPakan', 'chartPopulasi',
+            'weather', 'presetKota'
         ));
+    }
+
+    /**
+     * Memperbarui lokasi sentra kandang untuk sinkronisasi cuaca mikro Open-Meteo.
+     */
+    public function updateLokasi(Request $request): RedirectResponse
+    {
+        $farm = $this->farm();
+
+        $data = $request->validate([
+            'kota' => 'required|string|max:50',
+        ]);
+
+        $kota = $data['kota'];
+        $preset = WeatherService::PRESET_KOTA[$kota] ?? null;
+
+        if ($preset) {
+            $farm->update([
+                'lokasi_kota' => $kota,
+                'latitude' => $preset['lat'],
+                'longitude' => $preset['lon'],
+            ]);
+        } else {
+            $farm->update([
+                'lokasi_kota' => $kota,
+            ]);
+        }
+
+        // Bersihkan cache cuaca lama
+        Cache::forget("weather_farm_{$farm->id}_{$kota}");
+
+        return back()->with('ok', "Lokasi cuaca kandang berhasil diperbarui ke {$farm->lokasi_kota}.");
+    }
+
+    /**
+     * Endpoint API Webhook IoT (ESP32 / DHT22 / DHT11) untuk menerima data suhu fisik kandang.
+     */
+    public function terimaSensorIot(Request $request, Farm $farm, WeatherService $weatherService): JsonResponse
+    {
+        $data = $request->validate([
+            'suhu' => 'required|numeric|between:10,55',
+            'kelembaban' => 'required|numeric|between:10,100',
+            'token' => 'nullable|string',
+        ]);
+
+        if ($farm->iot_token && $request->input('token') !== $farm->iot_token) {
+            return response()->json([
+                'ok' => false,
+                'pesan' => 'Token otentikasi IoT tidak valid untuk kandang ini.',
+            ], 403);
+        }
+
+        $farm->update([
+            'sensor_suhu' => $data['suhu'],
+            'sensor_kelembaban' => $data['kelembaban'],
+            'sensor_updated_at' => now(),
+        ]);
+
+        Cache::forget("weather_farm_{$farm->id}_{$farm->lokasi_kota}");
+        $w = $weatherService->getWeather($farm);
+
+        return response()->json([
+            'ok' => true,
+            'pesan' => 'Data sensor IoT suhu & kelembaban kandang berhasil dicatat.',
+            'suhu' => $w['suhu'],
+            'kelembaban' => $w['kelembaban'],
+            'thi' => $w['thi'],
+            'status' => $w['thi_kategori'],
+            'level' => $w['thi_level'],
+            'saran_manajemen' => $w['saran_manajemen'],
+        ]);
     }
 
     public function tentang()

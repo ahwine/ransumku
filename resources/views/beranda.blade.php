@@ -50,11 +50,38 @@
                             <span>Belum Dicatat Hari Ini</span>
                         </span>
                     @endif
+
+                    {{-- Badge Cuaca Mikro & Indeks Stres Panas (THI) --}}
+                    @if (isset($weather))
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-line bg-surface text-ink font-semibold" title="Cuaca: {{ $weather['cuaca_teks'] }} · Suhu: {{ $weather['suhu'] }}°C · Kelembaban: {{ $weather['kelembaban'] }}% · THI: {{ $weather['thi'] }} ({{ $weather['thi_kategori'] }})">
+                            <span class="material-symbols-outlined text-[16px] {{ $weather['icon_color'] }}">{{ $weather['icon'] }}</span>
+                            <span>{{ $weather['suhu'] }}°C</span>
+                            <span class="text-muted text-[11px]">RH {{ $weather['kelembaban'] }}%</span>
+                            <span class="chip text-[10px] py-0 px-2 {{ $weather['badge_class'] }}">
+                                THI {{ $weather['thi'] }} · {{ $weather['thi_kategori_singkat'] }}
+                            </span>
+                        </div>
+                    @endif
                 </div>
             </div>
 
-            {{-- Sisi Kanan: Tanggal & Tombol CTA Utama --}}
-            <div class="flex flex-wrap items-center gap-3 self-start md:self-center">
+            {{-- Sisi Kanan: Lokasi Cuaca, Tanggal & Tombol CTA Utama --}}
+            <div class="flex flex-wrap items-center gap-2.5 self-start md:self-center">
+                {{-- Dropdown Pilih Sentra Peternakan --}}
+                @if (isset($presetKota))
+                    <form method="POST" action="{{ route('kandang.lokasi') }}" class="inline-flex items-center">
+                        @csrf
+                        <div class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-line bg-surface hover:bg-surface-2 transition text-xs font-semibold text-ink shadow-sm" title="Ubah lokasi sentra kandang untuk prakiraan cuaca mikro">
+                            <span class="material-symbols-outlined text-[16px] text-brand">location_on</span>
+                            <select name="kota" onchange="this.form.submit()" class="bg-transparent text-xs font-bold text-ink focus:outline-none cursor-pointer pr-1">
+                                @foreach ($presetKota as $k => $p)
+                                    <option value="{{ $k }}" @selected(($farm->lokasi_kota ?? 'Surabaya') === $k)>{{ $p['nama'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </form>
+                @endif
+
                 <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-line bg-surface text-xs font-semibold text-muted">
                     <span class="material-symbols-outlined text-[16px] text-brand">calendar_today</span>
                     <span>{{ today()->translatedFormat('l, d F Y') }}</span>
@@ -66,6 +93,13 @@
                 </a>
             </div>
         </div>
+
+        {{-- Widget Visual Cuaca Mikro & Indeks Stres Panas (THI) Kandang --}}
+        @if (isset($weather))
+            <div class="border-b border-line p-4 md:p-5 bg-surface/25">
+                @include('partials.weather-widget')
+            </div>
+        @endif
 
         {{-- 2. 4-Kuadran Grid dengan Border Pemisah Salib (Cross Dividers) --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-line">

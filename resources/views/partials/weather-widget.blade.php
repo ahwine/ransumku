@@ -1,0 +1,212 @@
+{{-- Komponen Visual Cuaca Mikro & Indeks Stres Panas (THI) Kandang --}}
+@php
+    $weatherType = $weather['weather_type'] ?? 'partly_cloudy';
+    $thiPercent = $weather['thi_percent'] ?? 50.0;
+    $dampakAyam = $weather['dampak_ayam'] ?? ($weather['deskripsi_risiko'] ?? 'Kondisi fisiologi ayam terpantau aman.');
+@endphp
+<div class="rounded-2xl border {{ $weather['card_class'] }} p-5 md:p-6 shadow-sm relative overflow-hidden transition-all">
+    {{-- Background Decorative Ambient Blur --}}
+    <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-amber-400/10 blur-3xl pointer-events-none"></div>
+    <div class="absolute right-32 -bottom-20 w-56 h-56 rounded-full bg-brand/5 blur-3xl pointer-events-none"></div>
+
+    {{-- Baris 1: Header Widget (Lokasi, Sumber Data, Indikator Real-time) --}}
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-black/10">
+        <div class="flex flex-wrap items-center gap-2.5">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-black/10 text-xs font-bold text-ink shadow-2xs">
+                <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>
+                <span>Biometeorologi Kandang</span>
+            </span>
+
+            {{-- Pemilih Lokasi Sentra Peternakan --}}
+            @if (isset($presetKota))
+                <form method="POST" action="{{ route('kandang.lokasi') }}" class="inline-flex items-center">
+                    @csrf
+                    <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/90 border border-black/10 hover:bg-white transition text-xs font-semibold text-ink shadow-2xs" title="Klik untuk mengganti lokasi sentra peternakan">
+                        <span class="material-symbols-outlined text-[15px] text-brand">location_on</span>
+                        <select name="kota" onchange="this.form.submit()" class="bg-transparent text-xs font-bold text-ink focus:outline-none cursor-pointer pr-1">
+                            @foreach ($presetKota as $k => $p)
+                                <option value="{{ $k }}" @selected(($farm->lokasi_kota ?? 'Surabaya') === $k)>{{ $p['nama'] }} ({{ $p['provinsi'] }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </form>
+            @endif
+        </div>
+
+        {{-- Sumber Data & Timestamp --}}
+        <div class="flex items-center gap-2 self-start md:self-auto text-tiny font-bold text-muted">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 border border-black/10">
+                <span class="w-2 h-2 rounded-full {{ $weather['sumber'] === 'sensor' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500' }}"></span>
+                <span>{{ $weather['sumber'] === 'sensor' ? 'Sensor IoT Kandang (Aktif)' : 'Cuaca Mikro (Open-Meteo)' }}</span>
+            </span>
+            <span class="text-muted/80">Pembaruan: {{ $weather['updated_at'] }}</span>
+        </div>
+    </div>
+
+    {{-- Baris 2: Visual Suhu & Gauge Indeks Stres Panas (THI) --}}
+    <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center py-5">
+        {{-- Sisi Kiri (Kolom 1-5): Visual Cuaca & Angka Suhu --}}
+        <div class="lg:col-span-5 flex items-center gap-4 md:gap-5">
+            {{-- Ilustrasi Cuaca SVG Modern --}}
+            <div class="w-20 h-20 md:w-24 md:h-24 shrink-0 grid place-items-center rounded-2xl bg-white/80 border border-white/60 shadow-sm p-2">
+                @if ($weatherType === 'sunny')
+                    {{-- Sun SVG --}}
+                    <svg class="w-16 h-16 md:w-18 md:h-18 animate-[spin_20s_linear_infinite]" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="32" cy="32" r="14" fill="url(#sunGrad)" />
+                        <g stroke="#F59E0B" stroke-width="3" stroke-linecap="round">
+                            <line x1="32" y1="4" x2="32" y2="10" />
+                            <line x1="32" y1="54" x2="32" y2="60" />
+                            <line x1="4" y1="32" x2="10" y2="32" />
+                            <line x1="54" y1="32" x2="60" y2="32" />
+                            <line x1="12.2" y1="12.2" x2="16.5" y2="16.5" />
+                            <line x1="47.5" y1="47.5" x2="51.8" y2="51.8" />
+                            <line x1="12.2" y1="51.8" x2="16.5" y2="47.5" />
+                            <line x1="47.5" y1="16.5" x2="51.8" y2="12.2" />
+                        </g>
+                        <defs>
+                            <radialGradient id="sunGrad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(32 32) rotate(90) scale(14)">
+                                <stop stop-color="#FCD34D" />
+                                <stop offset="1" stop-color="#F59E0B" />
+                            </radialGradient>
+                        </defs>
+                    </svg>
+                @elseif ($weatherType === 'partly_cloudy')
+                    {{-- Sun + Cloud SVG --}}
+                    <svg class="w-16 h-16 md:w-18 md:h-18" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="38" cy="22" r="11" fill="url(#sunPartly)" />
+                        <g stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="38" y1="6" x2="38" y2="9" />
+                            <line x1="52" y1="14" x2="50" y2="16" />
+                            <line x1="54" y1="22" x2="51" y2="22" />
+                            <line x1="26" y1="14" x2="28" y2="16" />
+                        </g>
+                        <path d="M20 48H44C47.866 48 51 44.866 51 41C51 37.134 47.866 34 44 34C43.7 34 43.4 34.02 43.1 34.06C42.06 28.32 37.07 24 31 24C24.37 24 19 29.37 19 36C19 36.35 19.01 36.69 19.05 37.03C15.65 37.56 13 40.48 13 44C13 46.21 14.79 48 17 48H20Z" fill="url(#cloudGrad)" stroke="#CBD5E1" stroke-width="1.5" />
+                        <defs>
+                            <linearGradient id="sunPartly" x1="27" y1="11" x2="49" y2="33" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FDE047" />
+                                <stop offset="1" stop-color="#EA580C" />
+                            </linearGradient>
+                            <linearGradient id="cloudGrad" x1="13" y1="24" x2="51" y2="48" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FFFFFF" />
+                                <stop offset="1" stop-color="#E2E8F0" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                @elseif ($weatherType === 'rainy')
+                    {{-- Rain SVG --}}
+                    <svg class="w-16 h-16 md:w-18 md:h-18" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 40H45C48.3 40 51 37.3 51 34C51 30.7 48.3 28 45 28C44.7 28 44.4 28.02 44.1 28.06C43.1 23.32 38.9 20 34 20C28.5 20 24 24.5 24 30C24 30.3 24.01 30.6 24.05 30.9C21.1 31.4 19 33.9 19 36.8C19 38.6 20.4 40 22.2 40H19Z" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1.5" />
+                        <line x1="24" y1="44" x2="21" y2="52" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" />
+                        <line x1="33" y1="44" x2="30" y2="52" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" />
+                        <line x1="42" y1="44" x2="39" y2="52" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
+                @elseif ($weatherType === 'thunderstorm')
+                    {{-- Storm SVG --}}
+                    <svg class="w-16 h-16 md:w-18 md:h-18" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 36H45C48.3 36 51 33.3 51 30C51 26.7 48.3 24 45 24C44.7 24 44.4 24.02 44.1 24.06C43.1 19.32 38.9 16 34 16C28.5 16 24 20.5 24 26C24 26.3 24.01 26.6 24.05 26.9C21.1 27.4 19 29.9 19 32.8C19 34.6 20.4 36 22.2 36H19Z" fill="#475569" />
+                        <polygon points="34,34 26,46 33,46 29,58 41,44 34,44" fill="#FACC15" stroke="#EAB308" stroke-width="1" />
+                    </svg>
+                @else
+                    {{-- Overcast Cloud SVG --}}
+                    <svg class="w-16 h-16 md:w-18 md:h-18" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 46H46C50 46 53 43 53 39C53 35.2 50 32 46.2 32C45.9 32 45.5 32.02 45.2 32.06C44.1 26.3 39 22 33 22C26.4 22 21 27.4 21 34C21 34.3 21.01 34.7 21.05 35C17.6 35.6 15 38.5 15 42C15 44.2 16.8 46 19 46H18Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5" />
+                    </svg>
+                @endif
+            </div>
+
+            {{-- Angka Suhu & Ringkasan Cuaca --}}
+            <div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl md:text-4xl lg:text-5xl font-black text-ink tracking-tight">{{ $weather['suhu'] }}</span>
+                    <span class="text-xl md:text-2xl font-bold text-muted">°C</span>
+                </div>
+                <p class="text-xs md:text-sm font-bold text-ink mt-0.5">{{ $weather['cuaca_teks'] }}</p>
+                <div class="flex items-center gap-3 text-tiny font-medium text-muted mt-1.5">
+                    <span class="flex items-center gap-1" title="Kelembaban Relatif (RH)">
+                        <span class="material-symbols-outlined text-[15px] text-blue-500">water_drop</span>
+                        <strong>{{ $weather['kelembaban'] }}%</strong> RH
+                    </span>
+                    <span class="flex items-center gap-1" title="Kecepatan Angin">
+                        <span class="material-symbols-outlined text-[15px] text-teal-600">air</span>
+                        <strong>{{ $weather['angin_kmh'] }}</strong> km/h
+                    </span>
+                    <span class="hidden sm:inline" title="Suhu Terasa (Heat Index)">
+                        Terasa ~<strong>{{ $weather['apparent_temp'] }}°C</strong>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {{-- Sisi Kanan (Kolom 6-12): Visual Gauge Indeks Stres Panas (THI) --}}
+        <div class="lg:col-span-7 bg-white/90 rounded-xl p-4 border border-black/10 shadow-2xs space-y-3">
+            {{-- Header THI Status --}}
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-black uppercase tracking-wider text-muted">Indeks Stres Panas Ayam:</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black {{ $weather['badge_class'] }}">
+                        THI {{ $weather['thi'] }} · {{ $weather['thi_kategori_singkat'] }}
+                    </span>
+                </div>
+                <span class="text-[11px] font-bold {{ $weather['thi_level'] === 'danger' ? 'text-danger' : ($weather['thi_level'] === 'warning' ? 'text-amber-700' : 'text-brand') }}">
+                    {{ $weather['thi_kategori'] }}
+                </span>
+            </div>
+
+            {{-- Visual Bar Gauge THI Unggas (Rentang 60 - 90+) --}}
+            <div class="space-y-1.5">
+                <div class="relative w-full h-3 rounded-full bg-surface overflow-hidden shadow-inner flex">
+                    <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Nyaman: THI < 72"></div>
+                    <div class="h-full bg-amber-400" style="width: 20%;" title="Waspada Panas: THI 72 - 78"></div>
+                    <div class="h-full bg-orange-500" style="width: 20%;" title="Kritis Heat Stress: THI 78 - 84"></div>
+                    <div class="h-full bg-rose-600" style="width: 20%;" title="Bahaya Ekstrem: THI ≥ 84"></div>
+                </div>
+
+                {{-- Pin Marker Posisi THI Saat Ini --}}
+                <div class="relative w-full h-4">
+                    <div class="absolute -top-1 -translate-x-1/2 flex flex-col items-center transition-all duration-500" style="left: {{ $thiPercent }}%;">
+                        <span class="w-3 h-3 rotate-45 bg-ink shadow-sm rounded-2xs"></span>
+                        <span class="text-[9px] font-black text-ink whitespace-nowrap mt-0.5 leading-none">THI {{ $weather['thi'] }}</span>
+                    </div>
+                </div>
+
+                {{-- Label Skala THI --}}
+                <div class="flex justify-between text-[9px] font-bold text-muted px-0.5">
+                    <span>&lt; 72 (Nyaman)</span>
+                    <span class="text-center">72-78 (Waspada)</span>
+                    <span class="text-center">78-84 (Kritis)</span>
+                    <span class="text-right">&gt; 84 (Bahaya)</span>
+                </div>
+            </div>
+
+            {{-- Dampak Fisiologi Ayam Petelur --}}
+            <div class="flex items-start gap-2 pt-1 border-t border-line/60 text-xs">
+                <span class="text-[15px] shrink-0">🐔</span>
+                <p class="text-ink font-medium leading-relaxed">
+                    <strong class="font-bold">Kondisi Ayam:</strong> {{ $dampakAyam }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {{-- Baris 3: Rekomendasi Manajemen Pakan Cepat --}}
+    <div class="relative z-10 pt-3 border-t border-black/10">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-ink flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-brand">health_and_safety</span>
+                <span>Rekomendasi Manajemen Pakan Cuaca Terkini:</span>
+            </span>
+            <span class="text-tiny text-muted">Berdasarkan Standar Fisiologi Unggas Tropis</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            @foreach ($weather['saran_manajemen'] as $index => $saran)
+                <div class="p-2.5 rounded-xl bg-white/85 border border-black/10 text-xs flex items-start gap-2 shadow-2xs">
+                    <span class="w-5 h-5 rounded-full bg-brand/10 text-brand font-black text-tiny flex items-center justify-center shrink-0 mt-0.5">
+                        {{ $index + 1 }}
+                    </span>
+                    <span class="text-ink font-medium leading-relaxed">{{ $saran }}</span>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</div>
+

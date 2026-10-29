@@ -254,6 +254,15 @@ SYS;
             $baris[] = '- Peringatan Dini Aktif: Tidak ada anomali terdeteksi (kondisi normal).';
         }
 
+        // Kondisi Cuaca Mikro & Indeks Stres Panas (THI) Terkini
+        try {
+            $weather = app(WeatherService::class)->getWeather($farm);
+            $saranCuaca = implode(' ', array_slice($weather['saran_manajemen'], 0, 2));
+            $baris[] = "- Cuaca Mikro & Suhu Kandang: Lokasi {$weather['kota']}, Suhu {$weather['suhu']}°C, Kelembaban {$weather['kelembaban']}%, Status THI: {$weather['thi']} ({$weather['thi_kategori']}). {$saranCuaca}";
+        } catch (\Throwable $e) {
+            // Abaikan kegagalan cuaca agar asisten tetap berjalan lancar
+        }
+
         return implode("\n", $baris);
     }
 

@@ -16,6 +16,12 @@
 <body class="min-h-screen bg-[#EBF1EB] text-ink antialiased">
 @php
     $farmNav = auth()->user()?->farm;
+    $cuacaNav = null;
+    if ($farmNav) {
+        try {
+            $cuacaNav = app(\App\Services\WeatherService::class)->getWeather($farmNav);
+        } catch (\Throwable $e) {}
+    }
 @endphp
 
 {{-- 1. Sidebar Desktop --}}
@@ -102,6 +108,19 @@
     </div>
 
     <div class="flex items-center gap-3">
+        @if ($cuacaNav)
+            {{-- Weather & Heat Stress Indicator Pill --}}
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 border border-line/60 shadow-sm text-xs font-semibold text-ink" title="Cuaca: {{ $cuacaNav['cuaca_teks'] }} · Lokasi: {{ $cuacaNav['kota'] }} · THI: {{ $cuacaNav['thi'] }} ({{ $cuacaNav['thi_kategori'] }})">
+                <span class="material-symbols-outlined text-[18px] {{ $cuacaNav['icon_color'] }}">{{ $cuacaNav['icon'] }}</span>
+                <span>{{ $cuacaNav['suhu'] }}°C</span>
+                <span class="text-muted text-[11px] font-normal">RH {{ $cuacaNav['kelembaban'] }}%</span>
+                <span class="w-1.5 h-1.5 rounded-full {{ $cuacaNav['thi_level'] === 'danger' ? 'bg-danger' : ($cuacaNav['thi_level'] === 'warning' ? 'bg-amber-500' : 'bg-lime') }}"></span>
+                <span class="text-[10px] font-bold uppercase tracking-wider {{ $cuacaNav['thi_level'] === 'danger' ? 'text-danger' : ($cuacaNav['thi_level'] === 'warning' ? 'text-amber-700' : 'text-brand') }}">
+                    THI {{ $cuacaNav['thi'] }} · {{ $cuacaNav['thi_kategori_singkat'] }}
+                </span>
+            </div>
+        @endif
+
         <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-line/60 text-xs font-semibold text-ink shadow-sm">
             <span class="w-6 h-6 rounded-full bg-brand/15 text-brand flex items-center justify-center">
                 <span class="material-symbols-outlined text-[16px]">person</span>
@@ -124,8 +143,16 @@
                 <span class="text-xs text-muted font-bold">· @yield('judul', 'Dashboard')</span>
             </div>
         </a>
-        <div class="w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center" aria-label="Akun">
-            <span class="material-symbols-outlined text-[18px]">person</span>
+        <div class="flex items-center gap-2">
+            @if ($cuacaNav)
+                <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface border border-line text-xs font-bold text-ink" title="{{ $cuacaNav['cuaca_teks'] }} · THI {{ $cuacaNav['thi'] }}">
+                    <span class="material-symbols-outlined text-[15px] {{ $cuacaNav['icon_color'] }}">{{ $cuacaNav['icon'] }}</span>
+                    <span>{{ $cuacaNav['suhu'] }}°C</span>
+                </div>
+            @endif
+            <div class="w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center" aria-label="Akun">
+                <span class="material-symbols-outlined text-[18px]">person</span>
+            </div>
         </div>
     </div>
 </header>
