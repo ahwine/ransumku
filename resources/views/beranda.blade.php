@@ -69,17 +69,7 @@
             <div class="flex flex-wrap items-center gap-2.5 self-start md:self-center">
                 {{-- Dropdown Pilih Sentra Peternakan --}}
                 @if (isset($presetKota))
-                    <form method="POST" action="{{ route('kandang.lokasi') }}" class="inline-flex items-center">
-                        @csrf
-                        <div class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-line bg-surface hover:bg-surface-2 transition text-xs font-semibold text-ink shadow-sm" title="Ubah lokasi sentra kandang untuk prakiraan cuaca mikro">
-                            <span class="material-symbols-outlined text-[16px] text-brand">location_on</span>
-                            <select name="kota" onchange="this.form.submit()" class="bg-transparent text-xs font-bold text-ink focus:outline-none cursor-pointer pr-1">
-                                @foreach ($presetKota as $k => $p)
-                                    <option value="{{ $k }}" @selected(($farm->lokasi_kota ?? 'Surabaya') === $k)>{{ $p['nama'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </form>
+                    @include('partials.dropdown-lokasi', ['idSuffix' => 'topbar', 'btnClass' => 'bg-surface hover:bg-surface-2 border-line text-ink'])
                 @endif
 
                 <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-line bg-surface text-xs font-semibold text-muted">

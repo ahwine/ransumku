@@ -233,3 +233,86 @@ const hitungHari = () => {
 };
 ['jumlah_hari', 'jumlah_ayam', 'konsumsi'].forEach((id) => document.getElementById(id)?.addEventListener('input', hitungHari));
 hitungHari();
+
+// Custom Floating Dropdown (Sentra Peternakan & City Selector)
+window.toggleCustomDropdown = function (dropdownId, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+
+    const menu = container.querySelector('.dropdown-menu');
+    const caret = container.querySelector('.dropdown-caret');
+    const trigger = container.querySelector('.dropdown-trigger');
+    const isOpen = menu && !menu.classList.contains('hidden');
+
+    // Close all custom dropdowns first
+    document.querySelectorAll('.custom-dropdown-container').forEach((c) => {
+        const m = c.querySelector('.dropdown-menu');
+        const crt = c.querySelector('.dropdown-caret');
+        const trg = c.querySelector('.dropdown-trigger');
+        if (m) m.classList.add('hidden');
+        if (crt) crt.classList.remove('rotate-180');
+        if (trg) {
+            trg.setAttribute('aria-expanded', 'false');
+            trg.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
+        }
+    });
+
+    if (!isOpen && menu) {
+        menu.classList.remove('hidden');
+        if (caret) caret.classList.add('rotate-180');
+        if (trigger) {
+            trigger.setAttribute('aria-expanded', 'true');
+            trigger.classList.add('ring-2', 'ring-brand/20', 'border-brand');
+        }
+    }
+};
+
+window.selectCustomDropdownKota = function (dropdownId, value) {
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+
+    const form = container.querySelector('form');
+    const hiddenInput = container.querySelector('input[name="kota"]');
+    if (hiddenInput && form) {
+        hiddenInput.value = value;
+        form.submit();
+    }
+};
+
+// Global event: Click outside closes any active dropdown
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-dropdown-container')) {
+        document.querySelectorAll('.custom-dropdown-container').forEach((c) => {
+            const m = c.querySelector('.dropdown-menu');
+            const crt = c.querySelector('.dropdown-caret');
+            const trg = c.querySelector('.dropdown-trigger');
+            if (m) m.classList.add('hidden');
+            if (crt) crt.classList.remove('rotate-180');
+            if (trg) {
+                trg.setAttribute('aria-expanded', 'false');
+                trg.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
+            }
+        });
+    }
+});
+
+// Global event: Escape key closes any active dropdown
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.custom-dropdown-container').forEach((c) => {
+            const m = c.querySelector('.dropdown-menu');
+            const crt = c.querySelector('.dropdown-caret');
+            const trg = c.querySelector('.dropdown-trigger');
+            if (m) m.classList.add('hidden');
+            if (crt) crt.classList.remove('rotate-180');
+            if (trg) {
+                trg.setAttribute('aria-expanded', 'false');
+                trg.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
+            }
+        });
+    }
+});
+

@@ -19,17 +19,7 @@
 
             {{-- Pemilih Lokasi Sentra Peternakan --}}
             @if (isset($presetKota))
-                <form method="POST" action="{{ route('kandang.lokasi') }}" class="inline-flex items-center">
-                    @csrf
-                    <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/90 border border-black/10 hover:bg-white transition text-xs font-semibold text-ink shadow-2xs" title="Klik untuk mengganti lokasi sentra peternakan">
-                        <span class="material-symbols-outlined text-[15px] text-brand">location_on</span>
-                        <select name="kota" onchange="this.form.submit()" class="bg-transparent text-xs font-bold text-ink focus:outline-none cursor-pointer pr-1">
-                            @foreach ($presetKota as $k => $p)
-                                <option value="{{ $k }}" @selected(($farm->lokasi_kota ?? 'Surabaya') === $k)>{{ $p['nama'] }} ({{ $p['provinsi'] }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </form>
+                @include('partials.dropdown-lokasi', ['idSuffix' => 'widget', 'btnClass' => 'bg-white/90 hover:bg-white border-black/10 text-ink'])
             @endif
         </div>
 
