@@ -12,7 +12,7 @@
     </div>
 
     {{-- Baris 1: Header Widget (Lokasi, Sumber Data, Indikator Real-time) --}}
-    <div class="relative z-40 flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-black/10">
+    <div data-dropdown-section class="relative z-30 flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-black/10">
         <div class="flex flex-wrap items-center gap-2.5">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-black/10 text-xs font-bold text-ink shadow-2xs">
                 <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>

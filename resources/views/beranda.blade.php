@@ -8,7 +8,7 @@
     <div class="bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
 
         {{-- 1. Baris Atas: Identitas Kandang, Smart Badges & Action Buttons --}}
-        <div class="p-5 md:p-6 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+        <div data-dropdown-section class="p-5 md:p-6 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white relative z-30">
             <div class="space-y-2">
                 {{-- Nama Kandang & Indikator Aktif --}}
                 <div class="flex items-center gap-2.5">
@@ -86,13 +86,13 @@
 
         {{-- Widget Visual Cuaca Mikro & Indeks Stres Panas (THI) Kandang --}}
         @if (isset($weather))
-            <div class="border-b border-line p-4 md:p-5 bg-surface/25">
+            <div class="border-b border-line p-4 md:p-5 bg-surface/25 relative z-10">
                 @include('partials.weather-widget')
             </div>
         @endif
 
         {{-- 2. 4-Kuadran Grid dengan Border Pemisah Salib (Cross Dividers) --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-line">
+        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-line relative z-0">
 
             {{-- Kolom Kiri: Kuadran 1 & Kuadran 3 --}}
             <div class="divide-y divide-line">

@@ -254,6 +254,8 @@ window.toggleCustomDropdown = function (dropdownId, event) {
         const trg = c.querySelector('.dropdown-trigger');
         if (m) m.classList.add('hidden');
         c.classList.remove('z-50');
+        const sec = c.closest('[data-dropdown-section]');
+        if (sec) sec.style.zIndex = '';
         if (crt) crt.classList.remove('rotate-180');
         if (trg) {
             trg.setAttribute('aria-expanded', 'false');
@@ -264,6 +266,8 @@ window.toggleCustomDropdown = function (dropdownId, event) {
     if (!isOpen && menu) {
         menu.classList.remove('hidden');
         container.classList.add('z-50');
+        const sec = container.closest('[data-dropdown-section]');
+        if (sec) sec.style.zIndex = '999';
         if (caret) caret.classList.add('rotate-180');
         if (trigger) {
             trigger.setAttribute('aria-expanded', 'true');
@@ -293,6 +297,8 @@ document.addEventListener('click', (e) => {
             const trg = c.querySelector('.dropdown-trigger');
             if (m) m.classList.add('hidden');
             c.classList.remove('z-50');
+            const sec = c.closest('[data-dropdown-section]');
+            if (sec) sec.style.zIndex = '';
             if (crt) crt.classList.remove('rotate-180');
             if (trg) {
                 trg.setAttribute('aria-expanded', 'false');
@@ -311,6 +317,8 @@ document.addEventListener('keydown', (e) => {
             const trg = c.querySelector('.dropdown-trigger');
             if (m) m.classList.add('hidden');
             c.classList.remove('z-50');
+            const sec = c.closest('[data-dropdown-section]');
+            if (sec) sec.style.zIndex = '';
             if (crt) crt.classList.remove('rotate-180');
             if (trg) {
                 trg.setAttribute('aria-expanded', 'false');
