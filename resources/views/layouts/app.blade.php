@@ -137,7 +137,7 @@
 
 {{-- 4. Main Content Area --}}
 <main class="lg:ml-64 pt-20 lg:pt-20 pb-28 lg:pb-12 px-4 lg:px-8">
-    <div class="max-w-6xl mx-auto space-y-4">
+    <div class="w-full space-y-5">
         @if (session('ok'))
             <div class="notice bg-brand-soft/70 text-primary" role="status">
                 <span class="material-symbols-outlined icon-fill text-[20px]">check_circle</span><span>{{ session('ok') }}</span>
