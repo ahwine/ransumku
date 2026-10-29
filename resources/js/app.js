@@ -88,7 +88,7 @@ function initSlidingTabs() {
             if (!animate) {
                 slider.style.transition = 'none';
             } else {
-                slider.style.transition = 'transform 320ms cubic-bezier(0.25, 1, 0.5, 1), width 320ms cubic-bezier(0.25, 1, 0.5, 1), height 320ms cubic-bezier(0.25, 1, 0.5, 1), opacity 150ms ease';
+                slider.style.transition = 'transform 340ms cubic-bezier(0.25, 1, 0.5, 1), width 340ms cubic-bezier(0.25, 1, 0.5, 1), height 340ms cubic-bezier(0.25, 1, 0.5, 1)';
             }
 
             const x = targetBtn.offsetLeft;
@@ -103,7 +103,7 @@ function initSlidingTabs() {
             if (!animate) {
                 void slider.offsetHeight; // Force reflow
                 requestAnimationFrame(() => {
-                    slider.style.transition = 'transform 320ms cubic-bezier(0.25, 1, 0.5, 1), width 320ms cubic-bezier(0.25, 1, 0.5, 1), height 320ms cubic-bezier(0.25, 1, 0.5, 1), opacity 150ms ease';
+                    slider.style.transition = 'transform 340ms cubic-bezier(0.25, 1, 0.5, 1), width 340ms cubic-bezier(0.25, 1, 0.5, 1), height 340ms cubic-bezier(0.25, 1, 0.5, 1)';
                 });
             }
         };
@@ -164,7 +164,12 @@ function initSlidingTabs() {
                 // Ignore url parse errors
             }
 
-            window.dispatchEvent(new Event('resize'));
+            // Resize Chart.js instances cleanly if visible
+            setTimeout(() => {
+                if (window.Chart && window.Chart.instances) {
+                    Object.values(window.Chart.instances).forEach((ci) => ci.resize());
+                }
+            }, 60);
         };
 
         buttons.forEach((btn) => {
@@ -182,9 +187,15 @@ function initSlidingTabs() {
         requestAnimationFrame(() => updateSlider(activeBtn, false));
         setTimeout(() => updateSlider(activeBtn, false), 50);
 
+        let prevW = window.innerWidth;
+        let prevH = window.innerHeight;
         window.addEventListener('resize', () => {
-            const currentActive = buttons.find((b) => b.classList.contains('active-tab')) || buttons[0];
-            updateSlider(currentActive, false);
+            if (window.innerWidth !== prevW || window.innerHeight !== prevH) {
+                prevW = window.innerWidth;
+                prevH = window.innerHeight;
+                const currentActive = buttons.find((b) => b.classList.contains('active-tab')) || buttons[0];
+                updateSlider(currentActive, false);
+            }
         });
 
         if (document.fonts?.ready) {
