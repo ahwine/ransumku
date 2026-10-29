@@ -253,6 +253,7 @@ window.toggleCustomDropdown = function (dropdownId, event) {
         const crt = c.querySelector('.dropdown-caret');
         const trg = c.querySelector('.dropdown-trigger');
         if (m) m.classList.add('hidden');
+        c.classList.remove('z-50');
         if (crt) crt.classList.remove('rotate-180');
         if (trg) {
             trg.setAttribute('aria-expanded', 'false');
@@ -262,6 +263,7 @@ window.toggleCustomDropdown = function (dropdownId, event) {
 
     if (!isOpen && menu) {
         menu.classList.remove('hidden');
+        container.classList.add('z-50');
         if (caret) caret.classList.add('rotate-180');
         if (trigger) {
             trigger.setAttribute('aria-expanded', 'true');
@@ -290,6 +292,7 @@ document.addEventListener('click', (e) => {
             const crt = c.querySelector('.dropdown-caret');
             const trg = c.querySelector('.dropdown-trigger');
             if (m) m.classList.add('hidden');
+            c.classList.remove('z-50');
             if (crt) crt.classList.remove('rotate-180');
             if (trg) {
                 trg.setAttribute('aria-expanded', 'false');
@@ -307,6 +310,7 @@ document.addEventListener('keydown', (e) => {
             const crt = c.querySelector('.dropdown-caret');
             const trg = c.querySelector('.dropdown-trigger');
             if (m) m.classList.add('hidden');
+            c.classList.remove('z-50');
             if (crt) crt.classList.remove('rotate-180');
             if (trg) {
                 trg.setAttribute('aria-expanded', 'false');

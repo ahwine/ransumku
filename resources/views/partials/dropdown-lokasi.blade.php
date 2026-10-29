@@ -6,7 +6,7 @@
     $menuAlignClass = ($align ?? 'left') === 'right' ? 'right-0' : 'left-0';
 @endphp
 
-<div class="relative inline-block text-left custom-dropdown-container" id="{{ $idDropdown }}">
+<div class="relative inline-block text-left custom-dropdown-container z-30" id="{{ $idDropdown }}">
     <form method="POST" action="{{ route('kandang.lokasi') }}">
         @csrf
         <input type="hidden" name="kota" value="{{ $kotaAktif }}" class="dropdown-hidden-input">

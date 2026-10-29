@@ -114,6 +114,13 @@
         }
     }
 
+    .custom-dropdown-menu {
+        background-color: #ffffff !important;
+        opacity: 1 !important;
+        z-index: 50 !important;
+        box-shadow: 0 16px 36px -4px rgba(0, 36, 21, 0.16), 0 0 0 1px rgba(0, 36, 21, 0.08) !important;
+    }
+
     .custom-dropdown-menu:not(.hidden) {
         animation: dropdownFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
         transform-origin: top left;

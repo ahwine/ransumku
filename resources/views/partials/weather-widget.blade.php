@@ -4,13 +4,15 @@
     $thiPercent = $weather['thi_percent'] ?? 50.0;
     $dampakAyam = $weather['dampak_ayam'] ?? ($weather['deskripsi_risiko'] ?? 'Kondisi fisiologi ayam terpantau aman.');
 @endphp
-<div class="rounded-2xl border {{ $weather['card_class'] }} p-5 md:p-6 shadow-sm relative overflow-hidden transition-all">
-    {{-- Background Decorative Ambient Blur --}}
-    <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-amber-400/10 blur-3xl pointer-events-none"></div>
-    <div class="absolute right-32 -bottom-20 w-56 h-56 rounded-full bg-brand/5 blur-3xl pointer-events-none"></div>
+<div class="rounded-2xl border {{ $weather['card_class'] }} p-5 md:p-6 shadow-sm relative transition-all">
+    {{-- Background Decorative Ambient Blur (terisolasi overflow-hidden agar card utama dapat menampilkan dropdown tanpa terpotong) --}}
+    <div class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+        <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-amber-400/10 blur-3xl"></div>
+        <div class="absolute right-32 -bottom-20 w-56 h-56 rounded-full bg-brand/5 blur-3xl"></div>
+    </div>
 
     {{-- Baris 1: Header Widget (Lokasi, Sumber Data, Indikator Real-time) --}}
-    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-black/10">
+    <div class="relative z-40 flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-black/10">
         <div class="flex flex-wrap items-center gap-2.5">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-black/10 text-xs font-bold text-ink shadow-2xs">
                 <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>

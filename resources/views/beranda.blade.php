@@ -66,7 +66,7 @@
             </div>
 
             {{-- Sisi Kanan: Lokasi Cuaca, Tanggal & Tombol CTA Utama --}}
-            <div class="flex flex-wrap items-center gap-2.5 self-start md:self-center">
+            <div class="flex flex-wrap items-center gap-2.5 self-start md:self-center relative z-40">
                 {{-- Dropdown Pilih Sentra Peternakan --}}
                 @if (isset($presetKota))
                     @include('partials.dropdown-lokasi', ['idSuffix' => 'topbar', 'btnClass' => 'bg-surface hover:bg-surface-2 border-line text-ink'])
