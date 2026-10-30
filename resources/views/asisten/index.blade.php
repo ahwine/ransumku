@@ -753,7 +753,7 @@ async function togglePinSession(id, e) {
             window.location.reload();
         }
     } catch (err) {
-        alert('Gagal mengubah sematan sesi.');
+        window.showToast('Gagal mengubah sematan sesi.', 'error', 'Gagal Memperbarui');
     }
 }
 

@@ -130,11 +130,7 @@
     {{-- 3. Acuan gizi --}}
     <section class="card space-y-3">
         <h2 class="text-h-sm">Acuan gizi target</h2>
-        <select name="standard_id" id="standard_id" class="field">
-            @foreach ($standards as $s)
-                <option value="{{ $s->id }}" @selected((int) old('standard_id') === $s->id)>{{ $s->nama }}{{ $s->tahun ? ' ('.$s->tahun.')' : '' }}</option>
-            @endforeach
-        </select>
+        @include('partials.dropdown-pilih-standar', ['standards' => $standards, 'value' => old('standard_id')])
         @foreach ($standards as $s)
             <details class="text-sm text-muted">
                 <summary class="cursor-pointer font-semibold text-brand">Lihat target: {{ $s->nama }}</summary>

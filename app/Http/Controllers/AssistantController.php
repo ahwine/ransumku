@@ -215,9 +215,19 @@ class AssistantController extends Controller
             ->with('pesan', 'Seluruh riwayat obrolan berhasil dibersihkan.');
     }
 
-    public function bacaPeringatan()
+    public function bacaPeringatan(Request $r)
     {
-        $this->farm()->alerts()->update(['dibaca' => true]);
+        $farm = $this->farm();
+        if ($r->filled('alert_id')) {
+            $farm->alerts()->where('id', $r->input('alert_id'))->update(['dibaca' => true]);
+        } else {
+            $farm->alerts()->update(['dibaca' => true]);
+        }
+
+        if ($r->wantsJson() || $r->ajax()) {
+            $unreadCount = $farm->alerts()->where('dibaca', false)->count();
+            return response()->json(['success' => true, 'unread_count' => $unreadCount]);
+        }
 
         return back();
     }

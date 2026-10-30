@@ -4,68 +4,21 @@ Chart.register(...registerables);
 Chart.defaults.font.family = "'Poppins', 'Plus Jakarta Sans', sans-serif";
 Chart.defaults.color = '#5C7A6D';
 
-// Grafik dibuat dari <canvas data-chart='{...}'> agar Blade cukup mengirim JSON.
-document.querySelectorAll('canvas[data-chart]').forEach((el) => {
-    const cfg = JSON.parse(el.dataset.chart);
-    new Chart(el, {
-        type: cfg.type,
-        data: { labels: cfg.labels, datasets: cfg.datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: cfg.legend ?? false,
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 8,
-                        boxHeight: 8,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        padding: 14,
-                        font: { size: 11, family: "'Plus Jakarta Sans', 'Poppins', sans-serif" },
-                        color: '#5C7A6D'
-                    }
-                },
-                tooltip: {
-                    backgroundColor: '#002415',
-                    titleFont: { family: "'Plus Jakarta Sans', sans-serif" },
-                    bodyFont: { family: "'Plus Jakarta Sans', sans-serif" },
-                    cornerRadius: 8,
-                    padding: 8
-                }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: {
-                        font: { size: 10, family: "'Plus Jakarta Sans', 'Poppins', sans-serif" },
-                        color: '#5C7A6D'
-                    }
-                },
-                y: {
-                    beginAtZero: cfg.zero ?? true,
-                    border: { dash: [3, 3] },
-                    grid: {
-                        color: '#E0EBE4',
-                        drawTicks: false
-                    },
-                    ticks: {
-                        font: { size: 10, family: "'Plus Jakarta Sans', 'Poppins', sans-serif" },
-                        color: '#9CA3AF'
-                    }
-                }
-            },
-        },
-    });
-});
-
 // =========================================================================
-// KHUSUS HALAMAN BUKU KANDANG: Animasi Progresif Kiri ke Kanan (4 Grafik)
-// Terisolasi 100% menggunakan data-buku-chart, tidak menyentuh halaman lain
+// UNIVERSAL PROGRESSIVE ANIMATION ENGINE UNTUK GRAFIK & STATISTIK
+// Menjamin konsistensi startup animasi di seluruh dashboard (Beranda & Buku Kandang)
 // =========================================================================
 const bukuSweepClipPlugin = {
     id: 'bukuSweepClip',
+    beforeInit(chart) {
+        // Tahan kondisi awal agar tidak ada blip / flash sebelum animasi dimulai
+        if (chart.config.type === 'line') {
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                chart._isSweepActive = true;
+                chart._sweepProgress = 0;
+            }
+        }
+    },
     beforeDatasetDraw(chart, args) {
         if (chart.config.type !== 'line') return;
         if (!chart._isSweepActive) return;
@@ -77,7 +30,6 @@ const bukuSweepClipPlugin = {
         if (!chartArea) return;
 
         const clipWidth = (chartArea.right - chartArea.left) * Math.max(0, Math.min(1, progress));
-        const currentRight = chartArea.left + clipWidth;
 
         ctx.save();
         ctx.beginPath();
@@ -85,19 +37,11 @@ const bukuSweepClipPlugin = {
         ctx.clip();
         chart._isClipped = true;
 
-        // Titik data muncul saat sapuan garis mencapai titik tersebut
+        // FASE 1: Selama garis bergerak, bola-bola disembunyikan (radius = 0)
+        // Bola-bola akan muncul bertahap satu per satu setelah garis selesai
         if (args.meta && args.meta.data) {
-            const baseRadius = chart.data.datasets[args.index]?.pointRadius ?? 4;
             args.meta.data.forEach((pt) => {
-                const dist = currentRight - pt.x;
-                if (dist < 0) {
-                    pt.options.radius = 0;
-                } else if (dist < 22) {
-                    const bloom = Math.sin((dist / 22) * (Math.PI / 2));
-                    pt.options.radius = baseRadius * bloom;
-                } else {
-                    pt.options.radius = baseRadius;
-                }
+                pt.options = { ...pt.options, radius: 0, borderWidth: 0 };
             });
         }
     },
@@ -109,8 +53,131 @@ const bukuSweepClipPlugin = {
     }
 };
 
+// Register plugin globally
+Chart.register(bukuSweepClipPlugin);
+
+// Helper: Animasi titik/bola-bola muncul bertahap satu per satu dari kiri ke kanan (Sequential Dot Bloom)
+function animateSequentialDots(chart, onComplete) {
+    if (!chart || !chart.ctx || !chart.data?.datasets) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        chart.data.datasets.forEach((ds, idx) => {
+            const meta = chart.getDatasetMeta(idx);
+            if (meta && meta.data) {
+                const baseRadius = ds.pointRadius ?? 4;
+                meta.data.forEach(pt => {
+                    pt.options.radius = baseRadius;
+                    pt.options.borderWidth = ds.pointBorderWidth ?? 2;
+                });
+            }
+        });
+        chart.draw();
+        if (onComplete) onComplete();
+        return;
+    }
+
+    if (chart._dotsRaf) {
+        cancelAnimationFrame(chart._dotsRaf);
+        chart._dotsRaf = null;
+    }
+
+    let maxPoints = 0;
+    chart.data.datasets.forEach((ds, idx) => {
+        const meta = chart.getDatasetMeta(idx);
+        if (meta && meta.data) {
+            maxPoints = Math.max(maxPoints, meta.data.length);
+        }
+    });
+
+    if (maxPoints === 0) {
+        if (onComplete) onComplete();
+        return;
+    }
+
+    // Kecepatan jelas bertahap (~95-105ms antar-bola) agar bola terlihat jelas mekar satu per satu
+    const staggerMs = Math.max(80, Math.min(115, 700 / maxPoints));
+    const bloomDurationMs = 260;
+    const totalDuration = (maxPoints - 1) * staggerMs + bloomDurationMs;
+
+    let startTime = null;
+
+    // Kurva mekar elastis (ease-out back): 0 -> mekar 109% -> kembali pas ke ukuran aslinya
+    function easeOutBack(t) {
+        const s = 1.6;
+        const p = t - 1;
+        return 1 + (s + 1) * Math.pow(p, 3) + s * Math.pow(p, 2);
+    }
+
+    // KRUSIAL: Putus sharedOptions reference di Chart.js agar radius tiap titik independen
+    chart.data.datasets.forEach((ds, idx) => {
+        const meta = chart.getDatasetMeta(idx);
+        if (meta && meta.data) {
+            meta.data.forEach(pt => {
+                pt.options = { ...pt.options, radius: 0, borderWidth: 0 };
+            });
+        }
+    });
+    chart.draw();
+
+    function step(now) {
+        if (!startTime) startTime = now;
+        const elapsed = now - startTime;
+
+        chart.data.datasets.forEach((ds, idx) => {
+            const meta = chart.getDatasetMeta(idx);
+            if (!meta || !meta.data) return;
+
+            const baseRadius = ds.pointRadius ?? 4;
+            const baseBorder = ds.pointBorderWidth ?? 2;
+            if (baseRadius <= 0) return;
+
+            meta.data.forEach((pt, i) => {
+                const pointStart = i * staggerMs;
+                const pointElapsed = elapsed - pointStart;
+
+                if (pointElapsed <= 0) {
+                    pt.options.radius = 0;
+                    pt.options.borderWidth = 0;
+                } else if (pointElapsed < bloomDurationMs) {
+                    const norm = pointElapsed / bloomDurationMs;
+                    const scale = easeOutBack(norm);
+                    pt.options.radius = Math.max(0, baseRadius * scale);
+                    pt.options.borderWidth = Math.max(0.5, baseBorder * Math.min(1, scale));
+                } else {
+                    pt.options.radius = baseRadius;
+                    pt.options.borderWidth = baseBorder;
+                }
+            });
+        });
+
+        chart.draw();
+
+        if (elapsed < totalDuration) {
+            chart._dotsRaf = requestAnimationFrame(step);
+        } else {
+            // Selesai seluruh tahapan: kembalikan ke baseRadius dan baseBorder normal
+            chart.data.datasets.forEach((ds, idx) => {
+                const meta = chart.getDatasetMeta(idx);
+                if (meta && meta.data) {
+                    const baseRadius = ds.pointRadius ?? 4;
+                    const baseBorder = ds.pointBorderWidth ?? 2;
+                    meta.data.forEach(pt => {
+                        pt.options.radius = baseRadius;
+                        pt.options.borderWidth = baseBorder;
+                    });
+                }
+            });
+            chart.draw();
+            chart._dotsRaf = null;
+            if (onComplete) onComplete();
+        }
+    }
+
+    chart._dotsRaf = requestAnimationFrame(step);
+}
+
 // Helper: Animasi garis bergerak dari kiri ke kanan (Progressive Line Drawing)
-function animateBukuLine(chart, delayMs = 0, durationMs = 1200) {
+function animateBukuLine(chart, delayMs = 0, durationMs = 1000) {
     if (!chart || !chart.ctx) return;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -123,6 +190,22 @@ function animateBukuLine(chart, delayMs = 0, durationMs = 1200) {
     if (chart._sweepRaf) {
         cancelAnimationFrame(chart._sweepRaf);
         chart._sweepRaf = null;
+    }
+    if (chart._dotsRaf) {
+        cancelAnimationFrame(chart._dotsRaf);
+        chart._dotsRaf = null;
+    }
+
+    // Tahan titik bola di radius 0 selama garis belum selesai dan putus sharedOptions
+    if (chart.data?.datasets) {
+        chart.data.datasets.forEach((ds, idx) => {
+            const meta = chart.getDatasetMeta(idx);
+            if (meta && meta.data) {
+                meta.data.forEach((pt) => {
+                    pt.options = { ...pt.options, radius: 0, borderWidth: 0 };
+                });
+            }
+        });
     }
 
     chart._sweepProgress = 0;
@@ -145,7 +228,7 @@ function animateBukuLine(chart, delayMs = 0, durationMs = 1200) {
         const animElapsed = elapsed - delayMs;
         const rawT = Math.min(1, animElapsed / durationMs);
 
-        // Ease-out cubic: halus dan bertahap
+        // Ease-out cubic: sapuan garis mulus dari kiri ke kanan
         const easeT = 1 - Math.pow(1 - rawT, 3);
 
         chart._sweepProgress = easeT;
@@ -154,16 +237,15 @@ function animateBukuLine(chart, delayMs = 0, durationMs = 1200) {
         if (rawT < 1) {
             chart._sweepRaf = requestAnimationFrame(step);
         } else {
+            // Selesai Fase 1: Garis selesai menyapu
             chart._sweepProgress = 1;
             chart._isSweepActive = false;
-            if (chart.data?.datasets?.[0] && chart.getDatasetMeta(0)?.data) {
-                const baseRadius = chart.data.datasets[0].pointRadius ?? 4;
-                chart.getDatasetMeta(0).data.forEach((pt) => {
-                    pt.options.radius = baseRadius;
-                });
-            }
-            chart.draw();
             chart._sweepRaf = null;
+
+            // Beri jeda mikro 40ms agar sapuan garis terasa tuntas sebelum bola pertama mekar
+            setTimeout(() => {
+                animateSequentialDots(chart);
+            }, 40);
         }
     }
 
@@ -171,7 +253,7 @@ function animateBukuLine(chart, delayMs = 0, durationMs = 1200) {
 }
 
 // Helper: Animasi batang muncul satu per satu dari baseline kiri ke kanan
-function animateBukuBar(chart, delayMs = 280) {
+function animateBukuBar(chart, delayMs = 280, durationMs = 650) {
     if (!chart || !chart.ctx) return;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -188,13 +270,13 @@ function animateBukuBar(chart, delayMs = 280) {
 
     chart._barTimer = setTimeout(() => {
         chart.options.animation = {
-            duration: 650,
+            duration: durationMs,
             easing: 'easeOutQuart',
         };
         chart.options.animations = {
             y: {
                 type: 'number',
-                duration: 650,
+                duration: durationMs,
                 easing: 'easeOutQuart',
                 delay(ctx) {
                     if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
@@ -206,17 +288,27 @@ function animateBukuBar(chart, delayMs = 280) {
     }, delayMs);
 }
 
-// Inisialisasi 4 grafik Buku Kandang
-const bukuChartsMap = {};
+// Factory konfigurasi & inisialisasi Chart seragam
+function createStandardChart(el, cfg) {
+    if (cfg.type === 'line' && Array.isArray(cfg.datasets)) {
+        cfg.datasets.forEach((ds) => {
+            if (!ds.borderDash) {
+                ds.borderWidth = ds.borderWidth ?? 2.75;
+                ds.pointRadius = ds.pointRadius ?? 4;
+                ds.pointHoverRadius = ds.pointHoverRadius ?? 6;
+                ds.pointBackgroundColor = ds.pointBackgroundColor ?? '#FFFFFF';
+                ds.pointBorderColor = ds.pointBorderColor ?? ds.borderColor;
+                ds.pointBorderWidth = ds.pointBorderWidth ?? 2;
+            } else {
+                ds.pointRadius = ds.pointRadius ?? 0;
+                ds.pointHoverRadius = ds.pointHoverRadius ?? 0;
+            }
+        });
+    }
 
-document.querySelectorAll('canvas[data-buku-chart]').forEach((el) => {
-    const cfg = JSON.parse(el.dataset.bukuChart);
-    const chartName = el.dataset.chartName;
-
-    const chart = new Chart(el, {
+    return new Chart(el, {
         type: cfg.type,
         data: { labels: cfg.labels, datasets: cfg.datasets },
-        plugins: cfg.type === 'line' ? [bukuSweepClipPlugin] : [],
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -273,10 +365,54 @@ document.querySelectorAll('canvas[data-buku-chart]').forEach((el) => {
         },
     });
 
+    // Isolasi objek options tiap titik agar tidak berbagi referensi (sharedOptions) di Chart.js
+    if (cfg.type === 'line' && chart.data?.datasets) {
+        chart.data.datasets.forEach((ds, idx) => {
+            const meta = chart.getDatasetMeta(idx);
+            if (meta && meta.data) {
+                meta.data.forEach((pt) => {
+                    pt.options = { ...pt.options };
+                });
+            }
+        });
+    }
+
+    return chart;
+}
+
+// Inisialisasi peta instans grafik
+const bukuChartsMap = {};
+const berandaChartsMap = {};
+
+// 1. Inisialisasi Canvas Buku Kandang
+document.querySelectorAll('canvas[data-buku-chart]').forEach((el) => {
+    const cfg = JSON.parse(el.dataset.bukuChart);
+    const chartName = el.dataset.chartName;
+    const chart = createStandardChart(el, cfg);
     if (chartName) {
         bukuChartsMap[chartName] = chart;
     }
     el._bukuChartInstance = chart;
+});
+
+// 2. Inisialisasi Canvas Beranda & Standalone
+document.querySelectorAll('canvas[data-chart]').forEach((el) => {
+    const cfg = JSON.parse(el.dataset.chart);
+    const chartName = el.dataset.chartName;
+    const chart = createStandardChart(el, cfg);
+
+    const isBerandaGrid = el.closest('[data-beranda-grafik-container]');
+    if (isBerandaGrid && chartName) {
+        berandaChartsMap[chartName] = chart;
+    } else if (!isBerandaGrid) {
+        // Standalone chart di luar beranda: picu animasi langsung
+        if (cfg.type === 'line') {
+            animateBukuLine(chart, 80, 1200);
+        } else if (cfg.type === 'bar') {
+            animateBukuBar(chart, 80);
+        }
+    }
+    el._chartInstance = chart;
 });
 
 // Orkestrasi urutan animasi 4 grafik Buku Kandang
@@ -289,7 +425,7 @@ function triggerBukuKandangOrchestration() {
     if (panel && panel.classList.contains('hidden')) return;
 
     // 1. Fade-in halus pada kartu grafik
-    const cards = container.querySelectorAll('.buku-card-fadein');
+    const cards = container.querySelectorAll('.buku-card-fadein, .stat-card-fadein');
     cards.forEach((c) => {
         c.style.animation = 'none';
         void c.offsetHeight; // trigger reflow
@@ -322,9 +458,41 @@ function triggerBukuKandangOrchestration() {
     }
 }
 
-window.__triggerBukuKandangAnimation = triggerBukuKandangOrchestration;
+// Orkestrasi urutan animasi 4 kuadran grafik Beranda Dashboard
+function triggerBerandaOrchestration() {
+    const container = document.querySelector('[data-beranda-grafik-container]');
+    if (!container) return;
 
-// IntersectionObserver untuk memicu animasi satu kali saat pertama kali terlihat
+    // Resize instans grafik jika diperlukan
+    Object.values(berandaChartsMap).forEach((ci) => {
+        if (ci) ci.resize();
+    });
+
+    // 2. Kuadran 1: Produksi Telur (batang berurutan kiri ke kanan, delay: 60ms)
+    if (berandaChartsMap.telur) {
+        animateBukuBar(berandaChartsMap.telur, 60);
+    }
+
+    // 3. Kuadran 2: Populasi Ayam (garis menyapu kiri ke kanan, delay: 180ms, durasi: 1000ms)
+    if (berandaChartsMap.populasi) {
+        animateBukuLine(berandaChartsMap.populasi, 180, 1000);
+    }
+
+    // 4. Kuadran 3: Konsumsi Pakan vs SNI (garis menyapu kiri ke kanan, delay: 320ms, durasi: 1000ms)
+    if (berandaChartsMap.pakan) {
+        animateBukuLine(berandaChartsMap.pakan, 320, 1000);
+    }
+
+    // 5. Kuadran 4: Efisiensi & FCR vs SNI (garis menyapu kiri ke kanan, delay: 460ms, durasi: 1000ms)
+    if (berandaChartsMap.fcr) {
+        animateBukuLine(berandaChartsMap.fcr, 460, 1000);
+    }
+}
+
+window.__triggerBukuKandangAnimation = triggerBukuKandangOrchestration;
+window.__triggerBerandaAnimation = triggerBerandaOrchestration;
+
+// IntersectionObserver untuk Buku Kandang
 let hasAnimatedBukuOnView = false;
 const bukuContainerEl = document.querySelector('[data-buku-grafik-container]');
 if (bukuContainerEl) {
@@ -346,6 +514,35 @@ if (bukuContainerEl) {
         observer.observe(bukuContainerEl);
     } else {
         setTimeout(triggerBukuKandangOrchestration, 200);
+    }
+}
+
+// IntersectionObserver & Auto-trigger untuk Beranda Dashboard
+let hasAnimatedBerandaOnView = false;
+const berandaContainerEl = document.querySelector('[data-beranda-grafik-container]');
+if (berandaContainerEl) {
+    // Pemicu langsung jika container sudah ada di dalam viewport layar saat boot
+    const rect = berandaContainerEl.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+        hasAnimatedBerandaOnView = true;
+        setTimeout(triggerBerandaOrchestration, 50);
+    }
+
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    if (!hasAnimatedBerandaOnView) {
+                        hasAnimatedBerandaOnView = true;
+                        triggerBerandaOrchestration();
+                    }
+                }
+            });
+        }, { threshold: 0.15 });
+
+        observer.observe(berandaContainerEl);
+    } else if (!hasAnimatedBerandaOnView) {
+        setTimeout(triggerBerandaOrchestration, 150);
     }
 }
 
@@ -465,6 +662,15 @@ function initSlidingTabs() {
                     window.__triggerBukuKandangAnimation();
                 }, 75);
             }
+
+            if (typeof window.__triggerBerandaAnimation === 'function') {
+                const berandaInPanel = group.querySelector(`[data-panel="${tabId}"] [data-beranda-grafik-container]`);
+                if (berandaInPanel) {
+                    setTimeout(() => {
+                        window.__triggerBerandaAnimation();
+                    }, 75);
+                }
+            }
         };
 
         buttons.forEach((btn) => {
@@ -551,6 +757,8 @@ window.toggleCustomDropdown = function (dropdownId, event) {
         c.classList.remove('z-50');
         const sec = c.closest('[data-dropdown-section]');
         if (sec) sec.style.zIndex = '';
+        const hdr = c.closest('header');
+        if (hdr) hdr.style.zIndex = '';
         if (crt) crt.classList.remove('rotate-180');
         if (trg) {
             trg.setAttribute('aria-expanded', 'false');
@@ -563,6 +771,8 @@ window.toggleCustomDropdown = function (dropdownId, event) {
         container.classList.add('z-50');
         const sec = container.closest('[data-dropdown-section]');
         if (sec) sec.style.zIndex = '999';
+        const hdr = container.closest('header');
+        if (hdr) hdr.style.zIndex = '999';
         if (caret) caret.classList.add('rotate-180');
         if (trigger) {
             trigger.setAttribute('aria-expanded', 'true');
@@ -584,6 +794,163 @@ window.selectCustomDropdownKota = function (dropdownId, value) {
     if (hiddenInput && form) {
         hiddenInput.value = value;
         form.submit();
+    }
+};
+
+// Form Dropdown Selection Handler for City Selector (No direct submit)
+window.selectCustomDropdownKotaInput = function(dropdownId, value, nama, info) {
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+
+    const hidden = container.querySelector('.dropdown-hidden-input') || container.querySelector('input[type="hidden"]');
+    if (hidden) {
+        hidden.value = value;
+        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    const labelEl = container.querySelector('.dropdown-selected-label');
+    if (labelEl) {
+        labelEl.textContent = nama;
+    }
+    const infoEl = container.querySelector('.dropdown-selected-info');
+    if (infoEl && info) {
+        infoEl.textContent = info;
+    }
+
+    const items = container.querySelectorAll('[data-city-item]');
+    items.forEach((item) => {
+        const itemVal = item.getAttribute('data-city-key');
+        const isSelected = itemVal === value;
+
+        item.classList.toggle('bg-surface', isSelected);
+        item.classList.toggle('border-brand/30', isSelected);
+        item.classList.toggle('shadow-2xs', isSelected);
+        item.classList.toggle('font-bold', isSelected);
+        item.classList.toggle('hover:bg-surface/80', !isSelected);
+        item.classList.toggle('text-ink/80', !isSelected);
+        item.classList.toggle('font-medium', !isSelected);
+
+        const iconBox = item.querySelector('[data-item-icon-box]');
+        if (iconBox) {
+            iconBox.className = isSelected
+                ? 'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-brand text-white transition-colors'
+                : 'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-surface-2 text-muted group-hover:bg-brand/10 group-hover:text-brand transition-colors';
+        }
+
+        const badge = item.querySelector('[data-active-badge]');
+        const chooseHint = item.querySelector('[data-choose-hint]');
+        if (badge) badge.classList.toggle('hidden', !isSelected);
+        if (chooseHint) chooseHint.classList.toggle('hidden', isSelected);
+    });
+
+    window.tutupCustomDropdown(dropdownId);
+};
+
+// Universal Custom Form Dropdown Option Selector
+window.selectCustomDropdownOption = function(dropdownId, value, label, sublabel, icon) {
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+
+    const hidden = container.querySelector('.dropdown-hidden-input') || container.querySelector('input[type="hidden"]');
+    if (hidden) {
+        hidden.value = value;
+        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    const labelEl = container.querySelector('.dropdown-selected-label');
+    if (labelEl && label !== undefined) {
+        labelEl.textContent = label;
+    }
+    const sublabelEl = container.querySelector('.dropdown-selected-sublabel');
+    if (sublabelEl && sublabel !== undefined) {
+        sublabelEl.textContent = sublabel;
+    }
+    const iconEl = container.querySelector('.dropdown-selected-icon');
+    if (iconEl && icon) {
+        iconEl.textContent = icon;
+    }
+
+    const items = container.querySelectorAll('[data-dropdown-item]');
+    items.forEach((item) => {
+        const itemVal = item.getAttribute('data-value');
+        const isSelected = String(itemVal) === String(value);
+
+        item.classList.toggle('bg-surface', isSelected);
+        item.classList.toggle('border-brand/30', isSelected);
+        item.classList.toggle('shadow-2xs', isSelected);
+        item.classList.toggle('font-bold', isSelected);
+        item.classList.toggle('hover:bg-surface/80', !isSelected);
+        item.classList.toggle('text-ink/80', !isSelected);
+        item.classList.toggle('font-medium', !isSelected);
+
+        const iconBox = item.querySelector('[data-item-icon-box]');
+        if (iconBox) {
+            iconBox.className = isSelected
+                ? 'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-brand text-white transition-colors'
+                : 'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-surface-2 text-muted group-hover:bg-brand/10 group-hover:text-brand transition-colors';
+        }
+
+        const badge = item.querySelector('[data-active-badge]');
+        const chooseHint = item.querySelector('[data-choose-hint]');
+        if (badge) badge.classList.toggle('hidden', !isSelected);
+        if (chooseHint) chooseHint.classList.toggle('hidden', isSelected);
+    });
+
+    window.tutupCustomDropdown(dropdownId);
+};
+
+window.tutupCustomDropdown = function(dropdownId) {
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+    const menu = container.querySelector('.dropdown-menu');
+    const caret = container.querySelector('.dropdown-caret');
+    const trigger = container.querySelector('.dropdown-trigger');
+
+    if (menu) menu.classList.add('hidden');
+    container.classList.remove('z-50');
+    const sec = container.closest('[data-dropdown-section]');
+    if (sec) sec.style.zIndex = '';
+    if (caret) caret.classList.remove('rotate-180');
+    if (trigger) {
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
+    }
+};
+
+window.filterCustomDropdown = function(input, dropdownId) {
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+
+    const query = (input.value || '').trim().toLowerCase();
+    const clearBtn = container.querySelector('[data-dropdown-clear]');
+    if (clearBtn) {
+        clearBtn.classList.toggle('hidden', query.length === 0);
+    }
+
+    const items = container.querySelectorAll('[data-dropdown-item]');
+    let matchCount = 0;
+
+    items.forEach((item) => {
+        const searchText = (item.getAttribute('data-search-text') || item.textContent || '').toLowerCase();
+        const match = query.length === 0 || searchText.includes(query);
+        item.style.display = match ? '' : 'none';
+        if (match) matchCount++;
+    });
+
+    const emptyState = container.querySelector('[data-dropdown-empty]');
+    if (emptyState) {
+        emptyState.classList.toggle('hidden', matchCount > 0);
+    }
+};
+
+window.clearCustomDropdownSearch = function(btn, dropdownId) {
+    const container = document.getElementById(dropdownId);
+    if (!container) return;
+    const input = container.querySelector('[data-dropdown-search]');
+    if (input) {
+        input.value = '';
+        input.focus();
+        window.filterCustomDropdown(input, dropdownId);
     }
 };
 
@@ -887,4 +1254,244 @@ setTimeout(() => {
         setTimeout(() => toast.remove(), 400);
     });
 }, 4000);
+
+// Universal Floating Toast Notification Dispatcher
+window.showToast = function (pesan, tipe = 'success', judul = null) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'fixed top-20 right-4 lg:right-8 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.setAttribute('data-toast', '');
+    toast.className = 'pointer-events-auto bg-white/95 backdrop-blur-md rounded-2xl border shadow-2xl p-4 flex items-start gap-3 transform transition-all duration-300 translate-y-2 opacity-0';
+
+    let icon = 'check_circle';
+    let iconClass = 'bg-emerald-100 text-emerald-700';
+    let borderClass = 'border-emerald-200/90';
+    let titleText = judul || 'Berhasil';
+    let titleClass = 'text-ink';
+
+    if (tipe === 'error') {
+        icon = 'error';
+        iconClass = 'bg-rose-100 text-danger';
+        borderClass = 'border-rose-200/90';
+        titleText = judul || 'Terdapat Kendala';
+        titleClass = 'text-danger';
+    } else if (tipe === 'warning') {
+        icon = 'warning';
+        iconClass = 'bg-amber-100 text-amber-700';
+        borderClass = 'border-amber-200/90';
+        titleText = judul || 'Perhatian';
+        titleClass = 'text-amber-800';
+    } else if (tipe === 'info') {
+        icon = 'info';
+        iconClass = 'bg-blue-100 text-blue-700';
+        borderClass = 'border-blue-200/90';
+        titleText = judul || 'Informasi';
+        titleClass = 'text-blue-800';
+    }
+
+    toast.classList.add(borderClass);
+    toast.innerHTML = `
+        <div class="w-9 h-9 rounded-full ${iconClass} flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined icon-fill text-[20px]">${icon}</span>
+        </div>
+        <div class="flex-1 pr-1">
+            <p class="text-xs font-bold ${titleClass}">${titleText}</p>
+            <p class="text-xs text-muted mt-0.5 leading-relaxed">${pesan}</p>
+        </div>
+        <button type="button" class="text-muted hover:text-ink cursor-pointer p-1 rounded-lg hover:bg-surface transition" aria-label="Tutup">
+            <span class="material-symbols-outlined text-[16px]">close</span>
+        </button>
+    `;
+
+    toast.querySelector('button').addEventListener('click', () => {
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-12px)';
+        setTimeout(() => toast.remove(), 300);
+    });
+
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    });
+
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-12px)';
+            setTimeout(() => toast.remove(), 400);
+        }
+    }, 4500);
+};
+
+// Polyfill window.alert agar selalu menampilkan custom Toast UI elegan daripada dialog bawaan browser
+window.alert = function (msg) {
+    if (typeof msg === 'string') {
+        const lower = msg.toLowerCase();
+        const tipe = lower.includes('gagal') || lower.includes('error') ? 'error' : (lower.includes('perhatian') || lower.includes('silakan') || lower.includes('wajib') ? 'warning' : 'success');
+        window.showToast(msg, tipe);
+    } else {
+        window.showToast(String(msg), 'info');
+    }
+};
+
+// ==========================================
+// RansumKu Notification & Dynamic Tab Bar System
+// ==========================================
+
+let baseDocumentTitle = document.title.replace(/^\(\d+\)\s*/, '');
+
+window.updateNotificationBadge = function (count) {
+    const unread = Math.max(0, parseInt(count, 10) || 0);
+
+    // 1. Update judul tab bar browser (seperti WhatsApp Web: "(1) Dashboard · RansumKu")
+    if (unread > 0) {
+        document.title = `(${unread}) ${baseDocumentTitle}`;
+    } else {
+        document.title = baseDocumentTitle;
+    }
+
+    // 2. Update dot merah di navbar lonceng (desktop & mobile)
+    document.querySelectorAll('[data-notif-dot]').forEach((dot) => {
+        dot.classList.toggle('hidden', unread === 0);
+        dot.classList.toggle('inline-block', unread > 0);
+    });
+
+    // 3. Update counter badge di sidebar & bottom nav
+    document.querySelectorAll('[data-notif-count]').forEach((badge) => {
+        badge.textContent = unread > 9 ? '9+' : unread;
+        badge.classList.toggle('hidden', unread === 0);
+        badge.classList.toggle('flex', unread > 0);
+    });
+
+    // 4. Update badge status di modal notifikasi
+    const modalBadge = document.querySelector('[data-notif-modal-badge]');
+    if (modalBadge) {
+        modalBadge.textContent = unread > 0 ? `${unread} Baru` : 'Semua Terbaca';
+        modalBadge.className = unread > 0
+            ? 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200'
+            : 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200';
+    }
+
+    // Update counter di dalam tab filter
+    document.querySelectorAll('[data-tab-unread-count]').forEach((el) => {
+        el.textContent = `(${unread})`;
+    });
+
+    // 5. Update tombol "Tandai Semua Dibaca"
+    const markAllBtn = document.getElementById('btn-mark-all-read');
+    if (markAllBtn) {
+        markAllBtn.classList.toggle('hidden', unread === 0);
+        markAllBtn.classList.toggle('flex', unread > 0);
+    }
+};
+
+window.filterNotifTab = function(tab, containerId, btn) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.querySelectorAll('[data-notif-tab-btn]').forEach((b) => {
+        const isActive = b === btn;
+        b.className = isActive
+            ? 'px-2.5 py-1 rounded-full font-bold cursor-pointer transition bg-brand text-white shadow-2xs'
+            : 'px-2.5 py-1 rounded-full font-semibold cursor-pointer transition bg-surface text-muted hover:text-ink hover:bg-surface-2 border border-line/60';
+    });
+
+    const items = container.querySelectorAll('[data-notif-item]');
+    let count = 0;
+    items.forEach((item) => {
+        const isUnread = item.dataset.isUnread === 'true';
+        const level = item.dataset.level || '';
+        let show = true;
+        if (tab === 'unread') {
+            show = isUnread;
+        } else if (tab === 'waspada') {
+            show = level === 'waspada';
+        }
+        item.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+
+    const emptyFilter = container.querySelector('[data-notif-empty-filter]');
+    if (emptyFilter) {
+        emptyFilter.classList.toggle('hidden', count > 0 || items.length === 0);
+    }
+};
+
+window.tandaiSatuNotifikasiDibaca = function (alertId, element) {
+    if (!element || element.dataset.isUnread !== 'true') return;
+
+    // Hapus dot merah pada item ini dan ubah styling ke read state
+    element.dataset.isUnread = 'false';
+    const dot = element.querySelector('[data-notif-item-dot]');
+    if (dot) {
+        dot.classList.add('hidden');
+        dot.classList.remove('inline-block');
+    }
+
+    element.classList.remove('bg-surface/80', 'border-brand/25', 'shadow-2xs');
+    element.classList.add('bg-white', 'border-line/60', 'opacity-80');
+
+    // Hitung sisa unread di dalam modal
+    const remainingUnread = document.querySelectorAll('[data-notif-item][data-is-unread="true"]').length;
+    window.updateNotificationBadge(remainingUnread);
+
+    // Kirim request ke server untuk update database
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    fetch('/asisten/baca', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({ alert_id: alertId }),
+    }).then(res => res.json()).then(data => {
+        if (data && typeof data.unread_count === 'number') {
+            window.updateNotificationBadge(data.unread_count);
+        }
+    }).catch(err => {
+        console.warn('Gagal update status baca notifikasi:', err);
+    });
+};
+
+window.tandaiSemuaNotifikasiDibaca = function () {
+    // Hapus semua dot merah pada item notifikasi
+    document.querySelectorAll('[data-notif-item]').forEach((element) => {
+        element.dataset.isUnread = 'false';
+        const dot = element.querySelector('[data-notif-item-dot]');
+        if (dot) {
+            dot.classList.add('hidden');
+            dot.classList.remove('inline-block');
+        }
+        element.classList.remove('bg-surface/80', 'border-brand/25', 'shadow-2xs');
+        element.classList.add('bg-white', 'border-line/60', 'opacity-80');
+    });
+
+    window.updateNotificationBadge(0);
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    fetch('/asisten/baca', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({}),
+    }).catch(err => {
+        console.warn('Gagal update status baca semua notifikasi:', err);
+    });
+};
 

@@ -48,19 +48,11 @@
                 </div>
                 <div>
                     <label class="block font-bold text-ink mb-1.5">Fase Pemeliharaan <span class="text-danger">*</span></label>
-                    <select name="fase" class="input w-full text-xs bg-white font-medium" required>
-                        <option value="produksi">Produksi (Ayam Bertelur / Layer)</option>
-                        <option value="grower">Grower / Pullet (Remaja)</option>
-                        <option value="starter">Starter (Fase Awal / DOC)</option>
-                    </select>
+                    @include('partials.dropdown-pilih-fase', ['id' => 'fase-tambah', 'value' => old('fase', 'produksi')])
                 </div>
                 <div>
                     <label class="block font-bold text-ink mb-1.5">Sentra Lokasi / Kota</label>
-                    <select name="lokasi_kota" class="input w-full text-xs bg-white font-medium">
-                        @foreach ($presetKota as $k => $p)
-                            <option value="{{ $k }}">{{ $p['nama'] }} ({{ $p['provinsi'] ?? 'Indonesia' }})</option>
-                        @endforeach
-                    </select>
+                    @include('partials.dropdown-pilih-kota', ['id' => 'kota-tambah', 'value' => old('lokasi_kota', 'Surabaya'), 'presetKota' => $presetKota])
                 </div>
             </div>
 
@@ -158,20 +150,12 @@
                                         </div>
                                         <div>
                                             <label class="block font-bold text-ink mb-1">Fase</label>
-                                            <select name="fase" class="input w-full text-xs bg-white font-medium" required>
-                                                <option value="produksi" @selected($f->fase === 'produksi')>Produksi</option>
-                                                <option value="grower" @selected($f->fase === 'grower')>Grower</option>
-                                                <option value="starter" @selected($f->fase === 'starter')>Starter</option>
-                                            </select>
+                                            @include('partials.dropdown-pilih-fase', ['id' => 'fase-edit-' . $f->id, 'value' => $f->fase])
                                         </div>
                                     </div>
                                     <div>
                                         <label class="block font-bold text-ink mb-1">Lokasi Sentra</label>
-                                        <select name="lokasi_kota" class="input w-full text-xs bg-white font-medium">
-                                            @foreach ($presetKota as $k => $p)
-                                                <option value="{{ $k }}" @selected(($f->lokasi_kota ?? 'Surabaya') === $k)>{{ $p['nama'] }}</option>
-                                            @endforeach
-                                        </select>
+                                        @include('partials.dropdown-pilih-kota', ['id' => 'kota-edit-' . $f->id, 'value' => $f->lokasi_kota ?? 'Surabaya', 'presetKota' => $presetKota])
                                     </div>
                                 </div>
 
@@ -198,7 +182,7 @@
 
                             {{-- Tombol Hapus (jika kandang > 1) --}}
                             @if ($farms->count() > 1)
-                                <form method="POST" action="{{ route('kandang.destroy', $f) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kandang \'{{ $f->nama }}\'? Seluruh rekaman catatan dan formula pakan di kandang ini akan terhapus.');">
+                                <form method="POST" action="{{ route('kandang.destroy', $f) }}" data-confirm="Apakah Anda yakin ingin menghapus kandang '{{ $f->nama }}'?" data-confirm-title="Hapus Kandang" data-confirm-sub="Seluruh rekaman catatan dan formula pakan di kandang ini akan terhapus permanen." data-confirm-btn="Ya, Hapus Kandang">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50/50 hover:bg-rose-50 border border-rose-200/60 transition cursor-pointer shadow-2xs" title="Hapus Kandang">

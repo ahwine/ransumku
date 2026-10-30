@@ -57,7 +57,7 @@
                 </div>
 
                 {{-- Filter Cepat Pulau / Wilayah --}}
-                <div class="flex items-center gap-1 overflow-x-auto pt-2 pb-0.5 custom-dropdown-scroll text-[10px]">
+                <div class="flex items-center gap-1 overflow-x-auto pt-2 pb-0.5 slim-scrollbar text-[10px]">
                     @foreach ($daftarWilayah as $idx => $wilayah)
                         <button type="button"
                                 data-wilayah-btn="{{ $wilayah }}"
@@ -70,7 +70,7 @@
             </div>
 
             {{-- List Sentra & Kota Seluruh Indonesia --}}
-            <div class="max-h-64 sm:max-h-72 overflow-y-auto custom-dropdown-scroll space-y-1 pr-0.5" data-dropdown-list>
+            <div class="max-h-64 sm:max-h-72 overflow-y-auto custom-dropdown-scroll space-y-1 pr-1.5" data-dropdown-list>
                 @foreach ($presetKota as $k => $p)
                     @php 
                         $isSelected = ($kotaAktif === $k); 

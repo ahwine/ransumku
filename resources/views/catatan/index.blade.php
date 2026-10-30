@@ -367,12 +367,8 @@
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="lbl" for="ingredient_id">Bahan Pakan</label>
-                    <select id="ingredient_id" name="ingredient_id" class="field" required>
-                        @foreach ($bahan as $b)
-                            <option value="{{ $b->id }}">{{ $b->nama }}</option>
-                        @endforeach
-                    </select>
+                    <label class="lbl">Bahan Pakan</label>
+                    @include('partials.dropdown-pilih-bahan', ['bahan' => $bahan])
                 </div>
                 <div>
                     <label class="lbl" for="beli_tanggal">Tanggal Beli</label>
@@ -791,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 inputBerat.value = estKg;
                 updateLivePreview();
             } else {
-                alert('Silakan isi jumlah butir telur terlebih dahulu.');
+                window.showToast('Silakan isi jumlah butir telur terlebih dahulu.', 'warning', 'Perhatian');
                 inputTelur.focus();
             }
         });
@@ -854,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(() => {
-                    alert('Laporan mingguan berhasil disalin ke clipboard! Silakan paste (Ctrl+V) ke chat WhatsApp.');
+                    window.showToast('Laporan mingguan berhasil disalin ke clipboard! Silakan paste (Ctrl+V) ke chat WhatsApp.', 'success', 'Berhasil Menyalin');
                 }).catch(() => {
                     copyViaTextarea(text);
                 });
@@ -873,9 +869,9 @@ document.addEventListener('DOMContentLoaded', function () {
         ta.select();
         try {
             document.execCommand('copy');
-            alert('Laporan mingguan berhasil disalin ke clipboard! Silakan paste (Ctrl+V) ke chat WhatsApp.');
+            window.showToast('Laporan mingguan berhasil disalin ke clipboard! Silakan paste (Ctrl+V) ke chat WhatsApp.', 'success', 'Berhasil Menyalin');
         } catch (e) {
-            alert('Gagal menyalin teks laporan.');
+            window.showToast('Gagal menyalin teks laporan.', 'error', 'Gagal Menyalin');
         }
         document.body.removeChild(ta);
     }

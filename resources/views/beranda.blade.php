@@ -67,10 +67,10 @@
         @endif
 
         {{-- 2. 4-Kuadran Grid Analitikal Sempurna 2x2 (Stock Market / Financial Terminal Style) --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y divide-line relative z-0">
+        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y divide-line relative z-0" data-beranda-grafik-container>
 
             {{-- Kuadran 1: Produksi Telur (Top-Left) --}}
-            <div class="p-5 md:p-6 space-y-3.5 border-b border-line lg:border-r">
+            <div class="p-5 md:p-6 space-y-3.5 border-b border-line lg:border-r stat-card-fadein">
                 {{-- Header Kuadran 1 --}}
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-1.5">
@@ -129,12 +129,12 @@
 
                 {{-- Grafik Produksi Telur 7 Hari --}}
                 <div class="h-44 pt-1">
-                    <canvas data-chart='@json($chartTelur)' aria-label="Grafik produksi telur"></canvas>
+                    <canvas data-chart='@json($chartTelur)' data-chart-name="telur" aria-label="Grafik produksi telur"></canvas>
                 </div>
             </div>
 
             {{-- Kuadran 2: Populasi Ayam (Top-Right) --}}
-            <div class="p-5 md:p-6 space-y-3.5 border-b border-line">
+            <div class="p-5 md:p-6 space-y-3.5 border-b border-line stat-card-fadein">
                 @php
                     $survivalRate = max(0, 100 - round(($totalMatiIni / max(1, $farm->jumlah_ayam ?? 200)) * 100, 1));
                 @endphp
@@ -190,12 +190,12 @@
 
                 {{-- Grafik Populasi 7 Hari --}}
                 <div class="h-44 pt-1">
-                    <canvas data-chart='@json($chartPopulasi)' aria-label="Grafik populasi ayam"></canvas>
+                    <canvas data-chart='@json($chartPopulasi)' data-chart-name="populasi" aria-label="Grafik populasi ayam"></canvas>
                 </div>
             </div>
 
             {{-- Kuadran 3: Pakan Harian (Bottom-Left) --}}
-            <div class="p-5 md:p-6 space-y-3.5 border-b lg:border-b-0 lg:border-r border-line">
+            <div class="p-5 md:p-6 space-y-3.5 border-b lg:border-b-0 lg:border-r border-line stat-card-fadein">
                 @php
                     $diffPersen = $standarPakanGr > 0 ? round((($gramPerEkor - $standarPakanGr) / $standarPakanGr) * 100, 1) : 0;
                 @endphp
@@ -257,12 +257,12 @@
 
                 {{-- Grafik Konsumsi Pakan 7 Hari --}}
                 <div class="h-44 pt-1">
-                    <canvas data-chart='@json($chartPakan)' aria-label="Grafik konsumsi pakan"></canvas>
+                    <canvas data-chart='@json($chartPakan)' data-chart-name="pakan" aria-label="Grafik konsumsi pakan"></canvas>
                 </div>
             </div>
 
             {{-- Kuadran 4: Rasio & Efisiensi FCR (Bottom-Right) --}}
-            <div class="p-5 md:p-6 space-y-3.5">
+            <div class="p-5 md:p-6 space-y-3.5 stat-card-fadein">
                 {{-- Header Kuadran 4 --}}
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-1.5">
@@ -317,7 +317,7 @@
 
                 {{-- Grafik Tren FCR 7 Hari vs SNI --}}
                 <div class="h-44 pt-1">
-                    <canvas data-chart='@json($chartFcr)' aria-label="Grafik tren FCR"></canvas>
+                    <canvas data-chart='@json($chartFcr)' data-chart-name="fcr" aria-label="Grafik tren FCR"></canvas>
                 </div>
             </div>
 
