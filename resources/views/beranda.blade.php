@@ -25,10 +25,10 @@
                     </a>
 
                     {{-- Tombol Primer (CTA): Catat Data Harian --}}
-                    <a href="{{ route('catatan.index') }}" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark shadow-2xs hover:shadow-xs transition-all active:scale-95">
+                    <button type="button" onclick="bukaModal('modal-catat-harian')" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">add</span>
                         <span>Catat Data Harian</span>
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -334,8 +334,9 @@
                     <span class="material-symbols-outlined text-[20px] text-amber-600 shrink-0">notifications_active</span>
                     <div class="flex items-center gap-2 flex-wrap">
                         <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Peringatan dini & Anomali Data</h2>
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                            {{ $alerts->count() }} Isu Terdeteksi
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 inline-flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                            <span>{{ $alerts->count() }} Isu Terdeteksi</span>
                         </span>
                         <span class="hidden sm:inline text-tiny text-muted">• Berdasarkan Rekaman Data 7 Hari</span>
                     </div>
@@ -361,5 +362,9 @@
             </div>
         </div>
     @endif
+
+    {{-- Modal Popups Khusus Beranda --}}
+    @include('partials.modal-catat-harian')
+    @include('partials.modal-iot-kandang')
 </div>
 @endsection

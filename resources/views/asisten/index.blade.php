@@ -36,8 +36,18 @@
         <button type="button" data-tab="tanya" class="relative z-10 py-2.5 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
             Tanya Asisten AI
         </button>
-        <button type="button" data-tab="peringatan" class="relative z-10 py-2.5 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
-            Peringatan Dini ({{ $alerts->where('dibaca', false)->count() }})
+        <button type="button" data-tab="peringatan" class="relative z-10 py-2.5 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }} flex items-center justify-center gap-1.5">
+            <span>Peringatan Dini</span>
+            @php $unreadCountTab = $alerts->where('dibaca', false)->count(); @endphp
+            @if ($unreadCountTab > 0)
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white shadow-2xs">
+                    {{ $unreadCountTab > 9 ? '9+' : $unreadCountTab }}
+                </span>
+            @elseif ($alerts->count() > 0)
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-2 text-muted">
+                    {{ $alerts->count() }}
+                </span>
+            @endif
         </button>
     </div>
 
@@ -691,32 +701,37 @@ function tambahSesiKeSidebar(id, judul) {
     recentsList.insertBefore(item, recentsList.firstChild);
 }
 
-async function hapusSession(id, e) {
+function hapusSession(id, e) {
     if (e) e.stopPropagation();
-    if (!confirm('Hapus sesi obrolan ini?')) return;
-
-    try {
-        const res = await fetch(endpointChat, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': getCsrfToken()
-            },
-            body: JSON.stringify({ aksi: 'hapus_session', session_id: id })
-        });
-        const d = await res.json();
-        if (d.status === 'success') {
-            const el = document.getElementById(`session-item-${id}`);
-            if (el) el.remove();
-            if (currentSessionId === id) {
-                mulaiObrolanBaru();
+    bukaKonfirmasi({
+        judul: 'Hapus Sesi Obrolan',
+        pesan: 'Apakah Anda yakin ingin menghapus sesi obrolan ini?',
+        tombolTeks: 'Ya, Hapus Sesi',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(endpointChat, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    },
+                    body: JSON.stringify({ aksi: 'hapus_session', session_id: id })
+                });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    const el = document.getElementById(`session-item-${id}`);
+                    if (el) el.remove();
+                    if (currentSessionId === id) {
+                        mulaiObrolanBaru();
+                    }
+                }
+            } catch (err) {
+                console.error(err);
             }
         }
-    } catch (err) {
-        alert('Gagal menghapus sesi.');
-    }
+    });
 }
 
 async function togglePinSession(id, e) {
@@ -742,27 +757,32 @@ async function togglePinSession(id, e) {
     }
 }
 
-async function hapusSemua() {
-    if (!confirm('Hapus SELURUH riwayat obrolan kandang?')) return;
-
-    try {
-        const res = await fetch(endpointChat, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': getCsrfToken()
-            },
-            body: JSON.stringify({ aksi: 'hapus_semua' })
-        });
-        const d = await res.json();
-        if (d.status === 'success') {
-            window.location.href = '{{ url('/asisten?tab=tanya&session=baru') }}';
+function hapusSemua() {
+    bukaKonfirmasi({
+        judul: 'Hapus Seluruh Riwayat Chat',
+        pesan: 'Apakah Anda yakin ingin menghapus SELURUH riwayat obrolan kandang? Semua pesan konsultasi AI akan hilang permanen.',
+        tombolTeks: 'Ya, Hapus Semua',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(endpointChat, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    },
+                    body: JSON.stringify({ aksi: 'hapus_semua' })
+                });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    window.location.href = '{{ url('/asisten?tab=tanya&session=baru') }}';
+                }
+            } catch (err) {
+                console.error('Gagal membersihkan seluruh riwayat:', err);
+            }
         }
-    } catch (err) {
-        alert('Gagal membersihkan seluruh riwayat.');
-    }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

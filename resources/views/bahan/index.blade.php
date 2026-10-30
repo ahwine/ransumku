@@ -21,15 +21,42 @@
     </p>
 </div>
 
-{{-- Pencarian --}}
-<form method="GET" action="{{ route('bahan.index') }}" class="flex gap-2">
-    <input type="text" name="q" value="{{ $q }}" placeholder="Cari nama bahan..." class="field !min-h-11">
-    <button class="btn-outline btn-sm">Cari</button>
-</form>
+{{-- Pencarian Cepat Bahan Pakan --}}
+<div class="card !p-3">
+    <form method="GET" action="{{ route('bahan.index') }}" class="flex items-center gap-2" id="form-search-bahan">
+        <div class="relative flex-1 flex items-center">
+            <span class="material-symbols-outlined absolute left-3 text-[18px] text-muted pointer-events-none">search</span>
+            <input type="text" 
+                   name="q" 
+                   id="search-bahan-live"
+                   value="{{ $q }}" 
+                   oninput="filterBahanKatalog(this)"
+                   placeholder="Cari nama bahan pakan (misal: Jagung, Bekatul, Konsentrat)..." 
+                   class="w-full pl-9 pr-8 py-2.5 bg-surface/50 focus:bg-white border border-line rounded-xl text-xs sm:text-sm font-semibold text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand shadow-2xs transition"
+                   autocomplete="off">
+            @if ($q)
+                <a href="{{ route('bahan.index') }}" class="absolute right-2.5 text-muted hover:text-ink cursor-pointer p-0.5 rounded-md hover:bg-surface" title="Hapus filter pencarian">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                </a>
+            @else
+                <button type="button" 
+                        id="clear-search-bahan"
+                        onclick="clearFilterBahanKatalog()" 
+                        class="hidden absolute right-2.5 text-muted hover:text-ink cursor-pointer p-0.5 rounded-md hover:bg-surface" 
+                        title="Hapus pencarian">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                </button>
+            @endif
+        </div>
+        <button type="submit" class="btn-primary btn-sm !min-h-10 !px-4 text-xs font-bold shadow-2xs">
+            <span>Cari</span>
+        </button>
+    </form>
+</div>
 
 <div class="space-y-3">
     @forelse ($bahan as $b)
-        <div class="card space-y-2">
+        <div class="card space-y-2" data-bahan-card data-bahan-nama="{{ strtolower($b->nama) }}">
             <div class="flex items-start justify-between">
                 <div>
                     <h2 class="text-h-sm text-ink">{{ $b->nama }}</h2>
@@ -39,7 +66,7 @@
                     <a href="{{ route('bahan.edit', $b) }}" class="btn-outline btn-sm !min-h-9 !px-3" aria-label="Ubah">
                         <span class="material-symbols-outlined text-[18px]">edit</span>
                     </a>
-                    <form method="POST" action="{{ route('bahan.destroy', $b) }}" onsubmit="return confirm('Hapus bahan {{ $b->nama }}?')">
+                    <form method="POST" action="{{ route('bahan.destroy', $b) }}" data-confirm="Apakah Anda yakin ingin menghapus bahan pakan '{{ $b->nama }}' dari daftar?" data-confirm-title="Hapus Bahan Pakan" data-confirm-btn="Ya, Hapus Bahan">
                         @csrf @method('DELETE')
                         <button class="btn btn-sm !min-h-9 !px-3 border border-line text-danger hover:bg-danger/5" aria-label="Hapus">
                             <span class="material-symbols-outlined text-[18px]">delete</span>
@@ -84,5 +111,12 @@
             <p>Tidak ada bahan yang ditemukan.</p>
         </div>
     @endforelse
+
+    {{-- Live Filter Empty State --}}
+    <div id="bahan-empty-filter" class="hidden card text-center py-8 text-muted space-y-1">
+        <span class="material-symbols-outlined text-[36px] text-muted/60 mb-1 block">search_off</span>
+        <p class="font-bold text-ink">Bahan Tidak Ditemukan</p>
+        <p class="text-xs text-muted">Tidak ada bahan pakan yang sesuai dengan kata kunci pencarian Anda.</p>
+    </div>
 </div>
 @endsection

@@ -17,25 +17,173 @@ use Illuminate\Support\Facades\Log;
 class WeatherService
 {
     /**
-     * Daftar sentra peternakan ayam petelur utama di Indonesia beserta koordinatnya.
+     * Daftar sentra peternakan ayam petelur dan kota/kabupaten strategis di seluruh 38 provinsi Indonesia.
+     * Dilengkapi koordinat geolokasi presisi untuk sinkronisasi cuaca mikro Open-Meteo.
      *
-     * @var array<string, array{nama: string, lat: float, lon: float, provinsi: string}>
+     * @var array<string, array{nama: string, lat: float, lon: float, provinsi: string, wilayah: string}>
      */
     public const PRESET_KOTA = [
-        'Blitar' => ['nama' => 'Kab. Blitar', 'lat' => -8.0983, 'lon' => 112.1681, 'provinsi' => 'Jawa Timur'],
-        'Surabaya' => ['nama' => 'Surabaya', 'lat' => -7.2575, 'lon' => 112.7521, 'provinsi' => 'Jawa Timur'],
-        'Malang' => ['nama' => 'Malang', 'lat' => -7.9797, 'lon' => 112.6304, 'provinsi' => 'Jawa Timur'],
-        'Kediri' => ['nama' => 'Kediri', 'lat' => -7.8480, 'lon' => 112.0178, 'provinsi' => 'Jawa Timur'],
-        'Tulungagung' => ['nama' => 'Tulungagung', 'lat' => -8.0667, 'lon' => 111.9000, 'provinsi' => 'Jawa Timur'],
-        'Boyolali' => ['nama' => 'Boyolali', 'lat' => -7.5333, 'lon' => 110.6000, 'provinsi' => 'Jawa Tengah'],
-        'Solo' => ['nama' => 'Surakarta (Solo)', 'lat' => -7.5755, 'lon' => 110.8243, 'provinsi' => 'Jawa Tengah'],
-        'Kendal' => ['nama' => 'Kendal', 'lat' => -6.9200, 'lon' => 110.2030, 'provinsi' => 'Jawa Tengah'],
-        'Yogyakarta' => ['nama' => 'Yogyakarta', 'lat' => -7.7956, 'lon' => 110.3695, 'provinsi' => 'DI Yogyakarta'],
-        'Ciamis' => ['nama' => 'Ciamis', 'lat' => -7.3274, 'lon' => 108.3556, 'provinsi' => 'Jawa Barat'],
-        'Bogor' => ['nama' => 'Bogor', 'lat' => -6.5950, 'lon' => 106.8166, 'provinsi' => 'Jawa Barat'],
-        'Medan' => ['nama' => 'Medan & Deli Serdang', 'lat' => 3.5952, 'lon' => 98.6722, 'provinsi' => 'Sumatera Utara'],
-        'Lampung' => ['nama' => 'Lampung Selatan', 'lat' => -5.7167, 'lon' => 105.5833, 'provinsi' => 'Lampung'],
-        'Sidrap' => ['nama' => 'Sidenreng Rappang (Sidrap)', 'lat' => -3.9242, 'lon' => 119.8058, 'provinsi' => 'Sulawesi Selatan'],
+        // ==========================================
+        // JAWA TIMUR (Sentra Telur Terbesar Nasional)
+        // ==========================================
+        'Blitar' => ['nama' => 'Kab. Blitar', 'lat' => -8.0983, 'lon' => 112.1681, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Surabaya' => ['nama' => 'Surabaya', 'lat' => -7.2575, 'lon' => 112.7521, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Malang' => ['nama' => 'Malang', 'lat' => -7.9797, 'lon' => 112.6304, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Kediri' => ['nama' => 'Kediri', 'lat' => -7.8480, 'lon' => 112.0178, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Tulungagung' => ['nama' => 'Tulungagung', 'lat' => -8.0667, 'lon' => 111.9000, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Jombang' => ['nama' => 'Jombang', 'lat' => -7.5461, 'lon' => 112.2331, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Pasuruan' => ['nama' => 'Pasuruan', 'lat' => -7.6453, 'lon' => 112.9075, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Banyuwangi' => ['nama' => 'Banyuwangi', 'lat' => -8.2192, 'lon' => 114.3691, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Jember' => ['nama' => 'Jember', 'lat' => -8.1724, 'lon' => 113.7007, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Lamongan' => ['nama' => 'Lamongan', 'lat' => -7.1282, 'lon' => 112.3135, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Magetan' => ['nama' => 'Magetan', 'lat' => -7.6539, 'lon' => 111.3283, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Mojokerto' => ['nama' => 'Mojokerto', 'lat' => -7.4726, 'lon' => 112.4381, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Sidoarjo' => ['nama' => 'Sidoarjo', 'lat' => -7.4478, 'lon' => 112.7183, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Tuban' => ['nama' => 'Tuban', 'lat' => -6.8976, 'lon' => 112.0649, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Bojonegoro' => ['nama' => 'Bojonegoro', 'lat' => -7.1502, 'lon' => 111.8817, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Probolinggo' => ['nama' => 'Probolinggo', 'lat' => -7.7543, 'lon' => 113.2159, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+        'Sumenep' => ['nama' => 'Sumenep (Madura)', 'lat' => -7.0051, 'lon' => 113.8604, 'provinsi' => 'Jawa Timur', 'wilayah' => 'Jawa'],
+
+        // ==========================================
+        // JAWA TENGAH & DI YOGYAKARTA
+        // ==========================================
+        'Boyolali' => ['nama' => 'Boyolali', 'lat' => -7.5333, 'lon' => 110.6000, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Solo' => ['nama' => 'Surakarta (Solo)', 'lat' => -7.5755, 'lon' => 110.8243, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Kendal' => ['nama' => 'Kendal', 'lat' => -6.9200, 'lon' => 110.2030, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Semarang' => ['nama' => 'Semarang', 'lat' => -6.9666, 'lon' => 110.4166, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Magelang' => ['nama' => 'Magelang', 'lat' => -7.4705, 'lon' => 110.2178, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Klaten' => ['nama' => 'Klaten', 'lat' => -7.7056, 'lon' => 110.6014, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Sukoharjo' => ['nama' => 'Sukoharjo', 'lat' => -7.6833, 'lon' => 110.8333, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Karanganyar' => ['nama' => 'Karanganyar', 'lat' => -7.5961, 'lon' => 110.9514, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Sragen' => ['nama' => 'Sragen', 'lat' => -7.4278, 'lon' => 111.0222, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Wonogiri' => ['nama' => 'Wonogiri', 'lat' => -7.8167, 'lon' => 110.9333, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Banyumas' => ['nama' => 'Banyumas (Purwokerto)', 'lat' => -7.4244, 'lon' => 109.2302, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Cilacap' => ['nama' => 'Cilacap', 'lat' => -7.7167, 'lon' => 109.0167, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Brebes' => ['nama' => 'Brebes', 'lat' => -6.8703, 'lon' => 109.0415, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Tegal' => ['nama' => 'Tegal', 'lat' => -6.8694, 'lon' => 109.1402, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Kudus' => ['nama' => 'Kudus', 'lat' => -6.8048, 'lon' => 110.8405, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Pati' => ['nama' => 'Pati', 'lat' => -6.7558, 'lon' => 111.0378, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Jepara' => ['nama' => 'Jepara', 'lat' => -6.5928, 'lon' => 110.6778, 'provinsi' => 'Jawa Tengah', 'wilayah' => 'Jawa'],
+        'Yogyakarta' => ['nama' => 'Kota Yogyakarta', 'lat' => -7.7956, 'lon' => 110.3695, 'provinsi' => 'DI Yogyakarta', 'wilayah' => 'Jawa'],
+        'Sleman' => ['nama' => 'Sleman', 'lat' => -7.7156, 'lon' => 110.3556, 'provinsi' => 'DI Yogyakarta', 'wilayah' => 'Jawa'],
+        'Bantul' => ['nama' => 'Bantul', 'lat' => -7.8897, 'lon' => 110.3289, 'provinsi' => 'DI Yogyakarta', 'wilayah' => 'Jawa'],
+        'KulonProgo' => ['nama' => 'Kulon Progo', 'lat' => -7.8286, 'lon' => 110.1583, 'provinsi' => 'DI Yogyakarta', 'wilayah' => 'Jawa'],
+        'Gunungkidul' => ['nama' => 'Gunungkidul', 'lat' => -7.9606, 'lon' => 110.6033, 'provinsi' => 'DI Yogyakarta', 'wilayah' => 'Jawa'],
+
+        // ==========================================
+        // JAWA BARAT, BANTEN, & DKI JAKARTA
+        // ==========================================
+        'Ciamis' => ['nama' => 'Ciamis', 'lat' => -7.3274, 'lon' => 108.3556, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Bogor' => ['nama' => 'Bogor', 'lat' => -6.5950, 'lon' => 106.8166, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Bandung' => ['nama' => 'Bandung', 'lat' => -6.9175, 'lon' => 107.6191, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Sukabumi' => ['nama' => 'Sukabumi', 'lat' => -6.9277, 'lon' => 106.9300, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Cianjur' => ['nama' => 'Cianjur', 'lat' => -6.8228, 'lon' => 107.1394, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Garut' => ['nama' => 'Garut', 'lat' => -7.2278, 'lon' => 107.9086, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Tasikmalaya' => ['nama' => 'Tasikmalaya', 'lat' => -7.3274, 'lon' => 108.2207, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Kuningan' => ['nama' => 'Kuningan', 'lat' => -6.9767, 'lon' => 108.4833, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Cirebon' => ['nama' => 'Cirebon', 'lat' => -6.7063, 'lon' => 108.5570, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Subang' => ['nama' => 'Subang', 'lat' => -6.5716, 'lon' => 107.7587, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Karawang' => ['nama' => 'Karawang', 'lat' => -6.3056, 'lon' => 107.3078, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Bekasi' => ['nama' => 'Bekasi', 'lat' => -6.2383, 'lon' => 106.9756, 'provinsi' => 'Jawa Barat', 'wilayah' => 'Jawa'],
+        'Jakarta' => ['nama' => 'DKI Jakarta', 'lat' => -6.2088, 'lon' => 106.8456, 'provinsi' => 'DKI Jakarta', 'wilayah' => 'Jawa'],
+        'Serang' => ['nama' => 'Serang', 'lat' => -6.1200, 'lon' => 106.1503, 'provinsi' => 'Banten', 'wilayah' => 'Jawa'],
+        'Tangerang' => ['nama' => 'Tangerang', 'lat' => -6.1783, 'lon' => 106.6319, 'provinsi' => 'Banten', 'wilayah' => 'Jawa'],
+        'Lebak' => ['nama' => 'Lebak (Rangkasbitung)', 'lat' => -6.5417, 'lon' => 106.2514, 'provinsi' => 'Banten', 'wilayah' => 'Jawa'],
+        'Pandeglang' => ['nama' => 'Pandeglang', 'lat' => -6.3089, 'lon' => 106.1067, 'provinsi' => 'Banten', 'wilayah' => 'Jawa'],
+
+        // ==========================================
+        // SUMATERA
+        // ==========================================
+        'BandaAceh' => ['nama' => 'Banda Aceh', 'lat' => 5.5483, 'lon' => 95.3238, 'provinsi' => 'Aceh', 'wilayah' => 'Sumatera'],
+        'Bireuen' => ['nama' => 'Bireuen', 'lat' => 5.2000, 'lon' => 96.7000, 'provinsi' => 'Aceh', 'wilayah' => 'Sumatera'],
+        'Medan' => ['nama' => 'Medan & Deli Serdang', 'lat' => 3.5952, 'lon' => 98.6722, 'provinsi' => 'Sumatera Utara', 'wilayah' => 'Sumatera'],
+        'Asahan' => ['nama' => 'Asahan (Kisaran)', 'lat' => 2.9833, 'lon' => 99.6167, 'provinsi' => 'Sumatera Utara', 'wilayah' => 'Sumatera'],
+        'Siantar' => ['nama' => 'Pematangsiantar', 'lat' => 2.9600, 'lon' => 99.0600, 'provinsi' => 'Sumatera Utara', 'wilayah' => 'Sumatera'],
+        'Padang' => ['nama' => 'Padang', 'lat' => -0.9471, 'lon' => 100.4172, 'provinsi' => 'Sumatera Barat', 'wilayah' => 'Sumatera'],
+        'Payakumbuh' => ['nama' => 'Payakumbuh & 50 Kota', 'lat' => -0.2244, 'lon' => 100.6300, 'provinsi' => 'Sumatera Barat', 'wilayah' => 'Sumatera'],
+        'TanahDatar' => ['nama' => 'Tanah Datar (Batusangkar)', 'lat' => -0.4578, 'lon' => 100.5964, 'provinsi' => 'Sumatera Barat', 'wilayah' => 'Sumatera'],
+        'Pekanbaru' => ['nama' => 'Pekanbaru', 'lat' => 0.5071, 'lon' => 101.4478, 'provinsi' => 'Riau', 'wilayah' => 'Sumatera'],
+        'Kampar' => ['nama' => 'Kampar (Bangkinang)', 'lat' => 0.3375, 'lon' => 101.0256, 'provinsi' => 'Riau', 'wilayah' => 'Sumatera'],
+        'Batam' => ['nama' => 'Batam', 'lat' => 1.1301, 'lon' => 104.0529, 'provinsi' => 'Kepulauan Riau', 'wilayah' => 'Sumatera'],
+        'Tanjungpinang' => ['nama' => 'Tanjungpinang', 'lat' => 0.9167, 'lon' => 104.4500, 'provinsi' => 'Kepulauan Riau', 'wilayah' => 'Sumatera'],
+        'Jambi' => ['nama' => 'Kota Jambi', 'lat' => -1.6101, 'lon' => 103.6131, 'provinsi' => 'Jambi', 'wilayah' => 'Sumatera'],
+        'MuaroJambi' => ['nama' => 'Muaro Jambi', 'lat' => -1.5333, 'lon' => 103.7833, 'provinsi' => 'Jambi', 'wilayah' => 'Sumatera'],
+        'Palembang' => ['nama' => 'Palembang', 'lat' => -2.9761, 'lon' => 104.7754, 'provinsi' => 'Sumatera Selatan', 'wilayah' => 'Sumatera'],
+        'Banyuasin' => ['nama' => 'Banyuasin', 'lat' => -2.8833, 'lon' => 104.3833, 'provinsi' => 'Sumatera Selatan', 'wilayah' => 'Sumatera'],
+        'OganIlir' => ['nama' => 'Ogan Ilir (Indralaya)', 'lat' => -3.2289, 'lon' => 104.6528, 'provinsi' => 'Sumatera Selatan', 'wilayah' => 'Sumatera'],
+        'Bengkulu' => ['nama' => 'Kota Bengkulu', 'lat' => -3.8004, 'lon' => 102.2655, 'provinsi' => 'Bengkulu', 'wilayah' => 'Sumatera'],
+        'Pangkalpinang' => ['nama' => 'Pangkalpinang', 'lat' => -2.1333, 'lon' => 106.1167, 'provinsi' => 'Kepulauan Bangka Belitung', 'wilayah' => 'Sumatera'],
+        'Lampung' => ['nama' => 'Lampung Selatan', 'lat' => -5.7167, 'lon' => 105.5833, 'provinsi' => 'Lampung', 'wilayah' => 'Sumatera'],
+        'BandarLampung' => ['nama' => 'Bandar Lampung', 'lat' => -5.4500, 'lon' => 105.2667, 'provinsi' => 'Lampung', 'wilayah' => 'Sumatera'],
+        'LampungTengah' => ['nama' => 'Lampung Tengah (Gunung Sugih)', 'lat' => -4.9667, 'lon' => 105.2167, 'provinsi' => 'Lampung', 'wilayah' => 'Sumatera'],
+        'LampungTimur' => ['nama' => 'Lampung Timur (Sukadana)', 'lat' => -5.1167, 'lon' => 105.6833, 'provinsi' => 'Lampung', 'wilayah' => 'Sumatera'],
+
+        // ==========================================
+        // BALI & NUSA TENGGARA
+        // ==========================================
+        'Denpasar' => ['nama' => 'Denpasar', 'lat' => -8.6705, 'lon' => 115.2126, 'provinsi' => 'Bali', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'Tabanan' => ['nama' => 'Tabanan', 'lat' => -8.5411, 'lon' => 115.1253, 'provinsi' => 'Bali', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'Gianyar' => ['nama' => 'Gianyar', 'lat' => -8.5433, 'lon' => 115.3267, 'provinsi' => 'Bali', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'Bangli' => ['nama' => 'Bangli', 'lat' => -8.4542, 'lon' => 115.3550, 'provinsi' => 'Bali', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'Mataram' => ['nama' => 'Mataram (Lombok)', 'lat' => -8.5833, 'lon' => 116.1167, 'provinsi' => 'Nusa Tenggara Barat', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'LombokTimur' => ['nama' => 'Lombok Timur (Selong)', 'lat' => -8.6500, 'lon' => 116.5333, 'provinsi' => 'Nusa Tenggara Barat', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'Sumbawa' => ['nama' => 'Sumbawa', 'lat' => -8.5000, 'lon' => 117.4167, 'provinsi' => 'Nusa Tenggara Barat', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'Bima' => ['nama' => 'Kota Bima', 'lat' => -8.4500, 'lon' => 118.7167, 'provinsi' => 'Nusa Tenggara Barat', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'Kupang' => ['nama' => 'Kupang', 'lat' => -10.1772, 'lon' => 123.6070, 'provinsi' => 'Nusa Tenggara Timur', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'TTS' => ['nama' => 'Timor Tengah Selatan (Soe)', 'lat' => -9.8608, 'lon' => 124.2831, 'provinsi' => 'Nusa Tenggara Timur', 'wilayah' => 'Bali & Nusa Tenggara'],
+        'Sikka' => ['nama' => 'Sikka (Maumere)', 'lat' => -8.6167, 'lon' => 122.2167, 'provinsi' => 'Nusa Tenggara Timur', 'wilayah' => 'Bali & Nusa Tenggara'],
+
+        // ==========================================
+        // KALIMANTAN
+        // ==========================================
+        'Pontianak' => ['nama' => 'Pontianak', 'lat' => -0.0263, 'lon' => 109.3425, 'provinsi' => 'Kalimantan Barat', 'wilayah' => 'Kalimantan'],
+        'Singkawang' => ['nama' => 'Singkawang', 'lat' => 0.9075, 'lon' => 108.9856, 'provinsi' => 'Kalimantan Barat', 'wilayah' => 'Kalimantan'],
+        'KubuRaya' => ['nama' => 'Kubu Raya', 'lat' => -0.1500, 'lon' => 109.4167, 'provinsi' => 'Kalimantan Barat', 'wilayah' => 'Kalimantan'],
+        'Palangkaraya' => ['nama' => 'Palangka Raya', 'lat' => -2.2167, 'lon' => 113.9167, 'provinsi' => 'Kalimantan Tengah', 'wilayah' => 'Kalimantan'],
+        'Kotim' => ['nama' => 'Kotawaringin Timur (Sampit)', 'lat' => -2.5333, 'lon' => 112.9500, 'provinsi' => 'Kalimantan Tengah', 'wilayah' => 'Kalimantan'],
+        'Banjarmasin' => ['nama' => 'Banjarmasin', 'lat' => -3.3167, 'lon' => 114.5900, 'provinsi' => 'Kalimantan Selatan', 'wilayah' => 'Kalimantan'],
+        'Banjarbaru' => ['nama' => 'Banjarbaru', 'lat' => -3.4572, 'lon' => 114.8103, 'provinsi' => 'Kalimantan Selatan', 'wilayah' => 'Kalimantan'],
+        'TanahLaut' => ['nama' => 'Tanah Laut (Pelaihari)', 'lat' => -3.7944, 'lon' => 114.8625, 'provinsi' => 'Kalimantan Selatan', 'wilayah' => 'Kalimantan'],
+        'Samarinda' => ['nama' => 'Samarinda', 'lat' => -0.5022, 'lon' => 117.1536, 'provinsi' => 'Kalimantan Timur', 'wilayah' => 'Kalimantan'],
+        'Balikpapan' => ['nama' => 'Balikpapan', 'lat' => -1.2379, 'lon' => 116.8289, 'provinsi' => 'Kalimantan Timur', 'wilayah' => 'Kalimantan'],
+        'Kukar' => ['nama' => 'Kutai Kartanegara (Tenggarong)', 'lat' => -0.4167, 'lon' => 116.9833, 'provinsi' => 'Kalimantan Timur', 'wilayah' => 'Kalimantan'],
+        'Tarakan' => ['nama' => 'Tarakan', 'lat' => 3.3000, 'lon' => 117.6333, 'provinsi' => 'Kalimantan Utara', 'wilayah' => 'Kalimantan'],
+        'TanjungSelor' => ['nama' => 'Bulungan (Tanjung Selor)', 'lat' => 2.8333, 'lon' => 117.3667, 'provinsi' => 'Kalimantan Utara', 'wilayah' => 'Kalimantan'],
+
+        // ==========================================
+        // SULAWESI
+        // ==========================================
+        'Sidrap' => ['nama' => 'Sidenreng Rappang (Sidrap)', 'lat' => -3.9242, 'lon' => 119.8058, 'provinsi' => 'Sulawesi Selatan', 'wilayah' => 'Sulawesi'],
+        'Makassar' => ['nama' => 'Makassar', 'lat' => -5.1477, 'lon' => 119.4327, 'provinsi' => 'Sulawesi Selatan', 'wilayah' => 'Sulawesi'],
+        'Maros' => ['nama' => 'Maros', 'lat' => -5.0042, 'lon' => 119.5739, 'provinsi' => 'Sulawesi Selatan', 'wilayah' => 'Sulawesi'],
+        'Gowa' => ['nama' => 'Gowa (Sungguminasa)', 'lat' => -5.2000, 'lon' => 119.4500, 'provinsi' => 'Sulawesi Selatan', 'wilayah' => 'Sulawesi'],
+        'Pinrang' => ['nama' => 'Pinrang', 'lat' => -3.7917, 'lon' => 119.6500, 'provinsi' => 'Sulawesi Selatan', 'wilayah' => 'Sulawesi'],
+        'Bone' => ['nama' => 'Bone (Watampone)', 'lat' => -4.5386, 'lon' => 120.3278, 'provinsi' => 'Sulawesi Selatan', 'wilayah' => 'Sulawesi'],
+        'Mamuju' => ['nama' => 'Mamuju', 'lat' => -2.6748, 'lon' => 118.8884, 'provinsi' => 'Sulawesi Barat', 'wilayah' => 'Sulawesi'],
+        'Polman' => ['nama' => 'Polewali Mandar', 'lat' => -3.4333, 'lon' => 119.3333, 'provinsi' => 'Sulawesi Barat', 'wilayah' => 'Sulawesi'],
+        'Palu' => ['nama' => 'Palu', 'lat' => -0.9003, 'lon' => 119.8780, 'provinsi' => 'Sulawesi Tengah', 'wilayah' => 'Sulawesi'],
+        'Sigi' => ['nama' => 'Sigi', 'lat' => -1.1333, 'lon' => 119.9667, 'provinsi' => 'Sulawesi Tengah', 'wilayah' => 'Sulawesi'],
+        'Kendari' => ['nama' => 'Kendari', 'lat' => -3.9985, 'lon' => 122.5126, 'provinsi' => 'Sulawesi Tenggara', 'wilayah' => 'Sulawesi'],
+        'Konawe' => ['nama' => 'Konawe (Unaaha)', 'lat' => -3.8500, 'lon' => 122.0500, 'provinsi' => 'Sulawesi Tenggara', 'wilayah' => 'Sulawesi'],
+        'Gorontalo' => ['nama' => 'Kota Gorontalo', 'lat' => 0.5435, 'lon' => 123.0568, 'provinsi' => 'Gorontalo', 'wilayah' => 'Sulawesi'],
+        'KabGorontalo' => ['nama' => 'Kab. Gorontalo (Limboto)', 'lat' => 0.6272, 'lon' => 122.9814, 'provinsi' => 'Gorontalo', 'wilayah' => 'Sulawesi'],
+        'Manado' => ['nama' => 'Manado', 'lat' => 1.4748, 'lon' => 124.8428, 'provinsi' => 'Sulawesi Utara', 'wilayah' => 'Sulawesi'],
+        'Minahasa' => ['nama' => 'Minahasa (Tondano)', 'lat' => 1.3069, 'lon' => 124.9125, 'provinsi' => 'Sulawesi Utara', 'wilayah' => 'Sulawesi'],
+        'Tomohon' => ['nama' => 'Tomohon', 'lat' => 1.3283, 'lon' => 124.8406, 'provinsi' => 'Sulawesi Utara', 'wilayah' => 'Sulawesi'],
+
+        // ==========================================
+        // MALUKU & PAPUA
+        // ==========================================
+        'Ambon' => ['nama' => 'Ambon', 'lat' => -3.6547, 'lon' => 128.1906, 'provinsi' => 'Maluku', 'wilayah' => 'Maluku & Papua'],
+        'MalukuTengah' => ['nama' => 'Maluku Tengah (Masohi)', 'lat' => -3.3000, 'lon' => 128.9667, 'provinsi' => 'Maluku', 'wilayah' => 'Maluku & Papua'],
+        'Ternate' => ['nama' => 'Ternate', 'lat' => 0.7893, 'lon' => 127.3610, 'provinsi' => 'Maluku Utara', 'wilayah' => 'Maluku & Papua'],
+        'Tidore' => ['nama' => 'Tidore Kepulauan', 'lat' => 0.6833, 'lon' => 127.4000, 'provinsi' => 'Maluku Utara', 'wilayah' => 'Maluku & Papua'],
+        'Jayapura' => ['nama' => 'Jayapura', 'lat' => -2.5337, 'lon' => 140.7181, 'provinsi' => 'Papua', 'wilayah' => 'Maluku & Papua'],
+        'Manokwari' => ['nama' => 'Manokwari', 'lat' => -0.8615, 'lon' => 134.0620, 'provinsi' => 'Papua Barat', 'wilayah' => 'Maluku & Papua'],
+        'Sorong' => ['nama' => 'Sorong', 'lat' => -0.8762, 'lon' => 131.2558, 'provinsi' => 'Papua Barat Daya', 'wilayah' => 'Maluku & Papua'],
+        'Merauke' => ['nama' => 'Merauke', 'lat' => -8.4991, 'lon' => 140.4019, 'provinsi' => 'Papua Selatan', 'wilayah' => 'Maluku & Papua'],
+        'Nabire' => ['nama' => 'Nabire', 'lat' => -3.3667, 'lon' => 135.4833, 'provinsi' => 'Papua Tengah', 'wilayah' => 'Maluku & Papua'],
+        'Wamena' => ['nama' => 'Jayawijaya (Wamena)', 'lat' => -4.0833, 'lon' => 138.9500, 'provinsi' => 'Papua Pegunungan', 'wilayah' => 'Maluku & Papua'],
     ];
 
     /**

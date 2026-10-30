@@ -22,7 +22,7 @@
         @endif
         <div class="flex gap-2">
             <a href="{{ route('ransum.show', $r) }}" class="btn-outline btn-sm flex-1">Lihat / pakai lagi</a>
-            <form method="POST" action="{{ route('ransum.destroy', $r) }}" onsubmit="return confirm('Hapus resep ini?')">@csrf @method('DELETE')
+            <form method="POST" action="{{ route('ransum.destroy', $r) }}" data-confirm="Hapus riwayat resep formulasi ransum ini?" data-confirm-title="Hapus Resep Ransum" data-confirm-btn="Ya, Hapus Resep">@csrf @method('DELETE')
                 <button class="btn btn-sm border-2 border-line text-muted" aria-label="Hapus"><span class="material-symbols-outlined">delete</span></button></form>
         </div>
     </div>

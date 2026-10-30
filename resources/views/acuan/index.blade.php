@@ -26,7 +26,7 @@
                         <span class="material-symbols-outlined text-[18px]">edit</span>
                     </a>
                     @if ($acuan->count() > 1)
-                        <form method="POST" action="{{ route('acuan.destroy', $s) }}" onsubmit="return confirm('Hapus acuan ini?')">
+                        <form method="POST" action="{{ route('acuan.destroy', $s) }}" data-confirm="Hapus acuan standar gizi '{{ $s->nama }}'?" data-confirm-title="Hapus Acuan Gizi" data-confirm-btn="Ya, Hapus Acuan">
                             @csrf @method('DELETE')
                             <button class="btn btn-sm !min-h-9 !px-3 border border-line text-danger hover:bg-danger/5" aria-label="Hapus">
                                 <span class="material-symbols-outlined text-[18px]">delete</span>

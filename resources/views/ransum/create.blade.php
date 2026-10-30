@@ -17,8 +17,27 @@
             <h2 class="text-h-sm">Bahan</h2>
             <span class="text-xs text-muted">Harga = input Anda</span>
         </div>
+
+        {{-- Pencarian Cepat Bahan Racikan --}}
+        <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-3 text-[18px] text-muted pointer-events-none">search</span>
+            <input type="text"
+                   id="search-bahan-racik"
+                   oninput="filterBahanRacikan(this)"
+                   placeholder="Cari bahan dalam racikan (misal: Jagung, Konsentrat, Dedak)..."
+                   class="w-full pl-9 pr-8 py-2 bg-surface/50 focus:bg-white border border-line rounded-xl text-xs font-semibold text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand shadow-2xs transition"
+                   autocomplete="off">
+            <button type="button" 
+                    id="clear-search-bahan-racik"
+                    onclick="clearFilterBahanRacikan()" 
+                    class="hidden absolute right-2.5 text-muted hover:text-ink cursor-pointer p-0.5 rounded-md hover:bg-surface" 
+                    title="Hapus pencarian">
+                <span class="material-symbols-outlined text-[15px]">close</span>
+            </button>
+        </div>
+
         @foreach ($fis as $fi)
-            <div class="rounded-xl border border-line p-3 space-y-2 {{ $fi->aktif ? '' : 'bg-surface/60' }}">
+            <div class="rounded-xl border border-line p-3 space-y-2 {{ $fi->aktif ? '' : 'bg-surface/60' }}" data-racik-item data-bahan-nama="{{ strtolower($fi->ingredient->nama) }}">
                 <label class="flex items-center gap-2 font-bold">
                     <input type="checkbox" name="bahan[{{ $fi->id }}][aktif]" value="1" class="w-5 h-5 accent-brand" @checked(old("bahan.{$fi->id}.aktif", $fi->aktif))>
                     <span>{{ $fi->ingredient->nama }}</span>
@@ -61,6 +80,14 @@
                 </details>
             </div>
         @endforeach
+
+        {{-- Live Filter Empty State --}}
+        <div id="racik-empty-filter" class="hidden p-4 rounded-xl border border-line bg-surface/50 text-center text-xs text-muted space-y-1">
+            <span class="material-symbols-outlined text-[24px] text-muted/60 block">search_off</span>
+            <p class="font-bold text-ink">Bahan Tidak Ditemukan</p>
+            <p class="text-tiny text-muted">Bahan tersebut belum ada di kandang Anda. Silakan klik Tambah Bahan di bawah.</p>
+        </div>
+
         <a href="{{ route('bahan.create') }}" class="btn-outline btn-sm w-full"><span class="material-symbols-outlined">add</span>Tambah bahan</a>
     </section>
 

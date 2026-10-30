@@ -219,7 +219,7 @@
                             <a href="{{ route('catatan.index', ['tanggal' => $r->tanggal->toDateString(), 'tab' => 'form']) }}" class="btn-outline btn-sm !min-h-8 !px-2.5 text-xs font-semibold">
                                 Edit
                             </a>
-                            <form method="POST" action="{{ route('catatan.destroy', $r) }}" onsubmit="return confirm('Hapus catatan tanggal ini?')">
+                            <form method="POST" action="{{ route('catatan.destroy', $r) }}" data-confirm="Hapus catatan produksi tanggal {{ $r->tanggal->translatedFormat('d M Y') }}?" data-confirm-title="Hapus Catatan Harian" data-confirm-btn="Ya, Hapus Catatan">
                                 @csrf @method('DELETE')
                                 <button class="btn btn-sm !min-h-8 !px-2 text-danger border border-line hover:bg-danger-soft">
                                     <span class="material-symbols-outlined text-[16px]">delete</span>

@@ -5,13 +5,19 @@
     $dampakAyam = $weather['dampak_ayam'] ?? ($weather['deskripsi_risiko'] ?? 'Kondisi fisiologi ayam terpantau aman.');
 @endphp
 <div class="space-y-4">
-    {{-- Baris 1: Header Cuaca Ramping (Judul & Timestamp Bersih) --}}
+    {{-- Baris 1: Header Cuaca Ramping (Judul, Tombol IoT & Timestamp Bersih) --}}
     <div class="flex items-center justify-between gap-2 pb-3 border-b border-line">
         <span class="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>
             <span>Cuaca Mikro Kandang</span>
         </span>
-        <span class="text-tiny font-medium text-muted">Pembaruan: {{ $weather['updated_at'] }}</span>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="bukaModal('modal-iot-kandang')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand/10 hover:bg-brand/20 text-brand border border-brand/20 transition font-bold text-tiny cursor-pointer" title="Buka Simulasi & Pengaturan Sensor IoT ESP32 Kandang">
+                <span class="material-symbols-outlined text-[13px]">sensors</span>
+                <span>Uji Sensor IoT</span>
+            </button>
+            <span class="text-tiny font-medium text-muted">Pembaruan: {{ $weather['updated_at'] }}</span>
+        </div>
     </div>
 
     {{-- Baris 2: Visual Suhu & Gauge Indeks Stres Panas (THI) --}}

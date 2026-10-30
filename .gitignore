@@ -30,3 +30,5 @@ Thumbs.db
 *.sqlite-journal
 database/*.sqlite
 database/*.sqlite-journal
+boost.json
+/ransumku/

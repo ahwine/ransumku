@@ -57,8 +57,8 @@
                     <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('asisten.*') ? 'text-brand' : '' }}">smart_toy</span>
                     <span>Asisten Cerdas</span>
                 </div>
-                @if (($alertCount = $farmNav?->alerts()->where('dibaca', false)->count() ?? 0) > 0)
-                    <span class="w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-xs ring-2 ring-white">{{ $alertCount > 9 ? '9+' : $alertCount }}</span>
+                @if ($unreadAlertsCount > 0)
+                    <span class="w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-xs ring-2 ring-white">{{ $unreadAlertsCount > 9 ? '9+' : $unreadAlertsCount }}</span>
                 @endif
             </a>
         </nav>
@@ -89,7 +89,7 @@
 
     {{-- Tombol Logout / Keluar di Bagian Bawah Sidebar (Merah Transparan Modern Tanpa Info Farm Redundan) --}}
     <div class="mt-auto pt-4 border-t border-line/70">
-        <form method="POST" action="{{ route('keluar') }}">
+        <form method="POST" action="{{ route('keluar') }}" data-confirm="Apakah Anda yakin ingin keluar dari akun RansumKu?" data-confirm-title="Keluar dari Akun" data-confirm-btn="Ya, Keluar">
             @csrf
             <button type="submit" class="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 hover:text-rose-700 border border-rose-500/20 font-bold text-xs transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.98] group" title="Keluar dari sesi akun">
                 <span class="material-symbols-outlined text-[18px] transition-transform duration-200 group-hover:-translate-x-0.5">logout</span>
@@ -142,10 +142,12 @@
             </div>
         </a>
         <div class="flex items-center gap-2">
-            <a href="{{ route('asisten.index', ['tab' => 'peringatan']) }}" class="relative w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center cursor-pointer" aria-label="Notifikasi">
+            <a href="{{ route('asisten.index', ['tab' => 'peringatan']) }}" class="relative w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center cursor-pointer" aria-label="Notifikasi" title="Pusat Peringatan & Notifikasi Kandang ({{ $unreadAlertsCount }} belum dibaca)">
                 <span class="material-symbols-outlined text-[18px]">notifications</span>
                 @if ($unreadAlertsCount > 0)
-                    <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-white"></span>
+                    <span class="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-white text-[9px] font-black shadow-xs ring-2 ring-white">
+                        {{ $unreadAlertsCount > 9 ? '9+' : $unreadAlertsCount }}
+                    </span>
                 @endif
             </a>
             <a href="{{ route('kandang.index') }}" class="w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center cursor-pointer" aria-label="Kelola Kandang" title="Kelola Kandang">
@@ -158,18 +160,6 @@
 {{-- 4. Main Content Area --}}
 <main class="lg:ml-64 pt-20 lg:pt-20 pb-28 lg:pb-12 px-4 lg:px-8">
     <div class="w-full space-y-5">
-        @if (session('ok'))
-            <div class="notice bg-brand-soft/70 text-primary" role="status">
-                <span class="material-symbols-outlined icon-fill text-[20px]">check_circle</span><span>{{ session('ok') }}</span>
-            </div>
-        @endif
-        @if (isset($errors) && $errors->any())
-            <div class="notice bg-danger-soft text-danger-ink" role="alert">
-                <span class="material-symbols-outlined icon-fill text-[20px]">error</span>
-                <ul class="list-disc ml-4">@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-            </div>
-        @endif
-
         @yield('isi')
     </div>
 </main>
@@ -189,8 +179,15 @@
             <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('ransum.*') ? 'icon-fill' : '' }}">calculate</span>
             <span class="text-[10px] mt-0.5">Ransum</span>
         </a>
-        <a href="{{ route('asisten.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('asisten.*') ? 'text-brand font-bold' : 'text-muted' }}">
-            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('asisten.*') ? 'icon-fill' : '' }}">smart_toy</span>
+        <a href="{{ route('asisten.index') }}" class="relative flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('asisten.*') ? 'text-brand font-bold' : 'text-muted' }}">
+            <div class="relative inline-flex items-center justify-center">
+                <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('asisten.*') ? 'icon-fill' : '' }}">smart_toy</span>
+                @if ($unreadAlertsCount > 0)
+                    <span class="absolute -top-1 -right-2 flex h-3.5 min-w-3.5 px-0.5 items-center justify-center rounded-full bg-rose-600 text-white text-[8px] font-black shadow-xs ring-1 ring-white">
+                        {{ $unreadAlertsCount > 9 ? '9+' : $unreadAlertsCount }}
+                    </span>
+                @endif
+            </div>
             <span class="text-[10px] mt-0.5">Asisten</span>
         </a>
         <a href="{{ route('bahan.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('bahan.*|acuan.*|tentang') ? 'text-brand font-bold' : 'text-muted' }}">
@@ -199,6 +196,10 @@
         </a>
     </div>
 </nav>
+
+{{-- Modal Konfirmasi Universal & Toast Notifikasi Mengambang --}}
+@include('partials.confirm-modal')
+@include('partials.toast-popup')
 
 </body>
 </html>
