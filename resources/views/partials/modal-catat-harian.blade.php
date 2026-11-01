@@ -40,7 +40,13 @@
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="lbl" for="modal_telur_kg">Bobot Telur Total (kg, opsional)</label>
+                    <div class="flex items-center justify-between">
+                        <label class="lbl" for="modal_telur_kg">Bobot Total (kg)</label>
+                        <button type="button" id="modal-btn-calc-egg" class="text-[11px] text-brand hover:underline font-bold flex items-center gap-0.5 cursor-pointer" title="Hitung otomatis dari butir × 62 gram">
+                            <span class="material-symbols-outlined text-[13px]">auto_fix_high</span>
+                            ~62g/btr
+                        </button>
+                    </div>
                     <input id="modal_telur_kg" name="telur_kg" type="number" step="0.1" min="0" class="field !min-h-11 text-sm" placeholder="Contoh: 10.5">
                     <span class="text-[10px] text-muted block mt-0.5">Otomatis ~62g/butir jika kosong</span>
                 </div>
@@ -53,6 +59,22 @@
             <div>
                 <label class="lbl" for="modal_catatan">Catatan Suhu / Gejala (Opsional)</label>
                 <textarea id="modal_catatan" name="catatan" rows="2" class="field !min-h-[56px] py-2 text-xs" placeholder="Contoh: Suhu siang panas 33°C, ayam minum banyak"></textarea>
+            </div>
+
+            {{-- Mini Live Indicator Strip --}}
+            <div id="modal-live-strip" class="p-2.5 rounded-2xl bg-surface border border-line/80 grid grid-cols-3 gap-2 text-center text-xs">
+                <div>
+                    <span class="text-[10px] text-muted block">HDP (Hen-Day)</span>
+                    <strong id="modal-live-hdp" class="text-sm font-bold text-ink">0.0%</strong>
+                </div>
+                <div>
+                    <span class="text-[10px] text-muted block">Pakan/Ekor</span>
+                    <strong id="modal-live-pakan-ekor" class="text-sm font-bold text-ink">0 gr</strong>
+                </div>
+                <div>
+                    <span class="text-[10px] text-muted block">FCR Instan</span>
+                    <strong id="modal-live-fcr" class="text-sm font-bold text-ink">0.00</strong>
+                </div>
             </div>
 
             <div class="pt-2 flex items-center justify-between gap-3">
@@ -73,4 +95,57 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const populasi = {{ (int) ($farm->jumlah_ayam ?? 200) }};
+    const inputPakan = document.getElementById('modal_pakan_kg');
+    const inputTelur = document.getElementById('modal_telur_butir');
+    const inputKg = document.getElementById('modal_telur_kg');
+    const btnCalcEgg = document.getElementById('modal-btn-calc-egg');
+    const liveHdp = document.getElementById('modal-live-hdp');
+    const livePakan = document.getElementById('modal-live-pakan-ekor');
+    const liveFcr = document.getElementById('modal-live-fcr');
+
+    function updateModalPreview() {
+        if (!inputPakan || !inputTelur || !liveHdp) return;
+        const pakan = parseFloat(inputPakan.value) || 0;
+        const telur = parseInt(inputTelur.value) || 0;
+        const kg = parseFloat(inputKg && inputKg.value ? inputKg.value : 0) || (telur * 0.062);
+
+        // HDP
+        const hdp = populasi > 0 && telur > 0 ? ((telur / populasi) * 100).toFixed(1) : '0.0';
+        liveHdp.textContent = hdp + '%';
+        liveHdp.className = parseFloat(hdp) >= 80 ? 'text-sm font-bold text-emerald-600' : 'text-sm font-bold text-ink';
+
+        // Pakan per ekor
+        const grEkor = populasi > 0 && pakan > 0 ? Math.round((pakan * 1000) / populasi) : 0;
+        livePakan.textContent = grEkor + ' gr';
+
+        // FCR
+        const fcr = kg > 0 && pakan > 0 ? (pakan / kg).toFixed(2) : '0.00';
+        liveFcr.textContent = fcr;
+        liveFcr.className = (parseFloat(fcr) > 0 && parseFloat(fcr) <= 2.2) ? 'text-sm font-bold text-emerald-600' : 'text-sm font-bold text-ink';
+    }
+
+    if (btnCalcEgg && inputTelur && inputKg) {
+        btnCalcEgg.addEventListener('click', function () {
+            const butir = parseInt(inputTelur.value) || 0;
+            if (butir > 0) {
+                inputKg.value = (butir * 0.062).toFixed(1);
+                updateModalPreview();
+            } else {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Isi butir telur terlebih dahulu', 'warning', 'Perhatian');
+                }
+                inputTelur.focus();
+            }
+        });
+    }
+
+    [inputPakan, inputTelur, inputKg].forEach(el => {
+        if (el) el.addEventListener('input', updateModalPreview);
+    });
+});
+</script>
 

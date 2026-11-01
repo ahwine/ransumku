@@ -353,6 +353,15 @@
         width: 100% !important;
         border-collapse: collapse !important;
         font-size: 8.5pt !important;
+        font-variant-numeric: tabular-nums !important;
+    }
+
+    .print-table thead {
+        display: table-header-group !important;
+    }
+
+    .print-table tfoot {
+        display: table-footer-group !important;
     }
 
     .print-table th,
@@ -373,9 +382,9 @@
     }
 
     .print-table tfoot td {
-        background-color: #e2e8f0 !important;
+        background-color: #f1f5f9 !important;
         font-weight: 800 !important;
-        border-top: 2px solid #64748b !important;
+        border-top: 2px solid #334155 !important;
     }
 
     .page-break-avoid {

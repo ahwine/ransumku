@@ -10,6 +10,82 @@ class Farm extends Model
 {
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'tgl_chick_in' => 'date',
+        ];
+    }
+
+    /** Umur ayam saat ini dalam satuan minggu. */
+    public function umurMinggu(): int
+    {
+        if ($this->tgl_chick_in) {
+            $weeks = (int) $this->tgl_chick_in->diffInWeeks(now());
+            return (int) ($this->umur_awal_minggu ?? 18) + $weeks;
+        }
+
+        return 28;
+    }
+
+    /**
+     * Detail fase umur biologis ayam petelur (Layer standard).
+     *
+     * @return array{nama: string, kode: string, standar_hdp: string, standar_pakan: string, badge_class: string}
+     */
+    public function faseUmurDetail(): array
+    {
+        $minggu = $this->umurMinggu();
+
+        if ($minggu < 18) {
+            return [
+                'nama' => 'Grower / Pullet',
+                'kode' => 'pullet',
+                'standar_hdp' => '< 50%',
+                'standar_pakan' => '75 - 90 gr/ekor',
+                'badge_class' => 'bg-amber-100 text-amber-800 border-amber-300',
+            ];
+        }
+
+        if ($minggu <= 24) {
+            return [
+                'nama' => 'Awal Bertelur',
+                'kode' => 'awal',
+                'standar_hdp' => '50 - 85%',
+                'standar_pakan' => '95 - 110 gr/ekor',
+                'badge_class' => 'bg-blue-100 text-blue-800 border-blue-300',
+            ];
+        }
+
+        if ($minggu <= 38) {
+            return [
+                'nama' => 'Puncak Produksi (Peak)',
+                'kode' => 'puncak',
+                'standar_hdp' => '90 - 95%',
+                'standar_pakan' => '110 - 118 gr/ekor',
+                'badge_class' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+            ];
+        }
+
+        if ($minggu <= 60) {
+            return [
+                'nama' => 'Pasca Puncak (Post-Peak)',
+                'kode' => 'pasca_puncak',
+                'standar_hdp' => '82 - 89%',
+                'standar_pakan' => '115 - 120 gr/ekor',
+                'badge_class' => 'bg-teal-100 text-teal-800 border-teal-300',
+            ];
+        }
+
+        return [
+            'nama' => 'Fase Akhir (Afkir)',
+            'kode' => 'afkir',
+            'standar_hdp' => '70 - 80%',
+            'standar_pakan' => '115 - 122 gr/ekor',
+            'badge_class' => 'bg-slate-100 text-slate-800 border-slate-300',
+        ];
+    }
+
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
     public function farmIngredients(): HasMany { return $this->hasMany(FarmIngredient::class); }
     public function ingredients(): HasMany { return $this->hasMany(Ingredient::class); }

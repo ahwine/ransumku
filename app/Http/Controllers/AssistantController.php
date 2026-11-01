@@ -12,6 +12,12 @@ class AssistantController extends Controller
     public function index(Request $r)
     {
         $farm = $this->farm();
+
+        // Jika peternak membuka tab peringatan, otomatis tandai semua peringatan sudah dibaca (hilangkan titik merah)
+        if ($r->query('tab') === 'peringatan') {
+            $farm->alerts()->where('dibaca', false)->update(['dibaca' => true]);
+        }
+
         $alerts = $farm->alerts()->latest('tanggal_data')->latest('id')->limit(10)->get();
         $aiAktif = app(AiAssistant::class)->tersedia();
 
@@ -24,17 +30,11 @@ class AssistantController extends Controller
 
         $sessionParam = $r->query('session');
         $activeSession = null;
+        $chats = collect();
 
-        if ($sessionParam === 'baru') {
-            // Mode percakapan baru (layar sambutan bersih seperti ChatGPT)
-            $activeSession = null;
-            $chats = collect();
-        } elseif ($sessionParam) {
+        // Default selalu buka sesi obrolan baru setiap kali dimuat / di-refresh
+        if (is_numeric($sessionParam) && (int) $sessionParam > 0) {
             $activeSession = $chatSessions->firstWhere('id', (int) $sessionParam);
-            $chats = $activeSession ? $activeSession->messages()->orderBy('id')->get() : collect();
-        } else {
-            // Default: buka sesi paling baru jika ada
-            $activeSession = $chatSessions->first();
             $chats = $activeSession ? $activeSession->messages()->orderBy('id')->get() : collect();
         }
 

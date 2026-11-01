@@ -32,8 +32,8 @@
                     <span class="material-symbols-outlined text-[17px] text-brand">location_on</span>
                     <span>Wilayah & Sentra Kandang</span>
                 </div>
-                <span class="text-[10px] font-mono font-bold text-brand bg-brand-soft/80 border border-brand/20 px-2 py-0.5 rounded-full">
-                    {{ count($presetKota) }} Wilayah Indonesia
+                <span class="text-[10px] font-semibold text-muted bg-surface-2 border border-line px-2 py-0.5 rounded-full shrink-0">
+                    {{ count($presetKota) }} Wilayah
                 </span>
             </div>
 
@@ -83,9 +83,7 @@
                             onclick="selectCustomDropdownKota('{{ $idDropdown }}', '{{ $k }}')" 
                             class="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left text-xs transition-all cursor-pointer group {{ $isSelected ? 'bg-surface border border-brand/30 shadow-2xs font-bold' : 'hover:bg-surface/80 text-ink/80 font-medium' }}">
                         <div class="flex items-center gap-2.5 min-w-0 pr-2">
-                            <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 {{ $isSelected ? 'bg-brand text-white' : 'bg-surface-2 text-muted group-hover:bg-brand/10 group-hover:text-brand' }} transition-colors">
-                                <span class="material-symbols-outlined text-[15px]">location_on</span>
-                            </div>
+                            <span class="material-symbols-outlined text-[18px] shrink-0 {{ $isSelected ? 'text-brand' : 'text-muted group-hover:text-brand' }} transition-colors">location_on</span>
                             <div class="min-w-0">
                                 <div class="font-bold text-xs truncate leading-snug {{ $isSelected ? 'text-brand-dark' : 'text-ink group-hover:text-brand' }}">
                                     {{ $p['nama'] }}
@@ -98,12 +96,12 @@
                             </div>
                         </div>
                         @if ($isSelected)
-                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-brand bg-brand-soft/80 border border-brand/20 px-2 py-0.5 rounded-full shrink-0">
-                                <span class="material-symbols-outlined text-[13px]">check</span>
-                                <span>Aktif</span>
+                            <span class="inline-flex items-center gap-1 text-xs font-bold text-brand shrink-0">
+                                <span class="material-symbols-outlined text-[15px]">check</span>
+                                <span>Dipilih</span>
                             </span>
                         @else
-                            <span class="text-[10px] text-muted font-mono opacity-0 group-hover:opacity-100 transition-opacity shrink-0">Pilih</span>
+                            <span class="text-[11px] text-muted font-medium opacity-0 group-hover:opacity-100 transition-opacity shrink-0">Pilih</span>
                         @endif
                     </button>
                 @endforeach

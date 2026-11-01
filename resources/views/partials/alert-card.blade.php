@@ -5,42 +5,31 @@
     $isList = $is_list ?? false;
 @endphp
 
-<div class="{{ $isList ? 'p-4 md:p-5 hover:bg-surface/30 transition-colors' : 'rounded-xl border border-line bg-white p-4 md:p-5 transition-all shadow-2xs hover:shadow-xs' }} flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div class="flex items-start gap-3 min-w-0">
-        {{-- Ikon Peringatan Murni (Tanpa Kotak/Badge) --}}
-        <span class="material-symbols-outlined text-[20px] {{ $danger ? 'text-rose-600' : 'text-amber-600' }} shrink-0 mt-0.5">
-            {{ $danger ? 'error' : 'warning' }}
-        </span>
-
-        <div class="space-y-1 min-w-0">
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-2xs {{ $danger ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
-                    {{ $danger ? 'Waspada' : 'Perhatian' }}
-                </span>
-                <span class="text-tiny font-medium text-muted">
-                    {{ optional($alert->tanggal_data)->translatedFormat('d F Y') }}
-                </span>
-            </div>
-
-            <p class="text-xs md:text-sm font-semibold text-ink leading-relaxed">
-                {{ $alert->pesan }}
-            </p>
-
-            @if (!$isList)
-                <div class="pt-2 flex items-center gap-1.5 text-tiny text-muted">
-                    <span class="material-symbols-outlined text-[13px] shrink-0">info</span>
-                    <span>{{ config('ransumku.disclaimer_ai') }}</span>
-                </div>
-            @endif
+<div class="{{ $isList ? 'p-4 md:py-4 md:px-5 hover:bg-surface/30 transition-colors' : 'rounded-2xl border border-line/80 bg-white p-4 sm:p-5 hover:border-line hover:shadow-xs transition-all shadow-2xs' }} flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="space-y-2 min-w-0 flex-1">
+        {{-- Status Badge & Tanggal --}}
+        <div class="flex items-center gap-2 text-xs">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold {{ $danger ? 'bg-rose-50 text-rose-700 border border-rose-200/80' : 'bg-amber-50 text-amber-800 border border-amber-200/80' }}">
+                <span class="material-symbols-outlined text-[13px]">{{ $danger ? 'error' : 'warning' }}</span>
+                <span>{{ $danger ? 'Waspada' : 'Perhatian' }}</span>
+            </span>
+            <span class="text-muted/40">•</span>
+            <span class="text-muted font-medium text-[11px]">
+                {{ optional($alert->tanggal_data)->translatedFormat('d F Y') }}
+            </span>
         </div>
+
+        <p class="text-xs sm:text-sm font-semibold text-ink leading-relaxed">
+            {{ $alert->pesan }}
+        </p>
     </div>
 
-    {{-- Tombol Aksi Minimalis & Profesional (Tanpa AI Sparkles yang Terkesan Generik) --}}
-    <div class="flex items-center shrink-0 self-end md:self-center pl-8 md:pl-0">
+    {{-- Tombol Aksi Konsultasi Solusi --}}
+    <div class="flex items-center shrink-0 self-end md:self-center">
         <a href="{{ route('asisten.index', ['tab' => 'tanya', 'tanya' => $tanyaPrompt]) }}"
-           class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink bg-surface hover:bg-surface-2 border border-line transition-all shadow-2xs active:scale-95 cursor-pointer">
+           class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-surface hover:bg-white text-ink hover:text-brand border border-line hover:border-brand/40 transition active:scale-95 shadow-2xs cursor-pointer group">
             <span>Konsultasi Solusi</span>
-            <span class="material-symbols-outlined text-[15px] text-muted">arrow_forward</span>
+            <span class="material-symbols-outlined text-[15px] text-brand group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
         </a>
     </div>
 </div>

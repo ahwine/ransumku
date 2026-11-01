@@ -27,6 +27,13 @@ class HomeController extends Controller
             $biayaKgTelur = $hariIni->pakan_kg * $ration->biaya_per_kg / $hariIni->telurKgEfektif();
         }
 
+        // Kalkulasi Keuangan & Margin Laba Kotor Telur (Acuan Pasar Layer)
+        $hargaTelurKg = (int) config('ransumku.harga_telur_default', 26000);
+        $estPendapatanTelur = $hariIni ? (int) round($hariIni->telurKgEfektif() * $hargaTelurKg) : 0;
+        $biayaPakanHariIni = ($hariIni && $ration) ? (int) round($hariIni->pakan_kg * $ration->biaya_per_kg) : (int) round(($hariIni?->pakan_kg ?? 0) * 6850);
+        $estMarginKotor = $estPendapatanTelur > 0 ? ($estPendapatanTelur - $biayaPakanHariIni) : null;
+        $estMarginPerKgTelur = ($biayaKgTelur !== null) ? round($hargaTelurKg - $biayaKgTelur) : null;
+
         $alerts = $farm->alerts()->where('tanggal_data', '>=', now()->subDays(5))->latest('tanggal_data')->latest('id')->get();
         $terlama = $farm->hargaTerlamaDiperbarui();
         $hargaUsangHari = $terlama && $terlama->lt(now()->subDays(config('ransumku.harga_usang_hari')))
@@ -80,8 +87,10 @@ class HomeController extends Controller
                 [
                     'label' => 'Telur (butir)',
                     'data' => $logs->isNotEmpty() ? $logs->pluck('telur_butir')->all() : [0, 0, 0, 0, 0, 0, 0],
-                    'backgroundColor' => '#116a3a',
-                    'borderRadius' => 6,
+                    'backgroundColor' => '#15803d',
+                    'hoverBackgroundColor' => '#166534',
+                    'borderRadius' => 0,
+                    'maxBarThickness' => 38,
                 ],
             ],
         ];
@@ -99,10 +108,10 @@ class HomeController extends Controller
                     'label' => 'Konsumsi (gr/ekor)',
                     'data' => $pakanGrData,
                     'borderColor' => '#F59E0B',
-                    'backgroundColor' => '#F59E0B22',
+                    'backgroundColor' => '#F59E0B18',
                     'fill' => true,
                     'tension' => 0.35,
-                    'borderWidth' => 2.75,
+                    'borderWidth' => 2.5,
                     'pointRadius' => 4,
                     'pointHoverRadius' => 6,
                     'pointBackgroundColor' => '#FFFFFF',
@@ -116,7 +125,7 @@ class HomeController extends Controller
                     'borderDash' => [4, 4],
                     'fill' => false,
                     'tension' => 0,
-                    'borderWidth' => 1.75,
+                    'borderWidth' => 1.5,
                     'pointRadius' => 0,
                     'pointHoverRadius' => 0,
                 ],
@@ -136,15 +145,16 @@ class HomeController extends Controller
             'type' => 'line',
             'labels' => $chartLabels,
             'zero' => false,
+            'precision' => 0,
             'datasets' => [
                 [
                     'label' => 'Populasi (ekor)',
                     'data' => $populasiData,
                     'borderColor' => '#2563EB',
-                    'backgroundColor' => '#2563EB15',
+                    'backgroundColor' => '#2563EB12',
                     'fill' => true,
                     'tension' => 0.35,
-                    'borderWidth' => 2.75,
+                    'borderWidth' => 2.5,
                     'pointRadius' => 4,
                     'pointHoverRadius' => 6,
                     'pointBackgroundColor' => '#FFFFFF',
@@ -176,10 +186,10 @@ class HomeController extends Controller
                     'label' => 'FCR Aktual',
                     'data' => $fcrData,
                     'borderColor' => '#7C3AED',
-                    'backgroundColor' => '#7C3AED18',
+                    'backgroundColor' => '#7C3AED12',
                     'fill' => true,
                     'tension' => 0.35,
-                    'borderWidth' => 2.75,
+                    'borderWidth' => 2.5,
                     'pointRadius' => 4,
                     'pointHoverRadius' => 6,
                     'pointBackgroundColor' => '#FFFFFF',
@@ -193,7 +203,7 @@ class HomeController extends Controller
                     'borderDash' => [4, 4],
                     'fill' => false,
                     'tension' => 0,
-                    'borderWidth' => 1.75,
+                    'borderWidth' => 1.5,
                     'pointRadius' => 0,
                     'pointHoverRadius' => 0,
                 ],
@@ -205,7 +215,8 @@ class HomeController extends Controller
             'totalTelurIni', 'totalTelurKgIni', 'rataGrTelur', 'hdPersen', 'telurUtuh', 'telurBentes',
             'deltaTelur', 'standarPakanGr', 'totalPakanIni', 'gramPerEkor', 'totalMatiIni',
             'eggMass', 'fcr', 'chartTelur', 'chartPakan', 'chartPopulasi', 'chartFcr',
-            'weather', 'presetKota'
+            'weather', 'presetKota',
+            'hargaTelurKg', 'estPendapatanTelur', 'biayaPakanHariIni', 'estMarginKotor', 'estMarginPerKgTelur'
         ));
     }
 

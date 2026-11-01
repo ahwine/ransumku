@@ -48,7 +48,7 @@
                 <span>Dashboard</span>
             </a>
             <a href="{{ route('catatan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('catatan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('catatan.*') ? 'text-brand' : '' }}">description</span>
+                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('catatan.*') ? 'text-brand' : '' }}">menu_book</span>
                 <span>Buku Kandang</span>
             </a>
             <a href="{{ route('ransum.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('ransum.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
@@ -57,7 +57,7 @@
             </a>
             <a href="{{ route('asisten.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('asisten.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('asisten.*') ? 'text-brand' : '' }}">smart_toy</span>
+                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('asisten.*') ? 'text-brand' : '' }}">psychology</span>
                     <span>Asisten Cerdas</span>
                 </div>
                 <span data-notif-count class="{{ $unreadAlertsCount > 0 ? 'flex' : 'hidden' }} w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-black items-center justify-center shrink-0 shadow-xs ring-2 ring-white">{{ $unreadAlertsCount > 9 ? '9+' : $unreadAlertsCount }}</span>
@@ -70,19 +70,19 @@
         <span class="px-3 text-[11px] font-black uppercase tracking-wider text-brand block mb-2">PENGATURAN</span>
         <nav class="space-y-1">
             <a href="{{ route('kandang.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('kandang.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('kandang.*') ? 'text-brand' : '' }}">cottage</span>
+                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('kandang.*') ? 'text-brand' : '' }}">warehouse</span>
                 <span>Kelola Kandang</span>
             </a>
             <a href="{{ route('bahan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('bahan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('bahan.*') ? 'text-brand' : '' }}">inventory_2</span>
+                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('bahan.*') ? 'text-brand' : '' }}">grain</span>
                 <span>Bahan Pakan</span>
             </a>
             <a href="{{ route('acuan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('acuan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('acuan.*') ? 'text-brand' : '' }}">fact_check</span>
+                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('acuan.*') ? 'text-brand' : '' }}">verified</span>
                 <span>Acuan Gizi (SNI)</span>
             </a>
             <a href="{{ route('tentang') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('tentang') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('tentang') ? 'text-brand' : '' }}">help_outline</span>
+                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('tentang') ? 'text-brand' : '' }}">info</span>
                 <span>Tentang RansumKu</span>
             </a>
         </nav>
@@ -103,10 +103,8 @@
 {{-- 2. Top Bar Desktop / Navbar (Solid White Navbar dengan Breadcrumb & Pill Badges) --}}
 <header class="hidden lg:flex fixed top-0 left-64 right-0 h-16 bg-white border-b border-line shadow-2xs z-50 px-8 items-center justify-between">
     {{-- Sisi Kiri: Breadcrumb / Judul Halaman Aktif (Menggantikan searchbar) --}}
-    <div class="flex items-center gap-2.5">
+    <div class="flex items-center">
         <span class="text-sm font-extrabold text-ink tracking-tight">@yield('judul', 'Dashboard')</span>
-        <span class="text-muted/60 text-xs">•</span>
-        <span class="text-xs font-medium text-muted">{{ $farmNav->nama ?? 'Kandang Maju Jaya' }}</span>
     </div>
 
     {{-- Sisi Kanan: Lonceng Notifikasi & Akun Pill Badge --}}
@@ -136,15 +134,15 @@
         <div class="flex items-center gap-2">
             @include('partials.dropdown-notifikasi', ['idDropdown' => 'notifikasi-popover-mobile', 'isMobile' => true])
             <a href="{{ route('kandang.index') }}" class="w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center cursor-pointer" aria-label="Kelola Kandang" title="Kelola Kandang">
-                <span class="material-symbols-outlined text-[18px]">cottage</span>
+                <span class="material-symbols-outlined text-[18px]">warehouse</span>
             </a>
         </div>
     </div>
 </header>
 
 {{-- 4. Main Content Area --}}
-<main class="lg:ml-64 pt-20 lg:pt-20 pb-28 lg:pb-12 px-4 lg:px-8">
-    <div class="w-full space-y-5">
+<main class="lg:ml-64 pt-20 lg:pt-20 {{ request()->routeIs('asisten.*') ? 'pb-2 lg:pb-2.5 lg:h-screen lg:max-h-screen lg:flex lg:flex-col lg:overflow-hidden box-border' : 'pb-28 lg:pb-12' }} px-4 lg:px-8">
+    <div class="w-full {{ request()->routeIs('asisten.*') ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : 'space-y-5' }}">
         @yield('isi')
     </div>
 </main>
@@ -157,7 +155,7 @@
             <span class="text-[10px] mt-0.5">Dashboard</span>
         </a>
         <a href="{{ route('catatan.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('catatan.*') ? 'text-brand font-bold' : 'text-muted' }}">
-            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('catatan.*') ? 'icon-fill' : '' }}">description</span>
+            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('catatan.*') ? 'icon-fill' : '' }}">menu_book</span>
             <span class="text-[10px] mt-0.5">Produksi</span>
         </a>
         <a href="{{ route('ransum.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('ransum.*') ? 'text-brand font-bold' : 'text-muted' }}">
@@ -166,7 +164,7 @@
         </a>
         <a href="{{ route('asisten.index') }}" class="relative flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('asisten.*') ? 'text-brand font-bold' : 'text-muted' }}">
             <div class="relative inline-flex items-center justify-center">
-                <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('asisten.*') ? 'icon-fill' : '' }}">smart_toy</span>
+                <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('asisten.*') ? 'icon-fill' : '' }}">psychology</span>
                 <span data-notif-count class="{{ $unreadAlertsCount > 0 ? 'flex' : 'hidden' }} absolute -top-1 -right-2 h-3.5 min-w-3.5 px-0.5 items-center justify-center rounded-full bg-rose-600 text-white text-[8px] font-black shadow-xs ring-1 ring-white">
                     {{ $unreadAlertsCount > 9 ? '9+' : $unreadAlertsCount }}
                 </span>
@@ -174,7 +172,7 @@
             <span class="text-[10px] mt-0.5">Asisten</span>
         </a>
         <a href="{{ route('bahan.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('bahan.*|acuan.*|tentang') ? 'text-brand font-bold' : 'text-muted' }}">
-            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('bahan.*|acuan.*|tentang') ? 'icon-fill' : '' }}">inventory_2</span>
+            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('bahan.*|acuan.*|tentang') ? 'icon-fill' : '' }}">grain</span>
             <span class="text-[10px] mt-0.5">Bahan</span>
         </a>
     </div>

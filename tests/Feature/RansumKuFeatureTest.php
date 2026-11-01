@@ -80,6 +80,17 @@ class RansumKuFeatureTest extends TestCase
         $asisten->assertStatus(200);
         $asisten->assertSee('Peringatan Dini');
 
+        // Pastikan membuka tab peringatan dini otomatis menandai peringatan belum dibaca menjadi dibaca (menghilangkan badge titik merah)
+        $alert = $user->farm->alerts()->create([
+            'jenis' => 'uji_deteksi',
+            'level' => 'perhatian',
+            'pesan' => 'Uji deteksi otomatis',
+            'tanggal_data' => now()->toDateString(),
+            'dibaca' => false,
+        ]);
+        $this->get(route('asisten.index', ['tab' => 'peringatan']))->assertStatus(200);
+        $this->assertTrue($alert->fresh()->dibaca);
+
         // Test tanya asisten AI (fallback mode tanpa API key)
         $chat = $this->post(route('asisten.chat'), [
             'pesan' => 'Apa bahan pengganti jagung?',

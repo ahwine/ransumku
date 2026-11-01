@@ -123,7 +123,7 @@
                     <span class="material-symbols-outlined text-[16px] text-amber-600">thermostat_auto</span>
                     <span>Indeks Stres Panas (THI)</span>
                 </span>
-                <span class="px-3.5 py-1 rounded-full text-xs font-bold shadow-2xs {{ $weather['badge_class'] }}">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border {{ $weather['badge_class'] }}">
                     THI {{ $weather['thi'] }} · {{ $weather['thi_kategori_singkat'] }}
                 </span>
             </div>
@@ -175,31 +175,33 @@
         </div>
     </div>
 
-    {{-- Baris 3: Rekomendasi Manajemen Pakan Cuaca Terkini (Collapsible Accordion Opsi 1) --}}
-    <details class="group pt-3 border-t border-line">
-        <summary class="flex items-center justify-between cursor-pointer list-none select-none py-0.5 text-xs transition-colors hover:text-brand [&::-webkit-details-marker]:hidden">
+    {{-- Baris 3: Rekomendasi Manajemen Pakan Cuaca Terkini (Collapsible Accordion Netral & Minimalis) --}}
+    <details class="group p-3 sm:px-4 sm:py-3 rounded-xl bg-surface/50 hover:bg-surface/80 border border-line/70 transition-all">
+        <summary class="flex items-center justify-between cursor-pointer list-none select-none text-xs transition-colors [&::-webkit-details-marker]:hidden">
             <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-line bg-surface hover:bg-surface-2 transition text-xs font-semibold text-ink shadow-2xs">
-                    <span class="material-symbols-outlined text-[15px] text-amber-600">lightbulb</span>
-                    <span>{{ count($weather['saran_manajemen']) }} Langkah Mitigasi Pakan Cuaca Terkini</span>
-                </span>
-                <span class="hidden sm:inline text-tiny text-muted">Berdasarkan Standar Fisiologi Unggas Tropis</span>
+                {{-- Ikon Bohlam Murni (Tanpa Badge / Lingkaran Pembungkus) --}}
+                <span class="material-symbols-outlined text-[18px] text-amber-600 shrink-0">lightbulb</span>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-ink text-xs">
+                        {{ count($weather['saran_manajemen']) }} Langkah Mitigasi Pakan Cuaca Terkini
+                    </span>
+                    <span class="hidden sm:inline text-tiny text-muted">• Standar Fisiologi Unggas Tropis</span>
+                </div>
             </div>
-            <div class="flex items-center gap-1 text-tiny font-semibold text-muted group-hover:text-brand transition-colors">
+            <div class="flex items-center gap-1 text-tiny font-semibold text-muted group-hover:text-ink transition-colors">
                 <span class="group-open:hidden">Buka Panduan</span>
                 <span class="hidden group-open:inline">Tutup Panduan</span>
                 <span class="material-symbols-outlined text-[16px] transition-transform duration-200 group-open:rotate-180">expand_more</span>
             </div>
         </summary>
 
-        {{-- Grid Kartu Rekomendasi (Muncul Saat Dibuka) --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-3 mt-2.5 border-t border-dashed border-line">
+        {{-- Grid Kartu Rekomendasi (Muncul Saat Dibuka dengan Penomoran Inline Polos) --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-3 mt-3 border-t border-line/60">
             @foreach ($weather['saran_manajemen'] as $index => $saran)
-                <div class="p-3 rounded-lg bg-surface/30 border border-line text-xs flex items-start gap-2.5 shadow-2xs">
-                    <span class="w-5 h-5 rounded-full bg-brand/10 text-brand font-bold text-tiny flex items-center justify-center shrink-0 mt-0.5">
-                        {{ $index + 1 }}
-                    </span>
-                    <span class="text-ink font-medium leading-relaxed">{{ $saran }}</span>
+                <div class="p-3 rounded-lg bg-white border border-line/60 text-xs shadow-2xs hover:border-brand/40 transition-colors">
+                    <p class="text-ink font-medium leading-relaxed">
+                        <strong class="font-bold text-ink mr-1">{{ $index + 1 }}.</strong><span>{{ $saran }}</span>
+                    </p>
                 </div>
             @endforeach
         </div>

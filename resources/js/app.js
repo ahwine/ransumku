@@ -293,7 +293,7 @@ function createStandardChart(el, cfg) {
     if (cfg.type === 'line' && Array.isArray(cfg.datasets)) {
         cfg.datasets.forEach((ds) => {
             if (!ds.borderDash) {
-                ds.borderWidth = ds.borderWidth ?? 2.75;
+                ds.borderWidth = ds.borderWidth ?? 2.5;
                 ds.pointRadius = ds.pointRadius ?? 4;
                 ds.pointHoverRadius = ds.pointHoverRadius ?? 6;
                 ds.pointBackgroundColor = ds.pointBackgroundColor ?? '#FFFFFF';
@@ -303,6 +303,14 @@ function createStandardChart(el, cfg) {
                 ds.pointRadius = ds.pointRadius ?? 0;
                 ds.pointHoverRadius = ds.pointHoverRadius ?? 0;
             }
+        });
+    }
+
+    if (cfg.type === 'bar' && Array.isArray(cfg.datasets)) {
+        cfg.datasets.forEach((ds) => {
+            ds.borderRadius = ds.borderRadius ?? 0;
+            delete ds.barThickness;
+            ds.maxBarThickness = ds.maxBarThickness ?? 38;
         });
     }
 
@@ -329,10 +337,23 @@ function createStandardChart(el, cfg) {
                 },
                 tooltip: {
                     backgroundColor: '#002415',
-                    titleFont: { family: "'Plus Jakarta Sans', sans-serif" },
-                    bodyFont: { family: "'Plus Jakarta Sans', sans-serif" },
+                    titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: 'bold', size: 12 },
+                    bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11 },
                     cornerRadius: 8,
-                    padding: 8
+                    padding: 10,
+                    boxPadding: 4,
+                    callbacks: {
+                        label(ctx) {
+                            const val = ctx.parsed.y ?? ctx.raw;
+                            const label = ctx.dataset.label || '';
+                            if (val === undefined || val === null) return label;
+                            const isIntegerChart = cfg.precision === 0 || el.dataset?.chartName === 'populasi';
+                            const formatted = typeof val === 'number'
+                                ? (isIntegerChart ? Math.round(val).toLocaleString('id-ID') : val.toLocaleString('id-ID', { maximumFractionDigits: 2 }))
+                                : val;
+                            return ` ${label}: ${formatted}`;
+                        }
+                    }
                 }
             },
             scales: {
@@ -351,10 +372,17 @@ function createStandardChart(el, cfg) {
                         drawTicks: false
                     },
                     ticks: {
+                        precision: cfg.precision ?? (el.dataset?.chartName === 'populasi' ? 0 : undefined),
+                        stepSize: cfg.stepSize ?? (el.dataset?.chartName === 'populasi' ? 1 : undefined),
                         font: { size: 10, family: "'Plus Jakarta Sans', 'Poppins', sans-serif" },
                         color: '#9CA3AF',
                         padding: 6,
                         callback(val) {
+                            // Untuk grafik populasi atau integer, jangan tampilkan nilai pecahan
+                            const isIntegerChart = cfg.precision === 0 || el.dataset?.chartName === 'populasi';
+                            if (isIntegerChart && !Number.isInteger(val)) {
+                                return null;
+                            }
                             if (val >= 1000000) return (val / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
                             if (val >= 10000) return (val / 1000).toLocaleString('id-ID') + ' rb';
                             return val.toLocaleString('id-ID');
@@ -780,7 +808,10 @@ window.toggleCustomDropdown = function (dropdownId, event) {
         }
         const searchInput = container.querySelector('[data-dropdown-search]');
         if (searchInput) {
-            setTimeout(() => searchInput.focus(), 80);
+            setTimeout(() => {
+                searchInput.focus();
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 80);
         }
     }
 };
@@ -830,11 +861,11 @@ window.selectCustomDropdownKotaInput = function(dropdownId, value, nama, info) {
         item.classList.toggle('text-ink/80', !isSelected);
         item.classList.toggle('font-medium', !isSelected);
 
-        const iconBox = item.querySelector('[data-item-icon-box]');
-        if (iconBox) {
-            iconBox.className = isSelected
-                ? 'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-brand text-white transition-colors'
-                : 'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-surface-2 text-muted group-hover:bg-brand/10 group-hover:text-brand transition-colors';
+        const iconEl = item.querySelector('[data-item-icon]');
+        if (iconEl) {
+            iconEl.className = isSelected
+                ? 'material-symbols-outlined text-[18px] shrink-0 text-brand transition-colors'
+                : 'material-symbols-outlined text-[18px] shrink-0 text-muted group-hover:text-brand transition-colors';
         }
 
         const badge = item.querySelector('[data-active-badge]');

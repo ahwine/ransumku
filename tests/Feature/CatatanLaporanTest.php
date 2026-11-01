@@ -23,7 +23,7 @@ class CatatanLaporanTest extends TestCase
 
         $response = $this->get(route('catatan.index', ['tab' => 'dashboard']));
         $response->assertStatus(200);
-        $response->assertSee('Cetak Laporan Resmi (PDF/A4)');
+        $response->assertSee('Unduh Laporan');
         $response->assertSee('modal-laporan-resmi');
         $response->assertSee('dokumen-laporan-resmi');
         $response->assertSee('Laporan Rekapitulasi Operasional Buku Kandang Layer');

@@ -3,80 +3,68 @@
 @section('isi')
 @use('App\Support\Fmt')
 
-<div class="flex items-center justify-between mb-4">
-    <div>
-        <h1 class="text-h-xl flex items-center gap-2">
-            <span>Asisten Cerdas</span>
-            <span class="material-symbols-outlined icon-fill text-brand text-[24px]">auto_awesome</span>
-        </h1>
-        <p class="text-muted text-sm">Deteksi dini anomali kandang & konsultasi pakan berbasis AI</p>
-    </div>
-</div>
 
 @php
     $tabAktif = request()->query('tab', 'tanya');
     $farm = auth()->user()->farm ?? null;
     $chatSessions = $chatSessions ?? ($farm ? $farm->chatSessions()->withCount('messages')->orderByDesc('pinned')->orderByDesc('updated_at')->get() : collect());
     $sessionParam = request()->query('session');
-    if ($sessionParam === 'baru') {
+    
+    // Default selalu sesi baru ketika dimuat atau di-refresh
+    if ($sessionParam && is_numeric($sessionParam) && (int) $sessionParam > 0) {
+        $activeSession = $activeSession ?? $chatSessions->firstWhere('id', (int) $sessionParam);
+        $chats = $chats ?? ($activeSession ? $activeSession->messages()->orderBy('id')->get() : collect());
+    } else {
         $activeSession = null;
         $chats = collect();
-    } elseif ($sessionParam) {
-        $activeSession = $chatSessions->firstWhere('id', (int) $sessionParam);
-        $chats = $activeSession ? $activeSession->messages()->orderBy('id')->get() : collect();
-    } else {
-        $activeSession = $chatSessions->first();
-        $chats = $activeSession ? $activeSession->messages()->orderBy('id')->get() : collect();
     }
 @endphp
 
-<div data-tabs class="space-y-4">
-    <div data-tab-nav class="tab-segmented-track relative grid grid-cols-2 gap-1 p-1.5 rounded-full text-center text-xs sm:text-sm font-bold select-none w-full">
-        <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
-        <button type="button" data-tab="tanya" class="relative z-10 py-2.5 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
-            Tanya Asisten AI
-        </button>
-        <button type="button" data-tab="peringatan" class="relative z-10 py-2.5 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }} flex items-center justify-center gap-1.5">
-            <span>Peringatan Dini</span>
-            @php $unreadCountTab = $alerts->where('dibaca', false)->count(); @endphp
-            @if ($unreadCountTab > 0)
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white shadow-2xs">
-                    {{ $unreadCountTab > 9 ? '9+' : $unreadCountTab }}
-                </span>
-            @elseif ($alerts->count() > 0)
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-2 text-muted">
-                    {{ $alerts->count() }}
-                </span>
-            @endif
-        </button>
+<div data-tabs class="lg:flex-1 lg:min-h-0 lg:flex lg:flex-col space-y-2">
+    <div class="flex items-center justify-start shrink-0">
+        <div data-tab-nav class="tab-segmented-track relative inline-flex items-center gap-1 p-1 rounded-full text-center text-xs sm:text-sm font-bold select-none bg-surface-2 border border-line/60 shadow-2xs">
+            <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
+            <button type="button" data-tab="tanya" class="relative z-10 py-2 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
+                Tanya Asisten AI
+            </button>
+            @php
+                $isPeringatanActive = ($tabAktif === 'peringatan');
+                $unreadCountTab = $isPeringatanActive ? 0 : $alerts->where('dibaca', false)->count();
+            @endphp
+            <button type="button" data-tab="peringatan" onclick="bukaTabPeringatan()" class="relative z-10 py-2 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }} flex items-center gap-1.5">
+                <span>Peringatan Dini</span>
+                @if ($unreadCountTab > 0)
+                    <span id="tab-unread-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white shadow-2xs">
+                        {{ $unreadCountTab > 9 ? '9+' : $unreadCountTab }}
+                    </span>
+                @endif
+            </button>
+        </div>
     </div>
 
     {{-- Tab 1: Tanya Jawab AI (ChatGPT Style & Real-Time) --}}
-    <section data-panel="tanya" class="{{ $tabAktif === 'tanya' ? '' : 'hidden' }} space-y-3">
+    <section data-panel="tanya" class="{{ $tabAktif === 'tanya' ? '' : 'hidden' }} space-y-2">
         {{-- Status API Key --}}
         @if (!$aiAktif)
-            <div class="notice bg-amber-soft/50 text-amber-ink">
-                <span class="material-symbols-outlined icon-fill">info</span>
-                <div>
-                    <strong>Kunci Gemini API belum dipasang di .env.</strong>
-                    <p class="text-xs mt-0.5">Asisten berjalan dalam mode jawaban bawaan (fallback otomatis tanpa crash).</p>
+            <div class="p-3 rounded-2xl bg-amber-soft/60 border border-amber/30 text-amber-ink flex items-start gap-2.5 shrink-0 mb-2">
+                <span class="material-symbols-outlined icon-fill text-[20px] text-amber-600 shrink-0 mt-0.5">info</span>
+                <div class="text-xs leading-relaxed">
+                    <strong class="font-bold">Kunci Gemini API belum dipasang di .env.</strong>
+                    <p class="text-muted mt-0.5">Asisten berjalan dalam mode jawaban bawaan (fallback otomatis tanpa crash).</p>
                 </div>
             </div>
         @endif
 
         {{-- ChatGPT Interface Window (Light Mode) --}}
-        <div class="card !p-0 overflow-hidden border border-line shadow-sm flex flex-col md:flex-row min-h-[660px] rounded-2xl bg-white text-ink chatgpt-layout-container">
+        <div class="card !p-0 overflow-hidden border border-line/80 shadow-2xs flex flex-col md:flex-row rounded-xl bg-white text-ink chatgpt-layout-container lg:flex-1 lg:min-h-0">
             
             {{-- Left Sidebar: ChatGPT Navigation (Pinned & Recents & Akun) --}}
-            <aside class="chatgpt-sidebar w-full md:w-72 lg:w-80 shrink-0 bg-[#f7faf8] border-b md:border-b-0 md:border-r border-line flex flex-col justify-between select-none">
+            <aside class="chatgpt-sidebar w-full md:w-72 lg:w-80 shrink-0 bg-[#f9faf9] border-b md:border-b-0 md:border-r border-line/70 flex flex-col justify-between select-none">
                 <div class="p-3.5 space-y-3.5 flex-1 flex flex-col min-h-0">
                     {{-- Tombol + Obrolan Baru --}}
-                    <button type="button" onclick="mulaiObrolanBaru()" class="w-full py-2.5 px-3.5 rounded-xl bg-white hover:bg-surface border border-line text-ink text-xs font-semibold flex items-center justify-between transition-all duration-150 shadow-xs cursor-pointer group">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-[18px] text-brand group-hover:rotate-90 transition-transform">add</span>
-                            <span>Obrolan Baru</span>
-                        </div>
-                        <span class="text-[10px] text-muted border border-line px-1.5 py-0.5 rounded font-mono bg-surface">Baru</span>
+                    <button type="button" onclick="mulaiObrolanBaru()" class="w-full py-2 px-3 rounded-full bg-white hover:bg-surface-2 border border-line text-ink text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-2xs hover:shadow-xs cursor-pointer group active:scale-[0.99]">
+                        <span class="material-symbols-outlined text-[17px] text-brand group-hover:rotate-90 transition-transform">add</span>
+                        <span>Obrolan Baru</span>
                     </button>
 
                     @php
@@ -84,7 +72,7 @@
                         $recentSessions = $chatSessions->where('pinned', false);
                     @endphp
 
-                    <div class="space-y-4 overflow-y-auto max-h-[460px] pr-1 custom-scrollbar" id="sidebar-sessions">
+                    <div class="flex-1 min-h-0 space-y-4 overflow-y-auto pr-1 custom-scrollbar" id="sidebar-sessions">
                         {{-- Bagian Pinned (Disematkan) --}}
                         <div id="pinned-container" class="space-y-1 {{ $pinnedSessions->isEmpty() ? 'hidden' : '' }}">
                             <div class="flex items-center justify-between px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-muted">
@@ -97,9 +85,9 @@
                             <div id="pinned-list" class="space-y-0.5">
                                 @foreach ($pinnedSessions as $s)
                                     @php $isActive = ($activeSession && $activeSession->id === $s->id); @endphp
-                                    <div id="session-item-{{ $s->id }}" class="session-item group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors duration-150 {{ $isActive ? 'bg-brand-soft/80 text-brand-dark font-bold border border-brand/20 shadow-xs' : 'text-ink/80 hover:bg-surface hover:text-ink' }}">
+                                    <div id="session-item-{{ $s->id }}" class="session-item group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors duration-150 {{ $isActive ? 'bg-surface text-ink font-bold border border-line/80 shadow-2xs' : 'text-ink/75 hover:bg-surface/70 hover:text-ink' }}">
                                         <button type="button" onclick="pilihSession({{ $s->id }})" class="flex items-center gap-2 flex-1 min-w-0 pr-2 text-left cursor-pointer">
-                                            <span class="material-symbols-outlined text-[15px] {{ $isActive ? 'text-brand' : 'text-muted' }}">chat_bubble</span>
+                                            <span class="material-symbols-outlined text-[15px] session-icon {{ $isActive ? 'text-brand' : 'text-muted' }}">chat_bubble</span>
                                             <span class="truncate session-title">{{ $s->judul }}</span>
                                         </button>
                                         <div class="flex items-center gap-1 shrink-0">
@@ -128,9 +116,9 @@
                             <div id="recents-list" class="space-y-0.5">
                                 @forelse ($recentSessions as $s)
                                     @php $isActive = ($activeSession && $activeSession->id === $s->id); @endphp
-                                    <div id="session-item-{{ $s->id }}" class="session-item group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors duration-150 {{ $isActive ? 'bg-brand-soft/80 text-brand-dark font-bold border border-brand/20 shadow-xs' : 'text-ink/80 hover:bg-surface hover:text-ink' }}">
+                                    <div id="session-item-{{ $s->id }}" class="session-item group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors duration-150 {{ $isActive ? 'bg-surface text-ink font-bold border border-line/80 shadow-2xs' : 'text-ink/75 hover:bg-surface/70 hover:text-ink' }}">
                                         <button type="button" onclick="pilihSession({{ $s->id }})" class="flex items-center gap-2 flex-1 min-w-0 pr-2 text-left cursor-pointer">
-                                            <span class="material-symbols-outlined text-[15px] {{ $isActive ? 'text-brand' : 'text-muted' }}">chat_bubble_outline</span>
+                                            <span class="material-symbols-outlined text-[15px] session-icon {{ $isActive ? 'text-brand' : 'text-muted' }}">chat_bubble_outline</span>
                                             <span class="truncate session-title">{{ $s->judul }}</span>
                                         </button>
                                         <div class="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -154,10 +142,10 @@
                     </div>
                 </div>
 
-                {{-- Footer Sidebar: Profil Pengguna (Sesuai Screenshot ChatGPT) --}}
-                <div class="p-3 border-t border-line bg-surface/60 flex items-center justify-between text-xs shrink-0">
+                {{-- Footer Sidebar: Profil Pengguna --}}
+                <div class="p-3 border-t border-line/60 bg-surface/40 flex items-center justify-between text-xs shrink-0 h-16 min-h-[64px]">
                     <div class="flex items-center gap-2.5 truncate min-w-0 pr-2">
-                        <div class="w-8 h-8 rounded-full bg-brand/15 text-brand font-bold text-xs shrink-0 shadow-xs flex items-center justify-center">
+                        <div class="w-8 h-8 rounded-full bg-brand/15 text-brand font-bold text-xs shrink-0 shadow-2xs flex items-center justify-center">
                             {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
                         </div>
                         <div class="truncate leading-tight">
@@ -165,88 +153,91 @@
                             <span class="block text-[10px] text-muted">{{ $farm->nama ?? 'Kandang Maju Jaya' }}</span>
                         </div>
                     </div>
-                    <button type="button" onclick="hapusSemua()" class="p-1.5 text-muted hover:text-danger hover:bg-white rounded-lg cursor-pointer transition-colors shadow-xs" title="Bersihkan Semua Obrolan">
+                    <button type="button" onclick="hapusSemua()" class="p-1.5 text-muted hover:text-danger hover:bg-white rounded-lg cursor-pointer transition-colors shadow-2xs" title="Bersihkan Semua Obrolan">
                         <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
                     </button>
                 </div>
             </aside>
 
             {{-- Right Main Chat Screen --}}
-            <main class="chatgpt-main flex-1 flex flex-col justify-between bg-white p-3 md:p-5 min-w-0">
+            <main class="chatgpt-main flex-1 flex flex-col justify-between bg-white min-w-0">
                 
                 {{-- Top Chat Header --}}
-                <div class="flex items-center justify-between pb-3 border-b border-line mb-2 shrink-0">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <div class="w-8 h-8 rounded-lg bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0">
-                            <span class="material-symbols-outlined text-[18px]">smart_toy</span>
-                        </div>
-                        <div class="truncate">
-                            <h3 id="current-session-title" class="font-bold text-sm text-ink truncate">
-                                {{ $activeSession ? $activeSession->judul : 'Percakapan Baru' }}
-                            </h3>
-                            <p id="current-session-subtitle" class="text-[11px] text-muted">
-                                {{ $activeSession ? 'Sesi ID #'.$activeSession->id.' • '.$chats->count().' pesan' : 'Konsultasi Nutrisi & Manajemen Unggas' }}
-                            </p>
-                        </div>
+                <div class="flex items-center justify-between px-4 py-3.5 border-b border-line/70 shrink-0">
+                    <div class="truncate min-w-0">
+                        <h3 id="current-session-title" class="font-bold text-sm text-ink truncate">
+                            {{ $activeSession ? $activeSession->judul : 'Percakapan Baru' }}
+                        </h3>
+                        <p id="current-session-subtitle" class="text-[11px] text-muted">
+                            {{ $activeSession ? 'Sesi ID #'.$activeSession->id.' • '.$chats->count().' pesan' : 'Konsultasi Nutrisi & Manajemen Unggas' }}
+                        </p>
                     </div>
                     
                     <div class="flex items-center gap-2 shrink-0">
-                        <span class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-brand bg-brand-soft/60 border border-brand/20 px-2.5 py-0.5 rounded-full font-bold">
-                            <span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span>
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full shadow-2xs">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
                             <span>Gemini AI</span>
                         </span>
-                        <button type="button" onclick="mulaiObrolanBaru()" class="py-1.5 px-3 rounded-lg bg-surface hover:bg-surface-2 border border-line text-xs font-semibold text-ink flex items-center gap-1 cursor-pointer transition-colors shadow-xs">
-                            <span class="material-symbols-outlined text-[15px] text-brand">add</span>
-                            <span>Baru</span>
-                        </button>
                     </div>
                 </div>
 
                 {{-- Chat Box Window --}}
-                <div id="chat-box" class="flex-1 min-h-[380px] max-h-[490px] overflow-y-auto space-y-4 px-2 py-2 flex flex-col custom-scrollbar">
+                <div id="chat-box" class="flex-1 min-h-0 overflow-y-auto space-y-4 px-4 py-3 flex flex-col custom-scrollbar">
                     
                     {{-- Welcome Screen (when session has no messages) --}}
-                    <div id="welcome-card" class="{{ $chats->isEmpty() ? '' : 'hidden' }} my-auto py-6 text-center space-y-4 max-w-lg mx-auto">
-                        <div class="w-14 h-14 rounded-2xl bg-brand/10 border border-brand/20 text-brand grid place-items-center mx-auto shadow-xs">
-                            <span class="material-symbols-outlined text-[32px] icon-fill">auto_awesome</span>
+                    <div id="welcome-card" class="{{ $chats->isEmpty() ? '' : 'hidden' }} my-auto py-6 text-center space-y-4 max-w-3xl mx-auto">
+                        <div class="w-14 h-14 rounded-2xl bg-brand/10 border border-brand/20 text-brand grid place-items-center mx-auto shadow-2xs">
+                            <span class="material-symbols-outlined text-[30px] icon-fill">auto_awesome</span>
                         </div>
                         <div>
-                            <h3 class="font-bold text-lg text-ink">Halo, Peternak Cerdas!</h3>
-                            <p class="text-xs text-muted mt-1 max-w-md mx-auto leading-relaxed">
-                                Saya Asisten Cerdas RansumKu (didukung Google Gemini AI). Saya siap menganalisis data performa kandang Anda, memberikan saran pakan alternatif, dan solusi masalah ayam petelur secara real-time.
+                            <h3 class="font-bold text-base sm:text-lg text-ink">Halo, Peternak Cerdas!</h3>
+                            <p class="text-xs text-muted mt-1 max-w-xl mx-auto leading-relaxed">
+                                Saya Asisten Cerdas RansumKu didukung Google Gemini AI. Saya siap menganalisis data performa kandang Anda, memberikan saran pakan alternatif, dan rekomendasi solusi ayam petelur.
                             </p>
                         </div>
 
                         {{-- Suggestion Prompts --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left pt-2">
-                            <button type="button" onclick="isiDanKirim('apakah kamu bisa cek konsumsi pakan naik kenapa kok telurnya turun?')" class="p-3 rounded-xl border border-line bg-white hover:bg-surface/70 hover:border-brand/40 transition-all text-xs text-ink space-y-1 text-left cursor-pointer group shadow-xs">
-                                <div class="font-bold text-brand flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[15px] text-amber-ink">warning</span>
-                                    <span>Pakan Naik, Telur Turun?</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left pt-2">
+                            <button type="button" onclick="isiDanKirim('apakah kamu bisa cek konsumsi pakan naik kenapa kok telurnya turun?')" class="p-3.5 rounded-2xl border border-line bg-surface/30 hover:bg-white hover:border-brand/40 hover:shadow-2xs transition-all text-xs text-ink space-y-1 text-left cursor-pointer group active:scale-[0.99]">
+                                <div class="font-bold text-brand flex items-center justify-between">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[15px] text-amber-600">warning</span>
+                                        <span>Pakan Naik, Telur Turun?</span>
+                                    </span>
+                                    <span class="material-symbols-outlined text-[14px] text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">arrow_forward</span>
                                 </div>
                                 <p class="text-[11px] text-muted group-hover:text-ink line-clamp-2">Analisis data 7 hari terakhir mengapa pakan naik namun produksi menurun.</p>
                             </button>
 
-                            <button type="button" onclick="isiDanKirim('Bagaimana analisis performa kandang saya berdasarkan data 7 hari terakhir?')" class="p-3 rounded-xl border border-line bg-white hover:bg-surface/70 hover:border-brand/40 transition-all text-xs text-ink space-y-1 text-left cursor-pointer group shadow-xs">
-                                <div class="font-bold text-brand flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[15px]">query_stats</span>
-                                    <span>Evaluasi Performa Kandang</span>
+                            <button type="button" onclick="isiDanKirim('Bagaimana analisis performa kandang saya berdasarkan data 7 hari terakhir?')" class="p-3.5 rounded-2xl border border-line bg-surface/30 hover:bg-white hover:border-brand/40 hover:shadow-2xs transition-all text-xs text-ink space-y-1 text-left cursor-pointer group active:scale-[0.99]">
+                                <div class="font-bold text-brand flex items-center justify-between">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[15px]">query_stats</span>
+                                        <span>Evaluasi Performa Kandang</span>
+                                    </span>
+                                    <span class="material-symbols-outlined text-[14px] text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">arrow_forward</span>
                                 </div>
                                 <p class="text-[11px] text-muted group-hover:text-ink line-clamp-2">Cek Hen-Day %, konsumsi gram/ekor/hari, dan angka mortalitas.</p>
                             </button>
 
-                            <button type="button" onclick="isiDanKirim('Apa bahan pakan pengganti jagung yang murah dan aman?')" class="p-3 rounded-xl border border-line bg-white hover:bg-surface/70 hover:border-brand/40 transition-all text-xs text-ink space-y-1 text-left cursor-pointer group shadow-xs">
-                                <div class="font-bold text-brand flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[15px]">grass</span>
-                                    <span>Bahan Pengganti Jagung</span>
+                            <button type="button" onclick="isiDanKirim('Apa bahan pakan pengganti jagung yang murah dan aman?')" class="p-3.5 rounded-2xl border border-line bg-surface/30 hover:bg-white hover:border-brand/40 hover:shadow-2xs transition-all text-xs text-ink space-y-1 text-left cursor-pointer group active:scale-[0.99]">
+                                <div class="font-bold text-brand flex items-center justify-between">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[15px]">grass</span>
+                                        <span>Bahan Pengganti Jagung</span>
+                                    </span>
+                                    <span class="material-symbols-outlined text-[14px] text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">arrow_forward</span>
                                 </div>
                                 <p class="text-[11px] text-muted group-hover:text-ink line-clamp-2">Sorgum, menir, atau dedak beserta takaran aman dalam ransum.</p>
                             </button>
 
-                            <button type="button" onclick="isiDanKirim('Bagaimana cara menjaga kualitas pakan saat musim hujan agar tidak berjamur?')" class="p-3 rounded-xl border border-line bg-white hover:bg-surface/70 hover:border-brand/40 transition-all text-xs text-ink space-y-1 text-left cursor-pointer group shadow-xs">
-                                <div class="font-bold text-brand flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[15px]">rainy</span>
-                                    <span>Tips Pakan Musim Hujan</span>
+                            <button type="button" onclick="isiDanKirim('Bagaimana cara menjaga kualitas pakan saat musim hujan agar tidak berjamur?')" class="p-3.5 rounded-2xl border border-line bg-surface/30 hover:bg-white hover:border-brand/40 hover:shadow-2xs transition-all text-xs text-ink space-y-1 text-left cursor-pointer group active:scale-[0.99]">
+                                <div class="font-bold text-brand flex items-center justify-between">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[15px]">rainy</span>
+                                        <span>Tips Pakan Musim Hujan</span>
+                                    </span>
+                                    <span class="material-symbols-outlined text-[14px] text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">arrow_forward</span>
                                 </div>
                                 <p class="text-[11px] text-muted group-hover:text-ink line-clamp-2">Mencegah kelembapan, kutu, mikotoksin, dan penurunan nafsu makan.</p>
                             </button>
@@ -254,20 +245,20 @@
                     </div>
 
                     {{-- Messages Stream Container --}}
-                    <div id="messages-container" class="space-y-4 flex flex-col">
+                    <div id="messages-container" class="w-full space-y-4 flex flex-col">
                         @foreach ($chats as $c)
                             @if ($c->role === 'user')
-                                <div class="flex gap-2 items-start justify-end max-w-[85%] self-end">
+                                <div class="flex gap-2 items-start justify-end max-w-[90%] sm:max-w-[85%] self-end">
                                     <div class="p-3 rounded-2xl rounded-tr-xs bg-brand text-white text-xs sm:text-sm leading-relaxed shadow-xs">
                                         {{ $c->isi }}
                                     </div>
                                 </div>
                             @else
-                                <div class="flex gap-2.5 items-start max-w-[92%] sm:max-w-[88%]">
+                                <div class="flex gap-2.5 items-start w-full">
                                     <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0 mt-0.5">
                                         <span class="material-symbols-outlined text-[16px]">smart_toy</span>
                                     </div>
-                                    <div class="p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box" data-raw="{{ $c->isi }}">
+                                    <div class="p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0" data-raw="{{ $c->isi }}">
                                         {!! App\Support\Fmt::markdownAi($c->isi) !!}
                                     </div>
                                 </div>
@@ -278,61 +269,61 @@
                     <div id="chat-bawah"></div>
                 </div>
 
-                {{-- Real-Time Input Area --}}
-                <div class="pt-3 border-t border-line space-y-2 shrink-0">
-                    <form id="form-chat" action="javascript:void(0);" onsubmit="return handleFormSubmit(event);" class="flex gap-2">
+                {{-- Real-Time Input Area (Sejajar Sempurna dengan Akun Sidebar, Tanpa Border Sendiri) --}}
+                <div class="p-3 bg-white flex items-center shrink-0 h-16 min-h-[64px]">
+                    <form id="form-chat" action="javascript:void(0);" onsubmit="return handleFormSubmit(event);" class="relative flex items-center w-full">
                         @csrf
-                        <div class="relative flex-1">
-                            <input id="input-pesan" name="pesan" type="text" class="w-full bg-[#f8faf9] hover:bg-white focus:bg-white text-ink placeholder:text-muted border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 rounded-xl px-4 py-3 text-xs sm:text-sm outline-none transition-all shadow-xs" placeholder="Ketik pertanyaan atau keluhan tentang kandang Anda..." required autocomplete="off">
-                        </div>
-                        <button id="btn-kirim" type="button" onclick="handleFormSubmit(event)" class="bg-brand hover:bg-brand-dark text-white font-bold px-4 sm:px-5 rounded-xl text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer transition-all shadow-sm shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Kirim">
-                            <span>Kirim</span>
-                            <span class="material-symbols-outlined text-[17px]">send</span>
+                        <input id="input-pesan" name="pesan" type="text" class="w-full bg-[#f8faf9] hover:bg-white focus:bg-white text-ink placeholder:text-muted border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 rounded-full pl-5 pr-14 py-2.5 sm:py-3 text-xs sm:text-sm outline-none transition-all shadow-2xs" placeholder="Ketik pertanyaan atau keluhan tentang kandang Anda..." required autocomplete="off">
+                        <button id="btn-kirim" type="button" onclick="handleFormSubmit(event)" class="absolute right-1.5 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center transition-all shadow-2xs hover:shadow-xs active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" aria-label="Kirim" title="Kirim pesan">
+                            <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
                         </button>
                     </form>
-
-                    <p class="text-[11px] text-muted text-center">
-                        {{ config('ransumku.disclaimer_ai') }}
-                    </p>
                 </div>
             </main>
+        </div>
+
+        {{-- Disclaimer AI diletakkan di luar chat box, posisi vertikal seimbang dan tidak terpotong --}}
+        <div class="flex items-center justify-center py-2 shrink-0">
+            <p class="text-[11px] text-muted text-center flex items-center justify-center gap-1.5 leading-none">
+                <span class="material-symbols-outlined text-[13px] text-muted">info</span>
+                <span>{{ config('ransumku.disclaimer_ai') }}</span>
+            </p>
         </div>
     </section>
 
     {{-- Tab 2: Peringatan Dini Kandang --}}
-    <section data-panel="peringatan" class="{{ $tabAktif === 'peringatan' ? '' : 'hidden' }} space-y-3">
-        @if ($alerts->where('dibaca', false)->count() > 0)
-            <div class="flex justify-end">
-                <form method="POST" action="{{ url('/asisten/baca') }}">
-                    @csrf
-                    <button class="text-xs text-brand font-bold hover:underline flex items-center gap-1 cursor-pointer">
-                        <span class="material-symbols-outlined text-[16px]">done_all</span>
-                        Tandai semua sudah dibaca
-                    </button>
-                </form>
-            </div>
-        @endif
-
+    <section data-panel="peringatan" class="{{ $tabAktif === 'peringatan' ? '' : 'hidden' }} space-y-4 pr-1 custom-scrollbar">
         @forelse ($alerts as $alert)
             @include('partials.alert-card', ['alert' => $alert])
         @empty
-            <div class="card text-center py-10 space-y-2">
-                <span class="material-symbols-outlined text-[48px] text-brand icon-fill">verified</span>
-                <h2 class="text-h-sm text-ink">Semua Pola Terlihat Normal</h2>
-                <p class="text-xs text-muted max-w-sm mx-auto">
+            <div class="card text-center py-12 px-6 space-y-3 rounded-2xl border border-line shadow-2xs bg-white">
+                <div class="w-14 h-14 rounded-full bg-brand-soft text-brand flex items-center justify-center mx-auto shadow-2xs">
+                    <span class="material-symbols-outlined text-[32px] icon-fill">verified</span>
+                </div>
+                <h2 class="text-base sm:text-lg font-bold text-ink">Semua Pola Terlihat Normal</h2>
+                <p class="text-xs text-muted max-w-sm mx-auto leading-relaxed">
                     Tidak ditemukan anomali pada konsumsi pakan, produksi telur, maupun mortalitas ayam berdasarkan data harian yang tercatat.
                 </p>
             </div>
         @endforelse
 
-        <div class="card space-y-2 bg-surface">
-            <h3 class="font-bold text-xs uppercase text-muted tracking-wider">Aturan Deteksi Anomali</h3>
-            <ul class="text-xs text-muted space-y-1 list-disc ml-4">
+        {{-- Panduan Aturan Deteksi Anomali (Tanpa Card agar Bersih & Tidak Menyatu/Berebut dengan Isu) --}}
+        <div class="pt-2 px-1 space-y-2">
+            <div class="font-bold text-xs uppercase tracking-wider text-muted flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-brand">rule</span>
+                <span class="text-ink">Aturan Deteksi Anomali Kandang</span>
+            </div>
+            <ul class="text-xs text-muted space-y-1.5 list-disc ml-5 leading-relaxed">
                 <li>Pakan naik &ge; 10% selama 3 hari berturut-turut sementara produksi telur turun.</li>
                 <li>Lonjakan kematian harian &ge; 3 ekor melebihi variasi rata-rata bergerak.</li>
                 <li>Biaya pakan per kg telur melonjak signifikan (z-score &ge; 2).</li>
             </ul>
         </div>
+
+        <p class="text-[11px] text-muted flex items-center gap-1.5 pt-1">
+            <span class="material-symbols-outlined text-[14px]">info</span>
+            <span>{{ config('ransumku.disclaimer_ai') }}</span>
+        </p>
     </section>
 </div>
 
@@ -343,6 +334,40 @@ const endpointChat = '/asisten/chat';
 
 function getCsrfToken() {
     return document.querySelector('input[name="_token"]')?.value || '{{ csrf_token() }}';
+}
+
+function bukaTabPeringatan() {
+    // 1. Hilangkan badge titik merah pada tombol tab "Peringatan Dini"
+    const badge = document.getElementById('tab-unread-badge');
+    if (badge) {
+        badge.remove();
+    }
+
+    // 2. Hilangkan badge merah notifikasi di sidebar dan topbar/bottombar layout
+    document.querySelectorAll('[data-notif-count]').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+    });
+    document.querySelectorAll('[data-notif-dot]').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('inline-block');
+    });
+
+    // 3. Update status dropdown notifikasi jika fungsi global tersedia
+    if (typeof window.tandaiSemuaNotifikasiDibaca === 'function') {
+        window.tandaiSemuaNotifikasiDibaca();
+    } else {
+        fetch('/asisten/baca', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({})
+        }).catch(err => console.warn('Gagal menandai peringatan terbaca:', err));
+    }
 }
 
 function escapeHtml(text) {
@@ -439,11 +464,16 @@ function mulaiObrolanBaru() {
     
     // Hapus highlight aktif di sidebar
     document.querySelectorAll('.session-item').forEach(el => {
-        el.classList.remove('bg-brand-soft/80', 'text-brand-dark', 'font-bold', 'border', 'border-brand/20', 'shadow-xs');
-        el.classList.add('text-ink/80');
+        el.classList.remove('bg-surface', 'border', 'border-line/80', 'font-bold', 'shadow-2xs', 'bg-slate-200', 'text-slate-900', 'border-slate-300');
+        el.classList.add('text-ink/75');
+        const icon = el.querySelector('.session-icon');
+        if (icon) {
+            icon.classList.remove('text-brand', 'text-slate-700');
+            icon.classList.add('text-muted');
+        }
     });
 
-    window.history.pushState(null, '', '{{ url('/asisten?tab=tanya&session=baru') }}');
+    window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
     const input = document.getElementById('input-pesan');
     if (input) input.focus();
 }
@@ -453,13 +483,23 @@ async function pilihSession(id) {
     
     // Highlight di sidebar
     document.querySelectorAll('.session-item').forEach(el => {
-        el.classList.remove('bg-brand-soft/80', 'text-brand-dark', 'font-bold', 'border', 'border-brand/20', 'shadow-xs');
-        el.classList.add('text-ink/80');
+        el.classList.remove('bg-surface', 'border', 'border-line/80', 'font-bold', 'shadow-2xs', 'bg-slate-200', 'text-slate-900', 'border-slate-300');
+        el.classList.add('text-ink/75');
+        const icon = el.querySelector('.session-icon');
+        if (icon) {
+            icon.classList.remove('text-brand', 'text-slate-700');
+            icon.classList.add('text-muted');
+        }
     });
     const elActive = document.getElementById(`session-item-${id}`);
     if (elActive) {
-        elActive.classList.add('bg-brand-soft/80', 'text-brand-dark', 'font-bold', 'border', 'border-brand/20', 'shadow-xs');
-        elActive.classList.remove('text-ink/80');
+        elActive.classList.add('bg-surface', 'text-ink', 'font-bold', 'border', 'border-line/80', 'shadow-2xs');
+        elActive.classList.remove('text-ink/75', 'text-ink/80');
+        const activeIcon = elActive.querySelector('.session-icon');
+        if (activeIcon) {
+            activeIcon.classList.remove('text-muted');
+            activeIcon.classList.add('text-brand');
+        }
     }
 
     const welcomeCard = document.getElementById('welcome-card');
@@ -490,7 +530,7 @@ async function pilihSession(id) {
         if (data.status === 'success') {
             document.getElementById('current-session-title').textContent = data.session_title;
             document.getElementById('current-session-subtitle').textContent = `Sesi ID #${id} • ${data.messages.length} pesan`;
-            window.history.pushState(null, '', `{{ url('/asisten?tab=tanya') }}&session=${id}`);
+            window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
 
             data.messages.forEach(m => {
                 if (m.role === 'user') {
@@ -500,12 +540,12 @@ async function pilihSession(id) {
                     container.appendChild(ub);
                 } else {
                     const ab = document.createElement('div');
-                    ab.className = 'flex gap-2.5 items-start max-w-[92%] sm:max-w-[88%]';
+                    ab.className = 'flex gap-2.5 items-start w-full';
                     ab.innerHTML = `
                         <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0 mt-0.5">
                             <span class="material-symbols-outlined text-[16px]">smart_toy</span>
                         </div>
-                        <div class="p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box" data-raw="${escapeHtml(m.isi)}">
+                        <div class="p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0" data-raw="${escapeHtml(m.isi)}">
                             ${formatAiMarkdown(m.isi)}
                         </div>
                     `;
@@ -584,10 +624,10 @@ async function kirimPesanRealtime() {
 
     // 2. Buat gelembung Asisten AI LANGSUNG di bawahnya dengan indikator berdenyut ala ChatGPT
     const aiBubble = document.createElement('div');
-    aiBubble.className = 'flex gap-2.5 items-start max-w-[92%] sm:max-w-[88%]';
+    aiBubble.className = 'flex gap-2.5 items-start w-full';
     
     const contentBox = document.createElement('div');
-    contentBox.className = 'p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box';
+    contentBox.className = 'p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0';
     contentBox.innerHTML = `
         <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium">
             <span class="w-2 h-2 rounded-full bg-brand animate-ping"></span>
@@ -635,7 +675,7 @@ async function kirimPesanRealtime() {
                 document.getElementById('current-session-title').textContent = data.session_title;
                 document.getElementById('current-session-subtitle').textContent = `Sesi ID #${data.session_id} • 2 pesan`;
 
-                window.history.pushState(null, '', `{{ url('/asisten?tab=tanya') }}&session=${data.session_id}`);
+                window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
                 tambahSesiKeSidebar(data.session_id, data.session_title);
             }
         } else {
@@ -677,17 +717,22 @@ function tambahSesiKeSidebar(id, judul) {
 
     // Hapus highlight sebelumnya
     document.querySelectorAll('.session-item').forEach(el => {
-        el.classList.remove('bg-brand-soft/80', 'text-brand-dark', 'font-bold', 'border', 'border-brand/20', 'shadow-xs');
-        el.classList.add('text-ink/80');
+        el.classList.remove('bg-surface', 'border', 'border-line/80', 'font-bold', 'shadow-2xs', 'bg-slate-200', 'text-slate-900', 'border-slate-300');
+        el.classList.add('text-ink/75');
+        const icon = el.querySelector('.session-icon');
+        if (icon) {
+            icon.classList.remove('text-brand', 'text-slate-700');
+            icon.classList.add('text-muted');
+        }
     });
 
     const item = document.createElement('div');
     item.id = `session-item-${id}`;
-    item.className = 'session-item group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors duration-150 bg-brand-soft/80 text-brand-dark font-bold border border-brand/20 shadow-xs';
+    item.className = 'session-item group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors duration-150 bg-surface text-ink font-bold border border-line/80 shadow-2xs';
     item.innerHTML = `
         <button type="button" onclick="pilihSession(${id})" class="flex items-center gap-2 flex-1 min-w-0 pr-2 text-left cursor-pointer">
-            <span class="material-symbols-outlined text-[15px] text-brand">chat_bubble</span>
-            <span class="truncate session-title text-brand-dark">${escapeHtml(judul)}</span>
+            <span class="material-symbols-outlined text-[15px] session-icon text-brand">chat_bubble_outline</span>
+            <span class="truncate session-title text-ink font-bold">${escapeHtml(judul)}</span>
         </button>
         <div class="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
             <button type="button" onclick="togglePinSession(${id}, event)" class="p-1 hover:text-brand text-muted cursor-pointer rounded" title="Sematkan">
@@ -807,31 +852,73 @@ document.addEventListener('DOMContentLoaded', () => {
             isiDanKirim(tanyaParam);
         }, 350);
     }
+
+    // Hubungkan event click tab peringatan agar titik merah otomatis hilang
+    const btnTabPeringatan = document.querySelector('button[data-tab="peringatan"]');
+    if (btnTabPeringatan) {
+        btnTabPeringatan.addEventListener('click', bukaTabPeringatan);
+    }
 });
 </script>
 
 <style>
-@media (min-width: 768px) {
+[data-tabs] [data-panel].hidden {
+    display: none !important;
+}
+
+@media (min-width: 1024px) {
+    [data-panel="tanya"]:not(.hidden) {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+    }
+    [data-panel="peringatan"]:not(.hidden) {
+        display: block !important;
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+    }
     .chatgpt-layout-container {
         display: flex !important;
         flex-direction: row !important;
-        min-height: 660px !important;
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        height: 100% !important;
     }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .chatgpt-layout-container {
+        display: flex !important;
+        flex-direction: row !important;
+        height: calc(100vh - 16rem) !important;
+        min-height: 360px !important;
+    }
+}
+
+@media (min-width: 768px) {
     .chatgpt-sidebar {
         width: 300px !important;
         min-width: 300px !important;
         max-width: 300px !important;
-        background-color: #f7faf8 !important;
-        border-right: 1px solid #e0ebe4 !important;
+        background-color: #f9faf9 !important;
+        border-right: 1px solid #e2ebe5 !important;
         border-bottom: none !important;
         flex-shrink: 0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
     }
     .chatgpt-main {
         flex: 1 1 0% !important;
         min-width: 0 !important;
         background-color: #ffffff !important;
+        height: 100% !important;
+        overflow: hidden !important;
     }
 }
+
 .custom-scrollbar::-webkit-scrollbar {
     width: 5px;
 }
@@ -844,6 +931,15 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #a8bfb2;
+}
+
+@media (min-width: 1024px) {
+    body:has([data-panel="tanya"]:not(.hidden)) {
+        overflow-y: hidden !important;
+    }
+    body:has([data-panel="peringatan"]:not(.hidden)) {
+        overflow-y: auto !important;
+    }
 }
 </style>
 @endsection

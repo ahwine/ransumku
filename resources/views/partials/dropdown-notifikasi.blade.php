@@ -7,18 +7,22 @@
 @endphp
 
 <div class="relative inline-block text-left custom-dropdown-container z-50" id="{{ $id }}">
-    {{-- Trigger Button Lonceng Notifikasi --}}
+    {{-- Trigger Button Lonceng Notifikasi: Murni Ikon dengan Hover Box & Lingkaran Merah di Kanan Atas --}}
     <button type="button" 
             onclick="toggleCustomDropdown('{{ $id }}', event)" 
-            class="dropdown-trigger relative {{ $isMobile ? 'w-8 h-8 rounded-full bg-surface border border-line text-ink grid place-items-center' : 'w-9 h-9 rounded-full bg-surface hover:bg-surface-2 border border-line flex items-center justify-center text-ink hover:text-brand transition shadow-2xs group' }} cursor-pointer focus:outline-none" 
+            class="dropdown-trigger p-2 rounded-lg text-ink hover:bg-surface hover:text-brand transition flex items-center justify-center cursor-pointer focus:outline-none group" 
             title="Pusat Peringatan & Notifikasi Kandang"
             aria-haspopup="true"
             aria-expanded="false"
             aria-label="Buka Notifikasi">
-        <span class="material-symbols-outlined {{ $isMobile ? 'text-[18px]' : 'text-[19px] transition-transform group-hover:scale-110' }}">notifications</span>
-        
-        {{-- Dot Merah Notifikasi (Hilang saat dibaca) --}}
-        <span data-notif-dot class="{{ $unreadCount > 0 ? 'inline-block' : 'hidden' }} absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-white shadow-2xs animate-pulse"></span>
+        <span class="relative inline-flex">
+            <span class="material-symbols-outlined {{ $isMobile ? 'text-[20px]' : 'text-[22px]' }} transition-transform group-hover:scale-105 select-none leading-none">notifications</span>
+            
+            {{-- Dot Merah Notifikasi di Samping Kanan Atas Lonceng --}}
+            <span data-notif-dot 
+                  class="{{ $unreadCount > 0 ? 'inline-block' : 'hidden' }} absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-white pointer-events-none"
+                  style="position: absolute; top: 0px; right: 0px; width: 10px; height: 10px; border-radius: 9999px; background-color: #e11d48; box-shadow: 0 0 0 2px #ffffff; pointer-events: none;"></span>
+        </span>
     </button>
 
     {{-- Popover Panel Dropdown (Tepat di Bawah Ikon Lonceng, Tanpa Blur) --}}

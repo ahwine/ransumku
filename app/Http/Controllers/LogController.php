@@ -31,7 +31,8 @@ class LogController extends Controller
         $selectedDate = $r->query('tanggal', today()->toDateString());
         $form = $farm->logs()->whereDate('tanggal', $selectedDate)->first() ?? new DailyLog(['tanggal' => \Illuminate\Support\Carbon::parse($selectedDate)]);
         $isEdit = $farm->logs()->whereDate('tanggal', $selectedDate)->exists();
-        $riwayat = $farm->logs()->orderByDesc('tanggal')->limit(10)->get();
+        $riwayat = $farm->logs()->orderByDesc('tanggal')->paginate(5)->withQueryString();
+        $allLogs = $farm->logs()->orderByDesc('tanggal')->get();
 
         $yesterdayDate = today()->subDay()->toDateString();
         $yesterdayLog = $farm->logs()->whereDate('tanggal', $yesterdayDate)->first();
@@ -53,7 +54,7 @@ class LogController extends Controller
         $bahan = $farm->ingredients()->orderBy('nama')->get();
         $selisihTotal = $beli->sum(fn ($p) => ($p->harga_nyata - $p->harga_estimasi) * $p->kg);
 
-        return view('catatan.index', compact('farm', 'rentang', 'logs', 'grafik', 'laporan', 'form', 'isEdit', 'riwayat', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam'));
+        return view('catatan.index', compact('farm', 'rentang', 'logs', 'grafik', 'laporan', 'form', 'isEdit', 'riwayat', 'allLogs', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam'));
     }
 
     public function store(Request $r, AnomalyDetector $detector)
@@ -140,13 +141,14 @@ class LogController extends Controller
                     'backgroundColor' => $type === 'bar' ? $warna : $warna.'22',
                     'fill' => $type === 'line',
                     'tension' => .35,
-                    'borderWidth' => 2.75,
-                    'pointRadius' => 4,
+                    'borderWidth' => 2.5,
+                    'pointRadius' => $type === 'line' ? 4 : 0,
                     'pointHoverRadius' => 6,
                     'pointBackgroundColor' => '#FFFFFF',
                     'pointBorderColor' => $warna,
                     'pointBorderWidth' => 2,
-                    'borderRadius' => 6,
+                    'borderRadius' => $type === 'bar' ? 6 : 0,
+                    'maxBarThickness' => 38,
                 ],
             ],
         ];
@@ -161,15 +163,22 @@ class LogController extends Controller
             $n = max(1, $c->count());
             $telurKg = $c->sum(fn ($l) => $l->telurKgEfektif());
             $pakan = (float) $c->sum('pakan_kg');
+            $hargaTelurKg = (int) config('ransumku.harga_telur_default', 26000);
+            $pendapatanTelur = (int) round($telurKg * $hargaTelurKg);
+            $biayaPakan = (int) round($pakan * $harga);
+            $marginKotor = $pendapatanTelur - $biayaPakan;
 
             return [
                 'hari' => $c->count(),
                 'pakan' => $pakan,
                 'telur' => (int) $c->sum('telur_butir'),
+                'telur_kg' => (float) round($telurKg, 2),
                 'mati' => (int) $c->sum('ayam_mati'),
-                'biaya_pakan' => $pakan * $harga,
+                'biaya_pakan' => $biayaPakan,
+                'pendapatan_telur' => $pendapatanTelur,
+                'margin_kotor' => $marginKotor,
                 'biaya_lain' => (int) $c->sum('biaya_lain'),
-                'biaya_kg_telur' => $telurKg > 0 ? $pakan * $harga / $telurKg : 0,
+                'biaya_kg_telur' => $telurKg > 0 ? $biayaPakan / $telurKg : 0,
                 'rasio' => $c->sum('telur_butir') > 0 ? $pakan * 1000 / $c->sum('telur_butir') : 0, // gram pakan per butir
                 'rata_telur' => $c->sum('telur_butir') / $n,
             ];

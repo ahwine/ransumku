@@ -40,6 +40,9 @@ class FarmController extends Controller
             'jumlah_ayam' => ['required', 'integer', 'min:1', 'max:1000000'],
             'fase' => ['required', Rule::in(['starter', 'grower', 'produksi'])],
             'lokasi_kota' => ['nullable', 'string', 'max:50'],
+            'tgl_chick_in' => ['nullable', 'date'],
+            'umur_awal_minggu' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'strain_ayam' => ['nullable', 'string', 'max:60'],
         ], [
             'nama.required' => 'Nama kandang wajib diisi.',
             'jumlah_ayam.min' => 'Jumlah ayam minimal 1 ekor.',
@@ -75,7 +78,7 @@ class FarmController extends Controller
     }
 
     /**
-     * Perbarui data spesifik satu kandang (nama, jumlah ayam, fase, kota).
+     * Perbarui data spesifik satu kandang (nama, jumlah ayam, fase, kota, umur).
      */
     public function update(Request $request, Farm $farm): RedirectResponse
     {
@@ -86,6 +89,9 @@ class FarmController extends Controller
             'jumlah_ayam' => ['required', 'integer', 'min:1', 'max:1000000'],
             'fase' => ['required', Rule::in(['starter', 'grower', 'produksi'])],
             'lokasi_kota' => ['nullable', 'string', 'max:50'],
+            'tgl_chick_in' => ['nullable', 'date'],
+            'umur_awal_minggu' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'strain_ayam' => ['nullable', 'string', 'max:60'],
         ]);
 
         $farm->update($validated);

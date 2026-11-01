@@ -3,342 +3,343 @@
 @section('isi')
 
 <div class="space-y-6">
-    {{-- 1. Hero Showcase Section --}}
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-dark via-primary to-emerald-950 text-white p-6 sm:p-10 shadow-lg border border-brand/30">
-        {{-- Pola Hiasan Latar Geometris --}}
-        <div class="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
-        <div class="absolute right-1/4 -bottom-12 w-80 h-80 rounded-full bg-lime/10 blur-3xl pointer-events-none"></div>
+    {{-- 1. Kartu Pengenalan Utama ("Apa itu RansumKu?") --}}
+    <div class="bg-white rounded-2xl border border-line p-6 md:p-7 shadow-2xs">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo RansumKu" class="w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0" />
 
-        <div class="relative z-10 space-y-4 max-w-3xl">
-            <div class="flex items-center gap-2 flex-wrap">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-lime/20 text-lime border border-lime/30 shadow-2xs">
-                    <span class="w-2 h-2 rounded-full bg-lime animate-pulse"></span>
-                    Smart Poultry Farm System
-                </span>
-                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold text-slate-300 bg-white/10 border border-white/15">
-                    <span class="material-symbols-outlined text-[14px]">school</span>
-                    Universitas Gadjah Mada
-                </span>
-                <span class="px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-white/5 text-slate-300 border border-white/10">
-                    v2.4.0 Stable
-                </span>
-            </div>
+            <div class="space-y-1.5 flex-1 min-w-0">
+                <h2 class="text-lg sm:text-xl font-bold text-ink tracking-tight">
+                    RansumKu · Platform Formulasi Pakan & Buku Kandang Digital
+                </h2>
 
-            <div class="flex items-center gap-4">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo RansumKu" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-2xl bg-white/10 p-1.5 shadow-md border border-white/20 shrink-0" />
-                <div>
-                    <h1 class="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
-                        RansumKu
-                    </h1>
-                    <p class="text-xs sm:text-sm font-semibold text-lime tracking-wide uppercase mt-0.5">
-                        Platform Formulasi Nutrisi Presisi & Buku Kandang Ayam Petelur
-                    </p>
-                </div>
-            </div>
-
-            <p class="text-slate-200 text-sm sm:text-base leading-relaxed pt-1">
-                RansumKu adalah sistem komprehensif yang dirancang untuk menjembatani sains nutrisi unggas dengan operasional nyata peternak ayam petelur (<em>layer</em>) skala mandiri dan komersial. Mengintegrasikan algoritma formulasi biaya terendah (<em>Least-Cost Formulation</em>) berbasis standar SNI, pencatatan harian buku kandang, hingga deteksi dini anomali kawanan.
-            </p>
-
-            {{-- Metric Strip Ringkas --}}
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                <div class="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
-                    <span class="text-[11px] text-slate-300 block font-medium">Metode Formulasi</span>
-                    <strong class="text-sm sm:text-base font-extrabold text-white block mt-0.5">Linear Simplex</strong>
-                    <span class="text-[10px] text-lime font-semibold">100% Eksak Terukur</span>
-                </div>
-                <div class="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
-                    <span class="text-[11px] text-slate-300 block font-medium">Standar Acuan</span>
-                    <strong class="text-sm sm:text-base font-extrabold text-white block mt-0.5">SNI Unggas</strong>
-                    <span class="text-[10px] text-lime font-semibold">Starter · Grower · Layer</span>
-                </div>
-                <div class="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
-                    <span class="text-[11px] text-slate-300 block font-medium">Audit Produksi</span>
-                    <strong class="text-sm sm:text-base font-extrabold text-white block mt-0.5">HDP % & FCR</strong>
-                    <span class="text-[10px] text-lime font-semibold">Otomasi Rekapitulasi</span>
-                </div>
-                <div class="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
-                    <span class="text-[11px] text-slate-300 block font-medium">Output Legalitas</span>
-                    <strong class="text-sm sm:text-base font-extrabold text-white block mt-0.5">Laporan A4</strong>
-                    <span class="text-[10px] text-lime font-semibold">Siap Cetak & TTD</span>
-                </div>
+                <p class="text-xs text-muted leading-relaxed max-w-4xl">
+                    <strong>RansumKu</strong> adalah aplikasi berbasis web yang dirancang khusus untuk peternak ayam petelur rakyat dan mandiri. RansumKu membantu peternak menghitung racikan pakan sendiri yang hemat biaya tanpa mengorbankan standar nutrisi, sekaligus mencatat hasil produksi telur dan performa harian kandang secara otomatis, rapi, dan transparan.
+                </p>
             </div>
         </div>
     </div>
 
-    {{-- 2. 4 Pilar Fungsional RansumKu --}}
+    {{-- 2. Mengapa RansumKu Dibuat? (Tujuan Utama) --}}
     <div class="space-y-3.5">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="text-h-md text-ink">4 Pilar Fungsional Sistem</h2>
-                <p class="text-xs sm:text-sm text-muted">Instrumen terintegrasi untuk mengoptimalkan efisiensi pakan dan stabilitas margin peternak.</p>
-            </div>
-            <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-brand/10 text-brand">
-                <span class="material-symbols-outlined text-[16px]">widgets</span>
-                Modul Terpadu
+        <div class="flex items-center justify-between pb-1 border-b border-line/60">
+            <span class="text-xs font-bold text-muted uppercase tracking-wider">
+                Tujuan & Manfaat Utama
             </span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {{-- Pilar 1: Peracik Ransum --}}
-            <div class="card space-y-3 p-5 transition duration-200 hover:shadow-md hover:border-brand/40 group">
-                <div class="flex items-start justify-between">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-brand flex items-center justify-center font-bold shadow-2xs group-hover:scale-105 transition-transform">
-                        <span class="material-symbols-outlined text-[26px]">calculate</span>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        Linear Programming
-                    </span>
-                </div>
-                <div>
-                    <h3 class="text-h-sm text-ink group-hover:text-brand transition-colors">Peracik Ransum Presisi</h3>
-                    <p class="text-xs text-muted mt-1 leading-relaxed">
-                        Memanfaatkan solver optimasi matematika untuk menghitung kombinasi bahan pakan nabati (jagung, bekatul, konsentrat, premix) dengan biaya total paling minimum (<em>least-cost</em>) yang tetap memenuhi batas ambang nutrisi SNI.
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {{-- Tujuan 1: Efisiensi Biaya --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+                <div class="space-y-2">
+                    <h3 class="text-sm font-bold text-ink">
+                        <span class="text-brand mr-1.5">1.</span>Menghemat Biaya Pakan Harian
+                    </h3>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Biaya pakan menyerap 70–80% dari total modal operasional peternakan. RansumKu membantu Anda meracik formula pakan sendiri dari bahan lokal (jagung, bekatul, konsentrat) dengan biaya per kilogram paling rendah.
                     </p>
                 </div>
-                <div class="pt-2 border-t border-line/60 flex items-center justify-between text-xs">
-                    <span class="text-muted">Target Nutrisi: <strong>PK, EM, Ca, P, SK</strong></span>
-                    <a href="{{ route('ransum.index') }}" class="font-bold text-brand hover:underline flex items-center gap-0.5">
-                        Buka Modul <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                    </a>
+                <div class="pt-2 border-t border-line/60">
+                    <span class="text-[11px] font-semibold text-emerald-700">Fokus: Efisiensi Biaya & Margin Laba</span>
                 </div>
             </div>
 
-            {{-- Pilar 2: Buku Kandang --}}
-            <div class="card space-y-3 p-5 transition duration-200 hover:shadow-md hover:border-brand/40 group">
-                <div class="flex items-start justify-between">
-                    <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shadow-2xs group-hover:scale-105 transition-transform">
-                        <span class="material-symbols-outlined text-[26px]">description</span>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-900 border border-amber-200">
-                        Smart Log & Audit A4
-                    </span>
-                </div>
-                <div>
-                    <h3 class="text-h-sm text-ink group-hover:text-brand transition-colors">Buku Kandang & Performa Harian</h3>
-                    <p class="text-xs text-muted mt-1 leading-relaxed">
-                        Pencatatan harian yang menghitung otomatis persentase Hen-Day Production (HDP %), konsumsi gram pakan per ekor, efisiensi pakan terhadap telur (FCR), grafik visual progresif, dan lembar laporan resmi format kertas A4 siap cetak.
+            {{-- Tujuan 2: Menjamin Kualitas Nutrisi --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+                <div class="space-y-2">
+                    <h3 class="text-sm font-bold text-ink">
+                        <span class="text-brand mr-1.5">2.</span>Memastikan Nutrisi Sesuai Standar
+                    </h3>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Pakan murah tidak boleh membuat produksi telur anjlok. RansumKu memastikan setiap racikan memenuhi batas nutrisi protein, energi, kalsium, dan fosfor sesuai Standar Nasional Indonesia (SNI Unggas).
                     </p>
                 </div>
-                <div class="pt-2 border-t border-line/60 flex items-center justify-between text-xs">
-                    <span class="text-muted">Fitur Unggulan: <strong>Cetak PDF/A4 & Ekspor CSV</strong></span>
-                    <a href="{{ route('catatan.index') }}" class="font-bold text-brand hover:underline flex items-center gap-0.5">
-                        Buka Modul <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                    </a>
+                <div class="pt-2 border-t border-line/60">
+                    <span class="text-[11px] font-semibold text-emerald-700">Fokus: Produksi Telur Stabil & Kerabang Kokoh</span>
                 </div>
             </div>
 
-            {{-- Pilar 3: Asisten Cerdas --}}
-            <div class="card space-y-3 p-5 transition duration-200 hover:shadow-md hover:border-brand/40 group">
-                <div class="flex items-start justify-between">
-                    <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-900 flex items-center justify-center font-bold shadow-2xs group-hover:scale-105 transition-transform">
-                        <span class="material-symbols-outlined text-[26px]">smart_toy</span>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-teal-50 text-teal-900 border border-teal-200">
-                        Early Warning System
-                    </span>
-                </div>
-                <div>
-                    <h3 class="text-h-sm text-ink group-hover:text-brand transition-colors">Asisten Cerdas & Deteksi Anomali</h3>
-                    <p class="text-xs text-muted mt-1 leading-relaxed">
-                        Sistem pendukung keputusan (<em>Decision Support System</em>) berbasis evaluasi statistik yang mendeteksi dini penurunan produksi telur mendadak, kenaikan pakan tidak wajar, serta lonjakan mortalitas untuk mencegah kerugian kawanan.
+            {{-- Tujuan 3: Rekap Digital Otomatis --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+                <div class="space-y-2">
+                    <h3 class="text-sm font-bold text-ink">
+                        <span class="text-brand mr-1.5">3.</span>Pencatatan Kandang Tanpa Kertas
+                    </h3>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Tinggalkan buku tulis kertas yang mudah rusak atau hilang. Cukup masukkan butir telur dan pakan harian, sistem otomatis menghitung persentase bertelur (HDP %), FCR, dan riwayat kandang.
                     </p>
                 </div>
-                <div class="pt-2 border-t border-line/60 flex items-center justify-between text-xs">
-                    <span class="text-muted">Fungsi: <strong>Pencegahan Wabah & Konsultasi</strong></span>
-                    <a href="{{ route('asisten.index') }}" class="font-bold text-brand hover:underline flex items-center gap-0.5">
-                        Buka Modul <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                    </a>
-                </div>
-            </div>
-
-            {{-- Pilar 4: Inventori & Manajemen Bahan --}}
-            <div class="card space-y-3 p-5 transition duration-200 hover:shadow-md hover:border-brand/40 group">
-                <div class="flex items-start justify-between">
-                    <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-900 flex items-center justify-center font-bold shadow-2xs group-hover:scale-105 transition-transform">
-                        <span class="material-symbols-outlined text-[26px]">inventory_2</span>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-blue-50 text-blue-900 border border-blue-200">
-                        Cost Variance & Stock
-                    </span>
-                </div>
-                <div>
-                    <h3 class="text-h-sm text-ink group-hover:text-brand transition-colors">Kontrol Stok & Transparansi Biaya</h3>
-                    <p class="text-xs text-muted mt-1 leading-relaxed">
-                        Pelacak selisih antara harga estimasi racikan formula dengan transaksi riil saat pembelian di toko bahan pakan. Mendukung penambahan otomatis stok gudang aktif untuk menjaga kepastian ketersediaan ransum.
-                    </p>
-                </div>
-                <div class="pt-2 border-t border-line/60 flex items-center justify-between text-xs">
-                    <span class="text-muted">Sinkronisasi: <strong>Stok Gudang & Harga Riil</strong></span>
-                    <a href="{{ route('bahan.index') }}" class="font-bold text-brand hover:underline flex items-center gap-0.5">
-                        Buka Modul <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                    </a>
+                <div class="pt-2 border-t border-line/60">
+                    <span class="text-[11px] font-semibold text-emerald-700">Fokus: Otomasi Laporan & Evaluasi Cepat</span>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- 3. Alur Siklus Kerja Peternak (Operational Workflow) --}}
-    <div class="card space-y-4 p-5 sm:p-6 bg-gradient-to-r from-surface via-white to-surface border border-line">
-        <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-brand text-[22px]">alt_route</span>
-            <div>
-                <h2 class="text-h-sm text-ink">Alur Operasional Terintegrasi</h2>
-                <p class="text-xs text-muted">Siklus kerja harian peternak dalam memaksimalkan produktivitas ayam petelur.</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 relative">
-            <div class="p-3.5 rounded-2xl bg-white border border-line space-y-1.5 shadow-2xs">
-                <span class="w-6 h-6 rounded-full bg-brand text-white text-xs font-black flex items-center justify-center">1</span>
-                <strong class="text-xs text-ink block font-bold">Input Bahan & SNI</strong>
-                <p class="text-[11px] text-muted leading-snug">Daftarkan harga pasar bahan pakan dan tentukan fase ayam (starter, grower, layer).</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-white border border-line space-y-1.5 shadow-2xs">
-                <span class="w-6 h-6 rounded-full bg-brand text-white text-xs font-black flex items-center justify-center">2</span>
-                <strong class="text-xs text-ink block font-bold">Optimasi Ransum</strong>
-                <p class="text-[11px] text-muted leading-snug">Sistem menghitung persentase campuran termurah yang memenuhi standar gizi SNI.</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-white border border-line space-y-1.5 shadow-2xs">
-                <span class="w-6 h-6 rounded-full bg-brand text-white text-xs font-black flex items-center justify-center">3</span>
-                <strong class="text-xs text-ink block font-bold">Pencatatan Harian</strong>
-                <p class="text-[11px] text-muted leading-snug">Input konsumsi pakan dan butir telur sore hari dalam waktu 1-2 menit via Buku Kandang.</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-white border border-line space-y-1.5 shadow-2xs">
-                <span class="w-6 h-6 rounded-full bg-brand text-white text-xs font-black flex items-center justify-center">4</span>
-                <strong class="text-xs text-ink block font-bold">Audit & Laporan A4</strong>
-                <p class="text-[11px] text-muted leading-snug">Evaluasi grafik FCR, deteksi anomali, dan cetak dokumen laporan resmi berkala.</p>
-            </div>
-        </div>
-    </div>
-
-    {{-- 4. Prinsip Integritas Ilmiah & Transparansi Batasan --}}
+    {{-- 3. Fitur & Fungsi Utama Platform --}}
     <div class="space-y-3.5">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="text-h-md text-ink">Prinsip Integritas Ilmiah & Batasan Sistem</h2>
-                <p class="text-xs sm:text-sm text-muted">Transparansi komitmen kami dalam menjaga kepatuhan sains peternakan dan keselamatan ternak.</p>
-            </div>
-            <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-ink">
-                <span class="material-symbols-outlined text-[16px]">verified</span>
-                Transparansi Sains
+        <div class="flex items-center justify-between pb-1 border-b border-line/60">
+            <span class="text-xs font-bold text-muted uppercase tracking-wider">
+                Fitur & Fungsi Utama
             </span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {{-- Poin 1 --}}
-            <div class="card p-4 space-y-2 bg-white hover:border-slate-300 transition shadow-2xs">
-                <div class="flex items-center gap-2.5 text-brand">
-                    <span class="w-8 h-8 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-[19px]">science</span>
-                    </span>
-                    <h3 class="font-bold text-xs sm:text-sm text-ink">Uji Adaptasi Lapangan (In-Vivo)</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {{-- Fitur 1: Peracik Ransum --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px] text-brand shrink-0">calculate</span>
+                            <h3 class="text-base font-bold text-ink">Peracik Ransum Presisi</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Linear Simplex
+                        </span>
+                    </div>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Alat hitung optimasi pakan berbasis metode matematis <strong>Linear Simplex</strong>. Cukup pilih bahan pakan yang Anda miliki di gudang, sistem akan menghitung persentase takaran campuran paling hemat yang memenuhi ambang gizi SNI.
+                    </p>
+                    <div class="text-[11px] text-muted">
+                        Target Nutrisi: <span class="font-medium text-ink">Protein Kasar, Energi Metabolis, Kalsium, Fosfor, Serat Kasar</span>
+                    </div>
                 </div>
-                <p class="text-xs text-muted leading-relaxed">
-                    Hasil hitungan ransum adalah formulasi matematis berdasarkan tabel nutrisi acuan laboratorium. Sebelum diterapkan menyeluruh pada kandang, peternak dianjurkan melakukan masa transisi pergantian pakan bertahap (3-5 hari) pada sekat uji coba.
-                </p>
+                <div class="pt-2.5 border-t border-line flex items-center justify-between">
+                    <span class="text-xs text-muted">Solusi pakan hemat mandiri</span>
+                    <a href="{{ route('ransum.index') }}" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink bg-surface hover:bg-surface-2 border border-line transition cursor-pointer shadow-2xs">
+                        <span>Buka Peracik Ransum</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                    </a>
+                </div>
             </div>
 
-            {{-- Poin 2 --}}
-            <div class="card p-4 space-y-2 bg-white hover:border-slate-300 transition shadow-2xs">
-                <div class="flex items-center gap-2.5 text-emerald-800">
-                    <span class="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-[19px]">functions</span>
-                    </span>
-                    <h3 class="font-bold text-xs sm:text-sm text-ink">Metode Eksak (Bukan Halusinasi AI)</h3>
+            {{-- Fitur 2: Buku Kandang --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px] text-amber-700 shrink-0">menu_book</span>
+                            <h3 class="text-base font-bold text-ink">Buku Kandang & Performa Harian</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                            Pencatatan & Laporan
+                        </span>
+                    </div>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Catat panen telur harian (butir dan kilogram), pakan yang dihabiskan, dan kematian ayam dalam 1–2 menit tiap sore. Sistem menghitung otomatis persentase bertelur (HDP %) serta menyediakan fitur cetak lembar laporan resmi A4.
+                    </p>
+                    <div class="text-[11px] text-muted">
+                        Indikator Utama: <span class="font-medium text-ink">Hen-Day Production (HDP %), Gram Pakan / Ekor, FCR, Mortalitas</span>
+                    </div>
                 </div>
-                <p class="text-xs text-muted leading-relaxed">
-                    Penentuan komposisi pakan diselesaikan 100% menggunakan metode Linear Programming (Simplex) murni, bukan teks generatif AI. Perhitungan dijamin deterministik, eksak, dan dapat diaudit secara matematis.
-                </p>
+                <div class="pt-2.5 border-t border-line flex items-center justify-between">
+                    <span class="text-xs text-muted">Siap cetak laporan resmi</span>
+                    <a href="{{ route('catatan.index') }}" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink bg-surface hover:bg-surface-2 border border-line transition cursor-pointer shadow-2xs">
+                        <span>Buka Buku Kandang</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                    </a>
+                </div>
             </div>
 
-            {{-- Poin 3 --}}
-            <div class="card p-4 space-y-2 bg-white hover:border-slate-300 transition shadow-2xs">
-                <div class="flex items-center gap-2.5 text-primary">
-                    <span class="w-8 h-8 rounded-xl bg-surface-2 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-[19px]">payments</span>
-                    </span>
-                    <h3 class="font-bold text-xs sm:text-sm text-ink">Harga Input Berbasis Riil</h3>
+            {{-- Fitur 3: Kontrol Stok & Manajemen Bahan --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px] text-muted shrink-0">inventory_2</span>
+                            <h3 class="text-base font-bold text-ink">Kontrol Stok & Manajemen Bahan</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-surface text-muted border border-line">
+                            Inventori & Gudang
+                        </span>
+                    </div>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Modul <strong>Kontrol Stok</strong> membantu memantau sisa stok bahan baku di gudang pakan aktif, membandingkan estimasi harga belanja dengan transaksi riil di toko, serta mengelola katalog harga pasar bahan pakan peternakan.
+                    </p>
+                    <div class="text-[11px] text-muted">
+                        Sinkronisasi: <span class="font-medium text-ink">Stok Bahan Gudang, Harga Pasar Riil, Ambang Batas Inklusi</span>
+                    </div>
                 </div>
-                <p class="text-xs text-muted leading-relaxed">
-                    Sistem tidak melakukan spekulasi harga pasar pakan secara otomatis. Seluruh perhitungan biaya per kilogram pakan, estimasi biaya harian, dan margin laba berasal dari angka harga riil yang Anda masukkan di menu bahan.
-                </p>
+                <div class="pt-2.5 border-t border-line flex items-center justify-between">
+                    <span class="text-xs text-muted">Pengawasan stok gudang</span>
+                    <a href="{{ route('bahan.index') }}" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink bg-surface hover:bg-surface-2 border border-line transition cursor-pointer shadow-2xs">
+                        <span>Buka Bahan Pakan</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                    </a>
+                </div>
             </div>
 
-            {{-- Poin 4 --}}
-            <div class="card p-4 space-y-2 bg-white hover:border-slate-300 transition shadow-2xs">
-                <div class="flex items-center gap-2.5 text-amber-800">
-                    <span class="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-[19px]">health_and_safety</span>
-                    </span>
-                    <h3 class="font-bold text-xs sm:text-sm text-ink">AI Sebagai Pendukung Keputusan</h3>
+            {{-- Fitur 4: Asisten Cerdas --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px] text-brand shrink-0">psychology</span>
+                            <h3 class="text-base font-bold text-ink">Asisten Cerdas & Deteksi Dini</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Peringatan Dini
+                        </span>
+                    </div>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Sistem pendamping yang mengevaluasi tren catatan kandang Anda. Asisten akan memunculkan notifikasi peringatan jika produksi telur mendadak turun, konsumsi pakan tidak wajar, atau ada potensi stres panas pada ayam.
+                    </p>
+                    <div class="text-[11px] text-muted">
+                        Fungsi: <span class="font-medium text-ink">Deteksi Anomali Produksi, Peringatan Stres Panas, Saran Praktis</span>
+                    </div>
                 </div>
-                <p class="text-xs text-muted leading-relaxed">
-                    {{ config('ransumku.disclaimer_ai', 'Peringatan dini dan saran asisten bertindak sebagai sistem pendukung keputusan (Decision Support System), bukan diagnosis klinis mutlak. Untuk penanganan penyakit menular atau kasus kritis, selalu konsultasikan dengan dokter hewan atau penyuluh peternakan.') }}
-                </p>
-            </div>
-
-            {{-- Poin 5 --}}
-            <div class="card p-4 space-y-2 bg-white hover:border-slate-300 transition shadow-2xs">
-                <div class="flex items-center gap-2.5 text-rose-800">
-                    <span class="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-[19px]">compost</span>
-                    </span>
-                    <h3 class="font-bold text-xs sm:text-sm text-ink">Variabilitas Mutu Bahan Lokal</h3>
+                <div class="pt-2.5 border-t border-line flex items-center justify-between">
+                    <span class="text-xs text-muted">Pencegahan kerugian kawanan</span>
+                    <a href="{{ route('asisten.index') }}" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-ink bg-surface hover:bg-surface-2 border border-line transition cursor-pointer shadow-2xs">
+                        <span>Buka Asisten Cerdas</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                    </a>
                 </div>
-                <p class="text-xs text-muted leading-relaxed">
-                    Kandungan nutrisi bahan baku lokal (seperti bekatul dan jagung) dapat berbeda menurut kadar air dan sumber penggilingan. Anda dapat menyesuaikan profil gizi bahan di aplikasi sesuai hasil uji proksimat atau label kemasan resmi.
-                </p>
-            </div>
-
-            {{-- Poin 6 --}}
-            <div class="card p-4 space-y-2 bg-white hover:border-slate-300 transition shadow-2xs">
-                <div class="flex items-center gap-2.5 text-teal-800">
-                    <span class="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-[19px]">fact_check</span>
-                    </span>
-                    <h3 class="font-bold text-xs sm:text-sm text-ink">Fleksibilitas Standar Nutrisi SNI</h3>
-                </div>
-                <p class="text-xs text-muted leading-relaxed">
-                    Target nutrisi mengikuti acuan standar yang dapat Anda pilih dan edit sesuai strain genetik ayam (Lohmann, Isa Brown, Hy-Line) serta iklim mikro kandang Anda agar hasil produksi telur optimal.
-                </p>
             </div>
         </div>
     </div>
 
-    {{-- 5. Informasi Institusi, Teknologi & Quick CTA --}}
-    <div class="card p-6 bg-surface-2/60 border border-line space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line">
-            <div class="space-y-1">
-                <span class="text-[11px] font-black uppercase tracking-wider text-brand block">Inisiatif Kolaborasi & Riset</span>
-                <h3 class="text-h-sm text-ink">Laboratorium Smart Poultry & Nutrisi Ternak</h3>
-                <p class="text-xs text-muted">Universitas Gadjah Mada · DI Yogyakarta, Indonesia</p>
-            </div>
-            <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 bg-white px-3.5 py-2 rounded-xl border border-line shadow-2xs self-start sm:self-auto">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>PHP 8.4 · Laravel 11 · TailwindCSS · Chart.js</span>
-            </div>
+    {{-- 4. Panduan Praktis Cara Menggunakan RansumKu --}}
+    <div class="space-y-3.5">
+        <div class="flex items-center justify-between pb-1 border-b border-line/60">
+            <span class="text-xs font-bold text-muted uppercase tracking-wider">
+                Panduan Cara Menggunakan RansumKu
+            </span>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
-            <p class="text-xs text-muted">
-                Didedikasikan untuk kemandirian pakan dan kemakmuran peternak ayam petelur rakyat di seluruh Indonesia.
-            </p>
-            <div class="flex items-center gap-2 flex-wrap">
-                <a href="{{ route('ransum.index') }}" class="btn-primary btn-sm !py-2 !px-3 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
-                    <span class="material-symbols-outlined text-[16px]">calculate</span>
-                    Peracik Ransum
-                </a>
-                <a href="{{ route('catatan.index') }}" class="btn-outline btn-sm !py-2 !px-3 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
-                    <span class="material-symbols-outlined text-[16px]">description</span>
-                    Buku Kandang
-                </a>
-                <a href="{{ route('asisten.index') }}" class="btn-outline btn-sm !py-2 !px-3 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
-                    <span class="material-symbols-outlined text-[16px]">smart_toy</span>
-                    Asisten Cerdas
-                </a>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {{-- Langkah 1 --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-ink">
+                        <span class="text-brand mr-1.5">1.</span>Atur Data Kandang & Bahan
+                    </h3>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Buka menu <strong>Kelola Kandang</strong> untuk memasukkan nama kandang dan populasi ayam. Lalu periksa menu <strong>Bahan Pakan</strong> untuk memperbarui harga beli lokal saat ini.
+                    </p>
+                </div>
+                <div class="pt-2 border-t border-line/60">
+                    <span class="text-[11px] font-semibold text-muted">Langkah 1: Setup Awal</span>
+                </div>
+            </div>
+
+            {{-- Langkah 2 --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-ink">
+                        <span class="text-brand mr-1.5">2.</span>Racik Ransum Hemat
+                    </h3>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Buka menu <strong>Peracik Ransum</strong>, centang bahan yang tersedia, lalu klik hitung. Sistem otomatis mencari persentase takaran campuran paling hemat yang memenuhi gizi SNI.
+                    </p>
+                </div>
+                <div class="pt-2 border-t border-line/60">
+                    <span class="text-[11px] font-semibold text-muted">Langkah 2: Optimasi Pakan</span>
+                </div>
+            </div>
+
+            {{-- Langkah 3 --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-ink">
+                        <span class="text-brand mr-1.5">3.</span>Catat Telur Tiap Sore
+                    </h3>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Tiap sore setelah panen, buka menu <strong>Buku Kandang</strong>. Masukkan butir telur, total kg telur, pakan dihabiskan, dan kematian ayam (cukup 1–2 menit).
+                    </p>
+                </div>
+                <div class="pt-2 border-t border-line/60">
+                    <span class="text-[11px] font-semibold text-muted">Langkah 3: Rutinitas Harian</span>
+                </div>
+            </div>
+
+            {{-- Langkah 4 --}}
+            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-ink">
+                        <span class="text-brand mr-1.5">4.</span>Pantau & Cetak Laporan
+                    </h3>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Pantau grafik persentase bertelur (HDP %) di <strong>Dashboard</strong>. Bila butuh rekapan resmi untuk evaluasi usaha atau pemodal, cetak langsung laporan format A4.
+                    </p>
+                </div>
+                <div class="pt-2 border-t border-line/60">
+                    <span class="text-[11px] font-semibold text-muted">Langkah 4: Evaluasi Hasil</span>
+                </div>
             </div>
         </div>
+    </div>
+
+    {{-- 5. Tanya Jawab Umum (FAQ Praktis Peternak - Tab Buka Tutup / Accordion) --}}
+    <div class="space-y-3">
+        <div class="flex items-center justify-between pb-1 border-b border-line/60">
+            <span class="text-xs font-bold text-muted uppercase tracking-wider">
+                Pertanyaan yang Sering Diajukan (FAQ)
+            </span>
+        </div>
+
+        <div class="space-y-2.5">
+            {{-- FAQ 1 --}}
+            <details class="group bg-white rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none select-none text-ink [&::-webkit-details-marker]:hidden">
+                    <div class="flex items-center gap-2.5 pr-4">
+                        <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">?</span>
+                        <span class="text-xs sm:text-sm font-bold text-ink">Apakah RansumKu bisa digunakan untuk pakan jadi pabrik?</span>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-muted transition-transform duration-200 group-open:rotate-180 shrink-0">expand_more</span>
+                </summary>
+                <div class="pt-3 mt-3 border-t border-line/60 text-xs text-muted leading-relaxed pl-7 sm:pl-8">
+                    Bisa. Anda dapat memasukkan pakan pabrikan pada menu <strong>Bahan Pakan</strong> untuk menghitung biaya harian dan memantau efisiensi pakan (FCR) serta persentase bertelur ayam di Buku Kandang.
+                </div>
+            </details>
+
+            {{-- FAQ 2 --}}
+            <details class="group bg-white rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none select-none text-ink [&::-webkit-details-marker]:hidden">
+                    <div class="flex items-center gap-2.5 pr-4">
+                        <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">?</span>
+                        <span class="text-xs sm:text-sm font-bold text-ink">Apakah aplikasi ini bisa diakses lewat handphone?</span>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-muted transition-transform duration-200 group-open:rotate-180 shrink-0">expand_more</span>
+                </summary>
+                <div class="pt-3 mt-3 border-t border-line/60 text-xs text-muted leading-relaxed pl-7 sm:pl-8">
+                    Bisa. Tampilan RansumKu sepenuhnya responsif dan ringan, sehingga sangat nyaman dibuka melalui browser Google Chrome di HP maupun laptop langsung dari area kandang.
+                </div>
+            </details>
+
+            {{-- FAQ 3 --}}
+            <details class="group bg-white rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none select-none text-ink [&::-webkit-details-marker]:hidden">
+                    <div class="flex items-center gap-2.5 pr-4">
+                        <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">?</span>
+                        <span class="text-xs sm:text-sm font-bold text-ink">Bagaimana jika harga jagung atau konsentrat di pasar berubah?</span>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-muted transition-transform duration-200 group-open:rotate-180 shrink-0">expand_more</span>
+                </summary>
+                <div class="pt-3 mt-3 border-t border-line/60 text-xs text-muted leading-relaxed pl-7 sm:pl-8">
+                    Cukup perbarui angka harga di menu <strong>Bahan Pakan</strong>. Setelah itu buka kembali formulasi ransum Anda, dan sistem akan langsung menghitung ulang biaya termurah berdasarkan harga pasar terbaru.
+                </div>
+            </details>
+
+            {{-- FAQ 4 --}}
+            <details class="group bg-white rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none select-none text-ink [&::-webkit-details-marker]:hidden">
+                    <div class="flex items-center gap-2.5 pr-4">
+                        <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">?</span>
+                        <span class="text-xs sm:text-sm font-bold text-ink">Apakah formula pakan baru bisa langsung diberikan sekaligus?</span>
+                    </div>
+                    <span class="material-symbols-outlined text-[18px] text-muted transition-transform duration-200 group-open:rotate-180 shrink-0">expand_more</span>
+                </summary>
+                <div class="pt-3 mt-3 border-t border-line/60 text-xs text-muted leading-relaxed pl-7 sm:pl-8">
+                    Sebaiknya lakukan masa transisi penggantian pakan bertahap selama 3–5 hari dengan mencampurkan pakan baru sedikit demi sedikit agar saluran pencernaan ayam tidak kaget dan tidak memicu stres.
+                </div>
+            </details>
+        </div>
+    </div>
+
+    {{-- 6. Footer Ringkas & Elegan --}}
+    <div class="text-center py-4 text-xs text-muted border-t border-line/60">
+        <span>RansumKu &copy; {{ date('Y') }} · Platform Formulasi Pakan & Buku Kandang Ayam Petelur · Universitas Gadjah Mada</span>
     </div>
 </div>
 

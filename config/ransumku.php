@@ -23,6 +23,7 @@ return [
 
     // Perkiraan umum (dapat diubah peternak)
     'konsumsi_default' => 0.11,       // kg/ekor/hari
+    'harga_telur_default' => 26000,   // Rp/kg acuan harga pasar telur ayam layer
     'harga_usang_hari' => 7,
 
     'disclaimer_ai' => 'Ini perkiraan dari pola data, bukan diagnosis. Periksa ayam langsung atau hubungi dokter hewan.',
