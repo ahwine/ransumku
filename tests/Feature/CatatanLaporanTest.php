@@ -48,4 +48,34 @@ class CatatanLaporanTest extends TestCase
         $response->assertSee('SNI Unggas');
         $response->assertSee('Universitas Gadjah Mada');
     }
+
+    public function test_riwayat_catatan_dapat_difilter_berdasarkan_periode_dan_tanggal(): void
+    {
+        $user = User::where('email', 'demo@ransumku.test')->first();
+        $this->actingAs($user);
+
+        $response = $this->get(route('catatan.index', ['tab' => 'form', 'periode' => 'bulan_ini']));
+        $response->assertStatus(200);
+        $response->assertSee('Bulan Ini');
+        $response->assertSee('Catatan Harian Terbaru');
+
+        $responseCari = $this->get(route('catatan.index', ['tab' => 'form', 'cari_tanggal' => today()->toDateString()]));
+        $responseCari->assertStatus(200);
+        $responseCari->assertSee('Catatan Harian Terbaru');
+    }
+
+    public function test_halaman_catatan_memuat_fitur_kalkulator_rak_telur(): void
+    {
+        $user = User::where('email', 'demo@ransumku.test')->first();
+        $this->actingAs($user);
+
+        $response = $this->get(route('catatan.index', ['tab' => 'form']));
+        $response->assertStatus(200);
+        $response->assertSee('Hitung per Rak (30)');
+        $response->assertSee('Kalkulator Rak Telur');
+        $response->assertSee('1 Rak = 30 butir');
+        $response->assertSee('calc_rak_input');
+        $response->assertSee('calc_sisa_input');
+    }
 }
+

@@ -105,11 +105,58 @@
                             </div>
 
                             {{-- Kolom Kiri 2: Jumlah Telur --}}
-                            <div>
-                                <label class="lbl text-xs font-bold text-ink" for="telur_butir">Jumlah Telur (butir)</label>
+                            <div class="relative">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="lbl text-xs font-bold text-ink !mb-0" for="telur_butir">Jumlah Telur (butir)</label>
+                                    <button type="button" id="btn-toggle-rak-calc" class="text-[11px] text-brand hover:text-brand-dark hover:underline font-bold cursor-pointer inline-flex items-center gap-0.5" title="Bantu hitung dari jumlah rak/tray telur (1 rak = 30 butir)">
+                                        <span class="material-symbols-outlined text-[13px]">grid_view</span>
+                                        <span>Hitung per Rak (30)</span>
+                                    </button>
+                                </div>
                                 <div class="relative">
                                     <input id="telur_butir" name="telur_butir" type="number" min="0" class="field text-lg font-black text-ink pr-14" value="{{ old('telur_butir', $form->telur_butir) }}" required placeholder="0">
                                     <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted pointer-events-none">butir</span>
+                                </div>
+
+                                {{-- Popover Mini Kalkulator Rak Telur --}}
+                                <div id="popover-calc-rak" class="hidden absolute top-full left-0 right-0 z-30 mt-1.5 p-3 rounded-xl bg-white border border-brand/30 shadow-xl space-y-2.5">
+                                    <div class="flex items-center justify-between pb-1.5 border-b border-line text-xs">
+                                        <span class="font-bold text-ink flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-brand text-[16px]">calculate</span>
+                                            Kalkulator Rak Telur
+                                        </span>
+                                        <span class="text-[10px] text-muted font-medium bg-surface px-1.5 py-0.5 rounded">1 Rak = 30 butir</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                            <label class="block text-[10.5px] text-muted font-semibold mb-0.5" for="calc_rak_input">Jumlah Rak</label>
+                                            <div class="relative">
+                                                <input type="number" id="calc_rak_input" min="0" step="1" placeholder="0" class="w-full h-8 px-2.5 pr-8 rounded-lg bg-surface border border-line text-xs font-bold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted font-medium pointer-events-none">rak</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10.5px] text-muted font-semibold mb-0.5" for="calc_sisa_input">Sisa Butir</label>
+                                            <div class="relative">
+                                                <input type="number" id="calc_sisa_input" min="0" step="1" placeholder="0" class="w-full h-8 px-2.5 pr-8 rounded-lg bg-surface border border-line text-xs font-bold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted font-medium pointer-events-none">btr</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200/60 flex items-center justify-between text-xs">
+                                        <span class="text-emerald-900 text-[11px] font-medium">Hasil Total:</span>
+                                        <strong id="calc_rak_total_preview" class="text-sm font-black text-emerald-800">0 butir</strong>
+                                    </div>
+
+                                    <div class="flex items-center justify-end gap-1.5 pt-0.5">
+                                        <button type="button" id="btn-cancel-rak-calc" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-surface transition cursor-pointer">
+                                            Batal
+                                        </button>
+                                        <button type="button" id="btn-apply-rak-calc" class="px-3 py-1 rounded-lg bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer">
+                                            Terapkan ke Form
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -235,16 +282,57 @@
             </div>
         </div>
 
-        {{-- Riwayat Catatan Harian (5 per halaman + Pagination) --}}
-        <div class="card space-y-3">
-            <div class="flex items-center justify-between pb-2.5 border-b border-line">
+        {{-- Riwayat Catatan Harian (5 per halaman + Filter Cepat & Pencarian) --}}
+        <div class="card space-y-3.5">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-line">
                 <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[18px] text-brand">history</span>
-                    <h2 class="text-xs font-bold text-ink">Catatan Harian Terbaru</h2>
+                    <span class="material-symbols-outlined text-[19px] text-brand">history</span>
+                    <div>
+                        <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Catatan Harian Terbaru</h2>
+                        <span class="text-tiny font-medium text-muted">
+                            Total {{ $riwayat->total() }} catatan {{ ($filterPeriode !== 'semua' || $cariTanggal) ? '(terfilter)' : '' }}
+                        </span>
+                    </div>
                 </div>
-                <span class="text-xs font-medium text-muted">
-                    Total {{ $riwayat->total() }} catatan
-                </span>
+
+                {{-- Kontrol Filter Periode & Pencarian Tanggal --}}
+                <form method="GET" action="{{ route('catatan.index') }}" class="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="tab" value="form">
+
+                    {{-- Quick Pill Filter: Semua, Bulan Ini, Bulan Lalu, 30 Hari --}}
+                    <div class="inline-flex p-0.5 bg-surface rounded-lg border border-line text-[11px] font-bold select-none shadow-2xs">
+                        <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'semua']) }}"
+                           class="px-2.5 py-1 rounded-md transition-all {{ ($filterPeriode === 'semua' && !$cariTanggal) ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
+                            Semua
+                        </a>
+                        <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'bulan_ini']) }}"
+                           class="px-2.5 py-1 rounded-md transition-all {{ $filterPeriode === 'bulan_ini' ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
+                            Bulan Ini
+                        </a>
+                        <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'bulan_lalu']) }}"
+                           class="px-2.5 py-1 rounded-md transition-all {{ $filterPeriode === 'bulan_lalu' ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
+                            Bulan Lalu
+                        </a>
+                        <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => '30_hari']) }}"
+                           class="px-2.5 py-1 rounded-md transition-all {{ $filterPeriode === '30_hari' ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
+                            30 Hari
+                        </a>
+                    </div>
+
+                    {{-- Cari Tanggal Spesifik --}}
+                    <div class="flex items-center gap-1">
+                        <input type="date" name="cari_tanggal" value="{{ $cariTanggal }}" max="{{ today()->toDateString() }}"
+                               onchange="this.form.submit()"
+                               class="h-7 px-2 rounded-lg bg-white border border-line text-xs font-semibold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 shadow-2xs"
+                               title="Pilih tanggal spesifik untuk memfilter">
+
+                        @if ($cariTanggal || $filterPeriode !== 'semua')
+                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="h-7 px-2 rounded-lg bg-surface hover:bg-surface-2 border border-line text-muted hover:text-rose-600 flex items-center justify-center transition shadow-2xs" title="Reset filter (Tampilkan semua)">
+                                <span class="material-symbols-outlined text-[15px]">close</span>
+                            </a>
+                        @endif
+                    </div>
+                </form>
             </div>
 
             <div class="overflow-x-auto -mx-4 sm:-mx-5 px-4 sm:px-5">
@@ -329,7 +417,19 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="py-6 text-center text-muted italic">Belum ada catatan produksi yang tersimpan.</td>
+                                <td colspan="8" class="py-8 text-center text-muted">
+                                    <div class="flex flex-col items-center justify-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[26px] text-muted/40">search_off</span>
+                                        <p class="text-xs font-semibold text-ink">Tidak ada catatan pada filter yang dipilih</p>
+                                        <p class="text-[11px] text-muted">Coba ubah filter periode atau tanggal pencarian Anda.</p>
+                                        @if ($cariTanggal || $filterPeriode !== 'semua')
+                                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="mt-1 text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[14px]">refresh</span>
+                                                Reset ke Semua Catatan
+                                            </a>
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -1164,6 +1264,88 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Kalkulator Bantu Hitung Rak Telur (1 Rak = 30 butir)
+    const btnToggleRak = document.getElementById('btn-toggle-rak-calc');
+    const popoverRak = document.getElementById('popover-calc-rak');
+    const inputCalcRak = document.getElementById('calc_rak_input');
+    const inputCalcSisa = document.getElementById('calc_sisa_input');
+    const previewRakTotal = document.getElementById('calc_rak_total_preview');
+    const btnApplyRak = document.getElementById('btn-apply-rak-calc');
+    const btnCancelRak = document.getElementById('btn-cancel-rak-calc');
+
+    function updateRakPreviewTotal() {
+        const rak = parseInt(inputCalcRak ? inputCalcRak.value : 0) || 0;
+        const sisa = parseInt(inputCalcSisa ? inputCalcSisa.value : 0) || 0;
+        const total = (rak * 30) + sisa;
+        if (previewRakTotal) {
+            previewRakTotal.textContent = `${total.toLocaleString('id-ID')} butir (${rak} rak + ${sisa} btr)`;
+        }
+        return total;
+    }
+
+    if (btnToggleRak && popoverRak) {
+        btnToggleRak.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isHidden = popoverRak.classList.contains('hidden');
+            if (isHidden) {
+                popoverRak.classList.remove('hidden');
+                const currentTotal = parseInt(inputTelur?.value) || 0;
+                if (currentTotal > 0 && inputCalcRak && inputCalcSisa) {
+                    inputCalcRak.value = Math.floor(currentTotal / 30);
+                    inputCalcSisa.value = currentTotal % 30;
+                }
+                updateRakPreviewTotal();
+                if (inputCalcRak) inputCalcRak.focus();
+            } else {
+                popoverRak.classList.add('hidden');
+            }
+        });
+    }
+
+    [inputCalcRak, inputCalcSisa].forEach(el => {
+        if (el) {
+            el.addEventListener('input', updateRakPreviewTotal);
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (btnApplyRak) btnApplyRak.click();
+                }
+            });
+        }
+    });
+
+    if (btnApplyRak && inputTelur && popoverRak) {
+        btnApplyRak.addEventListener('click', function () {
+            const total = updateRakPreviewTotal();
+            inputTelur.value = total;
+            popoverRak.classList.add('hidden');
+            updateLivePreview();
+            if (window.showToast) {
+                window.showToast(`Berhasil menerapkan ${total.toLocaleString('id-ID')} butir telur.`, 'success', 'Kalkulator Rak');
+            }
+        });
+    }
+
+    if (btnCancelRak && popoverRak) {
+        btnCancelRak.addEventListener('click', function () {
+            popoverRak.classList.add('hidden');
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        if (popoverRak && !popoverRak.classList.contains('hidden')) {
+            if (!popoverRak.contains(e.target) && e.target !== btnToggleRak && !btnToggleRak.contains(e.target)) {
+                popoverRak.classList.add('hidden');
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && popoverRak && !popoverRak.classList.contains('hidden')) {
+            popoverRak.classList.add('hidden');
+        }
+    });
 
     // Button: Quick fill from yesterday
     const btnQuickFill = document.getElementById('btn-quick-fill');
