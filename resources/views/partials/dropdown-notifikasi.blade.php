@@ -50,25 +50,25 @@
             </div>
 
             {{-- Filter Tabs (All, Unread, Waspada) --}}
-            <div class="flex items-center gap-1 overflow-x-auto text-[11px]">
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar text-[11px]">
                 <button type="button" 
                         data-notif-tab-btn="all"
                         onclick="filterNotifTab('all', '{{ $id }}', this)"
                         class="px-2.5 py-1 rounded-full font-bold cursor-pointer transition bg-brand text-white shadow-2xs">
-                    Semua <span class="ml-0.5 opacity-90 font-mono">({{ $alerts->count() }})</span>
+                    Semua <span class="ml-0.5 opacity-90 font-bold">({{ $alerts->count() }})</span>
                 </button>
                 <button type="button" 
                         data-notif-tab-btn="unread"
                         onclick="filterNotifTab('unread', '{{ $id }}', this)"
                         class="px-2.5 py-1 rounded-full font-semibold cursor-pointer transition bg-surface text-muted hover:text-ink hover:bg-surface-2 border border-line/60">
-                    Belum Dibaca <span class="ml-0.5 opacity-90 font-mono" data-tab-unread-count>({{ $unreadCount }})</span>
+                    Belum Dibaca <span class="ml-0.5 opacity-90 font-bold" data-tab-unread-count>({{ $unreadCount }})</span>
                 </button>
                 @if ($waspadaCount > 0)
                     <button type="button" 
                             data-notif-tab-btn="waspada"
                             onclick="filterNotifTab('waspada', '{{ $id }}', this)"
                             class="px-2.5 py-1 rounded-full font-semibold cursor-pointer transition bg-surface text-muted hover:text-ink hover:bg-surface-2 border border-line/60">
-                        Kritis <span class="ml-0.5 opacity-90 font-mono">({{ $waspadaCount }})</span>
+                        Kritis <span class="ml-0.5 opacity-90 font-bold">({{ $waspadaCount }})</span>
                     </button>
                 @endif
             </div>

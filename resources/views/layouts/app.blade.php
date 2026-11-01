@@ -141,8 +141,8 @@
 </header>
 
 {{-- 4. Main Content Area --}}
-<main class="lg:ml-64 pt-20 lg:pt-20 {{ request()->routeIs('asisten.*') ? 'pb-2 lg:pb-2.5 lg:h-screen lg:max-h-screen lg:flex lg:flex-col lg:overflow-hidden box-border' : 'pb-28 lg:pb-12' }} px-4 lg:px-8">
-    <div class="w-full {{ request()->routeIs('asisten.*') ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : 'space-y-5' }}">
+<main class="lg:ml-64 pt-20 lg:pt-20 {{ request()->routeIs('asisten.*') ? 'pb-2 lg:pb-2.5 lg:h-screen lg:max-h-screen lg:flex lg:flex-col lg:overflow-hidden box-border' : 'pb-28 lg:pb-12' }} px-4 lg:px-8 @yield('main_class')">
+    <div class="w-full {{ request()->routeIs('asisten.*') ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : 'space-y-5' }} @yield('container_class')">
         @yield('isi')
     </div>
 </main>

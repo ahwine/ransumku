@@ -7,6 +7,7 @@ use App\Services\WeatherService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
@@ -257,6 +258,17 @@ class HomeController extends Controller
      */
     public function terimaSensorIot(Request $request, Farm $farm, WeatherService $weatherService): JsonResponse
     {
+        $raw = $request->json()->all();
+        if (empty($raw)) {
+            $raw = $request->all();
+        }
+        if (isset($raw['kelembapan']) && !isset($raw['kelembaban'])) {
+            $raw['kelembaban'] = $raw['kelembapan'];
+        }
+        if (!empty($raw)) {
+            $request->merge($raw);
+        }
+
         $data = $request->validate([
             'suhu' => 'required|numeric|between:10,55',
             'kelembaban' => 'required|numeric|between:10,100',
@@ -288,6 +300,85 @@ class HomeController extends Controller
             'status' => $w['thi_kategori'],
             'level' => $w['thi_level'],
             'saran_manajemen' => $w['saran_manajemen'],
+        ]);
+    }
+
+    /**
+     * Endpoint live polling status cuaca & sensor kandang terkini secara real-time.
+     */
+    public function statusSensorLive(Farm $farm, WeatherService $weatherService): JsonResponse
+    {
+        $isOnline = $weatherService->isSensorOnline($farm, 60);
+
+        if ($isOnline) {
+            $w = $weatherService->getWeather($farm);
+        } else {
+            // Jika sensor fisik offline (dilepas), sistem otomatis beralih ke cuaca BMKG Open-Meteo
+            $w = $weatherService->fetchOpenMeteo($farm);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'suhu' => (float) $w['suhu'],
+            'kelembaban' => (float) $w['kelembaban'],
+            'apparent_temp' => (float) $w['apparent_temp'],
+            'angin_kmh' => (float) $w['angin_kmh'],
+            'cuaca_teks' => $w['cuaca_teks'],
+            'weather_type' => $w['weather_type'] ?? 'partly_cloudy',
+            'sumber' => $w['sumber'],
+            'kota' => $w['kota'] ?? ($farm->lokasi_kota ?: 'Kandang'),
+            'thi' => (float) $w['thi'],
+            'thi_kategori' => $w['thi_kategori'],
+            'thi_kategori_singkat' => $w['thi_kategori_singkat'],
+            'thi_percent' => (float) ($w['thi_percent'] ?? 50.0),
+            'thi_level' => $w['thi_level'],
+            'badge_class' => $w['badge_class'],
+            'dampak_ayam' => $w['dampak_ayam'] ?? ($w['deskripsi_risiko'] ?? 'Kondisi fisiologi ayam terpantau aman.'),
+            'saran_manajemen' => $w['saran_manajemen'] ?? [],
+            'updated_at' => $w['updated_at'],
+            'sensor_aktif' => $isOnline,
+            'sensor_online' => $isOnline,
+            'detik_lalu' => $farm->sensor_updated_at ? Carbon::parse($farm->sensor_updated_at)->diffInSeconds(now()) : null,
+        ]);
+    }
+
+    /**
+     * Endpoint untuk memutuskan/melepas koneksi sensor IoT (simulasi sensor dilepas/dicabut).
+     */
+    public function putusSensorIot(Farm $farm, WeatherService $weatherService): JsonResponse
+    {
+        $farm->update([
+            'sensor_updated_at' => now()->subHours(2),
+        ]);
+
+        Cache::forget("weather_farm_{$farm->id}_{$farm->lokasi_kota}");
+        $w = $weatherService->fetchOpenMeteo($farm);
+
+        return response()->json([
+            'ok' => true,
+            'pesan' => 'Sensor IoT ESP32 berhasil diputuskan (simulasi dilepas). Sistem kembali ke estimasi BMKG.',
+            'sumber' => $w['sumber'],
+            'suhu' => $w['suhu'],
+            'kelembaban' => $w['kelembaban'],
+            'thi' => $w['thi'],
+        ]);
+    }
+
+    /**
+     * Endpoint acuan cuaca luar BMKG/Open-Meteo untuk sinkronisasi mikrokontroler ESP32 secara dinamis.
+     * Mengembalikan data suhu luar terkini tanpa dipengaruhi oleh status sensor IoT kandang.
+     */
+    public function acuanBmkgLive(Farm $farm, WeatherService $weatherService): JsonResponse
+    {
+        $w = $weatherService->fetchOpenMeteo($farm);
+
+        return response()->json([
+            'ok' => true,
+            'kota' => $w['kota'] ?? ($farm->lokasi_kota ?: 'Sidoarjo'),
+            'suhu' => (float) $w['suhu'],
+            'kelembaban' => (float) $w['kelembaban'],
+            'cuaca_teks' => $w['cuaca_teks'] ?? 'Cerah Berawan',
+            'jam_server' => now()->format('H:i'),
         ]);
     }
 

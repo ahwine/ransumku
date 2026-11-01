@@ -1275,6 +1275,35 @@ document.addEventListener('submit', function(e) {
     });
 });
 
+// Horizontal drag & wheel scroll handler tanpa scrollbar visual
+document.querySelectorAll('[data-horizontal-scroll]').forEach((el) => {
+    el.addEventListener('wheel', (evt) => {
+        if (evt.deltaY !== 0) {
+            evt.preventDefault();
+            el.scrollLeft += evt.deltaY;
+        }
+    }, { passive: false });
+
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+
+    el.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - el.offsetLeft;
+        scrollLeft = el.scrollLeft;
+    });
+    el.addEventListener('mouseleave', () => { isDown = false; });
+    el.addEventListener('mouseup', () => { isDown = false; });
+    el.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - el.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        el.scrollLeft = scrollLeft - walk;
+    });
+});
+
 // Auto-dismiss floating toast notifications after 4 seconds
 setTimeout(() => {
     const toasts = document.querySelectorAll('[data-toast], #toast-notification, #toast-error');
@@ -1525,4 +1554,187 @@ window.tandaiSemuaNotifikasiDibaca = function () {
         console.warn('Gagal update status baca semua notifikasi:', err);
     });
 };
+
+// ==========================================
+// Real-time Live Sensor & Microclimate Poller
+// ==========================================
+function initLiveSensorPoller() {
+    const widget = document.querySelector('[data-weather-widget]');
+    if (!widget) return;
+
+    const liveUrl = widget.getAttribute('data-live-url');
+    if (!liveUrl) return;
+
+    let currentSuhu = widget.getAttribute('data-current-suhu');
+    let currentRh = widget.getAttribute('data-current-rh');
+    let lastSensorOnline = null;
+
+    const iconSVGs = {
+        sunny: '<svg class="w-14 h-14 md:w-16 md:h-16 animate-[spin_20s_linear_infinite]" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="14" fill="#F59E0B"/><g stroke="#F59E0B" stroke-width="3" stroke-linecap="round"><line x1="32" y1="4" x2="32" y2="10"/><line x1="32" y1="54" x2="32" y2="60"/><line x1="4" y1="32" x2="10" y2="32"/><line x1="54" y1="32" x2="60" y2="32"/></g></svg>',
+        partly_cloudy: '<svg class="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 64 64" fill="none"><circle cx="38" cy="22" r="11" fill="#EA580C"/><path d="M20 48H44C47.866 48 51 44.866 51 41C51 37.134 47.866 34 44 34C43.7 34 43.4 34.02 43.1 34.06C42.06 28.32 37.07 24 31 24C24.37 24 19 29.37 19 36C19 36.35 19.01 36.69 19.05 37.03C15.65 37.56 13 40.48 13 44C13 46.21 14.79 48 17 48H20Z" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1.5"/></svg>',
+        rainy: '<svg class="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 64 64" fill="none"><path d="M19 40H45C48.3 40 51 37.3 51 34C51 30.7 48.3 28 45 28C44.7 28 44.4 28.02 44.1 28.06C43.1 23.32 38.9 20 34 20C28.5 20 24 24.5 24 30C24 30.3 24.01 30.6 24.05 30.9C21.1 31.4 19 33.9 19 36.8C19 38.6 20.4 40 22.2 40H19Z" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1.5"/><line x1="24" y1="44" x2="21" y2="52" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round"/><line x1="33" y1="44" x2="30" y2="52" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round"/><line x1="42" y1="44" x2="39" y2="52" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round"/></svg>',
+        thunderstorm: '<svg class="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 64 64" fill="none"><path d="M19 36H45C48.3 36 51 33.3 51 30C51 26.7 48.3 24 45 24C44.7 24 44.4 24.02 44.1 24.06C43.1 19.32 38.9 16 34 16C28.5 16 24 20.5 24 26C24 26.3 24.01 26.6 24.05 26.9C21.1 27.4 19 29.9 19 32.8C19 34.6 20.4 36 22.2 36H19Z" fill="#475569"/><polygon points="34,34 26,46 33,46 29,58 41,44 34,44" fill="#FACC15" stroke="#EAB308" stroke-width="1"/></svg>',
+    };
+
+    async function pollSensor() {
+        try {
+            const res = await fetch(liveUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!data || !data.ok) return;
+
+            const isSensorOnline = Boolean(data.sensor_online || (data.sumber === 'sensor' && data.sensor_aktif));
+
+            // Deteksi otomatis saat sensor ESP32 dipasang atau dilepas
+            if (lastSensorOnline !== null) {
+                if (!lastSensorOnline && isSensorOnline) {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(
+                            `Sensor IoT ESP32 terdeteksi terpasang! Suhu fisik ${data.suhu}°C (${data.kelembaban}% RH) kini terbaca real-time.`,
+                            'success',
+                            'Sensor IoT Terhubung'
+                        );
+                    }
+                } else if (lastSensorOnline && !isSensorOnline) {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(
+                            `Sensor IoT ESP32 dilepas atau terputus. Sistem beralih otomatis ke prakiraan cuaca mikro ${data.kota || 'BMKG'}.`,
+                            'warning',
+                            'Sensor IoT Terlepas'
+                        );
+                    }
+                }
+            }
+            lastSensorOnline = isSensorOnline;
+
+            const suhuEl = widget.querySelector('[data-live-suhu]');
+            const rhEl = widget.querySelector('[data-live-rh]');
+            const apparentEl = widget.querySelector('[data-live-apparent]');
+            const anginEl = widget.querySelector('[data-live-angin]');
+            const cuacaEl = widget.querySelector('[data-live-cuaca]');
+            const updatedEl = widget.querySelector('[data-live-updated]');
+            const sumberBadge = widget.querySelector('[data-live-sumber-badge]');
+            const pulseDot = widget.querySelector('[data-live-pulse-dot]');
+            const thiBadge = widget.querySelector('[data-live-thi-badge]');
+            const thiMarker = widget.querySelector('[data-live-thi-marker]');
+            const thiPinText = widget.querySelector('[data-live-thi-pin-text]');
+            const dampakEl = widget.querySelector('[data-live-dampak]');
+            const liveBadge = widget.querySelector('[data-live-indicator-badge]');
+            const iconContainer = widget.querySelector('[data-live-icon-container]');
+
+            const newSuhuStr = String(data.suhu);
+            const newRhStr = String(data.kelembaban);
+
+            // Jika suhu berubah
+            if (currentSuhu !== newSuhuStr) {
+                if (suhuEl) {
+                    suhuEl.textContent = data.suhu;
+                    suhuEl.classList.add('text-brand', 'scale-110');
+                    setTimeout(() => {
+                        suhuEl.classList.remove('text-brand', 'scale-110');
+                    }, 800);
+                }
+                if (liveBadge) {
+                    liveBadge.classList.remove('hidden');
+                    setTimeout(() => liveBadge.classList.add('hidden'), 4000);
+                }
+                currentSuhu = newSuhuStr;
+                widget.setAttribute('data-current-suhu', newSuhuStr);
+            }
+
+            // Jika kelembaban berubah
+            if (currentRh !== newRhStr) {
+                if (rhEl) rhEl.textContent = data.kelembaban + '%';
+                currentRh = newRhStr;
+                widget.setAttribute('data-current-rh', newRhStr);
+            }
+
+            if (apparentEl && data.apparent_temp !== undefined) {
+                apparentEl.textContent = data.apparent_temp + '°C';
+            }
+            if (anginEl && data.angin_kmh !== undefined) {
+                anginEl.textContent = data.angin_kmh;
+            }
+            if (cuacaEl && data.cuaca_teks) {
+                cuacaEl.textContent = data.cuaca_teks;
+            }
+            if (updatedEl && data.updated_at) {
+                updatedEl.textContent = 'Pembaruan: ' + data.updated_at;
+            }
+
+            // Update Ikon Cuaca
+            if (iconContainer && data.weather_type && iconSVGs[data.weather_type]) {
+                if (iconContainer.getAttribute('data-current-type') !== data.weather_type) {
+                    iconContainer.innerHTML = iconSVGs[data.weather_type];
+                    iconContainer.setAttribute('data-current-type', data.weather_type);
+                }
+            }
+
+            // Update THI Badge & Kategori
+            if (thiBadge && data.thi !== undefined) {
+                thiBadge.textContent = 'THI ' + data.thi + ' · ' + (data.thi_kategori_singkat || '');
+                if (data.badge_class) {
+                    thiBadge.className = 'px-3.5 py-1 rounded-full text-xs font-bold shadow-2xs transition-all duration-300 ' + data.badge_class;
+                }
+            }
+
+            // Update THI Pin Marker di atas bar gauge
+            if (thiMarker && data.thi_percent !== undefined) {
+                thiMarker.style.left = data.thi_percent + '%';
+            }
+            if (thiPinText && data.thi !== undefined) {
+                thiPinText.textContent = 'THI ' + data.thi;
+            }
+
+            // Update Dampak Ayam
+            if (dampakEl && data.dampak_ayam) {
+                dampakEl.innerHTML = '<strong class="font-bold">Kondisi Ayam:</strong> ' + data.dampak_ayam;
+            }
+
+            // Update Indikator Status Sensor
+            const isSensor = isSensorOnline;
+            if (sumberBadge) {
+                sumberBadge.textContent = isSensor ? 'Sensor IoT Live' : 'Prakiraan BMKG';
+                sumberBadge.className = isSensor
+                    ? 'text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all bg-surface text-muted border border-line';
+            }
+            if (pulseDot) {
+                pulseDot.className = isSensor
+                    ? 'w-2 h-2 rounded-full transition-colors bg-emerald-500 animate-pulse'
+                    : 'w-2 h-2 rounded-full transition-colors bg-blue-400';
+                pulseDot.title = isSensor ? 'Sensor IoT Fisik Terhubung' : 'Prakiraan Cuaca Terbuka';
+            }
+        } catch (e) {
+            // Ignore temporary network errors
+        }
+    }
+
+    window.__refreshLiveSensor = pollSensor;
+
+    // Polling setiap 3 detik secara background saat tab aktif
+    setInterval(() => {
+        if (!document.hidden) {
+            pollSensor();
+        }
+    }, 3000);
+
+    // Langsung cek ketika peternak kembali ke tab browser
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            pollSensor();
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLiveSensorPoller);
+} else {
+    initLiveSensorPoller();
+}
 

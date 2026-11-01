@@ -3,20 +3,25 @@
     $weatherType = $weather['weather_type'] ?? 'partly_cloudy';
     $thiPercent = $weather['thi_percent'] ?? 50.0;
     $dampakAyam = $weather['dampak_ayam'] ?? ($weather['deskripsi_risiko'] ?? 'Kondisi fisiologi ayam terpantau aman.');
+    $isSensorAktif = ($weather['sumber'] ?? '') === 'sensor';
 @endphp
-<div class="space-y-4">
-    {{-- Baris 1: Header Cuaca Ramping (Judul, Tombol IoT & Timestamp Bersih) --}}
+<div class="space-y-4" data-weather-widget data-live-url="{{ route('api.kandang.sensor.live', $farm ?? auth()->user()->farm) }}" data-current-suhu="{{ $weather['suhu'] }}" data-current-rh="{{ $weather['kelembaban'] }}">
+    {{-- Baris 1: Header Cuaca Ramping (Judul, Indikator Live, Tombol IoT & Timestamp Bersih) --}}
     <div class="flex items-center justify-between gap-2 pb-3 border-b border-line">
         <span class="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[16px] text-brand">thermostat</span>
             <span>Cuaca Mikro Kandang</span>
+            <span data-live-pulse-dot class="w-2 h-2 rounded-full transition-colors {{ $isSensorAktif ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400' }}" title="{{ $isSensorAktif ? 'Sensor IoT Fisik Terhubung' : 'Prakiraan Cuaca Terbuka' }}"></span>
         </span>
         <div class="flex items-center gap-2">
+            <span data-live-sumber-badge class="text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all {{ $isSensorAktif ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-surface text-muted border border-line' }}">
+                {{ $isSensorAktif ? 'Sensor IoT Live' : 'Prakiraan BMKG' }}
+            </span>
             <button type="button" onclick="bukaModal('modal-iot-kandang')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand/10 hover:bg-brand/20 text-brand border border-brand/20 transition font-bold text-tiny cursor-pointer" title="Buka Simulasi & Pengaturan Sensor IoT ESP32 Kandang">
                 <span class="material-symbols-outlined text-[13px]">sensors</span>
                 <span>Uji Sensor IoT</span>
             </button>
-            <span class="text-tiny font-medium text-muted">Pembaruan: {{ $weather['updated_at'] }}</span>
+            <span data-live-updated class="text-tiny font-medium text-muted">Pembaruan: {{ $weather['updated_at'] }}</span>
         </div>
     </div>
 
@@ -25,7 +30,7 @@
         {{-- Sisi Kiri (Kolom 1-5): Ikon Cuaca Murni (Tanpa Kotak Badge) & Angka Suhu --}}
         <div class="lg:col-span-5 flex items-center gap-4 md:gap-5">
             {{-- Ilustrasi Cuaca SVG Langsung (Murni Tanpa Border/Badge Box) --}}
-            <div class="w-16 h-16 md:w-20 md:h-20 shrink-0 grid place-items-center">
+            <div data-live-icon-container class="w-16 h-16 md:w-20 md:h-20 shrink-0 grid place-items-center">
                 @if ($weatherType === 'sunny')
                     {{-- Sun SVG --}}
                     <svg class="w-14 h-14 md:w-16 md:h-16 animate-[spin_20s_linear_infinite]" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -91,25 +96,26 @@
                 @endif
             </div>
 
-            {{-- Angka Suhu & Ringkasan Cuaca --}}
+            {{-- Angka Suhu & Ringkasan Cuaca (Live Updating) --}}
             <div>
                 <span class="sr-only">{{ $weather['suhu'] }}°C</span>
                 <div class="flex items-baseline gap-1">
-                    <span class="text-3xl md:text-4xl lg:text-5xl font-black text-ink tracking-tight">{{ $weather['suhu'] }}</span>
+                    <span data-live-suhu class="text-3xl md:text-4xl lg:text-5xl font-black text-ink tracking-tight transition-all duration-300">{{ $weather['suhu'] }}</span>
                     <span class="text-xl md:text-2xl font-bold text-muted">°C</span>
+                    <span data-live-indicator-badge class="hidden ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 animate-pulse">Live</span>
                 </div>
-                <p class="text-xs md:text-sm font-bold text-ink mt-0.5">{{ $weather['cuaca_teks'] }}</p>
+                <p data-live-cuaca class="text-xs md:text-sm font-bold text-ink mt-0.5">{{ $weather['cuaca_teks'] }}</p>
                 <div class="flex items-center gap-3 text-tiny font-medium text-muted mt-1.5">
                     <span class="flex items-center gap-1" title="Kelembaban Relatif (RH)">
                         <span class="material-symbols-outlined text-[15px] text-blue-500">water_drop</span>
-                        <strong>{{ $weather['kelembaban'] }}%</strong> RH
+                        <strong data-live-rh>{{ $weather['kelembaban'] }}%</strong> RH
                     </span>
                     <span class="flex items-center gap-1" title="Kecepatan Angin">
                         <span class="material-symbols-outlined text-[15px] text-teal-600">air</span>
-                        <strong>{{ $weather['angin_kmh'] }}</strong> km/h
+                        <strong data-live-angin>{{ $weather['angin_kmh'] }}</strong> km/h
                     </span>
                     <span class="hidden sm:inline" title="Suhu Terasa (Heat Index)">
-                        Terasa ~<strong>{{ $weather['apparent_temp'] }}°C</strong>
+                        Terasa ~<strong data-live-apparent>{{ $weather['apparent_temp'] }}°C</strong>
                     </span>
                 </div>
             </div>
@@ -123,7 +129,7 @@
                     <span class="material-symbols-outlined text-[16px] text-amber-600">thermostat_auto</span>
                     <span>Indeks Stres Panas (THI)</span>
                 </span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border {{ $weather['badge_class'] }}">
+                <span data-live-thi-badge class="px-3.5 py-1 rounded-full text-xs font-bold shadow-2xs transition-all duration-300 {{ $weather['badge_class'] }}">
                     THI {{ $weather['thi'] }} · {{ $weather['thi_kategori_singkat'] }}
                 </span>
             </div>
@@ -132,8 +138,8 @@
             <div class="space-y-1.5 pt-1">
                 {{-- Pin Marker Posisi THI Saat Ini (Di Atas Bar, Menunjuk ke Titik Nilai) --}}
                 <div class="relative w-full h-6 mb-1.5">
-                    <div class="absolute bottom-0 -translate-x-1/2 flex flex-col items-center transition-all duration-500" style="left: {{ $thiPercent }}%;">
-                        <span class="text-[11px] font-bold text-ink whitespace-nowrap leading-none bg-surface border border-line px-2 py-1 rounded-md shadow-2xs">
+                    <div data-live-thi-marker class="absolute bottom-0 -translate-x-1/2 flex flex-col items-center transition-all duration-700 ease-out" style="left: {{ $thiPercent }}%;">
+                        <span data-live-thi-pin-text class="text-[11px] font-bold text-ink whitespace-nowrap leading-none bg-surface border border-line px-2 py-1 rounded-md shadow-2xs">
                             THI {{ $weather['thi'] }}
                         </span>
                         <span class="w-1.5 h-1.5 rotate-45 bg-surface border-r border-b border-line -mt-1 shadow-2xs"></span>
@@ -168,7 +174,7 @@
             {{-- Dampak Fisiologi Ayam Petelur --}}
             <div class="flex items-start gap-2 pt-1 border-t border-line/60 text-xs">
                 <span class="material-symbols-outlined text-[17px] text-muted shrink-0 mt-0.5" aria-hidden="true">info</span>
-                <p class="text-ink font-medium leading-relaxed">
+                <p data-live-dampak class="text-ink font-medium leading-relaxed">
                     <strong class="font-bold">Kondisi Ayam:</strong> {{ $dampakAyam }}
                 </p>
             </div>

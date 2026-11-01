@@ -55,18 +55,6 @@
                         <span class="material-symbols-outlined text-[15px]">close</span>
                     </button>
                 </div>
-
-                {{-- Filter Cepat Pulau / Wilayah --}}
-                <div class="flex items-center gap-1 overflow-x-auto pt-2 pb-0.5 slim-scrollbar text-[10px]">
-                    @foreach ($daftarWilayah as $idx => $wilayah)
-                        <button type="button"
-                                data-wilayah-btn="{{ $wilayah }}"
-                                onclick="filterDropdownWilayah('{{ $wilayah }}', '{{ $idDropdown }}', this)"
-                                class="px-2.5 py-0.5 rounded-full whitespace-nowrap transition-all font-semibold cursor-pointer {{ $idx === 0 ? 'bg-brand text-white font-bold' : 'bg-surface text-muted hover:text-ink hover:bg-surface-2 border border-line/60' }}">
-                            {{ $wilayah }}
-                        </button>
-                    @endforeach
-                </div>
             </div>
 
             {{-- List Sentra & Kota Seluruh Indonesia --}}

@@ -117,7 +117,8 @@ SYS;
 
             $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
 
-            $res = Http::timeout($timeout)
+            $res = Http::withoutVerifying()
+                ->timeout($timeout)
                 ->withHeaders([
                     'Content-Type' => 'application/json',
                     'x-goog-api-key' => $cfg['key'],

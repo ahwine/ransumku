@@ -32,7 +32,7 @@
                 <span class="material-symbols-outlined text-[17px] text-brand">inventory_2</span>
                 <span>Pilih Bahan Pakan</span>
             </div>
-            <span class="text-[10px] font-mono font-bold text-brand bg-brand-soft/80 border border-brand/20 px-2 py-0.5 rounded-full">
+            <span class="text-[10px] font-bold text-brand bg-brand-soft/80 border border-brand/20 px-2.5 py-0.5 rounded-full">
                 {{ count($bahan) }} Bahan Terdaftar
             </span>
         </div>
@@ -87,7 +87,7 @@
                         <span class="material-symbols-outlined text-[13px]">check</span>
                         <span>Aktif</span>
                     </span>
-                    <span data-choose-hint class="{{ $isSelected ? 'hidden' : 'inline-block' }} text-[10px] text-muted font-mono opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <span data-choose-hint class="{{ $isSelected ? 'hidden' : 'inline-block' }} text-[10px] text-muted font-semibold opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         Pilih
                     </span>
                 </button>

@@ -106,5 +106,102 @@ class WeatherAndIotFeatureTest extends TestCase
             'sensor_kelembaban' => 72.0,
         ]);
     }
+
+    public function test_status_sensor_live_endpoint_mengembalikan_data_realtime_dan_status_online(): void
+    {
+        $user = User::factory()->create();
+        $farm = Farm::create([
+            'user_id' => $user->id,
+            'nama' => 'Kandang Realtime',
+            'lokasi_kota' => 'Malang',
+            'sensor_suhu' => 32.5,
+            'sensor_kelembaban' => 70.0,
+            'sensor_updated_at' => now(),
+        ]);
+
+        $res = $this->getJson(route('api.kandang.sensor.live', $farm));
+
+        $res->assertStatus(200);
+        $res->assertJson([
+            'ok' => true,
+            'suhu' => 32.5,
+            'kelembaban' => 70.0,
+            'sensor_aktif' => true,
+            'sensor_online' => true,
+            'sumber' => 'sensor',
+        ]);
+    }
+
+    public function test_putus_sensor_iot_melepas_sensor_dan_beralih_ke_cuaca_bmkg(): void
+    {
+        Http::fake([
+            'https://api.open-meteo.com/*' => Http::response([
+                'current' => [
+                    'temperature_2m' => 29.5,
+                    'relative_humidity_2m' => 65.0,
+                    'apparent_temperature' => 32.0,
+                    'weather_code' => 0,
+                    'wind_speed_10m' => 6.0,
+                ],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $farm = Farm::create([
+            'user_id' => $user->id,
+            'nama' => 'Kandang Disconnect',
+            'lokasi_kota' => 'Malang',
+            'sensor_suhu' => 35.0,
+            'sensor_kelembaban' => 80.0,
+            'sensor_updated_at' => now(),
+        ]);
+
+        $res = $this->postJson(route('api.kandang.sensor.putus', $farm));
+
+        $res->assertStatus(200);
+        $res->assertJson([
+            'ok' => true,
+            'sumber' => 'open_meteo',
+            'suhu' => 29.5,
+        ]);
+
+        // Verifikasi endpoint live kini mengembalikan offline
+        $liveRes = $this->getJson(route('api.kandang.sensor.live', $farm));
+        $liveRes->assertStatus(200);
+        $liveRes->assertJson([
+            'ok' => true,
+            'sensor_aktif' => false,
+            'sensor_online' => false,
+            'sumber' => 'open_meteo',
+        ]);
+    }
+
+    public function test_endpoint_acuan_bmkg_live_mengembalikan_suhu_terkini_untuk_esp32(): void
+    {
+        $user = User::factory()->create();
+        $farm = Farm::create([
+            'user_id' => $user->id,
+            'nama' => 'Kandang Sidoarjo Mandiri',
+            'lokasi_kota' => 'Sidoarjo',
+            'latitude' => -7.4478,
+            'longitude' => 112.7183,
+        ]);
+
+        $res = $this->getJson(route('api.kandang.bmkg', $farm));
+
+        $res->assertStatus(200);
+        $res->assertJsonStructure([
+            'ok',
+            'kota',
+            'suhu',
+            'kelembaban',
+            'cuaca_teks',
+            'jam_server',
+        ]);
+        $this->assertTrue($res->json('ok'));
+        $this->assertEquals('Sidoarjo', $res->json('kota'));
+        $this->assertIsNumeric($res->json('suhu'));
+        $this->assertIsNumeric($res->json('kelembaban'));
+    }
 }
 

@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['farm' => \App\Http\Middleware\EnsureFarm::class]);
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+        ]);
         $middleware->redirectGuestsTo(fn () => route('masuk'));
         $middleware->redirectUsersTo(fn () => route('beranda'));
     })

@@ -172,13 +172,6 @@
                             {{ $activeSession ? 'Sesi ID #'.$activeSession->id.' • '.$chats->count().' pesan' : 'Konsultasi Nutrisi & Manajemen Unggas' }}
                         </p>
                     </div>
-                    
-                    <div class="flex items-center gap-2 shrink-0">
-                        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full shadow-2xs">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                            <span>Gemini AI</span>
-                        </span>
-                    </div>
                 </div>
 
                 {{-- Chat Box Window --}}

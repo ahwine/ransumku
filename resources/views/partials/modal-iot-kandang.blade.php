@@ -52,10 +52,16 @@
                 </div>
             </div>
 
-            <button type="submit" id="btn-kirim-sensor" class="btn-primary w-full !min-h-10 text-xs font-bold shadow-xs">
-                <span class="material-symbols-outlined text-[16px]">send</span>
-                <span>Kirim Sinyal Sensor ke Sistem</span>
-            </button>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <button type="submit" id="btn-kirim-sensor" class="btn-primary w-full !min-h-10 text-xs font-bold shadow-xs">
+                    <span class="material-symbols-outlined text-[16px]">sensors</span>
+                    <span>Pasang / Kirim Sinyal</span>
+                </button>
+                <button type="button" id="btn-putus-sensor" onclick="lepasSensorIot()" class="btn-outline w-full !min-h-10 text-xs font-bold text-rose-700 hover:bg-rose-50 border-rose-200">
+                    <span class="material-symbols-outlined text-[16px]">power_off</span>
+                    <span>Cabut / Lepas Sensor</span>
+                </button>
+            </div>
             <p id="iot-feedback" class="text-tiny font-bold text-center hidden"></p>
         </form>
 
@@ -103,14 +109,58 @@ function simulasiSensorIot(e, form) {
         fb.classList.remove('hidden', 'text-danger');
         fb.classList.add('text-brand');
         fb.textContent = `Berhasil! THI terhitung: ${data.thi} (${data.status})`;
+        if (typeof window.__refreshLiveSensor === 'function') {
+            window.__refreshLiveSensor();
+        }
         setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+            tutupModal('modal-iot-kandang');
+            fb.classList.add('hidden');
+        }, 600);
     })
     .catch(err => {
         fb.classList.remove('hidden', 'text-brand');
         fb.classList.add('text-danger');
         fb.textContent = 'Gagal mengirim data simulasi sensor.';
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
+function lepasSensorIot() {
+    const btn = document.getElementById('btn-putus-sensor');
+    const fb = document.getElementById('iot-feedback');
+    const originalText = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span><span>Memutuskan...</span>';
+
+    fetch('{{ route('api.kandang.sensor.putus', $farm ?? auth()->user()->farm) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        fb.classList.remove('hidden', 'text-brand');
+        fb.classList.add('text-amber-800');
+        fb.textContent = 'Sensor berhasil dicabut. Sistem kembali ke cuaca BMKG.';
+        if (typeof window.__refreshLiveSensor === 'function') {
+            window.__refreshLiveSensor();
+        }
+        setTimeout(() => {
+            tutupModal('modal-iot-kandang');
+            fb.classList.add('hidden');
+        }, 600);
+    })
+    .catch(err => {
+        fb.classList.remove('hidden', 'text-brand');
+        fb.classList.add('text-danger');
+        fb.textContent = 'Gagal memutuskan sensor.';
     })
     .finally(() => {
         btn.disabled = false;

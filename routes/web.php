@@ -68,3 +68,9 @@ Route::middleware('auth')->group(function () {
 Route::post('/api/kandang/{farm}/sensor', [HomeController::class, 'terimaSensorIot'])
     ->name('api.kandang.sensor')
     ->middleware('throttle:120,1');
+Route::post('/api/kandang/{farm}/sensor/putus', [HomeController::class, 'putusSensorIot'])
+    ->name('api.kandang.sensor.putus');
+Route::get('/api/kandang/{farm}/sensor', [HomeController::class, 'statusSensorLive'])
+    ->name('api.kandang.sensor.live');
+Route::get('/api/kandang/{farm}/bmkg', [HomeController::class, 'acuanBmkgLive'])
+    ->name('api.kandang.bmkg');
