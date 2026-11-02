@@ -1519,80 +1519,99 @@ setTimeout(() => {
     });
 }, 4000);
 
-// Universal Floating Toast Notification Dispatcher
+// Universal Floating Toast Notification Dispatcher (Mobile-Responsive, Haptic, Touch-Dismissible)
 window.showToast = function (pesan, tipe = 'success', judul = null) {
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
-        container.className = 'fixed top-20 right-4 lg:right-8 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none';
+        container.className = 'fixed top-3 sm:top-5 inset-x-3 sm:inset-x-auto sm:right-6 lg:right-8 z-[99999] flex flex-col gap-2.5 max-w-none sm:max-w-md w-auto sm:w-full pointer-events-none transition-all duration-300';
         document.body.appendChild(container);
+    }
+
+    // Feedback haptik di perangkat mobile jika didukung
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try {
+            if (tipe === 'error') navigator.vibrate([30, 50, 30]);
+            else navigator.vibrate(20);
+        } catch (e) {}
     }
 
     const toast = document.createElement('div');
     toast.setAttribute('data-toast', '');
-    toast.className = 'pointer-events-auto bg-white/95 backdrop-blur-md rounded-2xl border shadow-2xl p-4 flex items-start gap-3 transform transition-all duration-300 translate-y-2 opacity-0';
+    toast.className = 'pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl border shadow-2xl p-3.5 sm:p-4 flex items-start gap-3 transform transition-all duration-300 -translate-y-4 opacity-0 scale-95';
 
     let icon = 'check_circle';
-    let iconClass = 'bg-emerald-100 text-emerald-700';
-    let borderClass = 'border-emerald-200/90';
+    let iconClass = 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300';
+    let borderClass = 'border-emerald-300/80 dark:border-emerald-700/80 shadow-emerald-950/10';
     let titleText = judul || 'Berhasil';
-    let titleClass = 'text-ink';
+    let titleClass = 'text-ink dark:text-white';
 
     if (tipe === 'error') {
         icon = 'error';
-        iconClass = 'bg-rose-100 text-danger';
-        borderClass = 'border-rose-200/90';
+        iconClass = 'bg-rose-100 dark:bg-rose-900/50 text-danger';
+        borderClass = 'border-rose-300/80 dark:border-rose-700/80 shadow-rose-950/10';
         titleText = judul || 'Terdapat Kendala';
         titleClass = 'text-danger';
     } else if (tipe === 'warning') {
         icon = 'warning';
-        iconClass = 'bg-amber-100 text-amber-700';
-        borderClass = 'border-amber-200/90';
+        iconClass = 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300';
+        borderClass = 'border-amber-300/80 dark:border-amber-700/80 shadow-amber-950/10';
         titleText = judul || 'Perhatian';
-        titleClass = 'text-amber-800';
+        titleClass = 'text-amber-800 dark:text-amber-300';
     } else if (tipe === 'info') {
         icon = 'info';
-        iconClass = 'bg-blue-100 text-blue-700';
-        borderClass = 'border-blue-200/90';
+        iconClass = 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300';
+        borderClass = 'border-sky-300/80 dark:border-sky-700/80 shadow-sky-950/10';
         titleText = judul || 'Informasi';
-        titleClass = 'text-blue-800';
+        titleClass = 'text-sky-800 dark:text-sky-300';
     }
 
     toast.classList.add(borderClass);
     toast.innerHTML = `
-        <div class="w-9 h-9 rounded-full ${iconClass} flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined icon-fill text-[20px]">${icon}</span>
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${iconClass} flex items-center justify-center shrink-0 shadow-2xs">
+            <span class="material-symbols-outlined icon-fill text-[20px] sm:text-[22px]">${icon}</span>
         </div>
-        <div class="flex-1 pr-1">
-            <p class="text-xs font-bold ${titleClass}">${titleText}</p>
-            <p class="text-xs text-muted mt-0.5 leading-relaxed">${pesan}</p>
+        <div class="flex-1 pr-1 min-w-0">
+            <p class="text-xs sm:text-sm font-bold ${titleClass} truncate">${titleText}</p>
+            <p class="text-[11px] sm:text-xs text-muted dark:text-slate-300 mt-0.5 leading-relaxed break-words">${pesan}</p>
         </div>
-        <button type="button" class="text-muted hover:text-ink cursor-pointer p-1 rounded-lg hover:bg-surface transition" aria-label="Tutup">
-            <span class="material-symbols-outlined text-[16px]">close</span>
+        <button type="button" class="text-muted hover:text-ink dark:text-slate-400 dark:hover:text-white cursor-pointer w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface dark:hover:bg-slate-800 active:scale-90 transition shrink-0" aria-label="Tutup">
+            <span class="material-symbols-outlined text-[18px]">close</span>
         </button>
     `;
 
-    toast.querySelector('button').addEventListener('click', () => {
-        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    const dismiss = () => {
+        toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
         toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-12px)';
-        setTimeout(() => toast.remove(), 300);
-    });
+        toast.style.transform = 'translateY(-10px) scale(0.95)';
+        setTimeout(() => toast.remove(), 250);
+    };
+
+    const closeBtn = toast.querySelector('button');
+    if (closeBtn) closeBtn.addEventListener('click', dismiss);
+
+    // Gestur swipe-up di mobile untuk menutup notifikasi instan
+    let touchStartY = 0;
+    toast.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    toast.addEventListener('touchend', (e) => {
+        if (e.changedTouches[0].clientY < touchStartY - 15) {
+            dismiss();
+        }
+    }, { passive: true });
 
     container.appendChild(toast);
 
     requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-        toast.classList.add('translate-y-0', 'opacity-100');
+        toast.classList.remove('-translate-y-4', 'opacity-0', 'scale-95');
+        toast.classList.add('translate-y-0', 'opacity-100', 'scale-100');
     });
 
     setTimeout(() => {
         if (toast.parentElement) {
-            toast.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(-12px)';
-            setTimeout(() => toast.remove(), 400);
+            dismiss();
         }
     }, 4500);
 };

@@ -5,9 +5,9 @@
      Fitur: Kereta Hopper Katrol L298N, Sirkulasi Blower, Misting Atap, Ayam 3D
      ========================================================================= --}}
 
-<div class="bg-white rounded-2xl border border-line p-5 md:p-6 shadow-2xs space-y-4" id="section-digital-twin-3d">
-    {{-- Header Digital Twin 3D --}}
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-line">
+<div class="bg-white rounded-2xl border border-line p-4 sm:p-5 md:p-6 shadow-2xs space-y-3.5 sm:space-y-4" id="section-digital-twin-3d">
+    {{-- Header Digital Twin 3D (Rapi & Bebas Tombol Menumpuk) --}}
+    <div class="flex items-center justify-between gap-3 pb-3 border-b border-line">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 grid place-items-center shrink-0 shadow-2xs">
                 <span class="material-symbols-outlined text-[22px]">view_in_ar</span>
@@ -19,94 +19,124 @@
                         WebGL 3D Engine · Live Interactive
                     </span>
                 </div>
-                <p class="text-[11px] text-muted">Simulasi fisik interaktif 3D: Kereta pakan katrol tali sling meluncur di rel, corong pakan 2 tingkat (kanan & kiri), ayam baterai, blower, dan sprinkler atap</p>
+                <p class="text-[11px] text-muted hidden sm:block">Simulasi fisik interaktif 3D: Kereta pakan katrol tali sling meluncur di rel, corong pakan 2 tingkat, ayam baterai, blower, dan sprinkler atap</p>
             </div>
         </div>
 
-        {{-- Preset Tombol Kamera 3D --}}
-        <div class="flex items-center gap-1.5 flex-wrap">
-            <button type="button" onclick="setKamera3D('perspektif')" class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-surface hover:bg-surface-2 text-ink border border-line transition shadow-2xs cursor-pointer flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px]">videocam</span>
-                <span>Perspektif</span>
-            </button>
-            <button type="button" onclick="setKamera3D('lorong')" class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-surface hover:bg-surface-2 text-ink border border-line transition shadow-2xs cursor-pointer flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px]">straighten</span>
-                <span>Lorong Pakan</span>
-            </button>
-            <button type="button" onclick="setKamera3D('atas')" class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-surface hover:bg-surface-2 text-ink border border-line transition shadow-2xs cursor-pointer flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px]">vertical_align_top</span>
-                <span>Tampak Atas</span>
-            </button>
-            <button type="button" onclick="toggleAutoRotate3D()" id="btn-autorotate-3d" class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition shadow-2xs cursor-pointer flex items-center gap-1" title="Putar Otomatis 360 Derajat">
-                <span class="material-symbols-outlined text-[15px]">360</span>
-                <span>Auto-Putar</span>
-            </button>
-            <button type="button" onclick="toggleLabelsIoT3D()" id="btn-labels-iot" class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer flex items-center gap-1 transition" title="Tampilkan / Sembunyikan Label Pin Komponen IoT">
-                <span class="material-symbols-outlined text-[15px]">pin_drop</span>
-                <span>Pin IoT</span>
-            </button>
+        {{-- Indikator Kinerja Hardware --}}
+        <div class="flex items-center gap-2 text-xs font-semibold text-muted shrink-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="hidden sm:inline">60 FPS Hardware-Accelerated</span>
+            <span class="sm:hidden font-mono text-[11px] text-emerald-600 font-bold">60 FPS</span>
         </div>
     </div>
 
-    {{-- Area Canvas 3D Viewport --}}
-    <div class="relative w-full h-[420px] md:h-[480px] rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-inner">
+    {{-- Area Canvas 3D Viewport (Leluasa 360° Bebas Hambatan Sentuh) --}}
+    <div class="relative w-full h-[380px] sm:h-[440px] md:h-[490px] rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-inner group">
         {{-- Canvas Container --}}
         <div id="canvas-container-3d" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
 
-        {{-- Overlay Loading State (jika CDN perlu waktu sejenak) --}}
+        {{-- Overlay Loading State --}}
         <div id="loader-3d" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 text-slate-300 z-10 transition-opacity duration-300">
             <span class="material-symbols-outlined text-4xl text-purple-400 animate-spin">cyclone</span>
             <span class="text-xs font-bold tracking-wider uppercase text-purple-300">Memuat Model 3D Digital Twin...</span>
         </div>
 
-        {{-- Overlay Badge Status 3D Real-time (Pojok Kiri Atas) --}}
-        <div class="absolute top-3 left-3 flex flex-col gap-2 pointer-events-none z-20">
-            {{-- Status Kereta Pakan --}}
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 backdrop-blur border border-slate-700/80 text-white shadow-lg text-xs font-bold">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" id="dot-feeder-3d"></span>
-                <span class="text-slate-300 font-normal">Kereta Pakan:</span>
-                <span class="text-emerald-300" id="status-feeder-3d">Siaga di Pangkal (Titik A)</span>
+        {{-- Top HUD Bar: Status Realtime & Utility Pintar --}}
+        <div class="absolute top-2.5 sm:top-3 inset-x-2.5 sm:inset-x-3 flex items-start justify-between gap-2 z-20 pointer-events-none">
+            {{-- Status HUD Ringkas (Kiri Atas) --}}
+            <div class="flex flex-col gap-1.5 pointer-events-auto max-w-[65%] sm:max-w-none">
+                <div class="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-700/80 text-white shadow-lg text-[10px] sm:text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" id="dot-feeder-3d"></span>
+                    <span class="text-slate-300 font-normal hidden sm:inline">Kereta Pakan:</span>
+                    <span class="text-emerald-300 truncate" id="status-feeder-3d">Siaga di Pangkal (Titik A)</span>
+                </div>
+
+                <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[10px] font-semibold text-slate-300">
+                    <span class="flex items-center gap-1" id="badge-kipas-3d">
+                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="icon-fan-3d">mode_fan</span>
+                        <span id="text-fan-3d">Kipas OFF</span>
+                    </span>
+                    <span class="text-slate-600">•</span>
+                    <span class="flex items-center gap-1" id="badge-atap-3d">
+                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="icon-roof-3d">water_drop</span>
+                        <span id="text-roof-3d">Sprinkler OFF</span>
+                    </span>
+                </div>
             </div>
 
-            {{-- Status Kipas & Sprinkler --}}
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900/80 backdrop-blur border border-slate-800 text-[11px] font-semibold text-slate-300">
-                <span class="flex items-center gap-1" id="badge-kipas-3d">
-                    <span class="material-symbols-outlined text-[14px] text-slate-400" id="icon-fan-3d">mode_fan</span>
-                    <span id="text-fan-3d">Kipas OFF</span>
-                </span>
-                <span class="text-slate-600">•</span>
-                <span class="flex items-center gap-1" id="badge-atap-3d">
-                    <span class="material-symbols-outlined text-[14px] text-slate-400" id="icon-roof-3d">water_drop</span>
-                    <span id="text-roof-3d">Sprinkler OFF</span>
-                </span>
+            {{-- Quick Utility Toggles (Kanan Atas: Pin IoT & 360 Auto-Putar) --}}
+            <div class="flex items-center gap-1.5 pointer-events-auto shrink-0">
+                <button type="button" onclick="toggleLabelsIoT3D()" id="btn-labels-iot" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer border border-cyan-400/40" title="Tampilkan / Sembunyikan Label Pin Komponen IoT">
+                    <span class="material-symbols-outlined text-[15px] sm:text-[16px]">pin_drop</span>
+                    <span class="hidden sm:inline">Pin IoT</span>
+                </button>
+                <button type="button" onclick="toggleAutoRotate3D()" id="btn-autorotate-3d" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-900/85 hover:bg-slate-800 text-purple-300 border border-slate-700/80 shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer" title="Putar Otomatis 360 Derajat">
+                    <span class="material-symbols-outlined text-[15px] sm:text-[16px]">360</span>
+                    <span class="hidden sm:inline">Auto-Putar</span>
+                </button>
             </div>
         </div>
 
-        {{-- Tombol Kontrol Cepat Interaktif (Pojok Kanan Atas) --}}
-        <div class="absolute top-3 right-3 flex items-center gap-2 z-20">
-            <button type="button" onclick="toggleSimulasiGerakPakan()" id="btn-trigger-pakan-3d" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer" title="Jalankan / Hentikan Kereta Pakan Otomatis">
-                <span class="material-symbols-outlined text-[16px]">play_arrow</span>
-                <span>Jalankan Kereta 3D</span>
+        {{-- Hint Navigasi Halus (Bawah Viewport) --}}
+        <div class="absolute bottom-2.5 inset-x-3 flex items-center justify-between pointer-events-none text-[10px] text-slate-400 z-20">
+            <span class="bg-slate-900/85 px-2 py-0.5 rounded-md backdrop-blur border border-slate-800 text-[10px] flex items-center gap-1">
+                <span class="hidden sm:inline">🖱️ <strong>Klik & Geser</strong> putar · <strong>Scroll</strong> zoom · <strong>Klik Kanan</strong> pan</span>
+                <span class="sm:hidden">👆 <strong>Sentuh & Geser</strong> untuk memutar 360°</span>
+            </span>
+            <span class="hidden sm:inline bg-slate-900/85 px-2 py-0.5 rounded-md backdrop-blur border border-slate-800 font-mono text-emerald-400 text-[10px]">
+                Katrol Tali Sling · L298N
+            </span>
+        </div>
+    </div>
+
+    {{-- ================================================================= --}}
+    {{-- BARIS PUSAT KONTROL UTAMA SIMULASI 3D (ERGONOMIC CONTROL CENTER)  --}}
+    {{-- Tertata rapi di bawah canvas: Ramah sentuhan mobile, tidak numpuk --}}
+    {{-- ================================================================= --}}
+    <div class="p-3 sm:p-4 rounded-2xl bg-surface/70 border border-line flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+        
+        {{-- Sektor 1: Tombol Aksi Simulasi Fisik (Primary Action Buttons) --}}
+        <div class="grid grid-cols-2 gap-2.5 w-full md:w-auto md:flex md:items-center">
+            {{-- Tombol 1: Kereta Pakan Katrol Rel (Auto-Shuttle) --}}
+            <button type="button" onclick="toggleSimulasiGerakPakan()" id="btn-trigger-pakan-3d" class="px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-700/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30" title="Jalankan / Hentikan Kereta Pakan Otomatis (Auto-Shuttle)">
+                <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                <div class="text-left">
+                    <span class="block leading-tight font-extrabold" id="text-feeder-btn">Jalankan Kereta 3D</span>
+                    <span class="block text-[9px] text-emerald-100 font-normal leading-tight hidden sm:block" id="subtext-feeder-btn">Auto-Shuttle Bolak-Balik</span>
+                </div>
             </button>
-            <button type="button" onclick="toggleUjiCuacaPanas3D()" id="btn-cuaca-3d" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-amber-300 border border-slate-700 shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer" title="Simulasikan cuaca panas untuk menyalakan Kipas & Sprinkler">
-                <span class="material-symbols-outlined text-[16px]">thermostat</span>
-                <span>Simulasi Panas</span>
+
+            {{-- Tombol 2: Uji Cuaca Panas (Trigger Blower & Misting) --}}
+            <button type="button" onclick="toggleUjiCuacaPanas3D()" id="btn-cuaca-3d" class="px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer" title="Simulasikan cuaca panas ekstrim untuk memicu Kipas & Sprinkler Atap">
+                <span class="material-symbols-outlined text-[18px]" id="icon-cuaca-btn">thermostat</span>
+                <div class="text-left">
+                    <span class="block leading-tight font-extrabold" id="text-cuaca-btn">Uji Cuaca Panas</span>
+                    <span class="block text-[9px] text-amber-200/80 font-normal leading-tight hidden sm:block" id="subtext-cuaca-btn">Blower & Sprinkler</span>
+                </div>
             </button>
         </div>
 
-        {{-- Petunjuk Navigasi Kamera & Spek Mekanik (Pojok Bawah) --}}
-        <div class="absolute bottom-3 inset-x-3 flex items-center justify-between pointer-events-none text-[10px] text-slate-400 px-2 z-20">
-            <span class="bg-slate-900/80 px-2.5 py-1 rounded-md backdrop-blur border border-slate-800 flex items-center gap-1.5">
-                <span>🖱️ <strong>Klik & Geser</strong> putar 360°</span>
-                <span class="text-slate-600">•</span>
-                <span><strong>Scroll</strong> zoom</span>
-                <span class="text-slate-600">•</span>
-                <span><strong>Klik Kanan</strong> geser posisi</span>
-            </span>
-            <span class="hidden sm:inline bg-slate-900/80 px-2.5 py-1 rounded-md backdrop-blur border border-slate-800 font-mono text-emerald-400">
-                Katrol Tali Sling · L298N · 60 FPS
-            </span>
+        {{-- Sektor 2: Presets Sudut Pandang Kamera (Camera Perspective Deck) --}}
+        <div class="flex items-center gap-1.5 justify-between sm:justify-end border-t md:border-t-0 pt-2.5 md:pt-0 border-line/60">
+            <span class="text-[11px] font-bold text-muted mr-1 hidden lg:inline">Sudut Pandang:</span>
+            
+            <div class="inline-flex p-1 rounded-xl bg-white border border-line shadow-2xs gap-1 w-full sm:w-auto justify-center">
+                <button type="button" onclick="setKamera3D('perspektif')" id="btn-cam-perspektif" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-surface text-ink shadow-2xs border border-line flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Isometrik Luar">
+                    <span class="material-symbols-outlined text-[15px] text-purple-600">videocam</span>
+                    <span>Perspektif</span>
+                </button>
+                <button type="button" onclick="setKamera3D('lorong')" id="btn-cam-lorong" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-muted hover:text-ink hover:bg-surface flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Lorong Tengah Antar Baterai">
+                    <span class="material-symbols-outlined text-[15px] text-emerald-600">straighten</span>
+                    <span>Lorong Pakan</span>
+                </button>
+                <button type="button" onclick="setKamera3D('atas')" id="btn-cam-atas" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-muted hover:text-ink hover:bg-surface flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Atas Denah Kandang">
+                    <span class="material-symbols-outlined text-[15px] text-blue-600">vertical_align_top</span>
+                    <span>Tampak Atas</span>
+                </button>
+            </div>
         </div>
+
     </div>
 </div>
 
@@ -1125,6 +1155,30 @@ function setKamera3D(tipe) {
         controls3D.target.set(0, 0, 0);
     }
     controls3D.update();
+    setCameraPresetUI(tipe);
+
+    const nama = {
+        'perspektif': 'Perspektif Isometrik 3D',
+        'lorong': 'Lorong Rel Pakan (Tampak Depan)',
+        'atas': 'Denah Kandang (Tampak Atas)'
+    }[tipe] || tipe;
+
+    if (typeof window.showToast === 'function') {
+        window.showToast(`Kamera beralih ke mode ${nama}.`, 'info', 'Sudut Kamera 3D');
+    }
+}
+
+function setCameraPresetUI(tipe) {
+    const presets = ['perspektif', 'lorong', 'atas'];
+    presets.forEach(p => {
+        const b = document.getElementById(`btn-cam-${p}`);
+        if (!b) return;
+        if (p === tipe) {
+            b.className = 'flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-surface text-ink shadow-2xs border border-line flex items-center justify-center gap-1 cursor-pointer transition';
+        } else {
+            b.className = 'flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-muted hover:text-ink hover:bg-surface flex items-center justify-center gap-1 cursor-pointer transition';
+        }
+    });
 }
 
 function toggleAutoRotate3D() {
@@ -1133,8 +1187,16 @@ function toggleAutoRotate3D() {
     const btn = document.getElementById('btn-autorotate-3d');
     if (btn) {
         btn.className = controls3D.autoRotate
-            ? 'px-3 py-1.5 rounded-lg text-[11px] font-bold bg-purple-600 text-white shadow-2xs cursor-pointer flex items-center gap-1'
-            : 'px-3 py-1.5 rounded-lg text-[11px] font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition shadow-2xs cursor-pointer flex items-center gap-1';
+            ? 'px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer border border-purple-400/40'
+            : 'px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-900/85 hover:bg-slate-800 text-purple-300 border border-slate-700/80 shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
+    }
+
+    if (typeof window.showToast === 'function') {
+        window.showToast(
+            controls3D.autoRotate ? 'Kamera 3D berputar otomatis 360° mengelilingi kandang.' : 'Putaran otomatis kamera dinonaktifkan.',
+            'info',
+            'Auto-Putar 360°'
+        );
     }
 }
 
@@ -1145,8 +1207,16 @@ function toggleLabelsIoT3D() {
     const btn = document.getElementById('btn-labels-iot');
     if (btn) {
         btn.className = isLabelsVisible
-            ? 'px-3 py-1.5 rounded-lg text-[11px] font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer flex items-center gap-1 transition'
-            : 'px-3 py-1.5 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 transition shadow-2xs cursor-pointer flex items-center gap-1';
+            ? 'px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer border border-cyan-400/40'
+            : 'px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-900/85 hover:bg-slate-800 text-cyan-300 border border-slate-700/80 shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
+    }
+
+    if (typeof window.showToast === 'function') {
+        window.showToast(
+            isLabelsVisible ? 'Pin label komponen IoT (ESP32, L298N, sensor) aktif ditampilkan.' : 'Pin label komponen IoT disembunyikan.',
+            'info',
+            'Pin Label IoT'
+        );
     }
 }
 
@@ -1159,9 +1229,15 @@ function toggleSimulasiGerakPakan() {
 
     if (isFeederRunning3D) {
         updateStatusFeederText(feederDirection3D === 1 ? 'Meluncur MAJU (A ➔ B)' : 'Meluncur MUNDUR (B ➔ A)');
+        if (typeof window.showToast === 'function') {
+            window.showToast('Kereta pakan travelling hopper mulai meluncur di rel (Auto-Shuttle A ⇄ B).', 'success', 'Kereta Pakan 3D Aktif');
+        }
     } else {
         setFeedParticlesVisible(false);
         updateStatusFeederText('Kereta Dihentikan (Pause Manual)');
+        if (typeof window.showToast === 'function') {
+            window.showToast('Kereta pakan dihentikan di posisinya saat ini.', 'info', 'Kereta Pakan Dijeda');
+        }
     }
 }
 
@@ -1170,13 +1246,27 @@ window.triggerSimulasiGerakPakan = toggleSimulasiGerakPakan;
 
 function updateFeederButtonUI(isRunning) {
     const btn = document.getElementById('btn-trigger-pakan-3d');
+    const textEl = document.getElementById('text-feeder-btn');
+    const subTextEl = document.getElementById('subtext-feeder-btn');
+    const iconEl = btn ? btn.querySelector('.material-symbols-outlined') : null;
     if (!btn) return;
+
     if (isRunning) {
-        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
-        btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-pulse">pause_circle</span><span>Hentikan Kereta</span>';
+        btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-900/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-rose-400/40';
+        if (iconEl) {
+            iconEl.textContent = 'pause_circle';
+            iconEl.className = 'material-symbols-outlined text-[18px] animate-pulse';
+        }
+        if (textEl) textEl.textContent = 'Hentikan Kereta';
+        if (subTextEl) subTextEl.textContent = 'Jeda di Rel (Pause)';
     } else {
-        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
-        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">play_arrow</span><span>Jalankan Kereta 3D</span>';
+        btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-700/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30';
+        if (iconEl) {
+            iconEl.textContent = 'play_arrow';
+            iconEl.className = 'material-symbols-outlined text-[18px]';
+        }
+        if (textEl) textEl.textContent = 'Jalankan Kereta 3D';
+        if (subTextEl) subTextEl.textContent = 'Auto-Shuttle Bolak-Balik';
     }
 }
 
@@ -1197,12 +1287,40 @@ function toggleUjiCuacaPanas3D() {
 
     updateBadgeKipas3D(isFanSpinning3D);
     updateBadgeSprinkler3D(isSprinklerActive3D);
+    updateCuacaButtonUI(isManualSimulationHot);
 
+    if (typeof window.showToast === 'function') {
+        if (isManualSimulationHot) {
+            window.showToast('Simulasi cuaca panas aktif: Blower berputar cepat & Pompa Misting menyemprot embun atap.', 'warning', 'Simulasi Cuaca Panas ON');
+        } else {
+            window.showToast('Simulasi cuaca panas dimatikan. Blower & misting kembali ke status normal.', 'info', 'Simulasi Cuaca Panas OFF');
+        }
+    }
+}
+
+function updateCuacaButtonUI(isHot) {
     const btn = document.getElementById('btn-cuaca-3d');
-    if (btn) {
-        btn.className = isManualSimulationHot
-            ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer'
-            : 'px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-amber-300 border border-slate-700 shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
+    const textEl = document.getElementById('text-cuaca-btn');
+    const subTextEl = document.getElementById('subtext-cuaca-btn');
+    const iconEl = document.getElementById('icon-cuaca-btn');
+    if (!btn) return;
+
+    if (isHot) {
+        btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-amber-300';
+        if (iconEl) {
+            iconEl.textContent = 'mode_fan';
+            iconEl.className = 'material-symbols-outlined text-[18px] animate-spin';
+        }
+        if (textEl) textEl.textContent = 'Cuaca Panas Aktif';
+        if (subTextEl) subTextEl.textContent = 'Blower & Misting ON';
+    } else {
+        btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer';
+        if (iconEl) {
+            iconEl.textContent = 'thermostat';
+            iconEl.className = 'material-symbols-outlined text-[18px]';
+        }
+        if (textEl) textEl.textContent = 'Uji Cuaca Panas';
+        if (subTextEl) subTextEl.textContent = 'Blower & Sprinkler';
     }
 }
 
@@ -1210,14 +1328,14 @@ function updateBadgeKipas3D(isAktif) {
     const fanText = document.getElementById('text-fan-3d');
     const fanIcon = document.getElementById('icon-fan-3d');
     if (fanText) fanText.textContent = isAktif ? 'Kipas ON (Berputar)' : 'Kipas OFF';
-    if (fanIcon) fanIcon.className = isAktif ? 'material-symbols-outlined text-[14px] text-cyan-400 animate-spin' : 'material-symbols-outlined text-[14px] text-slate-400';
+    if (fanIcon) fanIcon.className = isAktif ? 'material-symbols-outlined text-[13px] text-cyan-400 animate-spin' : 'material-symbols-outlined text-[13px] text-slate-400';
 }
 
 function updateBadgeSprinkler3D(isAktif) {
     const roofText = document.getElementById('text-roof-3d');
     const roofIcon = document.getElementById('icon-roof-3d');
     if (roofText) roofText.textContent = isAktif ? 'Sprinkler ON (Menyemprot)' : 'Sprinkler OFF';
-    if (roofIcon) roofIcon.className = isAktif ? 'material-symbols-outlined text-[14px] text-cyan-300 animate-bounce' : 'material-symbols-outlined text-[14px] text-slate-400';
+    if (roofIcon) roofIcon.className = isAktif ? 'material-symbols-outlined text-[13px] text-cyan-300 animate-bounce' : 'material-symbols-outlined text-[13px] text-slate-400';
 }
 
 // Sinkronisasi Status dari Luar (Misal dari Widget Kontroler Sakelar atau Telemetri IoT)

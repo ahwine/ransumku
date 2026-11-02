@@ -338,12 +338,21 @@
 </div>
 
 <script>
-// Fungsi mengubah sakelar manual per-alat (Override Langsung)
+// Fungsi mengubah sakelar manual per-alat (Override Langsung dengan Responsif Visual)
 async function ubahSakelar(alat, statusBaru) {
     const widget = document.querySelector('[data-controller-widget]');
     if (!widget) return;
     const url = widget.getAttribute('data-sakelar-url');
     if (!url) return;
+
+    const btn = document.getElementById(`btn-sakelar-${alat}`);
+    let prevInnerHTML = '';
+    if (btn) {
+        prevInnerHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.classList.add('opacity-80', 'pointer-events-none');
+        btn.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span><span>Mengirim Perintah...</span>`;
+    }
 
     try {
         const res = await fetch(url, {
@@ -360,11 +369,30 @@ async function ubahSakelar(alat, statusBaru) {
         if (data && data.ok && data.kontrol) {
             updateControllerUI(data.kontrol);
             if (typeof window.showToast === 'function') {
-                window.showToast(data.pesan, 'success', 'Sakelar ' + alat.toUpperCase());
+                const labelAlat = {
+                    'kipas': 'Kipas Sirkulasi Blower',
+                    'misting': 'Pompa Misting Atap',
+                    'lampu': 'Lampu Fotoperiode',
+                    'pakan': 'Kereta Pakan Rel'
+                }[alat] || alat.toUpperCase();
+                window.showToast(data.pesan || `${labelAlat} berhasil di-${statusBaru ? 'nyalakan' : 'matikan'}.`, 'success', labelAlat);
             }
+        } else {
+            throw new Error(data.message || 'Gagal merespons data kendali');
         }
     } catch (err) {
         console.error('Gagal ubah sakelar:', err);
+        if (btn && prevInnerHTML) {
+            btn.innerHTML = prevInnerHTML;
+        }
+        if (typeof window.showToast === 'function') {
+            window.showToast('Gagal mengirim perintah sakelar. Silakan coba kembali.', 'error', 'Kendala Sakelar');
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-80', 'pointer-events-none');
+        }
     }
 }
 
@@ -419,11 +447,16 @@ async function simpanSemuaSetting(e) {
         if (data && data.ok) {
             if (data.kontrol) updateControllerUI(data.kontrol);
             if (typeof window.showToast === 'function') {
-                window.showToast(data.pesan, 'success', 'Pengaturan Tersimpan');
+                window.showToast(data.pesan || 'Konfigurasi otomatisasi kandang berhasil diperbarui.', 'success', 'Pengaturan Tersimpan');
             }
+        } else {
+            throw new Error(data.message || 'Gagal menyimpan pengaturan');
         }
     } catch (err) {
         console.error('Gagal simpan setting:', err);
+        if (typeof window.showToast === 'function') {
+            window.showToast('Gagal menyimpan pengaturan otomatisasi. Periksa koneksi internet Anda.', 'error', 'Gagal Simpan');
+        }
     } finally {
         if (btn) {
             btn.disabled = false;
