@@ -315,7 +315,14 @@ class HomeController extends Controller
      */
     public function statusSensorLive(Farm $farm, WeatherService $weatherService): JsonResponse
     {
-        $w = $weatherService->getWeather($farm);
+        $isOnline = $weatherService->isSensorOnline($farm, 60);
+
+        if ($isOnline) {
+            $w = $weatherService->getWeather($farm);
+        } else {
+            // Jika sensor fisik offline (dilepas), sistem otomatis beralih ke cuaca BMKG Open-Meteo
+            $w = $weatherService->fetchOpenMeteo($farm);
+        }
 
         $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
 
