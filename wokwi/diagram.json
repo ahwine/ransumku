@@ -27,6 +27,8 @@
     [ "esp:GND.1", "oled:GND", "black", [ "v-20", "h-10" ] ],
     [ "esp:22", "oled:SCL", "yellow", [ "v-50", "h10" ] ],
     [ "esp:21", "oled:SDA", "blue", [ "v-40", "h20" ] ],
+    [ "esp:3V3", "oled:RST", "red", [ "v-30", "h-5" ] ],
+    [ "esp:GND.1", "oled:CS", "black", [ "v-20", "h5" ] ],
 
     [ "esp:5V", "motor_penarik_pakan:V+", "red", [ "v-60", "h180" ] ],
     [ "esp:GND.2", "motor_penarik_pakan:GND", "black", [ "v-50", "h170" ] ],
