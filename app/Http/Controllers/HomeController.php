@@ -409,7 +409,7 @@ class HomeController extends Controller
     public function ubahSakelarAktuator(Request $request, Farm $farm): JsonResponse
     {
         $data = $request->validate([
-            'alat' => 'required|in:kipas,misting,lampu',
+            'alat' => 'required|in:kipas,misting,lampu,pakan',
             'status' => 'required|boolean',
         ]);
 
@@ -427,6 +427,7 @@ class HomeController extends Controller
                 'relay_kipas' => (bool) $farm->relay_kipas,
                 'relay_misting' => (bool) $farm->relay_misting,
                 'relay_lampu' => (bool) $farm->relay_lampu,
+                'relay_pakan' => (bool) $farm->relay_pakan,
                 'settings' => $farm->getSettingsKontroler(),
             ],
         ]);
@@ -451,6 +452,12 @@ class HomeController extends Controller
             'lampu.jam_pagi_selesai' => 'required|string',
             'lampu.jam_sore_mulai' => 'required|string',
             'lampu.jam_sore_selesai' => 'required|string',
+
+            'pakan.otomatis' => 'nullable|boolean',
+            'pakan.mode' => 'nullable|string|in:shuttle,bolak_balik',
+            'pakan.durasi_detik' => 'nullable|numeric|between:1,60',
+            'pakan.jam_pagi' => 'nullable|string',
+            'pakan.jam_sore' => 'nullable|string',
         ]);
 
         $settings = [
@@ -470,6 +477,13 @@ class HomeController extends Controller
                 'jam_pagi_selesai' => $data['lampu']['jam_pagi_selesai'],
                 'jam_sore_mulai' => $data['lampu']['jam_sore_mulai'],
                 'jam_sore_selesai' => $data['lampu']['jam_sore_selesai'],
+            ],
+            'pakan' => [
+                'otomatis' => (bool) $request->input('pakan.otomatis', false),
+                'mode' => $data['pakan']['mode'] ?? 'shuttle',
+                'durasi_detik' => (int) ($data['pakan']['durasi_detik'] ?? 4),
+                'jam_pagi' => $data['pakan']['jam_pagi'] ?? '07:00',
+                'jam_sore' => $data['pakan']['jam_sore'] ?? '15:30',
             ],
         ];
 
@@ -498,6 +512,7 @@ class HomeController extends Controller
      *     relay_kipas: bool,
      *     relay_misting: bool,
      *     relay_lampu: bool,
+     *     relay_pakan: bool,
      *     settings: array,
      *     keterangan_aksi: string
      * }
@@ -535,6 +550,14 @@ class HomeController extends Controller
             $updates['relay_lampu'] = ($isPagi || $isSore);
         }
 
+        // 4. Kereta Pakan Berjalan:
+        if (!empty($settings['pakan']['otomatis'])) {
+            $jamMenit = Carbon::now('Asia/Jakarta')->format('H:i');
+            $jamPagi  = $settings['pakan']['jam_pagi'] ?? '07:00';
+            $jamSore  = $settings['pakan']['jam_sore'] ?? '15:30';
+            $updates['relay_pakan'] = ($jamMenit === $jamPagi || $jamMenit === $jamSore);
+        }
+
         if (!empty($updates)) {
             $farm->update($updates);
         }
@@ -544,10 +567,13 @@ class HomeController extends Controller
             $aksi[] = 'Kipas ON';
         }
         if ($farm->relay_misting) {
-            $aksi[] = 'Misting ON';
+            $aksi[] = 'Sprinkler Atap ON';
         }
         if ($farm->relay_lampu) {
             $aksi[] = 'Lampu ON';
+        }
+        if ($farm->relay_pakan) {
+            $aksi[] = 'Kereta Pakan ON';
         }
         if (empty($aksi)) {
             $aksi[] = 'Semua alat siaga (OFF)';
@@ -559,6 +585,7 @@ class HomeController extends Controller
             'relay_kipas' => (bool) $farm->relay_kipas,
             'relay_misting' => (bool) $farm->relay_misting,
             'relay_lampu' => (bool) $farm->relay_lampu,
+            'relay_pakan' => (bool) $farm->relay_pakan,
             'settings' => $settings,
             'keterangan_aksi' => implode(' • ', $aksi),
         ];

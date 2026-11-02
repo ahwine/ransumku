@@ -18,6 +18,7 @@ class Farm extends Model
             'relay_kipas' => 'boolean',
             'relay_misting' => 'boolean',
             'relay_lampu' => 'boolean',
+            'relay_pakan' => 'boolean',
             'controller_settings' => 'array',
         ];
     }
@@ -28,7 +29,8 @@ class Farm extends Model
      * @return array{
      *     kipas: array{otomatis: bool, suhu_nyala: float, thi_nyala: float},
      *     misting: array{otomatis: bool, thi_nyala: float, rh_maksimal: float},
-     *     lampu: array{otomatis: bool, jam_pagi_mulai: string, jam_pagi_selesai: string, jam_sore_mulai: string, jam_sore_selesai: string}
+     *     lampu: array{otomatis: bool, jam_pagi_mulai: string, jam_pagi_selesai: string, jam_sore_mulai: string, jam_sore_selesai: string},
+     *     pakan: array{otomatis: bool, mode: string, durasi_detik: int, jam_pagi: string, jam_sore: string}
      * }
      */
     public function getSettingsKontroler(): array
@@ -50,6 +52,13 @@ class Farm extends Model
                 'jam_pagi_selesai' => '07:00',
                 'jam_sore_mulai' => '18:00',
                 'jam_sore_selesai' => '21:00',
+            ],
+            'pakan' => [
+                'otomatis' => false,
+                'mode' => 'shuttle', // 'shuttle' (ujung-ke-ujung) atau 'bolak_balik' (round-trip)
+                'durasi_detik' => 4,
+                'jam_pagi' => '07:00',
+                'jam_sore' => '15:30',
             ],
         ];
 

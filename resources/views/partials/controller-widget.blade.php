@@ -3,6 +3,7 @@
     $relayKipas = (bool) ($farm->relay_kipas ?? false);
     $relayMisting = (bool) ($farm->relay_misting ?? false);
     $relayLampu = (bool) ($farm->relay_lampu ?? false);
+    $relayPakan = (bool) ($farm->relay_pakan ?? false);
     $settings = $farm->getSettingsKontroler();
 @endphp
 
@@ -27,10 +28,10 @@
         </div>
     </div>
 
-    {{-- Baris 2: 3 Kartu Aktuator Mandiri (Kipas, Misting, Lampu) --}}
+    {{-- Baris 2: 4 Kartu Aktuator Mandiri (Kipas, Misting, Lampu, Kereta Pakan) --}}
     <form id="form-settings-kontroler" onsubmit="simpanSemuaSetting(event)">
         @csrf
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             
             {{-- ================================================================ --}}
             {{-- CONTROLLER 1: KIPAS SIRKULASI / BLOWER (GPIO 12)                 --}}
@@ -242,6 +243,85 @@
                 </div>
             </div>
 
+            {{-- ================================================================ --}}
+            {{-- CONTROLLER 4: KERETA PAKAN BERJALAN / KATROL REL (L298N)         --}}
+            {{-- ================================================================ --}}
+            <div class="p-4 md:p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-4 {{ $relayPakan ? 'bg-white border-emerald-300 shadow-sm shadow-emerald-500/10 ring-1 ring-emerald-300/60' : 'bg-surface/30 border-line' }}" id="card-relay-pakan">
+                <div class="space-y-3.5">
+                    {{-- Header Kartu --}}
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors {{ $relayPakan ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400' }}" id="icon-bg-pakan">
+                                <span class="material-symbols-outlined text-[22px] {{ $relayPakan ? 'animate-bounce' : '' }}" id="icon-relay-pakan">agriculture</span>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-ink">Kereta Pakan Rel</h4>
+                                <span class="text-[10px] text-muted font-medium">Katrol Tali Sling · L298N</span>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider {{ $relayPakan ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500' }}" id="badge-relay-pakan">
+                            {{ $relayPakan ? 'Meluncur (ON)' : 'Parkir (OFF)' }}
+                        </span>
+                    </div>
+
+                    {{-- Tombol Kendali Manual (Klik untuk Langsung Nyalakan / Matikan) --}}
+                    <div class="p-3 rounded-xl bg-white border border-line/80 space-y-2 shadow-2xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-tiny font-bold text-ink uppercase tracking-wider">Kendali Manual:</span>
+                            <span class="text-[10px] text-muted">Jarak Jauh</span>
+                        </div>
+                        <button type="button" onclick="ubahSakelar('pakan', {{ $relayPakan ? 'false' : 'true' }})" id="btn-sakelar-pakan" class="w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-2xs active:scale-95 cursor-pointer {{ $relayPakan ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20' }}">
+                            <span class="material-symbols-outlined text-[16px]">{{ $relayPakan ? 'stop_circle' : 'play_arrow' }}</span>
+                            <span>{{ $relayPakan ? 'Hentikan Kereta Sekarang (OFF)' : 'Jalankan Pakan Sekarang (ON)' }}</span>
+                        </button>
+                    </div>
+
+                    {{-- Pengaturan Otomatis (Kapan Nyala Otomatis & Kapan Berhenti) --}}
+                    <div class="p-3.5 rounded-xl bg-surface/50 border border-line/70 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" name="pakan[otomatis]" value="1" {{ !empty($settings['pakan']['otomatis']) ? 'checked' : '' }} class="w-4 h-4 rounded text-brand focus:ring-brand border-line" id="toggle-auto-pakan">
+                                <span class="text-xs font-bold text-ink">Jadwal Otomatis</span>
+                            </label>
+                            <span class="text-[10px] text-emerald-700 font-semibold">2 Sesi / Hari</span>
+                        </div>
+
+                        <div class="space-y-2 pt-1 text-xs">
+                            <div>
+                                <label class="text-[10px] text-muted font-medium block">Pilihan Mode Operasi:</label>
+                                <select name="pakan[mode]" class="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-line bg-white text-xs font-bold text-ink focus:border-brand">
+                                    <option value="shuttle" {{ ($settings['pakan']['mode'] ?? 'shuttle') === 'shuttle' ? 'selected' : '' }}>Mode Shuttle (Ujung-ke-Ujung)</option>
+                                    <option value="bolak_balik" {{ ($settings['pakan']['mode'] ?? '') === 'bolak_balik' ? 'selected' : '' }}>Mode Bolak-Balik (Round-Trip)</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-muted font-medium block">Jam Sesi Pagi</label>
+                                    <input type="time" name="pakan[jam_pagi]" value="{{ $settings['pakan']['jam_pagi'] ?? '07:00' }}" class="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-line bg-white text-xs font-bold text-ink focus:border-brand">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-muted font-medium block">Jam Sesi Sore</label>
+                                    <input type="time" name="pakan[jam_sore]" value="{{ $settings['pakan']['jam_sore'] ?? '15:30' }}" class="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-line bg-white text-xs font-bold text-ink focus:border-brand">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-[10px] text-muted font-medium flex items-center justify-between">
+                                    <span>Durasi Tempuh Rel:</span>
+                                    <span class="font-bold text-ink" id="label-durasi-pakan">{{ $settings['pakan']['durasi_detik'] ?? 4 }} Detik</span>
+                                </label>
+                                <input type="range" name="pakan[durasi_detik]" min="1" max="15" step="1" value="{{ $settings['pakan']['durasi_detik'] ?? 4 }}" oninput="document.getElementById('label-durasi-pakan').textContent = this.value + ' Detik'" class="w-full mt-1 accent-emerald-600">
+                            </div>
+
+                            <p class="text-[10px] text-muted pt-1 leading-relaxed border-t border-line/60">
+                                <strong>Kapan Berhenti:</strong> Otomatis berhenti setelah mencapai ujung rel sesuai durasi atau saat menyentuh limit switch.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         {{-- Baris Bawah: Tombol Simpan Pengaturan Otomatisasi --}}
@@ -356,10 +436,11 @@ async function simpanSemuaSetting(e) {
 function updateControllerUI(kontrol) {
     if (!kontrol) return;
 
-    // Update 3 Kartu Aktuator Detail
+    // Update 4 Kartu Aktuator Detail
     updateAktuatorCardDetail('kipas', Boolean(kontrol.relay_kipas));
     updateAktuatorCardDetail('misting', Boolean(kontrol.relay_misting));
     updateAktuatorCardDetail('lampu', Boolean(kontrol.relay_lampu));
+    updateAktuatorCardDetail('pakan', Boolean(kontrol.relay_pakan));
 }
 
 function updateAktuatorCardDetail(alat, isAktif) {
@@ -370,7 +451,11 @@ function updateAktuatorCardDetail(alat, isAktif) {
     const btn = document.getElementById(`btn-sakelar-${alat}`);
 
     if (badge) {
-        badge.textContent = isAktif ? 'Aktif (ON)' : 'Mati (OFF)';
+        if (alat === 'pakan') {
+            badge.textContent = isAktif ? 'Meluncur (ON)' : 'Parkir (OFF)';
+        } else {
+            badge.textContent = isAktif ? 'Aktif (ON)' : 'Mati (OFF)';
+        }
         badge.className = isAktif
             ? 'text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider bg-emerald-100 text-emerald-800'
             : 'text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider bg-gray-100 text-gray-500';
@@ -398,6 +483,12 @@ function updateAktuatorCardDetail(alat, isAktif) {
                 : 'w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-2xs active:scale-95 cursor-pointer bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20';
             if (iconSpan) iconSpan.textContent = isAktif ? 'power_settings_new' : 'lightbulb';
             if (textSpan) textSpan.textContent = isAktif ? 'Matikan Lampu Sekarang (OFF)' : 'Nyalakan Lampu Sekarang (ON)';
+        } else if (alat === 'pakan') {
+            btn.className = isAktif
+                ? 'w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-2xs active:scale-95 cursor-pointer bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
+                : 'w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-2xs active:scale-95 cursor-pointer bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-700/20';
+            if (iconSpan) iconSpan.textContent = isAktif ? 'stop_circle' : 'play_arrow';
+            if (textSpan) textSpan.textContent = isAktif ? 'Hentikan Kereta Sekarang (OFF)' : 'Jalankan Pakan Sekarang (ON)';
         }
 
         btn.setAttribute('onclick', `ubahSakelar('${alat}', ${isAktif ? 'false' : 'true'})`);
@@ -413,6 +504,10 @@ function updateAktuatorCardDetail(alat, isAktif) {
     } else if (alat === 'lampu') {
         if (card) card.className = isAktif ? 'p-4 md:p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-4 bg-white border-amber-300 shadow-sm shadow-amber-500/10 ring-1 ring-amber-300/60' : 'p-4 md:p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-4 bg-surface/30 border-line';
         if (iconBg) iconBg.className = isAktif ? 'w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-amber-100 text-amber-700' : 'w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-gray-100 text-gray-400';
+    } else if (alat === 'pakan') {
+        if (card) card.className = isAktif ? 'p-4 md:p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-4 bg-white border-emerald-300 shadow-sm shadow-emerald-500/10 ring-1 ring-emerald-300/60' : 'p-4 md:p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-4 bg-surface/30 border-line';
+        if (iconBg) iconBg.className = isAktif ? 'w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-emerald-100 text-emerald-700' : 'w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-gray-100 text-gray-400';
+        if (icon) icon.className = isAktif ? 'material-symbols-outlined text-[22px] animate-bounce' : 'material-symbols-outlined text-[22px]';
     }
 }
 
