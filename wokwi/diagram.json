@@ -37,12 +37,14 @@
     [ "esp:5V", "relay_kipas:VCC", "red", [ "v20", "h120" ] ],
     [ "esp:GND.2", "relay_kipas:GND", "black", [ "v30", "h130" ] ],
     [ "esp:12", "relay_kipas:IN", "cyan", [ "v10", "h110" ] ],
+    [ "esp:5V", "relay_kipas:COM", "red", [ "v25", "h115" ] ],
     [ "relay_kipas:NO", "led_kipas:A", "cyan", [ "h20" ] ],
     [ "esp:GND.2", "led_kipas:C", "black", [ "v40", "h240" ] ],
 
     [ "esp:5V", "relay_sprinkler:VCC", "red", [ "v140", "h120" ] ],
     [ "esp:GND.2", "relay_sprinkler:GND", "black", [ "v150", "h130" ] ],
     [ "esp:14", "relay_sprinkler:IN", "blue", [ "v130", "h110" ] ],
+    [ "esp:5V", "relay_sprinkler:COM", "red", [ "v145", "h115" ] ],
     [ "relay_sprinkler:NO", "led_sprinkler:A", "blue", [ "h20" ] ],
     [ "esp:GND.2", "led_sprinkler:C", "black", [ "v160", "h240" ] ],
 
