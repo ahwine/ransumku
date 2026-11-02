@@ -148,8 +148,8 @@ function initThreeJSKandang() {
     scene3D.fog = new THREE.FogExp2(0x0a0f1d, 0.022);
 
     // 2. Camera
-    camera3D = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera3D.position.set(13, 9, 14);
+    camera3D = new THREE.PerspectiveCamera(50, width / height, 0.1, 80);
+    camera3D.position.set(13, 6.5, 10);
 
     // 3. Renderer
     renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -170,7 +170,7 @@ function initThreeJSKandang() {
         controls3D.maxDistance = 35;
         controls3D.autoRotate = false;
         controls3D.autoRotateSpeed = 1.0;
-        controls3D.target.set(0, 2, 0);
+        controls3D.target.set(0, 1.8, 0);
     }
 
     // 5. Lighting
@@ -245,456 +245,491 @@ function createStylizedChicken() {
 }
 
 function buildKandang3DScene() {
+    // =====================================================================
+    // KOORDINAT ARSITEKTUR KANDANG:
+    // Y=0: Lantai, Y=3.60: Tepi Atap/Kolom, Y=4.85: Nok Bubungan Puncak Atap
+    // Z=±3.5: Kolom samping, Z=±2.1: Kandang baterai, Z=±1.32: Talang
+    // Sisi Depan (Z > 0): TERBUKA TANPA TEMBOK (Cutaway view ke kandang & troli)
+    // Sisi Belakang (Z < 0): Curb wall rendah 0.45m + tiang baja
+    // Dinding Ujung (X = ±9.9): Portal rangka baja terbuka (lorong bebas pandang)
+    // Atap: Pelana galvalum simetris rapi (kemiringan ~18.6°)
+    // Sprinkler: Pipa nok luar Y=5.02, partikel 100% meluncur di permukaan seng luar
+    // Kipas Blower: Gantung dari plafon di Y=3.0, berputar di atas lorong
+    // =====================================================================
+
     // A. Lantai Kandang Semen
-    const floorGeo = new THREE.PlaneGeometry(24, 14);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8, metalness: 0.1 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9, metalness: 0.05 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(22, 9.5), floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene3D.add(floor);
 
-    // Grid Garis Lantai
-    const grid = new THREE.GridHelper(24, 24, 0x334155, 0x1e293b);
+    // Grid Lorong Lantai
+    const grid = new THREE.GridHelper(22, 22, 0x475569, 0x334155);
     grid.position.y = 0.01;
     scene3D.add(grid);
 
-    // B. Tiang Rangka Baja Ringan Kandang (A-Frame Portal Megah & Tinggi)
-    const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6, roughness: 0.3 });
-    for (let x = -9; x <= 9; x += 4.5) {
-        // Kolom Kiri (Tinggi 5.2 meter)
-        const colL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 5.2), steelMat);
-        colL.position.set(x, 2.6, -3.8);
-        scene3D.add(colL);
+    // B. Dinding Kandang:
+    // Sisi Belakang (Z = -3.6): Tembok batako rendah (0.45m)
+    // Sisi Depan (Z = +3.6): 100% TERBUKA TANPA TEMBOK (sesuai instruksi agar dalam kandang terlihat jelas)
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+    const wallBack = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.45, 0.15), wallMat);
+    wallBack.position.set(0, 0.225, -3.6);
+    scene3D.add(wallBack);
 
-        // Kolom Kanan (Tinggi 5.2 meter)
-        const colR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 5.2), steelMat);
-        colR.position.set(x, 2.6, 3.8);
-        scene3D.add(colR);
+    // C. Kolom Tiang Baja Ringan (Tinggi 3.6m per interval 3m sepanjang lorong)
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.75, roughness: 0.25 });
+    const colPositions = [-9, -6, -3, 0, 3, 6, 9];
+    for (const cx of colPositions) {
+        // Kolom Kiri (Belakang)
+        const cL = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 3.6), steelMat);
+        cL.position.set(cx, 1.8, -3.5);
+        cL.castShadow = true;
+        scene3D.add(cL);
 
-        // Kuda-Kuda Rangka Atap Kiri (Membentang naik dari 5.2m ke puncak 7.2m)
-        const rafterL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.4), steelMat);
-        rafterL.position.set(x, 6.2, -1.9);
-        rafterL.rotation.x = Math.atan2(2.0, 3.8);
-        scene3D.add(rafterL);
-
-        // Kuda-Kuda Rangka Atap Kanan
-        const rafterR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.4), steelMat);
-        rafterR.position.set(x, 6.2, 1.9);
-        rafterR.rotation.x = -Math.atan2(2.0, 3.8);
-        scene3D.add(rafterR);
+        // Kolom Kanan (Depan - tetap ada tiang rangka penopang atap, tapi tanpa tembok)
+        const cR = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 3.6), steelMat);
+        cR.position.set(cx, 1.8, 3.5);
+        cR.castShadow = true;
+        scene3D.add(cR);
     }
 
-    // C. Atap Seng Kandang Rapat Tinggi (Solid Galvalum Penahan Panas)
-    const roofMat = new THREE.MeshStandardMaterial({ 
-        color: 0x334155, 
-        metalness: 0.8, 
-        roughness: 0.3, 
-        side: THREE.DoubleSide 
+    // D. ATAP PELANA GALVALUM RAPI & SIMETRIS (Kemiringan ~18.6°)
+    // Puncak Nok (Ridge): Y = 4.85, Z = 0
+    // Tepi Luar (Eave):   Y = 3.60, Z = ±3.7 (overhang 20cm dari kolom)
+    // Panjang Atap:      X = -10.2 s/d +10.2
+    const roofMat = new THREE.MeshStandardMaterial({
+        color: 0x475569, // Abu metalik seng galvalum
+        metalness: 0.82,
+        roughness: 0.35,
+        side: THREE.DoubleSide
     });
 
-    const roofL = new THREE.Mesh(new THREE.PlaneGeometry(19, 4.4), roofMat);
-    roofL.position.set(0, 6.22, -1.9);
-    roofL.rotation.x = Math.atan2(2.0, 3.8);
-    scene3D.add(roofL);
-
-    const roofR = new THREE.Mesh(new THREE.PlaneGeometry(19, 4.4), roofMat);
-    roofR.position.set(0, 6.22, 1.9);
-    roofR.rotation.x = -Math.atan2(2.0, 3.8);
-    scene3D.add(roofR);
-
-    // Nok Penutup Bubungan Puncak Atap (Ridge Cap) - Ketinggian 7.28 meter
-    const ridgeCap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.28, 0.28, 19, 8),
-        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.25 })
-    );
-    ridgeCap.rotation.z = Math.PI / 2;
-    ridgeCap.position.set(0, 7.28, 0);
-    scene3D.add(ridgeCap);
-
-    // Dinding Segitiga Ujung Belakang Kandang (Gable End)
-    const gableShape = new THREE.Shape();
-    gableShape.moveTo(-3.8, 5.2);
-    gableShape.lineTo(0, 7.2);
-    gableShape.lineTo(3.8, 5.2);
-    gableShape.closePath();
-    const gableGeo = new THREE.ShapeGeometry(gableShape);
-    const gableMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, side: THREE.DoubleSide });
-
-    const gableBack = new THREE.Mesh(gableGeo, gableMat);
-    gableBack.position.set(9.4, 0, 0);
-    gableBack.rotation.y = -Math.PI / 2;
-    scene3D.add(gableBack);
-
-    // Pipa Sprinkler MURNI DI LUAR ATAP (Ketinggian 7.5 Meter di Luar)
-    const ridgePipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 19), steelMat);
-    ridgePipe.rotation.z = Math.PI / 2;
-    ridgePipe.position.set(0, 7.5, 0); // Jauh tinggi di luar atap!
-    scene3D.add(ridgePipe);
-
-    // Nozzle-nozzle Sprinkler di Luar Atap Mengarah ke Lereng Kiri dan Kanan
-    for (let nx = -8; nx <= 8; nx += 2) {
-        const nozL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 6), steelMat);
-        nozL.position.set(nx, 7.5, -0.08);
-        nozL.rotation.x = Math.PI / 3;
-        scene3D.add(nozL);
-
-        const nozR = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 6), steelMat);
-        nozR.position.set(nx, 7.5, 0.08);
-        nozR.rotation.x = -Math.PI / 3;
-        scene3D.add(nozR);
+    // Helper untuk membuat bidang atap miring presisi matematis via BufferGeometry
+    function createSlopedRoofMesh(xMin, xMax, yRidge, zRidge, yEave, zEave, mat) {
+        const geo = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+            // Segitiga 1
+            xMin, yRidge, zRidge,
+            xMax, yEave,  zEave,
+            xMax, yRidge, zRidge,
+            // Segitiga 2
+            xMin, yRidge, zRidge,
+            xMin, yEave,  zEave,
+            xMax, yEave,  zEave
+        ]);
+        geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geo.computeVertexNormals();
+        return new THREE.Mesh(geo, mat);
     }
 
-    // D. Rak Kandang Baterai Ayam Petelur 2 TINGKAT (Sisi Kiri & Sisi Kanan Lorong)
-    const cageMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.5, roughness: 0.5 });
-    const troughMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.35 }); // Talang pakan PVC KUNING persis sesuai foto
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x78350f, metalness: 0.6 });  // Rangka besi cokelat seperti di foto
+    // Bidang Atap Kiri (Belakang)
+    const roofL = createSlopedRoofMesh(-10.2, 10.2, 4.85, 0, 3.60, -3.7, roofMat);
+    scene3D.add(roofL);
+
+    // Bidang Atap Kanan (Depan)
+    const roofR = createSlopedRoofMesh(-10.2, 10.2, 4.85, 0, 3.60, 3.7, roofMat);
+    scene3D.add(roofR);
+
+    // Nok Penutup Bubungan (Ridge Cap) di puncak Y = 4.88
+    const ridgeCap = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.12, 20.4, 8),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85, roughness: 0.25 })
+    );
+    ridgeCap.rotation.z = Math.PI / 2;
+    ridgeCap.position.set(0, 4.88, 0);
+    scene3D.add(ridgeCap);
+
+    // Lisplang / Fascia Trim di tepi seng bawah
+    const fasciaL = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.08, 0.04), steelMat);
+    fasciaL.position.set(0, 3.60, -3.7);
+    scene3D.add(fasciaL);
+    const fasciaR = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.08, 0.04), steelMat);
+    fasciaR.position.set(0, 3.60, 3.7);
+    scene3D.add(fasciaR);
+
+    // Helper membuat balok kuda-kuda miring presisi
+    function createRafterBar(x, y1, z1, y2, z2) {
+        const dy = y2 - y1;
+        const dz = z2 - z1;
+        const len = Math.hypot(dy, dz);
+        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, len), steelMat);
+        cyl.position.set(x, (y1 + y2) / 2, (z1 + z2) / 2);
+        cyl.rotation.x = Math.atan2(dz, dy);
+        return cyl;
+    }
+
+    // Kuda-Kuda Baja Rapi di Setiap Portal Kolom
+    for (const cx of colPositions) {
+        // Balok Tarik Horizontal (Tie Beam) di Y = 3.60 menghubungkan kolom kiri & kanan
+        const tie = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 7.0), steelMat);
+        tie.position.set(cx, 3.60, 0);
+        scene3D.add(tie);
+
+        // Tiang Gantung Tengah (King Post) dari Y=3.60 ke puncak Y=4.85
+        const kingPost = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), steelMat);
+        kingPost.position.set(cx, 4.225, 0);
+        scene3D.add(kingPost);
+
+        // Kaki Kuda-Kuda Kiri & Kanan
+        scene3D.add(createRafterBar(cx, 4.85, 0, 3.60, -3.5));
+        scene3D.add(createRafterBar(cx, 4.85, 0, 3.60, 3.5));
+    }
+
+    // E. Pipa Sprinkler MURNI DI LUAR ATAP (Tepat di atas nok bubungan puncak Y = 5.02)
+    const sprayPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 20.4), steelMat);
+    sprayPipe.rotation.z = Math.PI / 2;
+    sprayPipe.position.set(0, 5.02, 0);
+    scene3D.add(sprayPipe);
+
+    // Nozzle Sprinkler Mengarah ke Lereng Atap Kiri dan Kanan
+    const nozzleMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.2 });
+    for (let nx = -8.5; nx <= 8.5; nx += 2.5) {
+        const nL = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.08, 6), nozzleMat);
+        nL.position.set(nx, 5.00, -0.07);
+        nL.rotation.x = Math.PI / 3;
+        scene3D.add(nL);
+
+        const nR = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.08, 6), nozzleMat);
+        nR.position.set(nx, 5.00, 0.07);
+        nR.rotation.x = -Math.PI / 3;
+        scene3D.add(nR);
+    }
+
+    // F. Rak Kandang Baterai 2 TINGKAT — Sisi Kiri & Kanan Lorong
+    const cageMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.45, roughness: 0.55 });
+    const troughMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.3, metalness: 0.1 }); // Talang KUNING cerah
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x92400e, metalness: 0.55 }); // Rangka cokelat
 
     chickensList = [];
 
+    // Kawat jaring tampilan kandang (tipis melintang per sel)
+    const wireMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.6, roughness: 0.4, wireframe: false });
+
     for (let x = -8; x <= 8; x += 2.0) {
-        // --- 1. SISI KIRI LORONG (2 TINGKAT) ---
-        // Tiang Rangka Baterai Kiri (Cokelat)
-        const legL1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.05), frameMat);
-        legL1.position.set(x - 0.8, 0.9, -1.4);
-        scene3D.add(legL1);
-        const legL2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.05), frameMat);
-        legL2.position.set(x + 0.8, 0.9, -1.4);
-        scene3D.add(legL2);
+        // ---- SISI KIRI (Z negatif) ----
+        // Tiang vertikal rangka kiri
+        for (const tz of [-1.3, -2.85]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.1, 0.05), frameMat);
+            leg.position.set(x, 1.05, tz);
+            scene3D.add(leg);
+        }
+        // Kandang Tingkat 1 kiri (bawah)
+        const cL1 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 1.4), cageMat);
+        cL1.position.set(x, 0.45, -2.1);
+        cL1.castShadow = true;
+        scene3D.add(cL1);
+        // Talang kuning T1 kiri
+        const tL1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
+        tL1.position.set(x, 0.35, -1.32);
+        scene3D.add(tL1);
+        // Ayam T1 kiri
+        const ckL1 = createStylizedChicken();
+        ckL1.position.set(x, 0.35, -1.65);
+        ckL1.rotation.y = 0; // Menghadap lorong
+        scene3D.add(ckL1);
+        chickensList.push(ckL1);
 
-        // A. Tingkat 1 (Bawah) - Kiri
-        const cageL_T1 = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.65, 1.2), cageMat);
-        cageL_T1.position.set(x, 0.45, -2.1);
-        cageL_T1.castShadow = true;
-        scene3D.add(cageL_T1);
+        // Kandang Tingkat 2 kiri (atas)
+        const cL2 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 1.4), cageMat);
+        cL2.position.set(x, 1.35, -2.1);
+        cL2.castShadow = true;
+        scene3D.add(cL2);
+        // Talang kuning T2 kiri
+        const tL2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
+        tL2.position.set(x, 1.25, -1.32);
+        scene3D.add(tL2);
+        // Ayam T2 kiri
+        const ckL2 = createStylizedChicken();
+        ckL2.position.set(x, 1.25, -1.65);
+        ckL2.rotation.y = 0;
+        scene3D.add(ckL2);
+        chickensList.push(ckL2);
 
-        const troughL_T1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.28), troughMat);
-        troughL_T1.position.set(x, 0.38, -1.35);
-        scene3D.add(troughL_T1);
+        // ---- SISI KANAN (Z positif) ----
+        for (const tz of [1.3, 2.85]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.1, 0.05), frameMat);
+            leg.position.set(x, 1.05, tz);
+            scene3D.add(leg);
+        }
+        // Kandang Tingkat 1 kanan
+        const cR1 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 1.4), cageMat);
+        cR1.position.set(x, 0.45, 2.1);
+        cR1.castShadow = true;
+        scene3D.add(cR1);
+        // Talang kuning T1 kanan
+        const tR1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
+        tR1.position.set(x, 0.35, 1.32);
+        scene3D.add(tR1);
+        // Ayam T1 kanan
+        const ckR1 = createStylizedChicken();
+        ckR1.position.set(x, 0.35, 1.65);
+        ckR1.rotation.y = Math.PI;
+        scene3D.add(ckR1);
+        chickensList.push(ckR1);
 
-        const chickL_T1 = createStylizedChicken();
-        chickL_T1.position.set(x, 0.38, -1.65);
-        chickL_T1.rotation.y = 0; // Menghadap lorong
-        scene3D.add(chickL_T1);
-        chickensList.push(chickL_T1);
-
-        // B. Tingkat 2 (Atas) - Kiri
-        const cageL_T2 = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.65, 1.2), cageMat);
-        cageL_T2.position.set(x, 1.35, -2.1);
-        cageL_T2.castShadow = true;
-        scene3D.add(cageL_T2);
-
-        const troughL_T2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.28), troughMat);
-        troughL_T2.position.set(x, 1.28, -1.35);
-        scene3D.add(troughL_T2);
-
-        const chickL_T2 = createStylizedChicken();
-        chickL_T2.position.set(x, 1.28, -1.65);
-        chickL_T2.rotation.y = 0; // Menghadap lorong
-        scene3D.add(chickL_T2);
-        chickensList.push(chickL_T2);
-
-        // --- 2. SISI KANAN LORONG (2 TINGKAT) ---
-        // Tiang Rangka Baterai Kanan (Cokelat)
-        const legR1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.05), frameMat);
-        legR1.position.set(x - 0.8, 0.9, 1.4);
-        scene3D.add(legR1);
-        const legR2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.05), frameMat);
-        legR2.position.set(x + 0.8, 0.9, 1.4);
-        scene3D.add(legR2);
-
-        // A. Tingkat 1 (Bawah) - Kanan
-        const cageR_T1 = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.65, 1.2), cageMat);
-        cageR_T1.position.set(x, 0.45, 2.1);
-        cageR_T1.castShadow = true;
-        scene3D.add(cageR_T1);
-
-        const troughR_T1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.28), troughMat);
-        troughR_T1.position.set(x, 0.38, 1.35);
-        scene3D.add(troughR_T1);
-
-        const chickR_T1 = createStylizedChicken();
-        chickR_T1.position.set(x, 0.38, 1.65);
-        chickR_T1.rotation.y = Math.PI; // Menghadap lorong
-        scene3D.add(chickR_T1);
-        chickensList.push(chickR_T1);
-
-        // B. Tingkat 2 (Atas) - Kanan
-        const cageR_T2 = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.65, 1.2), cageMat);
-        cageR_T2.position.set(x, 1.35, 2.1);
-        cageR_T2.castShadow = true;
-        scene3D.add(cageR_T2);
-
-        const troughR_T2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.28), troughMat);
-        troughR_T2.position.set(x, 1.28, 1.35);
-        scene3D.add(troughR_T2);
-
-        const chickR_T2 = createStylizedChicken();
-        chickR_T2.position.set(x, 1.28, 1.65);
-        chickR_T2.rotation.y = Math.PI; // Menghadap lorong
-        scene3D.add(chickR_T2);
-        chickensList.push(chickR_T2);
+        // Kandang Tingkat 2 kanan
+        const cR2 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 1.4), cageMat);
+        cR2.position.set(x, 1.35, 2.1);
+        cR2.castShadow = true;
+        scene3D.add(cR2);
+        // Talang kuning T2 kanan
+        const tR2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
+        tR2.position.set(x, 1.25, 1.32);
+        scene3D.add(tR2);
+        // Ayam T2 kanan
+        const ckR2 = createStylizedChicken();
+        ckR2.position.set(x, 1.25, 1.65);
+        ckR2.rotation.y = Math.PI;
+        scene3D.add(ckR2);
+        chickensList.push(ckR2);
     }
 
-    // E. Rel Baja Suspensi Kereta Pakan
-    const railMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
-    const rail1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 16), railMat);
+    // G. Rel Suspensi Kereta Pakan (2 rel paralel di Y=2.6, Z=±0.4)
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, metalness: 0.92, roughness: 0.15 });
+    const rail1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 19), railMat);
     rail1.rotation.z = Math.PI / 2;
-    rail1.position.set(0, 2.4, -0.4);
+    rail1.position.set(0, 2.6, -0.42);
     scene3D.add(rail1);
-
-    const rail2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 16), railMat);
+    const rail2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 19), railMat);
     rail2.rotation.z = Math.PI / 2;
-    rail2.position.set(0, 2.4, 0.4);
+    rail2.position.set(0, 2.6, 0.42);
     scene3D.add(rail2);
 
-    // Stasiun Batas A (Pangkal Rel + Motor Katrol L298N)
-    const stationMatA = new THREE.MeshStandardMaterial({ color: 0x10b981 });
-    const stationA = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 2.5), stationMatA);
-    stationA.position.set(-7.5, 1.25, 0);
-    scene3D.add(stationA);
+    // Penggantung rel ke kuda-kuda per 3m
+    for (const cx of colPositions) {
+        const hanger = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.6, 0.84), steelMat);
+        hanger.position.set(cx, 2.9, 0);
+        scene3D.add(hanger);
+    }
 
-    // Motor Gearbox Kuning di Titik A (Motor DC dari kit mobil robot)
-    const yellowMotor = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 0.25, 0.4),
-        new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.3, roughness: 0.4 })
-    );
-    yellowMotor.position.set(-7.5, 2.4, 0);
-    scene3D.add(yellowMotor);
+    // Stasiun Motor A (Titik awal, warna hijau)
+    const stA = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.6),
+        new THREE.MeshStandardMaterial({ color: 0x10b981 }));
+    stA.position.set(-8.5, 1.3, 0);
+    scene3D.add(stA);
+    // Motor gearbox kuning
+    const motorBox = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.38),
+        new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.3 }));
+    motorBox.position.set(-8.5, 2.6, 0);
+    scene3D.add(motorBox);
 
-    // Stasiun Batas B (Ujung Rel + Pulley Katrol Pembalik)
-    const stationMatB = new THREE.MeshStandardMaterial({ color: 0xef4444 });
-    const stationB = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 2.5), stationMatB);
-    stationB.position.set(7.5, 1.25, 0);
-    scene3D.add(stationB);
+    // Stasiun Pulley B (Titik ujung, warna merah)
+    const stB = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.6),
+        new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+    stB.position.set(8.5, 1.3, 0);
+    scene3D.add(stB);
+    const pulley = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.1, 16), steelMat);
+    pulley.position.set(8.5, 2.6, 0);
+    scene3D.add(pulley);
 
-    // Pulley Katrol Putar di Titik B
-    const returnPulley = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.15, 0.15, 0.1, 16),
-        steelMat
-    );
-    returnPulley.position.set(7.5, 2.4, 0);
-    scene3D.add(returnPulley);
-
-    // F. Kereta Pakan 3D: TROLLEY TANGGA VERTIKAL DENGAN CORONG BIRU BERTINGKAT (Sesuai Foto RansumKu)
+    // H. Kereta Pakan (Travelling Hopper) — Tangga Vertikal + Corong Biru
     feederCart3D = new THREE.Group();
 
-    const ladderMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.3 }); // Rangka tangga baja abu-abu
-    const blueHopperMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.2, roughness: 0.4 }); // Corong biru persis di foto
-    const feedInsideMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.9 }); // Pakan kuning di dalam corong
+    const ladderMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.7, roughness: 0.3 });
+    const blueHopperMat = new THREE.MeshStandardMaterial({ color: 0x0369a1, metalness: 0.15, roughness: 0.35 });
+    const feedInsideMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.95 });
 
-    // Fungsi Pembantu: Membuat 1 Unit Corong Pakan Biru Kotak Piramida Terbalik
     function createBlueHopperUnit() {
-        const hGroup = new THREE.Group();
-        // 1. Kotak bibir atas corong
-        const boxTop = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.2, 0.38), blueHopperMat);
-        boxTop.position.y = 0.1;
-        hGroup.add(boxTop);
-
-        // 2. Permukaan pakan kuning di dalam
-        const feedSurface = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.32), feedInsideMat);
-        feedSurface.rotation.x = -Math.PI / 2;
-        feedSurface.position.y = 0.18;
-        hGroup.add(feedSurface);
-
-        // 3. Badan corong mengerucut ke bawah (Inverted Truncated Pyramid)
-        const pyramidGeo = new THREE.CylinderGeometry(0.32, 0.12, 0.32, 4);
-        const pyramid = new THREE.Mesh(pyramidGeo, blueHopperMat);
-        pyramid.position.y = -0.15;
-        pyramid.rotation.y = Math.PI / 4;
-        hGroup.add(pyramid);
-
-        // 4. Cerat bibir curahan bawah ke talang kuning
-        const snout = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.16), blueHopperMat);
-        snout.position.y = -0.34;
-        hGroup.add(snout);
-
-        return hGroup;
+        const hg = new THREE.Group();
+        // Bibir atas kotak
+        const topBox = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.18, 0.36), blueHopperMat);
+        topBox.position.y = 0.09;
+        hg.add(topBox);
+        // Permukaan pakan dalam
+        const feed = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.30), feedInsideMat);
+        feed.rotation.x = -Math.PI / 2;
+        feed.position.y = 0.17;
+        hg.add(feed);
+        // Badan mengkerucut (piramid terpancung terbalik)
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.10, 0.30, 4), blueHopperMat);
+        body.position.y = -0.14;
+        body.rotation.y = Math.PI / 4;
+        hg.add(body);
+        // Cerat bawah
+        const spout = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.09, 0.14), blueHopperMat);
+        spout.position.y = -0.32;
+        hg.add(spout);
+        return hg;
     }
 
-    // --- RANGKA TANGGA VERTIKAL SISI KIRI (Menempel di Depan Talang Pakan Kiri) ---
-    // Dua Tiang Vertikal Tangga Kiri
-    const poleL1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.05), ladderMat);
-    poleL1.position.set(-0.25, 1.1, -1.35);
-    feederCart3D.add(poleL1);
-
-    const poleL2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.05), ladderMat);
-    poleL2.position.set(0.25, 1.1, -1.35);
-    feederCart3D.add(poleL2);
-
-    // Palang-palang anak tangga kiri
-    for (let py = 0.2; py <= 2.1; py += 0.45) {
-        const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5), ladderMat);
+    // Tangga Kiri (Z = -1.32)
+    const pL1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.04), ladderMat);
+    pL1.position.set(-0.22, 1.1, -1.32);
+    feederCart3D.add(pL1);
+    const pL2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.04), ladderMat);
+    pL2.position.set(0.22, 1.1, -1.32);
+    feederCart3D.add(pL2);
+    for (let ry = 0.25; ry <= 2.05; ry += 0.44) {
+        const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.44), ladderMat);
         rung.rotation.z = Math.PI / 2;
-        rung.position.set(0, py, -1.35);
+        rung.position.set(0, ry, -1.32);
         feederCart3D.add(rung);
     }
+    // Corong Kiri T2 (atas)
+    const hL2 = createBlueHopperUnit();
+    hL2.position.set(0, 1.58, -1.32);
+    feederCart3D.add(hL2);
+    // Corong Kiri T1 (bawah)
+    const hL1 = createBlueHopperUnit();
+    hL1.position.set(0, 0.70, -1.32);
+    feederCart3D.add(hL1);
 
-    // Corong Biru Tingkat 2 (Atas) - Sisi Kiri (Tepat di atas talang kuning atas)
-    const hopperL_T2 = createBlueHopperUnit();
-    hopperL_T2.position.set(0, 1.6, -1.35);
-    feederCart3D.add(hopperL_T2);
-
-    // Corong Biru Tingkat 1 (Bawah) - Sisi Kiri (Tepat di atas talang kuning bawah)
-    const hopperL_T1 = createBlueHopperUnit();
-    hopperL_T1.position.set(0, 0.72, -1.35);
-    feederCart3D.add(hopperL_T1);
-
-    // --- RANGKA TANGGA VERTIKAL SISI KANAN (Menempel di Depan Talang Pakan Kanan) ---
-    // Dua Tiang Vertikal Tangga Kanan
-    const poleR1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.05), ladderMat);
-    poleR1.position.set(-0.25, 1.1, 1.35);
-    feederCart3D.add(poleR1);
-
-    const poleR2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.05), ladderMat);
-    poleR2.position.set(0.25, 1.1, 1.35);
-    feederCart3D.add(poleR2);
-
-    // Palang-palang anak tangga kanan
-    for (let py = 0.2; py <= 2.1; py += 0.45) {
-        const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5), ladderMat);
+    // Tangga Kanan (Z = +1.32)
+    const pR1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.04), ladderMat);
+    pR1.position.set(-0.22, 1.1, 1.32);
+    feederCart3D.add(pR1);
+    const pR2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.04), ladderMat);
+    pR2.position.set(0.22, 1.1, 1.32);
+    feederCart3D.add(pR2);
+    for (let ry = 0.25; ry <= 2.05; ry += 0.44) {
+        const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.44), ladderMat);
         rung.rotation.z = Math.PI / 2;
-        rung.position.set(0, py, 1.35);
+        rung.position.set(0, ry, 1.32);
         feederCart3D.add(rung);
     }
+    // Corong Kanan T2 (atas)
+    const hR2 = createBlueHopperUnit();
+    hR2.position.set(0, 1.58, 1.32);
+    feederCart3D.add(hR2);
+    // Corong Kanan T1 (bawah)
+    const hR1 = createBlueHopperUnit();
+    hR1.position.set(0, 0.70, 1.32);
+    feederCart3D.add(hR1);
 
-    // Corong Biru Tingkat 2 (Atas) - Sisi Kanan (Tepat di atas talang kuning atas)
-    const hopperR_T2 = createBlueHopperUnit();
-    hopperR_T2.position.set(0, 1.6, 1.35);
-    feederCart3D.add(hopperR_T2);
+    // Gantry balok atas penghubung (jembatan rel)
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 2.64), ladderMat);
+    bridge.position.set(0, 2.25, 0);
+    feederCart3D.add(bridge);
 
-    // Corong Biru Tingkat 1 (Bawah) - Sisi Kanan (Tepat di atas talang kuning bawah)
-    const hopperR_T1 = createBlueHopperUnit();
-    hopperR_T1.position.set(0, 0.72, 1.35);
-    feederCart3D.add(hopperR_T1);
+    // Hanger gantung ke rel
+    const cartHanger = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.32, 0.84), ladderMat);
+    cartHanger.position.set(0, 2.55, 0);
+    feederCart3D.add(cartHanger);
 
-    // --- JEMBATAN GANTRY ATAS PENGHUBUNG TANGGA KIRI & KANAN ---
-    const bridgeBeam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 2.75), ladderMat);
-    bridgeBeam.position.set(0, 2.25, 0);
-    feederCart3D.add(bridgeBeam);
-
-    // Rangka Suspensi Roda Rel Tengah
-    const hanger = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.35, 0.8), ladderMat);
-    hanger.position.set(0, 2.4, 0);
-    feederCart3D.add(hanger);
-
-    // Roda Kereta di Rel Suspensi
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7 });
-    const wL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.12), wheelMat);
-    wL.position.set(0, 2.4, -0.4);
+    // Roda di rel
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.75 });
+    const wL = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.11), wheelMat);
+    wL.position.set(0, 2.58, -0.42);
     wL.rotation.x = Math.PI / 2;
     feederCart3D.add(wL);
-
-    const wR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.12), wheelMat);
-    wR.position.set(0, 2.4, 0.4);
+    const wR = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.11), wheelMat);
+    wR.position.set(0, 2.58, 0.42);
     wR.rotation.x = Math.PI / 2;
     feederCart3D.add(wR);
 
-    // Posisi awal di Titik A (Pangkal)
     feederCart3D.position.x = feederPositionX;
     scene3D.add(feederCart3D);
 
-    // Tali Kawat Sling Penarik (Cable Winch Line)
-    const cableMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
-    const cableGeoA = new THREE.CylinderGeometry(0.015, 0.015, 1);
-    cableMeshA = new THREE.Mesh(cableGeoA, cableMat);
+    // Kabel Sling Penarik
+    const cableMat = new THREE.MeshBasicMaterial({ color: 0x9ca3af });
+    cableMeshA = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 1), cableMat);
     cableMeshA.rotation.z = Math.PI / 2;
     scene3D.add(cableMeshA);
-
-    const cableGeoB = new THREE.CylinderGeometry(0.015, 0.015, 1);
-    cableMeshB = new THREE.Mesh(cableGeoB, cableMat);
+    cableMeshB = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 1), cableMat);
     cableMeshB.rotation.z = Math.PI / 2;
     scene3D.add(cableMeshB);
-
     updateCableLines();
 
-    // G. Kipas Blower Sirkulasi 3D DI ATAS (Dipasang Berseri Berjarak per 4.5 Meter di Plafon/Puncak Atap)
+    // I. Kipas Blower — Gantung di Plafon Berseri per ~4.5m di Sepanjang Lorong
     fanBladesList = [];
 
-    function createCeilingFanUnit(xPos, yPos, zPos, isExhaustWall = false) {
-        const fanGroup = new THREE.Group();
-        fanGroup.position.set(xPos, yPos, zPos);
-        fanGroup.rotation.y = -Math.PI / 2;
+    function createCeilingFanUnit(xPos, yPos, zPos, isExhaust = false) {
+        const fg = new THREE.Group();
+        fg.position.set(xPos, yPos, zPos);
+        // Hadapkan kipas menatap sepanjang lorong (sumbu X)
+        fg.rotation.y = Math.PI / 2;
 
-        const radius = isExhaustWall ? 0.85 : 0.65;
-        const fanFrame = new THREE.Mesh(
-            new THREE.TorusGeometry(radius, 0.08, 16, 32),
-            new THREE.MeshStandardMaterial({ color: isExhaustWall ? 0x1e293b : 0x334155, metalness: 0.7 })
+        const R = isExhaust ? 0.42 : 0.38;
+
+        // Rangka lingkar luar
+        const frame = new THREE.Mesh(
+            new THREE.TorusGeometry(R, 0.045, 12, 28),
+            new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.25 })
         );
-        fanGroup.add(fanFrame);
+        fg.add(frame);
 
-        // Rangka gantungan ke plafon atap
-        if (!isExhaustWall) {
-            const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7), new THREE.MeshStandardMaterial({ color: 0x64748b }));
-            strut.position.set(0, 0.7, 0);
-            fanGroup.add(strut);
+        // Batang strut gantung ke balok tarik kuda-kuda (Y = 3.60)
+        const strutLen = 3.60 - (yPos + R);
+        if (strutLen > 0.05) {
+            const strut = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.018, 0.018, strutLen),
+                steelMat
+            );
+            strut.position.set(0, R + strutLen / 2, 0);
+            fg.add(strut);
         }
 
+        // Baling-baling (4 bilah, aerodinamis biru muda)
         const blades = new THREE.Group();
-        const bladeGeo = new THREE.BoxGeometry(0.16, radius * 0.88, 0.02);
-        const bladeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
-        for (let i = 0; i < 4; i++) {
-            const blade = new THREE.Mesh(bladeGeo, bladeMat);
-            blade.rotation.z = (Math.PI / 2) * i;
-            blade.position.y = (radius * 0.38) * Math.sin((Math.PI / 2) * i);
-            blade.position.x = (radius * 0.38) * Math.cos((Math.PI / 2) * i);
+        const bladeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.2, roughness: 0.4 });
+        for (let bi = 0; bi < 4; bi++) {
+            const blade = new THREE.Mesh(new THREE.BoxGeometry(0.10, R * 0.85, 0.016), bladeMat);
+            const angle = (Math.PI / 2) * bi;
+            blade.rotation.z = angle;
+            blade.position.set(
+                Math.cos(angle + Math.PI / 4) * R * 0.4,
+                Math.sin(angle + Math.PI / 4) * R * 0.4,
+                0
+            );
             blades.add(blade);
         }
-        fanGroup.add(blades);
-        scene3D.add(fanGroup);
+        fg.add(blades);
+
+        scene3D.add(fg);
         fanBladesList.push(blades);
-        return fanGroup;
+        return fg;
     }
 
-    // Pasang kipas berseri di plafon atas berjarak beberapa meter (Ketinggian 5.2m & 6.0m)
-    createCeilingFanUnit(-4.5, 5.2, 0); // Kipas Sirkulasi Atas Zona 1
-    createCeilingFanUnit(0.0, 5.2, 0);  // Kipas Sirkulasi Atas Zona 2 (Tengah)
-    createCeilingFanUnit(4.5, 5.2, 0);  // Kipas Sirkulasi Atas Zona 3
-    createCeilingFanUnit(9.4, 6.0, 0, true); // Kipas Exhaust Dinding Belakang Atas (Gable Apex di 6.0m)
+    // 3 unit kipas sirkulasi plafon berjarak 4.5m sepanjang lorong (ketinggian Y = 3.0m)
+    createCeilingFanUnit(-4.5, 3.0, 0);       // Zona 1 (Pangkal)
+    createCeilingFanUnit( 0.0, 3.0, 0);       // Zona 2 (Tengah)
+    createCeilingFanUnit( 4.5, 3.0, 0);       // Zona 3 (Ujung)
+    createCeilingFanUnit( 9.0, 3.1, 0, true); // Kipas Blower Ujung Portal (Exhaust)
 
-    // H. Partikel Air Sprinkler MURNI DI LUAR ATAP TINGGI (Ketinggian 7.4m - 5.4m di Luar Seng)
-    const particleCount = 280;
+    // J. Partikel Air Sprinkler MURNI DI LUAR ATAP (Puncak Y=4.88 meluncur ke Eaves Y=3.60)
+    const particleCount = 300;
     const waterGeo = new THREE.BufferGeometry();
-    const waterPositions = new Float32Array(particleCount * 3);
+    const waterPos = new Float32Array(particleCount * 3);
     for (let k = 0; k < particleCount; k++) {
         const i = k * 3;
-        const isLeft = k % 2 === 0;
-        const x = (Math.random() - 0.5) * 18;
-        // z mengalir di lereng atap luar: dari z = ±0.25 ke z = ±3.85
+        const isLeft = (k % 2 === 0);
         const progress = Math.random();
-        const z = isLeft ? (-0.25 - progress * 3.6) : (0.25 + progress * 3.6);
-        const y = 7.42 - (2.0 / 3.8) * Math.abs(z); // Tepat di atas permukaan luar seng tinggi!
+        const absZ = 0.15 + progress * 3.5; // z dari 0.15 s/d 3.65 (di atas seng)
+        const z = isLeft ? -absZ : absZ;
+        const y = 4.88 - (1.25 / 3.7) * absZ + 0.05; // Selalu 5cm di atas permukaan seng luar!
 
-        waterPositions[i] = x;
-        waterPositions[i + 1] = y;
-        waterPositions[i + 2] = z;
+        waterPos[i]     = (Math.random() - 0.5) * 19.5; // sepanjang atap kandang
+        waterPos[i + 1] = y;
+        waterPos[i + 2] = z;
     }
-    waterGeo.setAttribute('position', new THREE.BufferAttribute(waterPositions, 3));
-    const waterMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.17, transparent: true, opacity: 0.9 });
+    waterGeo.setAttribute('position', new THREE.BufferAttribute(waterPos, 3));
+    const waterMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.14, transparent: true, opacity: 0.9 });
     roofWaterParticles3D = new THREE.Points(waterGeo, waterMat);
     roofWaterParticles3D.visible = false;
     scene3D.add(roofWaterParticles3D);
 
-    // I. Partikel Butiran Ransum Pakan (4 Titik Curahan Langsung dari Cerat Bawah Corong Biru)
+    // K. Partikel Curahan Pakan dari Corong Biru ke Talang Kuning
     function createFeedEmitter(yBase, zBase) {
-        const pCount = 25;
+        const pCount = 22;
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(pCount * 3);
         for (let i = 0; i < pCount * 3; i += 3) {
-            pos[i] = (Math.random() - 0.5) * 0.12;
-            pos[i + 1] = yBase - Math.random() * 0.16;
-            pos[i + 2] = zBase + (Math.random() - 0.5) * 0.1;
+            pos[i]     = (Math.random() - 0.5) * 0.10;
+            pos[i + 1] = yBase - Math.random() * 0.14;
+            pos[i + 2] = zBase + (Math.random() - 0.5) * 0.08;
         }
         geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-        const mat = new THREE.PointsMaterial({ color: 0xfbbf24, size: 0.07 });
+        const mat = new THREE.PointsMaterial({ color: 0xfbbf24, size: 0.065 });
         const p = new THREE.Points(geo, mat);
         p.visible = false;
         return p;
     }
 
-    feedP_L_T2 = createFeedEmitter(1.3, -1.35); // Curah ke Talang Kiri Tingkat 2 (Atas)
-    feedP_L_T1 = createFeedEmitter(0.42, -1.35); // Curah ke Talang Kiri Tingkat 1 (Bawah)
-    feedP_R_T2 = createFeedEmitter(1.3, 1.35);  // Curah ke Talang Kanan Tingkat 2 (Atas)
-    feedP_R_T1 = createFeedEmitter(0.42, 1.35);  // Curah ke Talang Kanan Tingkat 1 (Bawah)
+    feedP_L_T2 = createFeedEmitter(1.28, -1.32);
+    feedP_L_T1 = createFeedEmitter(0.38, -1.32);
+    feedP_R_T2 = createFeedEmitter(1.28,  1.32);
+    feedP_R_T1 = createFeedEmitter(0.38,  1.32);
 
     feederCart3D.add(feedP_L_T2);
     feederCart3D.add(feedP_L_T1);
@@ -789,7 +824,7 @@ function animateThreeJS() {
         }
     }
 
-    // 4. Animasi Percikan Air Sprinkler 100% DI LUAR ATAP SENG TINGGI (7.4m - 5.4m)
+    // 4. Animasi Percikan Air Sprinkler 100% DI LUAR ATAP (Puncak Y=4.88, Lereng turun ke Eaves Y=3.60 di Z=±3.7)
     if (isSprinklerActive3D && roofWaterParticles3D) {
         roofWaterParticles3D.visible = true;
         const pos = roofWaterParticles3D.geometry.attributes.position.array;
@@ -797,20 +832,20 @@ function animateThreeJS() {
             const i = k * 3;
             const isLeft = pos[i + 2] < 0;
             if (isLeft) {
-                pos[i + 2] -= 0.055; // Mengalir turun di lereng kiri LUAR
-                if (pos[i + 2] < -3.85) {
-                    pos[i + 2] = -0.25; // Reset kembali ke puncak nok bubungan luar
-                    pos[i] = (Math.random() - 0.5) * 18;
+                pos[i + 2] -= 0.045; // Mengalir turun di lereng kiri seng luar
+                if (pos[i + 2] < -3.65) {
+                    pos[i + 2] = -0.15; // Reset ke dekat puncak nok luar
+                    pos[i] = (Math.random() - 0.5) * 19.5;
                 }
             } else {
-                pos[i + 2] += 0.055; // Mengalir turun di lereng kanan LUAR
-                if (pos[i + 2] > 3.85) {
-                    pos[i + 2] = 0.25; // Reset kembali ke puncak nok bubungan luar
-                    pos[i] = (Math.random() - 0.5) * 18;
+                pos[i + 2] += 0.045; // Mengalir turun di lereng kanan seng luar
+                if (pos[i + 2] > 3.65) {
+                    pos[i + 2] = 0.15; // Reset ke dekat puncak nok luar
+                    pos[i] = (Math.random() - 0.5) * 19.5;
                 }
             }
-            // Ketinggian Y selalu berada tepat di atas seng luar atap tinggi (7.42m - 5.4m)
-            pos[i + 1] = 7.42 - (2.0 / 3.8) * Math.abs(pos[i + 2]);
+            // Y presisi 5cm di atas permukaan seng galvalum luar
+            pos[i + 1] = 4.88 - (1.25 / 3.7) * Math.abs(pos[i + 2]) + 0.05;
         }
         roofWaterParticles3D.geometry.attributes.position.needsUpdate = true;
     } else if (roofWaterParticles3D) {
@@ -840,13 +875,13 @@ function onWindowResize3D() {
 function setKamera3D(tipe) {
     if (!camera3D || !controls3D) return;
     if (tipe === 'perspektif') {
-        camera3D.position.set(16, 11, 16);
-        controls3D.target.set(0, 2.8, 0);
+        camera3D.position.set(13, 6.5, 10);
+        controls3D.target.set(0, 1.8, 0);
     } else if (tipe === 'lorong') {
-        camera3D.position.set(feederPositionX - 3.2, 1.7, 0);
-        controls3D.target.set(feederPositionX + 4, 1.4, 0);
+        camera3D.position.set(feederPositionX - 2.8, 1.6, 0);
+        controls3D.target.set(feederPositionX + 4.5, 1.4, 0);
     } else if (tipe === 'atas') {
-        camera3D.position.set(0, 26, 0.01);
+        camera3D.position.set(0, 18, 0.01);
         controls3D.target.set(0, 0, 0);
     }
     controls3D.update();
