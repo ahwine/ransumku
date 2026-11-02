@@ -311,18 +311,18 @@ function buildKandang3DScene() {
 
     // D. Rak Kandang Baterai Ayam Petelur 2 TINGKAT (Sisi Kiri & Sisi Kanan Lorong)
     const cageMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.5, roughness: 0.5 });
-    const troughMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 }); // Talang pakan PVC oranye-kuning
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7 });  // Rangka siku besi baterai
+    const troughMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.35 }); // Talang pakan PVC KUNING persis sesuai foto
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x78350f, metalness: 0.6 });  // Rangka besi cokelat seperti di foto
 
     chickensList = [];
 
     for (let x = -8; x <= 8; x += 2.0) {
         // --- 1. SISI KIRI LORONG (2 TINGKAT) ---
-        // Tiang Rangka Baterai Kiri
-        const legL1 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8), frameMat);
+        // Tiang Rangka Baterai Kiri (Cokelat)
+        const legL1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.05), frameMat);
         legL1.position.set(x - 0.8, 0.9, -1.4);
         scene3D.add(legL1);
-        const legL2 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8), frameMat);
+        const legL2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.05), frameMat);
         legL2.position.set(x + 0.8, 0.9, -1.4);
         scene3D.add(legL2);
 
@@ -332,7 +332,7 @@ function buildKandang3DScene() {
         cageL_T1.castShadow = true;
         scene3D.add(cageL_T1);
 
-        const troughL_T1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.32), troughMat);
+        const troughL_T1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.28), troughMat);
         troughL_T1.position.set(x, 0.38, -1.35);
         scene3D.add(troughL_T1);
 
@@ -348,7 +348,7 @@ function buildKandang3DScene() {
         cageL_T2.castShadow = true;
         scene3D.add(cageL_T2);
 
-        const troughL_T2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.32), troughMat);
+        const troughL_T2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.28), troughMat);
         troughL_T2.position.set(x, 1.28, -1.35);
         scene3D.add(troughL_T2);
 
@@ -359,11 +359,11 @@ function buildKandang3DScene() {
         chickensList.push(chickL_T2);
 
         // --- 2. SISI KANAN LORONG (2 TINGKAT) ---
-        // Tiang Rangka Baterai Kanan
-        const legR1 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8), frameMat);
+        // Tiang Rangka Baterai Kanan (Cokelat)
+        const legR1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.05), frameMat);
         legR1.position.set(x - 0.8, 0.9, 1.4);
         scene3D.add(legR1);
-        const legR2 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8), frameMat);
+        const legR2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.05), frameMat);
         legR2.position.set(x + 0.8, 0.9, 1.4);
         scene3D.add(legR2);
 
@@ -373,7 +373,7 @@ function buildKandang3DScene() {
         cageR_T1.castShadow = true;
         scene3D.add(cageR_T1);
 
-        const troughR_T1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.32), troughMat);
+        const troughR_T1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.28), troughMat);
         troughR_T1.position.set(x, 0.38, 1.35);
         scene3D.add(troughR_T1);
 
@@ -389,7 +389,7 @@ function buildKandang3DScene() {
         cageR_T2.castShadow = true;
         scene3D.add(cageR_T2);
 
-        const troughR_T2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.32), troughMat);
+        const troughR_T2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.28), troughMat);
         troughR_T2.position.set(x, 1.28, 1.35);
         scene3D.add(troughR_T2);
 
@@ -440,77 +440,116 @@ function buildKandang3DScene() {
     returnPulley.position.set(7.5, 2.4, 0);
     scene3D.add(returnPulley);
 
-    // F. Kereta Pakan 3D (Travelling Hopper Cart - 2 Corong Bertingkat Kiri & Kanan)
+    // F. Kereta Pakan 3D: TROLLEY TANGGA VERTIKAL DENGAN CORONG BIRU BERTINGKAT (Sesuai Foto RansumKu)
     feederCart3D = new THREE.Group();
 
-    // Corong Penampung Pakan (Hopper Biru - Inverted Truncated Pyramid)
-    const hopperGeo = new THREE.CylinderGeometry(0.7, 0.32, 0.95, 4);
-    const hopperMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.4, roughness: 0.3 });
-    const hopper = new THREE.Mesh(hopperGeo, hopperMat);
-    hopper.position.y = 1.9;
-    hopper.rotation.y = Math.PI / 4;
-    feederCart3D.add(hopper);
+    const ladderMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.3 }); // Rangka tangga baja abu-abu
+    const blueHopperMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.2, roughness: 0.4 }); // Corong biru persis di foto
+    const feedInsideMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.9 }); // Pakan kuning di dalam corong
 
-    // Tutup / Corong Atas Pakan Kuning
-    const feedTopGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.08, 4);
-    const feedTopMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.9 });
-    const feedTop = new THREE.Mesh(feedTopGeo, feedTopMat);
-    feedTop.position.y = 2.38;
-    feedTop.rotation.y = Math.PI / 4;
-    feederCart3D.add(feedTop);
+    // Fungsi Pembantu: Membuat 1 Unit Corong Pakan Biru Kotak Piramida Terbalik
+    function createBlueHopperUnit() {
+        const hGroup = new THREE.Group();
+        // 1. Kotak bibir atas corong
+        const boxTop = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.2, 0.38), blueHopperMat);
+        boxTop.position.y = 0.1;
+        hGroup.add(boxTop);
 
-    // Pipa Manifold Distribusi Pakan 2 Tingkat (Bahan Pipa Hitam/Baja)
-    const chuteMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.6 });
-    
-    // --- SISI KIRI (2 TINGKAT) ---
-    // 1. Cerat Kiri Tingkat 2 (Atas - mengarah ke talang atas y=1.28, z=-1.35)
-    const chuteL_T2 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.55), chuteMat);
-    chuteL_T2.position.set(0, 1.48, -0.65);
-    chuteL_T2.rotation.x = Math.PI / 4;
-    feederCart3D.add(chuteL_T2);
+        // 2. Permukaan pakan kuning di dalam
+        const feedSurface = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.32), feedInsideMat);
+        feedSurface.rotation.x = -Math.PI / 2;
+        feedSurface.position.y = 0.18;
+        hGroup.add(feedSurface);
 
-    // 2. Cerat Kiri Tingkat 1 (Bawah - pipa vertikal panjang turun ke talang bawah y=0.38, z=-1.35)
-    const pipeL_Vert = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.15), chuteMat);
-    pipeL_Vert.position.set(0, 0.95, -0.9);
-    feederCart3D.add(pipeL_Vert);
+        // 3. Badan corong mengerucut ke bawah (Inverted Truncated Pyramid)
+        const pyramidGeo = new THREE.CylinderGeometry(0.32, 0.12, 0.32, 4);
+        const pyramid = new THREE.Mesh(pyramidGeo, blueHopperMat);
+        pyramid.position.y = -0.15;
+        pyramid.rotation.y = Math.PI / 4;
+        hGroup.add(pyramid);
 
-    const chuteL_T1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.35), chuteMat);
-    chuteL_T1.position.set(0, 0.45, -1.05);
-    chuteL_T1.rotation.x = Math.PI / 5;
-    feederCart3D.add(chuteL_T1);
+        // 4. Cerat bibir curahan bawah ke talang kuning
+        const snout = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.16), blueHopperMat);
+        snout.position.y = -0.34;
+        hGroup.add(snout);
 
-    // --- SISI KANAN (2 TINGKAT) ---
-    // 1. Cerat Kanan Tingkat 2 (Atas - mengarah ke talang atas y=1.28, z=1.35)
-    const chuteR_T2 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.55), chuteMat);
-    chuteR_T2.position.set(0, 1.48, 0.65);
-    chuteR_T2.rotation.x = -Math.PI / 4;
-    feederCart3D.add(chuteR_T2);
+        return hGroup;
+    }
 
-    // 2. Cerat Kanan Tingkat 1 (Bawah - pipa vertikal panjang turun ke talang bawah y=0.38, z=1.35)
-    const pipeR_Vert = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.15), chuteMat);
-    pipeR_Vert.position.set(0, 0.95, 0.9);
-    feederCart3D.add(pipeR_Vert);
+    // --- RANGKA TANGGA VERTIKAL SISI KIRI (Menempel di Depan Talang Pakan Kiri) ---
+    // Dua Tiang Vertikal Tangga Kiri
+    const poleL1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.05), ladderMat);
+    poleL1.position.set(-0.25, 1.1, -1.35);
+    feederCart3D.add(poleL1);
 
-    const chuteR_T1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.35), chuteMat);
-    chuteR_T1.position.set(0, 0.45, 1.05);
-    chuteR_T1.rotation.x = -Math.PI / 5;
-    feederCart3D.add(chuteR_T1);
+    const poleL2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.05), ladderMat);
+    poleL2.position.set(0.25, 1.1, -1.35);
+    feederCart3D.add(poleL2);
 
-    // Rangka Gantungan Roda Suspensi Rel
-    const hangerGeo = new THREE.BoxGeometry(0.3, 0.45, 0.9);
-    const hangerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
-    const hanger = new THREE.Mesh(hangerGeo, hangerMat);
-    hanger.position.y = 2.45;
+    // Palang-palang anak tangga kiri
+    for (let py = 0.2; py <= 2.1; py += 0.45) {
+        const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5), ladderMat);
+        rung.rotation.z = Math.PI / 2;
+        rung.position.set(0, py, -1.35);
+        feederCart3D.add(rung);
+    }
+
+    // Corong Biru Tingkat 2 (Atas) - Sisi Kiri (Tepat di atas talang kuning atas)
+    const hopperL_T2 = createBlueHopperUnit();
+    hopperL_T2.position.set(0, 1.6, -1.35);
+    feederCart3D.add(hopperL_T2);
+
+    // Corong Biru Tingkat 1 (Bawah) - Sisi Kiri (Tepat di atas talang kuning bawah)
+    const hopperL_T1 = createBlueHopperUnit();
+    hopperL_T1.position.set(0, 0.72, -1.35);
+    feederCart3D.add(hopperL_T1);
+
+    // --- RANGKA TANGGA VERTIKAL SISI KANAN (Menempel di Depan Talang Pakan Kanan) ---
+    // Dua Tiang Vertikal Tangga Kanan
+    const poleR1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.05), ladderMat);
+    poleR1.position.set(-0.25, 1.1, 1.35);
+    feederCart3D.add(poleR1);
+
+    const poleR2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.05), ladderMat);
+    poleR2.position.set(0.25, 1.1, 1.35);
+    feederCart3D.add(poleR2);
+
+    // Palang-palang anak tangga kanan
+    for (let py = 0.2; py <= 2.1; py += 0.45) {
+        const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5), ladderMat);
+        rung.rotation.z = Math.PI / 2;
+        rung.position.set(0, py, 1.35);
+        feederCart3D.add(rung);
+    }
+
+    // Corong Biru Tingkat 2 (Atas) - Sisi Kanan (Tepat di atas talang kuning atas)
+    const hopperR_T2 = createBlueHopperUnit();
+    hopperR_T2.position.set(0, 1.6, 1.35);
+    feederCart3D.add(hopperR_T2);
+
+    // Corong Biru Tingkat 1 (Bawah) - Sisi Kanan (Tepat di atas talang kuning bawah)
+    const hopperR_T1 = createBlueHopperUnit();
+    hopperR_T1.position.set(0, 0.72, 1.35);
+    feederCart3D.add(hopperR_T1);
+
+    // --- JEMBATAN GANTRY ATAS PENGHUBUNG TANGGA KIRI & KANAN ---
+    const bridgeBeam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 2.75), ladderMat);
+    bridgeBeam.position.set(0, 2.25, 0);
+    feederCart3D.add(bridgeBeam);
+
+    // Rangka Suspensi Roda Rel Tengah
+    const hanger = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.35, 0.8), ladderMat);
+    hanger.position.set(0, 2.4, 0);
     feederCart3D.add(hanger);
 
-    // Roda Kereta di Rel Baja
+    // Roda Kereta di Rel Suspensi
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7 });
-    const wL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.12), wheelMat);
+    const wL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.12), wheelMat);
     wL.position.set(0, 2.4, -0.4);
     wL.rotation.x = Math.PI / 2;
     feederCart3D.add(wL);
 
-    const wR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.12), wheelMat);
+    const wR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.12), wheelMat);
     wR.position.set(0, 2.4, 0.4);
     wR.rotation.x = Math.PI / 2;
     feederCart3D.add(wR);
@@ -533,34 +572,34 @@ function buildKandang3DScene() {
 
     updateCableLines();
 
-    // G. Kipas Blower Sirkulasi 3D di Dinding Belakang (x = 9.5)
+    // G. Kipas Blower Sirkulasi 3D DI ATAS (Puncak Segitiga Dinding Atap / Gable Apex)
     const fanGroup = new THREE.Group();
-    fanGroup.position.set(9.4, 2.3, 0);
+    fanGroup.position.set(9.4, 4.3, 0); // KETINGGIAN 4.3 METER DI PUNCAK ATAP ATAS!
     fanGroup.rotation.y = -Math.PI / 2;
 
-    const fanFrame = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.1, 16, 32), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+    const fanFrame = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.09, 16, 32), new THREE.MeshStandardMaterial({ color: 0x334155 }));
     fanGroup.add(fanFrame);
 
     fanBlades3D = new THREE.Group();
-    const bladeGeo = new THREE.BoxGeometry(0.2, 0.8, 0.02);
+    const bladeGeo = new THREE.BoxGeometry(0.18, 0.75, 0.02);
     const bladeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
     for (let i = 0; i < 4; i++) {
         const blade = new THREE.Mesh(bladeGeo, bladeMat);
         blade.rotation.z = (Math.PI / 2) * i;
-        blade.position.y = 0.35 * Math.sin((Math.PI / 2) * i);
-        blade.position.x = 0.35 * Math.cos((Math.PI / 2) * i);
+        blade.position.y = 0.32 * Math.sin((Math.PI / 2) * i);
+        blade.position.x = 0.32 * Math.cos((Math.PI / 2) * i);
         fanBlades3D.add(blade);
     }
     fanGroup.add(fanBlades3D);
     scene3D.add(fanGroup);
 
-    // H. Partikel Air Sprinkler Atap (Particle System)
+    // H. Partikel Air Sprinkler Atap (Particle System di Puncak Atap Bubungan)
     const particleCount = 200;
     const waterGeo = new THREE.BufferGeometry();
     const waterPositions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
-        waterPositions[i] = (Math.random() - 0.5) * 18;     // Sepanjang bubungan atap
-        waterPositions[i + 1] = 5.3;                        // Mulai dari puncak atap
+        waterPositions[i] = (Math.random() - 0.5) * 18;     // Sepanjang bubungan atap luar
+        waterPositions[i + 1] = 5.3;                        // Mulai dari puncak atap luar
         waterPositions[i + 2] = (Math.random() - 0.5) * 0.8;
     }
     waterGeo.setAttribute('position', new THREE.BufferAttribute(waterPositions, 3));
@@ -569,15 +608,15 @@ function buildKandang3DScene() {
     roofWaterParticles3D.visible = false;
     scene3D.add(roofWaterParticles3D);
 
-    // I. Partikel Butiran Ransum Pakan (4 Titik Curahan 2 Tingkat Kiri & Kanan)
+    // I. Partikel Butiran Ransum Pakan (4 Titik Curahan Langsung dari Cerat Bawah Corong Biru)
     function createFeedEmitter(yBase, zBase) {
-        const pCount = 30;
+        const pCount = 25;
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(pCount * 3);
         for (let i = 0; i < pCount * 3; i += 3) {
             pos[i] = (Math.random() - 0.5) * 0.12;
-            pos[i + 1] = yBase - Math.random() * 0.22;
-            pos[i + 2] = zBase + (Math.random() - 0.5) * 0.12;
+            pos[i + 1] = yBase - Math.random() * 0.16;
+            pos[i + 2] = zBase + (Math.random() - 0.5) * 0.1;
         }
         geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
         const mat = new THREE.PointsMaterial({ color: 0xfbbf24, size: 0.07 });
@@ -586,10 +625,10 @@ function buildKandang3DScene() {
         return p;
     }
 
-    feedP_L_T2 = createFeedEmitter(1.35, -1.2); // Kiri Tingkat 2 (Atas)
-    feedP_L_T1 = createFeedEmitter(0.42, -1.2); // Kiri Tingkat 1 (Bawah)
-    feedP_R_T2 = createFeedEmitter(1.35, 1.2);  // Kanan Tingkat 2 (Atas)
-    feedP_R_T1 = createFeedEmitter(0.42, 1.2);  // Kanan Tingkat 1 (Bawah)
+    feedP_L_T2 = createFeedEmitter(1.3, -1.35); // Curah ke Talang Kiri Tingkat 2 (Atas)
+    feedP_L_T1 = createFeedEmitter(0.42, -1.35); // Curah ke Talang Kiri Tingkat 1 (Bawah)
+    feedP_R_T2 = createFeedEmitter(1.3, 1.35);  // Curah ke Talang Kanan Tingkat 2 (Atas)
+    feedP_R_T1 = createFeedEmitter(0.42, 1.35);  // Curah ke Talang Kanan Tingkat 1 (Bawah)
 
     feederCart3D.add(feedP_L_T2);
     feederCart3D.add(feedP_L_T1);
