@@ -84,7 +84,7 @@
 
         {{-- Tombol Kontrol Cepat Interaktif (Pojok Kanan Atas) --}}
         <div class="absolute top-3 right-3 flex items-center gap-2 z-20">
-            <button type="button" onclick="triggerSimulasiGerakPakan()" id="btn-trigger-pakan-3d" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
+            <button type="button" onclick="toggleSimulasiGerakPakan()" id="btn-trigger-pakan-3d" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer" title="Jalankan / Hentikan Kereta Pakan Otomatis">
                 <span class="material-symbols-outlined text-[16px]">play_arrow</span>
                 <span>Jalankan Kereta 3D</span>
             </button>
@@ -134,6 +134,11 @@ const FEEDER_LIMIT_B = 7.0;
 let isFanSpinning3D = false;
 let isSprinklerActive3D = false;
 let chickenBobTime = 0;
+
+// Flag simulasi mandiri (agar tidak ditimpa oleh background poller setiap 3 detik)
+let isManualSimulationHot = false;
+let isManualFeederActive = false;
+let feederPauseUntil = 0;
 
 function initThreeJSKandang() {
     const container = document.getElementById('canvas-container-3d');
@@ -1003,38 +1008,42 @@ function setFeedParticlesVisible(vis) {
 function animateThreeJS() {
     requestAnimationFrame(animateThreeJS);
 
-    // 1. Animasi Gerak Kereta Pakan (Travelling Hopper Katrol 2 Tingkat)
+    // 1. Animasi Gerak Kereta Pakan (Travelling Hopper Katrol 2 Tingkat - Auto Shuttle Loop)
     if (isFeederRunning3D && feederCart3D) {
-        feederPositionX += 0.05 * feederDirection3D;
-        feederCart3D.position.x = feederPositionX;
-        updateCableLines();
-
-        setFeedParticlesVisible(true);
-
-        // Hitung persentase lintasan lorong
-        const progress = Math.round(((feederPositionX - FEEDER_LIMIT_A) / (FEEDER_LIMIT_B - FEEDER_LIMIT_A)) * 100);
-
-        // Sampai di Titik B (Ujung Lorong)
-        if (feederDirection3D === 1 && feederPositionX >= FEEDER_LIMIT_B) {
-            feederPositionX = FEEDER_LIMIT_B;
-            feederCart3D.position.x = FEEDER_LIMIT_B;
-            isFeederRunning3D = false;
-            feederDirection3D = -1; // Sesi berikutnya siap mundur ke A
+        const nowMs = Date.now();
+        if (nowMs < feederPauseUntil) {
+            // Sedang jeda sebentar di stasiun (Pangkal A atau Ujung B)
             setFeedParticlesVisible(false);
-            updateStatusFeederText('Parkir di Ujung (Titik B 100%)');
-            resetFeederButtonUI();
-        }
-        // Sampai di Titik A (Pangkal Lorong)
-        else if (feederDirection3D === -1 && feederPositionX <= FEEDER_LIMIT_A) {
-            feederPositionX = FEEDER_LIMIT_A;
-            feederCart3D.position.x = FEEDER_LIMIT_A;
-            isFeederRunning3D = false;
-            feederDirection3D = 1; // Sesi berikutnya siap maju ke B
-            setFeedParticlesVisible(false);
-            updateStatusFeederText('Siaga di Pangkal (Titik A 0%)');
-            resetFeederButtonUI();
         } else {
-            updateStatusFeederText(`Meluncur ${feederDirection3D === 1 ? 'MAJU (A➔B)' : 'MUNDUR (B➔A)'} ${progress}%`);
+            feederPositionX += 0.05 * feederDirection3D;
+            feederCart3D.position.x = feederPositionX;
+            updateCableLines();
+
+            setFeedParticlesVisible(true);
+
+            // Hitung persentase lintasan lorong
+            const progress = Math.round(((feederPositionX - FEEDER_LIMIT_A) / (FEEDER_LIMIT_B - FEEDER_LIMIT_A)) * 100);
+
+            // Sampai di Titik B (Ujung Lorong)
+            if (feederDirection3D === 1 && feederPositionX >= FEEDER_LIMIT_B) {
+                feederPositionX = FEEDER_LIMIT_B;
+                feederCart3D.position.x = FEEDER_LIMIT_B;
+                feederDirection3D = -1; // Balik arah siap mundur ke A
+                feederPauseUntil = nowMs + 1500; // Jeda 1.5 detik di ujung B
+                setFeedParticlesVisible(false);
+                updateStatusFeederText('Sampai di Ujung B · Jeda 1.5 detik lalu balik arah...');
+            }
+            // Sampai di Titik A (Pangkal Lorong)
+            else if (feederDirection3D === -1 && feederPositionX <= FEEDER_LIMIT_A) {
+                feederPositionX = FEEDER_LIMIT_A;
+                feederCart3D.position.x = FEEDER_LIMIT_A;
+                feederDirection3D = 1; // Balik arah siap maju ke B
+                feederPauseUntil = nowMs + 1500; // Jeda 1.5 detik di pangkal A
+                setFeedParticlesVisible(false);
+                updateStatusFeederText('Sampai di Pangkal A · Jeda 1.5 detik lalu jalan lagi...');
+            } else {
+                updateStatusFeederText(`Meluncur ${feederDirection3D === 1 ? 'MAJU (A➔B)' : 'MUNDUR (B➔A)'} ${progress}%`);
+            }
         }
     } else {
         setFeedParticlesVisible(false);
@@ -1141,24 +1150,38 @@ function toggleLabelsIoT3D() {
     }
 }
 
-// Pemicu Gerak Kereta 3D Langsung dari Tombol
-function triggerSimulasiGerakPakan() {
-    isFeederRunning3D = true;
-    updateStatusFeederText(feederDirection3D === 1 ? 'Meluncur MAJU (A ➔ B)' : 'Meluncur MUNDUR (B ➔ A)');
-    
+// Pemicu Gerak Kereta 3D Langsung dari Tombol (Toggle ON/OFF)
+function toggleSimulasiGerakPakan() {
+    isManualFeederActive = !isManualFeederActive;
+    isFeederRunning3D = isManualFeederActive;
+
+    updateFeederButtonUI(isFeederRunning3D);
+
+    if (isFeederRunning3D) {
+        updateStatusFeederText(feederDirection3D === 1 ? 'Meluncur MAJU (A ➔ B)' : 'Meluncur MUNDUR (B ➔ A)');
+    } else {
+        setFeedParticlesVisible(false);
+        updateStatusFeederText('Kereta Dihentikan (Pause Manual)');
+    }
+}
+
+// Kompatibilitas jika dipanggil dari trigger lama
+window.triggerSimulasiGerakPakan = toggleSimulasiGerakPakan;
+
+function updateFeederButtonUI(isRunning) {
     const btn = document.getElementById('btn-trigger-pakan-3d');
-    if (btn) {
-        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-600 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
-        btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>Kereta Bergerak...</span>';
+    if (!btn) return;
+    if (isRunning) {
+        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
+        btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-pulse">pause_circle</span><span>Hentikan Kereta</span>';
+    } else {
+        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
+        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">play_arrow</span><span>Jalankan Kereta 3D</span>';
     }
 }
 
 function resetFeederButtonUI() {
-    const btn = document.getElementById('btn-trigger-pakan-3d');
-    if (btn) {
-        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
-        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">play_arrow</span><span>Jalankan Kereta 3D</span>';
-    }
+    updateFeederButtonUI(false);
 }
 
 function updateStatusFeederText(teks) {
@@ -1166,17 +1189,18 @@ function updateStatusFeederText(teks) {
     if (el) el.textContent = teks;
 }
 
-// Simulasi Uji Cuaca Panas (Trigger Kipas & Sprinkler 3D)
+// Simulasi Uji Cuaca Panas (Trigger Kipas & Sprinkler 3D - Mandiri dari poller sensor)
 function toggleUjiCuacaPanas3D() {
-    isFanSpinning3D = !isFanSpinning3D;
-    isSprinklerActive3D = !isSprinklerActive3D;
+    isManualSimulationHot = !isManualSimulationHot;
+    isFanSpinning3D = isManualSimulationHot;
+    isSprinklerActive3D = isManualSimulationHot;
 
     updateBadgeKipas3D(isFanSpinning3D);
     updateBadgeSprinkler3D(isSprinklerActive3D);
 
     const btn = document.getElementById('btn-cuaca-3d');
     if (btn) {
-        btn.className = isFanSpinning3D
+        btn.className = isManualSimulationHot
             ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer'
             : 'px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-amber-300 border border-slate-700 shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer';
     }
@@ -1199,26 +1223,37 @@ function updateBadgeSprinkler3D(isAktif) {
 // Sinkronisasi Status dari Luar (Misal dari Widget Kontroler Sakelar atau Telemetri IoT)
 window.syncKandang3DState = function(state) {
     if (!state) return;
-    if (state.kipas !== undefined) {
-        isFanSpinning3D = Boolean(state.kipas);
-        updateBadgeKipas3D(isFanSpinning3D);
+
+    // Hanya override kipas & sprinkler jika pengguna TIDAK sedang mengaktifkan mode simulasi cuaca panas manual
+    if (!isManualSimulationHot) {
+        if (state.kipas !== undefined) {
+            isFanSpinning3D = Boolean(state.kipas);
+            updateBadgeKipas3D(isFanSpinning3D);
+        }
+        if (state.misting !== undefined) {
+            isSprinklerActive3D = Boolean(state.misting);
+            updateBadgeSprinkler3D(isSprinklerActive3D);
+        }
     }
-    if (state.misting !== undefined) {
-        isSprinklerActive3D = Boolean(state.misting);
-        updateBadgeSprinkler3D(isSprinklerActive3D);
-    }
+
     if (state.lampu !== undefined) {
         const intensity = state.lampu ? 1.6 : 0.35;
         if (coopLight1) coopLight1.intensity = intensity;
         if (coopLight2) coopLight2.intensity = intensity;
     }
-    if (state.pakan !== undefined) {
-        if (Boolean(state.pakan) && !isFeederRunning3D) {
-            triggerSimulasiGerakPakan();
-        } else if (!Boolean(state.pakan)) {
-            isFeederRunning3D = false;
-            setFeedParticlesVisible(false);
-            resetFeederButtonUI();
+
+    // Hanya override kereta pakan jika pengguna TIDAK sedang mengaktifkan gerak simulasi manual
+    if (!isManualFeederActive) {
+        if (state.pakan !== undefined) {
+            if (Boolean(state.pakan) && !isFeederRunning3D) {
+                isFeederRunning3D = true;
+                updateStatusFeederText(feederDirection3D === 1 ? 'Meluncur MAJU (A ➔ B)' : 'Meluncur MUNDUR (B ➔ A)');
+                updateFeederButtonUI(true);
+            } else if (!Boolean(state.pakan) && isFeederRunning3D) {
+                isFeederRunning3D = false;
+                setFeedParticlesVisible(false);
+                updateFeederButtonUI(false);
+            }
         }
     }
 };
