@@ -6,15 +6,13 @@
     { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 80, "left": 100, "attrs": {} },
     { "type": "wokwi-dht22", "id": "dht22", "top": -120, "left": -80, "attrs": { "temperature": "34.5", "humidity": "72" } },
     { "type": "wokwi-ssd1306", "id": "oled", "top": -120, "left": 120, "attrs": { "height": "64", "width": "128" } },
-    { "type": "wokwi-servo", "id": "servo_pakan", "top": -120, "left": 360, "attrs": { "label": "Katup Ransum Pakan" } },
+
+    { "type": "wokwi-servo", "id": "motor_penarik_pakan", "top": -120, "left": 360, "attrs": { "label": "MOTOR PENARIK KERETA PAKAN (KATROL TALI)" } },
 
     { "type": "wokwi-relay-module", "id": "relay_kipas", "top": 120, "left": 360, "attrs": {} },
     { "type": "wokwi-relay-module", "id": "relay_sprinkler", "top": 240, "left": 360, "attrs": {} },
     { "type": "wokwi-led", "id": "led_kipas", "top": 140, "left": 530, "attrs": { "color": "cyan", "label": "Kipas Blower Sirkulasi" } },
     { "type": "wokwi-led", "id": "led_sprinkler", "top": 260, "left": 530, "attrs": { "color": "blue", "label": "Pompa Sprinkler Atap" } },
-
-    { "type": "wokwi-stepper-motor", "id": "motor_roda_kiri", "top": 80, "left": 720, "attrs": { "size": "17", "label": "Roda Kiri (Driver L298N)" } },
-    { "type": "wokwi-stepper-motor", "id": "motor_roda_kanan", "top": 240, "left": 720, "attrs": { "size": "17", "label": "Roda Kanan (Driver L298N)" } },
 
     { "type": "wokwi-pushbutton", "id": "btn_limit_pangkal", "top": 200, "left": -90, "attrs": { "color": "green", "label": "Limit Switch Pangkal (Titik A)" } },
     { "type": "wokwi-pushbutton", "id": "btn_limit_ujung", "top": 280, "left": -90, "attrs": { "color": "red", "label": "Limit Switch Ujung (Titik B)" } },
@@ -30,9 +28,9 @@
     [ "esp:22", "oled:SCL", "yellow", [ "h-10", "v-60" ] ],
     [ "esp:21", "oled:SDA", "blue", [ "h10", "v-60" ] ],
 
-    [ "esp:5V", "servo_pakan:V+", "red", [ "h30", "v-90" ] ],
-    [ "esp:GND.2", "servo_pakan:GND", "black", [ "h40", "v-80" ] ],
-    [ "esp:26", "servo_pakan:PWM", "orange", [ "h60", "v-140" ] ],
+    [ "esp:5V", "motor_penarik_pakan:V+", "red", [ "h30", "v-90" ] ],
+    [ "esp:GND.2", "motor_penarik_pakan:GND", "black", [ "h40", "v-80" ] ],
+    [ "esp:18", "motor_penarik_pakan:PWM", "orange", [ "h60", "v-140" ] ],
 
     [ "esp:5V", "relay_kipas:VCC", "red", [ "h30", "v20" ] ],
     [ "esp:GND.2", "relay_kipas:GND", "black", [ "h40", "v30" ] ],
@@ -45,16 +43,6 @@
     [ "esp:14", "relay_sprinkler:IN", "blue", [ "h50", "v110" ] ],
     [ "relay_sprinkler:NO", "led_sprinkler:A", "blue", [ "h20" ] ],
     [ "esp:GND.2", "led_sprinkler:C", "black", [ "h50", "v130" ] ],
-
-    [ "esp:18", "motor_roda_kiri:A-", "purple", [ "h300", "v-50" ] ],
-    [ "esp:19", "motor_roda_kiri:A+", "blue", [ "h300", "v-30" ] ],
-    [ "esp:GND.2", "motor_roda_kiri:B-", "black", [ "h300", "v-10" ] ],
-    [ "esp:5V", "motor_roda_kiri:B+", "red", [ "h300", "v10" ] ],
-
-    [ "esp:4", "motor_roda_kanan:A-", "white", [ "h300", "v90" ] ],
-    [ "esp:16", "motor_roda_kanan:A+", "gray", [ "h300", "v110" ] ],
-    [ "esp:GND.2", "motor_roda_kanan:B-", "black", [ "h300", "v130" ] ],
-    [ "esp:5V", "motor_roda_kanan:B+", "red", [ "h300", "v150" ] ],
 
     [ "esp:33", "btn_limit_pangkal:2.l", "green", [ "h-40", "v30" ] ],
     [ "esp:GND.1", "btn_limit_pangkal:1.l", "black", [ "h-50", "v40" ] ],
