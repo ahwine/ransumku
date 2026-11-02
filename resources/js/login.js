@@ -13,6 +13,7 @@ const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.mi
 const GLTF_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
 const stageEl = document.getElementById('lg-stage');
 const MODEL_URL = (stageEl && stageEl.dataset && stageEl.dataset.modelUrl) || '/models/chicken.glb';
+const EGG_MODEL_URL = (stageEl && stageEl.dataset && stageEl.dataset.eggUrl) || '/models/egg.glb';
 const flashEl = document.getElementById('lg-flash');
 const skipBtn = document.getElementById('lg-skip');
 const emailInput = document.getElementById('email');
@@ -164,7 +165,7 @@ const EGG_R = 0.235;
 const EGG_SPLIT_Y = 0.06;
 const EGG_X = -0.9;
 
-function buildIntro(THREE, host, hooks, gltfData) {
+function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
     const isMobile = window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches;
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -824,8 +825,93 @@ function buildIntro(THREE, host, hooks, gltfData) {
         }
     }
 
-    /* ---------- Telur ---------- */
+    /* ---------- Telur (Mendukung egg.glb Photorealistic Coklat + Pemotongan Menetas Otomatis) ---------- */
+    const maxAnisoEgg = renderer.capabilities ? renderer.capabilities.getMaxAnisotropy() : 4;
+    let eggSourceMesh = null;
+    if (eggGltf && eggGltf.scene) {
+        eggGltf.scene.updateMatrixWorld(true);
+        eggGltf.scene.traverse((child) => {
+            if (child.isMesh && !eggSourceMesh) {
+                eggSourceMesh = child;
+            }
+        });
+    }
+
+    let normEggGeo = null;
+    let eggProfileBins = null;
+    let eggColorMap = null;
+    let eggNormalMap = null;
+
+    if (eggSourceMesh && eggSourceMesh.geometry) {
+        normEggGeo = eggSourceMesh.geometry.clone();
+        normEggGeo.applyMatrix4(eggSourceMesh.matrixWorld);
+        if (normEggGeo.attributes.tangent) {
+            normEggGeo.deleteAttribute('tangent');
+        }
+        normEggGeo.computeBoundingBox();
+        const ebb = normEggGeo.boundingBox;
+        const ecx = (ebb.min.x + ebb.max.x) * 0.5;
+        const ecy = (ebb.min.y + ebb.max.y) * 0.5;
+        const ecz = (ebb.min.z + ebb.max.z) * 0.5;
+        const halfH = Math.max(0.01, (ebb.max.y - ebb.min.y) * 0.5);
+        const eggScale = EGG_H / halfH;
+
+        const ePos = normEggGeo.attributes.position;
+        const BINS = 32;
+        const binSum = new Float32Array(BINS);
+        const binCnt = new Uint16Array(BINS);
+
+        for (let i = 0; i < ePos.count; i++) {
+            const x = (ePos.getX(i) - ecx) * eggScale;
+            const y = (ePos.getY(i) - ecy) * eggScale;
+            const z = (ePos.getZ(i) - ecz) * eggScale;
+            ePos.setXYZ(i, x, y, z);
+
+            const uBin = clamp01((y + EGG_H) / (2 * EGG_H));
+            const bIdx = Math.min(BINS - 1, Math.floor(uBin * BINS));
+            binSum[bIdx] += Math.hypot(x, z);
+            binCnt[bIdx]++;
+        }
+        ePos.needsUpdate = true;
+        normEggGeo.normalizeNormals();
+        normEggGeo.computeBoundingSphere();
+
+        eggProfileBins = new Float32Array(BINS);
+        for (let b = 0; b < BINS; b++) {
+            const yMid = -EGG_H + ((b + 0.5) / BINS) * (2 * EGG_H);
+            const th = Math.acos(Math.max(-1, Math.min(1, -yMid / EGG_H)));
+            const fallbackR = EGG_R * Math.sin(th);
+            eggProfileBins[b] = binCnt[b] > 0 ? binSum[b] / binCnt[b] : fallbackR;
+        }
+
+        const oldEggMat = Array.isArray(eggSourceMesh.material) ? eggSourceMesh.material[0] : eggSourceMesh.material;
+        if (oldEggMat) {
+            eggColorMap =
+                oldEggMat.map ||
+                oldEggMat.diffuseMap ||
+                (oldEggMat.uniforms && oldEggMat.uniforms.diffuseMap && oldEggMat.uniforms.diffuseMap.value) ||
+                null;
+            eggNormalMap = oldEggMat.normalMap || null;
+        }
+        if (eggColorMap) {
+            eggColorMap.encoding = THREE.LinearEncoding;
+            eggColorMap.anisotropy = maxAnisoEgg;
+            eggColorMap.needsUpdate = true;
+        }
+        if (eggNormalMap) {
+            eggNormalMap.anisotropy = maxAnisoEgg;
+            eggNormalMap.needsUpdate = true;
+        }
+    }
+
     const eggRadiusAtY = (y) => {
+        if (eggProfileBins) {
+            const BINS = eggProfileBins.length;
+            const u = clamp01((y + EGG_H) / (2 * EGG_H)) * (BINS - 1);
+            const i0 = Math.floor(u);
+            const i1 = Math.min(BINS - 1, i0 + 1);
+            return lerp(eggProfileBins[i0], eggProfileBins[i1], u - i0);
+        }
         const theta = Math.acos(Math.max(-1, Math.min(1, -y / EGG_H)));
         return EGG_R * Math.sin(theta) * (1 + 0.14 * Math.cos(theta));
     };
@@ -865,42 +951,112 @@ function buildIntro(THREE, host, hooks, gltfData) {
         nor.needsUpdate = true;
     };
 
-    const shellMat = track(new THREE.MeshPhysicalMaterial({
-        clearcoat: 0.18,
-        clearcoatRoughness: 0.35,
-        color: 0xf6eddc,
-        roughness: 0.42,
-        metalness: 0,
-        bumpMap: speckleTex,
-        bumpScale: 0.25,
-        side: THREE.DoubleSide,
-        emissive: 0x000000,
-    }));
+    const shellMat = track(
+        new THREE.MeshPhysicalMaterial(
+            eggColorMap
+                ? {
+                      clearcoat: 0.16,
+                      clearcoatRoughness: 0.38,
+                      color: 0xffffff,
+                      map: eggColorMap,
+                      normalMap: eggNormalMap,
+                      normalScale: new THREE.Vector2(0.65, 0.65),
+                      roughness: 0.44,
+                      metalness: 0,
+                      side: THREE.DoubleSide,
+                      emissive: 0x000000,
+                  }
+                : {
+                      clearcoat: 0.18,
+                      clearcoatRoughness: 0.35,
+                      color: 0xd89b6a,
+                      roughness: 0.42,
+                      metalness: 0,
+                      bumpMap: speckleTex,
+                      bumpScale: 0.25,
+                      side: THREE.DoubleSide,
+                      emissive: 0x000000,
+                  },
+        ),
+    );
 
     const egg = new THREE.Group();
     scene.add(egg);
 
-    const eggBase = mk(new THREE.LatheGeometry(eggProfile(0, thetaSplit, 24), 40), shellMat);
-    shapeEgg(eggBase.geometry);
-    egg.add(eggBase);
-
     const rSplit = eggRadiusAtY(EGG_SPLIT_Y);
-    const petals = [0, 1, 2, 3].map((k) => {
-        const phiStart = (k * Math.PI) / 2;
-        const geo = new THREE.LatheGeometry(eggProfile(thetaSplit, Math.PI, 28), 14, phiStart, Math.PI / 2);
-        shapeEgg(geo);
-        const mesh = mk(geo, shellMat);
-        const phiC = phiStart + Math.PI / 4;
-        const dir = new THREE.Vector3(Math.sin(phiC), 0, Math.cos(phiC));
-        const pivotPos = new THREE.Vector3(dir.x * rSplit, EGG_SPLIT_Y, dir.z * rSplit);
-        const axis = new THREE.Vector3(Math.cos(phiC), 0, -Math.sin(phiC));
-        const pivot = new THREE.Group();
-        pivot.position.copy(pivotPos);
-        mesh.position.copy(pivotPos).multiplyScalar(-1);
-        pivot.add(mesh);
-        egg.add(pivot);
-        return { pivot, dir, axis, pivotPos, power: [1, 0.85, 1.15, 0.95][k] };
-    });
+    let petals = [];
+
+    if (normEggGeo && normEggGeo.index) {
+        /* Partisi segitiga egg.glb secara presisi ke cangkang bawah (eggBase) dan 4 kelopak atas (petals).
+         * Saat telur masih utuh (bt < 0), kelima bagian menyatu sempurna 100% tanpa celah seam;
+         * saat telur pecah (bt >= 0), kelopak terbelah mengikuti patahan zig-zag organik. */
+        const srcIdx = normEggGeo.index.array;
+        const ePos = normEggGeo.attributes.position;
+        const baseIndices = [];
+        const petalIndices = [[], [], [], []];
+
+        for (let i = 0; i < srcIdx.length; i += 3) {
+            const i0 = srcIdx[i];
+            const i1 = srcIdx[i + 1];
+            const i2 = srcIdx[i + 2];
+            const mx = (ePos.getX(i0) + ePos.getX(i1) + ePos.getX(i2)) / 3;
+            const my = (ePos.getY(i0) + ePos.getY(i1) + ePos.getY(i2)) / 3;
+            const mz = (ePos.getZ(i0) + ePos.getZ(i1) + ePos.getZ(i2)) / 3;
+            const phi = ((Math.atan2(mx, mz) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            const ySplit = EGG_SPLIT_Y + jag(phi);
+
+            if (my < ySplit) {
+                baseIndices.push(i0, i1, i2);
+            } else {
+                const phiJagged = ((phi + 0.07 * Math.sin(my * 28)) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+                const k = Math.min(3, Math.floor((phiJagged / (Math.PI * 2)) * 4));
+                petalIndices[k].push(i0, i1, i2);
+            }
+        }
+
+        const baseGeo = normEggGeo.clone();
+        baseGeo.setIndex(baseIndices);
+        const eggBase = mk(baseGeo, shellMat);
+        egg.add(eggBase);
+
+        petals = [0, 1, 2, 3].map((k) => {
+            const phiStart = (k * Math.PI) / 2;
+            const pGeo = normEggGeo.clone();
+            pGeo.setIndex(petalIndices[k]);
+            const mesh = mk(pGeo, shellMat);
+            const phiC = phiStart + Math.PI / 4;
+            const dir = new THREE.Vector3(Math.sin(phiC), 0, Math.cos(phiC));
+            const pivotPos = new THREE.Vector3(dir.x * rSplit, EGG_SPLIT_Y, dir.z * rSplit);
+            const axis = new THREE.Vector3(Math.cos(phiC), 0, -Math.sin(phiC));
+            const pivot = new THREE.Group();
+            pivot.position.copy(pivotPos);
+            mesh.position.copy(pivotPos).multiplyScalar(-1);
+            pivot.add(mesh);
+            egg.add(pivot);
+            return { pivot, dir, axis, pivotPos, power: [1, 0.85, 1.15, 0.95][k] };
+        });
+    } else {
+        const eggBase = mk(new THREE.LatheGeometry(eggProfile(0, thetaSplit, 24), 40), shellMat);
+        shapeEgg(eggBase.geometry);
+        egg.add(eggBase);
+
+        petals = [0, 1, 2, 3].map((k) => {
+            const phiStart = (k * Math.PI) / 2;
+            const geo = new THREE.LatheGeometry(eggProfile(thetaSplit, Math.PI, 28), 14, phiStart, Math.PI / 2);
+            shapeEgg(geo);
+            const mesh = mk(geo, shellMat);
+            const phiC = phiStart + Math.PI / 4;
+            const dir = new THREE.Vector3(Math.sin(phiC), 0, Math.cos(phiC));
+            const pivotPos = new THREE.Vector3(dir.x * rSplit, EGG_SPLIT_Y, dir.z * rSplit);
+            const axis = new THREE.Vector3(Math.cos(phiC), 0, -Math.sin(phiC));
+            const pivot = new THREE.Group();
+            pivot.position.copy(pivotPos);
+            mesh.position.copy(pivotPos).multiplyScalar(-1);
+            pivot.add(mesh);
+            egg.add(pivot);
+            return { pivot, dir, axis, pivotPos, power: [1, 0.85, 1.15, 0.95][k] };
+        });
+    }
 
     /* Retakan: tabung tipis dengan draw-range progresif */
     const crackMat = track(new THREE.MeshBasicMaterial({ color: 0x4a3b2a }));
@@ -1437,6 +1593,17 @@ function buildIntro(THREE, host, hooks, gltfData) {
         }
     }
 
+    /* Pre-warm shader & tekstur (termasuk tekstur 4K egg.glb) di VRAM sebelum loop dimulai
+     * agar tidak terjadi jeda kompilasi pada t = 3.45s saat telur muncul. */
+    poseCamera(0);
+    camera.updateMatrixWorld();
+    egg.visible = true;
+    egg.scale.setScalar(0.0001);
+    if (renderer.compile) {
+        renderer.compile(scene, camera);
+    }
+    renderer.render(scene, camera);
+
     renderAt(0);
     rafId = requestAnimationFrame((now) => {
         last = now;
@@ -1488,18 +1655,18 @@ function loadThreeAndLoader() {
     });
 }
 
-function loadChickenGLTF(THREE) {
+function loadGLTFModel(THREE, url, timeoutMs = 10000) {
     return new Promise((resolve) => {
-        if (!THREE.GLTFLoader) {
+        if (!THREE.GLTFLoader || !url) {
             resolve(null);
             return;
         }
         const loader = new THREE.GLTFLoader();
         const timer = window.setTimeout(() => {
             resolve(null);
-        }, 8000);
+        }, timeoutMs);
         loader.load(
-            MODEL_URL,
+            url,
             (gltf) => {
                 window.clearTimeout(timer);
                 resolve(gltf);
@@ -1528,17 +1695,26 @@ function startIntro() {
             if (revealed) {
                 return;
             }
-            return loadChickenGLTF(THREE).then((gltfData) => {
+            return Promise.all([
+                loadGLTFModel(THREE, MODEL_URL, 10000),
+                loadGLTFModel(THREE, EGG_MODEL_URL, 12000),
+            ]).then(([chickenGltf, eggGltf]) => {
                 if (revealed) {
                     return;
                 }
-                activeScene = buildIntro(THREE, stageEl, {
-                    onReveal: () => revealForm(false),
-                    onEnd: () => disposeScene(),
-                    onFail: () => {
-                        revealForm(true);
+                activeScene = buildIntro(
+                    THREE,
+                    stageEl,
+                    {
+                        onReveal: () => revealForm(false),
+                        onEnd: () => disposeScene(),
+                        onFail: () => {
+                            revealForm(true);
+                        },
                     },
-                }, gltfData);
+                    chickenGltf,
+                    eggGltf,
+                );
             });
         })
         .catch(() => {

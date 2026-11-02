@@ -248,7 +248,7 @@
 </head>
 <body class="lg-body">
     <div class="lg-decor" aria-hidden="true"></div>
-    <div id="lg-stage" data-model-url="{{ asset('models/chicken.glb') }}" aria-hidden="true"></div>
+    <div id="lg-stage" data-model-url="{{ asset('models/chicken.glb') }}" data-egg-url="{{ asset('models/egg.glb') }}" aria-hidden="true"></div>
     <div id="lg-flash" aria-hidden="true"></div>
     <button type="button" id="lg-skip" class="lg-skip">Lewati animasi</button>
 
