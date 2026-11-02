@@ -89,8 +89,8 @@ class FarmBootstrap
             );
         }
 
-        if (! $farm->standards()->exists()) {
-            $farm->standards()->create(self::standardDefault());
+        if ($farm->standards()->where('is_resmi', true)->count() < 4) {
+            app(NutrientStandardService::class)->syncOfficialStandards($farm);
         }
     }
 

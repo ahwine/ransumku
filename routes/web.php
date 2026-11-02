@@ -46,6 +46,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/ransum/{ration}', [RationController::class, 'destroy'])->name('ransum.destroy');
 
         Route::resource('bahan', IngredientController::class)->parameters(['bahan' => 'ingredient'])->except('show');
+        Route::post('/acuan/sync', [StandardController::class, 'sync'])->name('acuan.sync');
+        Route::post('/acuan/terapkan-preset', [StandardController::class, 'terapkanPreset'])->name('acuan.terapkan-preset');
         Route::resource('acuan', StandardController::class)->parameters(['acuan' => 'standard'])->except('show');
 
         // Modul B: Buku Kandang

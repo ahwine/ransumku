@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ration;
 use App\Services\AiAssistant;
 use App\Services\FeedConversionService;
+use App\Services\NutrientStandardService;
 use App\Services\RationCalculator;
 use App\Services\RationSafetyValidator;
 use Illuminate\Http\Request;
@@ -22,10 +23,14 @@ class RationController extends Controller
     {
         $farm = $this->farm();
         $fis = $farm->farmIngredients()->with('ingredient')->get()->sortByDesc('aktif')->values();
-        $standards = $farm->standards()->get();
+        
+        $stdService = app(NutrientStandardService::class);
+        $recommendedStandard = $stdService->getRecommendedStandard($farm);
+        $standards = $farm->standards()->orderByDesc('is_resmi')->orderBy('id')->get();
+        $recommendedStandardId = $recommendedStandard?->id ?? ($standards->first()?->id ?? 0);
         $konsumsi = $farm->konsumsi_per_ekor;
 
-        return view('ransum.create', compact('farm', 'fis', 'standards', 'konsumsi'));
+        return view('ransum.create', compact('farm', 'fis', 'standards', 'konsumsi', 'recommendedStandardId', 'recommendedStandard'));
     }
 
     public function store(Request $r, RationCalculator $calc)

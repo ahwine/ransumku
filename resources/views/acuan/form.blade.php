@@ -18,12 +18,41 @@
         </div>
     </div>
 
+    {{-- Kotak Preset Standar Resmi (Bantuan Isi Otomatis) --}}
+    <div class="bg-gradient-to-r from-emerald-50/70 via-white to-blue-50/40 rounded-2xl border border-emerald-200 p-4 sm:p-5 shadow-2xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 grid place-items-center shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">flash_on</span>
+                </div>
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-ink">Isi Cepat dari Template Resmi (SNI & Breeder Guide)</h3>
+                    <p class="text-[11px] text-muted">Pilih standar resmi untuk mengisi seluruh formulir di bawah secara otomatis tanpa menghitung manual.</p>
+                </div>
+            </div>
+
+            <div class="w-full sm:w-72 shrink-0">
+                <select id="select-preset-standar" onchange="muatPresetStandar(this.value)" class="w-full px-3 py-2 bg-white border border-line rounded-xl text-xs font-semibold text-ink shadow-2xs focus:border-brand focus:ring-1 focus:ring-brand/20 transition cursor-pointer">
+                    <option value="">-- Pilih Template Standar Resmi --</option>
+                    @foreach ($katalogResmi ?? [] as $k)
+                        <option value="{{ $k['kode'] }}">{{ $k['nama'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </div>
+
     {{-- Form Card Lebar Penuh (Two-Column Split Sectional Layout) --}}
     <form id="form-acuan" method="POST" action="{{ $acuan->exists ? route('acuan.update', $acuan) : route('acuan.store') }}" class="w-full bg-white rounded-2xl border border-line shadow-2xs divide-y divide-line overflow-hidden">
         @csrf
         @if ($acuan->exists) 
             @method('PUT') 
         @endif
+
+        {{-- Hidden Fields untuk Metadata Standar Resmi --}}
+        <input type="hidden" name="kode" id="input_kode" value="{{ old('kode', $acuan->kode) }}">
+        <input type="hidden" name="kategori_fase" id="input_kategori_fase" value="{{ old('kategori_fase', $acuan->kategori_fase) }}">
+        <input type="hidden" name="organisasi_sumber" id="input_organisasi_sumber" value="{{ old('organisasi_sumber', $acuan->organisasi_sumber) }}">
 
         {{-- SEKSI 1: IDENTITAS ACUAN & RUJUKAN --}}
         <div class="p-5 md:p-7 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -46,13 +75,13 @@
 
                     <div>
                         <label class="lbl" for="tahun">Tahun Rujukan</label>
-                        <input id="tahun" name="tahun" type="number" min="1980" max="2050" class="field !min-h-10 text-xs font-medium" value="{{ old('tahun', $acuan->exists ? $acuan->tahun : 2016) }}" placeholder="Contoh: 2016">
+                        <input id="tahun" name="tahun" type="number" min="1980" max="2050" class="field !min-h-10 text-xs font-medium" value="{{ old('tahun', $acuan->exists ? $acuan->tahun : 2006) }}" placeholder="Contoh: 2006">
                     </div>
                 </div>
 
                 <div>
                     <label class="lbl" for="sumber">Keterangan Sumber / Jurnal / Rujukan</label>
-                    <input id="sumber" name="sumber" type="text" class="field !min-h-10 text-xs font-medium" value="{{ old('sumber', $acuan->sumber) }}" placeholder="Contoh: SNI Pakan Ayam Petelur No. 01-3929-2006 / Balitnak">
+                    <input id="sumber" name="sumber" type="text" class="field !min-h-10 text-xs font-medium" value="{{ old('sumber', $acuan->sumber) }}" placeholder="Contoh: Standar Nasional Indonesia (SNI 01-3929-2006) - BSN & Kementan RI">
                 </div>
             </div>
         </div>
@@ -132,7 +161,7 @@
             </div>
         </div>
 
-        {{-- CARD FOOTER: AKSI FORMULIR (KIRI: KETERANGAN, KANAN: TOMBOL AKSI PILL) --}}
+        {{-- CARD FOOTER: AKSI FORMULIR --}}
         <div class="px-5 md:px-7 py-4 bg-surface/40 flex items-center justify-between">
             <span class="text-xs text-muted">
                 Tanda <span class="text-danger font-bold">*</span> wajib diisi dengan nilai yang valid
@@ -149,5 +178,30 @@
         </div>
     </form>
 </div>
-@endsection
 
+<script>
+const KATALOG_RESMI = @json($katalogResmi ?? []);
+
+function muatPresetStandar(kode) {
+    if (!kode) return;
+    const item = KATALOG_RESMI.find(x => x.kode === kode);
+    if (!item) return;
+
+    document.getElementById('nama').value = item.nama;
+    document.getElementById('tahun').value = item.tahun || '';
+    document.getElementById('sumber').value = item.sumber || '';
+    document.getElementById('protein_min').value = item.protein_min;
+    document.getElementById('energi_min').value = item.energi_min;
+    document.getElementById('kalsium_min').value = item.kalsium_min;
+    document.getElementById('kalsium_max').value = item.kalsium_max;
+    document.getElementById('fosfor_min').value = item.fosfor_min;
+    document.getElementById('fosfor_max').value = item.fosfor_max;
+    document.getElementById('serat_max').value = item.serat_max || '';
+
+    // Metadata
+    document.getElementById('input_kode').value = item.kode;
+    document.getElementById('input_kategori_fase').value = item.kategori_fase || '';
+    document.getElementById('input_organisasi_sumber').value = item.organisasi_sumber || '';
+}
+</script>
+@endsection

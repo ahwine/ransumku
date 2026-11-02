@@ -3,60 +3,63 @@
 namespace App\Http\Controllers;
 
 use App\Models\NutrientStandard;
+use App\Services\NutrientStandardService;
 use Illuminate\Http\Request;
 
 class StandardController extends Controller
 {
-    private function rules(): array
-    {
-        return [
-            'nama' => 'required|string|max:120',
-            'tahun' => 'nullable|integer|min:1900|max:2100',
-            'protein_min' => 'required|numeric|min:0|max:100',
-            'kalsium_min' => 'required|numeric|min:0|max:100',
-            'kalsium_max' => 'required|numeric|min:0|max:100|gte:kalsium_min',
-            'fosfor_min' => 'required|numeric|min:0|max:100',
-            'fosfor_max' => 'required|numeric|min:0|max:100|gte:fosfor_min',
-            'serat_max' => 'nullable|numeric|min:0|max:100',
-            'energi_min' => 'required|integer|min:0|max:10000',
-            'sumber' => 'nullable|string|max:255',
-        ];
-    }
+    public function __construct(
+        protected NutrientStandardService $standardService
+    ) {}
 
     public function index()
     {
-        return view('acuan.index', ['acuan' => $this->farm()->standards()->get()]);
+        $farm = $this->farm();
+
+        // Pastikan standar resmi lengkap di database kandang
+        if ($farm->standards()->where('is_resmi', true)->count() < 4) {
+            $this->standardService->syncOfficialStandards($farm);
+        }
+
+        $acuan = $farm->standards()
+            ->orderBy('id')
+            ->get();
+
+        $syncMetadata = NutrientStandardService::getSyncMetadata();
+
+        return view('acuan.index', compact('acuan', 'syncMetadata'));
+    }
+
+    public function sync(Request $r)
+    {
+        $farm = $this->farm();
+        $count = $this->standardService->syncOfficialStandards($farm);
+
+        return redirect()->route('acuan.index')->with('ok', "Sinkronisasi selesai. {$count} standar resmi BSN & Breeder Guide telah diperbarui.");
     }
 
     public function create()
     {
-        return view('acuan.form', ['acuan' => new NutrientStandard]);
+        return redirect()->route('acuan.index')->with('info', 'Acuan gizi adalah direktori standar resmi terverifikasi dan tidak perlu ditambahkan secara manual.');
     }
 
-    public function store(Request $r)
+    public function store()
     {
-        $this->farm()->standards()->create($r->validate($this->rules()));
-
-        return redirect()->route('acuan.index')->with('ok', 'Acuan gizi ditambahkan.');
+        return redirect()->route('acuan.index')->with('info', 'Acuan gizi adalah direktori standar resmi terverifikasi.');
     }
 
     public function edit(NutrientStandard $standard)
     {
-        return view('acuan.form', ['acuan' => $this->own($standard)]);
+        return redirect()->route('acuan.index')->with('info', 'Acuan gizi resmi tidak dapat diubah guna menjaga akurasi standar ilmiah.');
     }
 
     public function update(Request $r, NutrientStandard $standard)
     {
-        $this->own($standard)->update($r->validate($this->rules()));
-
-        return redirect()->route('acuan.index')->with('ok', 'Acuan gizi diperbarui.');
+        return redirect()->route('acuan.index')->with('info', 'Acuan gizi resmi tidak dapat diubah guna menjaga akurasi standar ilmiah.');
     }
 
     public function destroy(NutrientStandard $standard)
     {
-        abort_if($this->farm()->standards()->count() <= 1, 422, 'Minimal harus ada satu acuan gizi.');
-        $this->own($standard)->delete();
-
-        return redirect()->route('acuan.index')->with('ok', 'Acuan gizi dihapus.');
+        return redirect()->route('acuan.index')->with('info', 'Standar resmi terkunci untuk menjaga keutuhan data formulasi ransum.');
     }
 }
