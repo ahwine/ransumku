@@ -28,8 +28,29 @@
 
 
             {{-- Grid Menu Tambahan --}}
-            <div class="space-y-2">
-                <span class="text-[10px] font-extrabold tracking-wider uppercase text-muted px-1 block">FITUR & MASTER DATA</span>
+            <div class="space-y-3">
+                <span class="text-[10px] font-extrabold tracking-wider uppercase text-muted px-1 block">FITUR IOT & KONTROLER</span>
+
+                {{-- Featured Card: Kontroler & 3D Digital Twin --}}
+                <a href="{{ route('kontroler.index') }}" class="p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 {{ request()->routeIs('kontroler.*') ? 'bg-purple-50 border-purple-300 shadow-xs' : 'bg-gradient-to-r from-purple-50/70 via-indigo-50/40 to-white hover:bg-surface border-purple-200 shadow-2xs' }}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl {{ request()->routeIs('kontroler.*') ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700' }} grid place-items-center shrink-0 shadow-2xs">
+                            <span class="material-symbols-outlined text-[22px]">tune</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-xs font-black text-ink block">Kontroler & IoT 3D Twin</span>
+                                <span class="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200 uppercase">
+                                    Live 3D
+                                </span>
+                            </div>
+                            <span class="text-[10px] text-muted">Sakelar pakan, blower, misting & simulasi fisik 3D</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-purple-600 text-[20px] shrink-0">chevron_right</span>
+                </a>
+
+                <span class="text-[10px] font-extrabold tracking-wider uppercase text-muted px-1 block pt-1">FITUR & MASTER DATA</span>
                 
                 <div class="grid grid-cols-2 gap-2.5">
                     {{-- 1. Kelola Kandang --}}

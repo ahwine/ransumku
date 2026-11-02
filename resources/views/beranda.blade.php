@@ -52,7 +52,14 @@
             <div class="bg-white rounded-2xl border border-line p-4 shadow-2xs space-y-3.5">
                 {{-- Bagian Atas: Cuaca Mikro Kandang --}}
                 <div class="space-y-2.5">
-                    <span class="text-xs font-black text-ink block">Cuaca Mikro Kandang</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-ink block">Cuaca Mikro Kandang</span>
+                        <a href="{{ route('kontroler.index') }}" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition shadow-2xs" title="Buka Kontroler & 3D Digital Twin">
+                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
+                            <span>Kontroler 3D</span>
+                            <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                        </a>
+                    </div>
 
                     <div class="flex items-center justify-between">
                         <div>
