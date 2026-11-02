@@ -3,12 +3,12 @@
  * SIMULASI UTUH: SMART CLOSED-HOUSE LAYER FARM IoT (RANSUMKU)
  * Inovator: Aditya Ramadhani (SMKN 2 Surabaya)
  * 
- * ALAT PEMBERI PAKAN: LANGSUNG MENGGUNAKAN MOTOR FISIK (BUKAN LAMPU LED!)
- * 1. Motor Penarik Pakan (Servo/Katrol Tali): Lengan motor berputar nyata menarik kereta!
- * 2. Layar OLED 128x64: Menampilkan visual kereta meluncur di atas rel (A <--> B)!
- * 3. Kipas Sirkulasi: Otomatis ON saat suhu panas (>= 31°C atau THI >= 78.0)
- * 4. Sprinkler Pendingin Atap: Otomatis ON saat cuaca terik (>= 33°C)
- * 5. Dua Sakelar Batas Lorong: Titik A (Pangkal) & Titik B (Ujung)
+ * 1. LAYAR DISPLAY OLED (LAYAR LED):
+ *    Murni khusus menampilkan parameter: Suhu, Kelembaban, THI, dan Status Alat.
+ * 2. ALAT PEMBERI PAKAN:
+ *    Beroperasi langsung secara fisik menggunakan MOTOR KATROL PENARIK PAKAN!
+ * 3. KIPAS SIRKULASI: Otomatis ON saat suhu >= 31°C atau THI >= 78.0
+ * 4. SPRINKLER ATAP: Otomatis ON saat suhu >= 33°C
  * =========================================================================
  */
 
@@ -23,18 +23,18 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 // --- PIN ASSIGNMENT ---
-const int PIN_DHT               = 15; // Sensor DHT22
-const int PIN_MOTOR_PAKAN       = 18; // Motor Penggerak Katrol Tali Pakan (Servo PWM)
+const int PIN_DHT               = 15; // Sensor DHT22 Suhu & Kelembaban
+const int PIN_MOTOR_PAKAN       = 18; // Motor Penggerak Katrol Tali Pakan Langsung (PWM)
 const int PIN_RELAY_KIPAS       = 12; // Relay Kipas Blower
 const int PIN_RELAY_SPRINKLER   = 14; // Relay Sprinkler Atap
 const int PIN_BUZZER_SOUND      = 25; // Audio Anti-Stres
-const int PIN_LIMIT_PANGKAL_A   = 33; // Sakelar Batas Pangkal A
-const int PIN_LIMIT_UJUNG_B     = 32; // Sakelar Batas Ujung B
+const int PIN_LIMIT_PANGKAL_A   = 33; // Sakelar Batas Pangkal (Titik A)
+const int PIN_LIMIT_UJUNG_B     = 32; // Sakelar Batas Ujung (Titik B)
 
 DHTesp dhtSensor;
 Servo motorPenarikPakan; // Motor Fisik Langsung Penarik Tali Pakan
 
-// --- STATE SISTEM & MODE KERETA ---
+// --- STATE SISTEM & MODE PAKAN ---
 enum FeederMode     { MODE_SHUTTLE, MODE_ROUND_TRIP };
 enum FeederState    { FEEDER_IDLE, FEEDER_FORWARD, FEEDER_BACKWARD };
 enum FeederPosition { POSISI_PANGKAL_A, POSISI_UJUNG_B };
@@ -43,12 +43,10 @@ FeederMode modePakan        = MODE_SHUTTLE;     // Default: Mode Shuttle (Ujung-
 FeederState statePakan      = FEEDER_IDLE;
 FeederPosition posisiKereta = POSISI_PANGKAL_A; // Start di Pangkal A
 
-float posKeretaPixel = 14.0;
-const float PIXEL_PANGKAL = 14.0;
-const float PIXEL_UJUNG   = 106.0;
-
 int motorAngle = 0;
 int motorDir   = 1;
+unsigned long waktuMulaiJalan = 0;
+const unsigned long DURASI_JALAN_MS = 5000; // Motor jalan 5 detik dari A ke B
 
 bool statusKipas     = false;
 bool statusSprinkler = false;
@@ -59,8 +57,7 @@ float curRH   = 72.0;
 float curTHI  = 82.0;
 
 unsigned long lastSensorRead = 0;
-unsigned long lastAnimUpdate = 0;
-int fanAnimFrame = 0;
+unsigned long lastDisplayUpdate = 0;
 
 void stopMotorPakan() {
   motorPenarikPakan.write(0); // Motor berhenti
@@ -69,12 +66,14 @@ void stopMotorPakan() {
 
 void jalanFeederMaju() {
   statePakan = FEEDER_FORWARD;
-  Serial.println(F(">> [MOTOR PENARIK PAKAN]: AKTIF! Motor katrol berputar MAJU menarik tali pakan dari A ke B..."));
+  waktuMulaiJalan = millis();
+  Serial.println(F(">> [MOTOR PAKAN]: AKTIF! Motor katrol berputar MAJU menarik wadah pakan dari A ke B..."));
 }
 
 void jalanFeederMundur() {
   statePakan = FEEDER_BACKWARD;
-  Serial.println(F(">> [MOTOR PENARIK PAKAN]: AKTIF! Motor katrol berputar MUNDUR menarik tali pakan dari B ke A..."));
+  waktuMulaiJalan = millis();
+  Serial.println(F(">> [MOTOR PAKAN]: AKTIF! Motor katrol berputar MUNDUR menarik wadah pakan dari B ke A..."));
 }
 
 void picuPakan() {
@@ -84,7 +83,6 @@ void picuPakan() {
   }
 
   if (modePakan == MODE_ROUND_TRIP) {
-    posKeretaPixel = PIXEL_PANGKAL;
     jalanFeederMaju();
   } else {
     // Mode Shuttle: Bergantian sesuai posisi parkir saat ini
@@ -96,73 +94,51 @@ void picuPakan() {
   }
 }
 
-// Menggambar Tampilan Dashboard & Animasi Bergerak di Layar OLED
-void renderOLED() {
+// Menampilkan Parameter Telemetri Suhu, Kelembaban, THI, dan Status Alat di Layar Display
+void renderDisplay() {
   display.clearDisplay();
-
-  // 1. Baris Atas: Info Suhu, Kelembaban, THI & Status Kipas/Atap
-  display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.printf("%.1fC %d%% THI:%.0f", curSuhu, (int)curRH, curTHI);
 
-  // Animasi Ikon Kipas Berputar
-  if (statusKipas) {
-    const char fanChars[] = {'|', '/', '-', '\\'};
-    display.setCursor(102, 0);
-    display.printf("[%c]", fanChars[fanAnimFrame % 4]);
-  } else {
-    display.setCursor(102, 0);
-    display.print("[ ]");
-  }
-
-  // Indikator Sprinkler Atap
-  if (statusSprinkler) {
-    display.setCursor(120, 0);
-    display.print("*");
-  }
-
+  // 1. Header Banner
+  display.setTextSize(1);
+  display.setCursor(8, 0);
+  display.print("RANSUMKU - SMART FARM");
   display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
 
-  // 2. Area Tengah: Tali Katrol Rel Kandang & Kereta Pakan Bergerak
-  display.setCursor(0, 22);
-  display.print("A");
-  display.setCursor(120, 22);
-  display.print("B");
+  // 2. Data Sensor Suhu & Kelembaban
+  display.setCursor(0, 14);
+  display.printf("Suhu : %.1f C", curSuhu);
 
-  // Garis Rel Pipa Besi & Tali Sling
-  display.drawLine(10, 25, 117, 25, SSD1306_WHITE);
-  display.drawLine(10, 29, 117, 29, SSD1306_WHITE);
-  for (int x = 12; x <= 115; x += 6) {
-    display.drawLine(x, 25, x, 29, SSD1306_WHITE);
-  }
+  display.setCursor(76, 14);
+  display.printf("RH: %d%%", (int)curRH);
 
-  int xPos = (int)posKeretaPixel;
-  display.fillRect(xPos - 4, 15, 10, 8, SSD1306_WHITE);
-  display.drawRect(xPos - 5, 14, 12, 10, SSD1306_WHITE);
-  display.fillCircle(xPos - 2, 24, 1, SSD1306_BLACK);
-  display.fillCircle(xPos + 4, 24, 1, SSD1306_BLACK);
+  // 3. Indeks Stres Panas Ayam (THI)
+  display.setCursor(0, 26);
+  String labelTHI = "AMAN";
+  if (curTHI >= 84.0)      labelTHI = "BAHAYA";
+  else if (curTHI >= 80.0) labelTHI = "STRES BERAT";
+  else if (curTHI >= 78.0) labelTHI = "WASPADA";
 
-  // Butiran ransum jatuh saat kereta membagikan pakan
-  if (statePakan != FEEDER_IDLE) {
-    display.drawPixel(xPos + 1, 31, SSD1306_WHITE);
-    display.drawPixel(xPos - 1, 33, SSD1306_WHITE);
-    display.drawPixel(xPos + 3, 33, SSD1306_WHITE);
-  }
+  display.printf("THI  : %.1f (%s)", curTHI, labelTHI.c_str());
 
-  // 3. Baris Bawah: Status Operasional
-  display.drawLine(0, 38, 127, 38, SSD1306_WHITE);
-  display.setCursor(0, 43);
+  // 4. Status Aktuator Kipas & Sprinkler Atap
+  display.setCursor(0, 38);
+  display.printf("Kipas: %s", statusKipas ? "AKTIF" : "OFF");
+
+  display.setCursor(68, 38);
+  display.printf("Atap: %s", statusSprinkler ? "NYEMPROT" : "OFF");
+
+  display.drawLine(0, 48, 127, 48, SSD1306_WHITE);
+
+  // 5. Status Langsung Mesin Pakan
+  display.setCursor(0, 53);
   if (statePakan == FEEDER_FORWARD) {
-    display.print(">> MAJU BAGI PAKAN");
+    display.print("PAKAN: >> MAJU (A->B)");
   } else if (statePakan == FEEDER_BACKWARD) {
-    display.print("<< MUNDUR BAGI PAKAN");
+    display.print("PAKAN: << MUNDUR (B->A)");
   } else {
-    display.printf("PARKIR: TITIK %s", posisiKereta == POSISI_PANGKAL_A ? "A (PANGKAL)" : "B (UJUNG)");
+    display.printf("PAKAN: PARKIR TITIK %s", posisiKereta == POSISI_PANGKAL_A ? "A" : "B");
   }
-
-  display.setCursor(0, 54);
-  display.printf("MODE: %s", modePakan == MODE_SHUTTLE ? "SHUTTLE (A<->B)" : "BOLAK-BALIK");
 
   display.display();
 }
@@ -193,6 +169,7 @@ void setup() {
 
   dhtSensor.setup(PIN_DHT, DHTesp::DHT22);
 
+  // Inisialisasi Layar Display
   if (display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     display.clearDisplay();
     display.setTextSize(1);
@@ -205,63 +182,50 @@ void setup() {
     delay(1200);
   }
 
-  Serial.println(F("[OK] Seluruh sistem siap! Alat pakan menggunakan MOTOR FISIK LANGSUNG."));
-  Serial.println(F("[INFO] Ketik 'pakan' di Serial Monitor untuk mulai menjalankan motor pakan."));
+  Serial.println(F("[OK] Seluruh sistem siap!"));
+  Serial.println(F("[INFO] Layar Display murni menampilkan Suhu, RH, THI, dan Status Alat."));
+  Serial.println(F("[INFO] Alat pakan langsung digerakkan oleh MOTOR KATROL FISIK."));
 }
 
 void loop() {
   unsigned long now = millis();
 
-  // 1. UPDATE ANIMASI & FISIKA MOTOR PENARIK PAKAN BERPUTAR (Tiap 40 ms)
-  if (now - lastAnimUpdate >= 40) {
-    lastAnimUpdate = now;
-    fanAnimFrame++;
+  // 1. GERAKAN MOTOR FISIK PENARIK PAKAN (Berputar Langsung Saat Aktif)
+  if (statePakan != FEEDER_IDLE) {
+    // Putaran lengan motor fisik nyata bolak-balik selama menarik tali pakan
+    motorAngle += 12 * motorDir;
+    if (motorAngle >= 170) { motorAngle = 170; motorDir = -1; }
+    else if (motorAngle <= 10) { motorAngle = 10; motorDir = 1; }
+    motorPenarikPakan.write(motorAngle);
 
-    // Jika sedang MAJU: Lengan motor berputar bolak-balik menarik tali sling ke depan
-    if (statePakan == FEEDER_FORWARD) {
-      posKeretaPixel += 0.8;
-      
-      // Putaran lengan motor fisik nyata
-      motorAngle += 10 * motorDir;
-      if (motorAngle >= 170) { motorAngle = 170; motorDir = -1; }
-      else if (motorAngle <= 10) { motorAngle = 10; motorDir = 1; }
-      motorPenarikPakan.write(motorAngle);
-
-      if (posKeretaPixel >= PIXEL_UJUNG) {
-        posKeretaPixel = PIXEL_UJUNG;
+    // Deteksi Waktu Tempuh Lorong (5 Detik)
+    if (now - waktuMulaiJalan >= DURASI_JALAN_MS) {
+      if (statePakan == FEEDER_FORWARD) {
         if (modePakan == MODE_ROUND_TRIP) {
           stopMotorPakan();
-          renderOLED();
+          renderDisplay();
           delay(800);
           jalanFeederMundur();
         } else {
           stopMotorPakan();
           posisiKereta = POSISI_UJUNG_B;
-          Serial.println(F(">> [STATUS]: Kereta sampai & PARKIR DI TITIK B. Motor Berhenti."));
+          Serial.println(F(">> [STATUS]: Wadah pakan sampai di Titik B. Motor berhenti parkir."));
         }
-      }
-    } 
-    // Jika sedang MUNDUR: Lengan motor berputar sebaliknya menarik tali kembali ke pangkal
-    else if (statePakan == FEEDER_BACKWARD) {
-      posKeretaPixel -= 0.8;
-
-      motorAngle -= 10 * motorDir;
-      if (motorAngle <= 10) { motorAngle = 10; motorDir = -1; }
-      else if (motorAngle >= 170) { motorAngle = 170; motorDir = 1; }
-      motorPenarikPakan.write(motorAngle);
-
-      if (posKeretaPixel <= PIXEL_PANGKAL) {
-        posKeretaPixel = PIXEL_PANGKAL;
+      } else if (statePakan == FEEDER_BACKWARD) {
         stopMotorPakan();
         posisiKereta = POSISI_PANGKAL_A;
-        Serial.println(F(">> [STATUS]: Kereta sampai & PARKIR DI TITIK A (Docking). Motor Berhenti."));
+        Serial.println(F(">> [STATUS]: Wadah pakan sampai di Titik A. Motor berhenti parkir."));
       }
     }
-
-    renderOLED();
   }
 
-  // 2. EVALUASI SENSOR SUHU & THI (Tiap 2 detik)
+  // 2. REFRESH LAYAR DISPLAY (Tiap 300 ms)
+  if (now - lastDisplayUpdate >= 300) {
+    lastDisplayUpdate = now;
+    renderDisplay();
+  }
+
+  // 3. EVALUASI SENSOR SUHU & THI (Tiap 2 detik)
   if (now - lastSensorRead >= 2000) {
     lastSensorRead = now;
 
@@ -291,7 +255,7 @@ void loop() {
         if (!statusSprinkler) {
           statusSprinkler = true;
           digitalWrite(PIN_RELAY_SPRINKLER, HIGH);
-          Serial.println(F("  -> [SPRINKLER ATAP]: OTOMATIS MENYEMPROT."));
+          Serial.println(F("  -> [SPRINKLER ATAP]: OTOMATIS MENYEMPROT SENG."));
         }
       } else if (curSuhu < 31.5 && curTHI < 78.0) {
         if (statusSprinkler) {
@@ -303,12 +267,11 @@ void loop() {
     }
   }
 
-  // 3. DETEKSI SAKELAR BATAS MANUAL (Limit Switch A & B)
+  // 4. DETEKSI SAKELAR BATAS MANUAL (Limit Switch A & B jika ditekan)
   int limitA = digitalRead(PIN_LIMIT_PANGKAL_A);
   int limitB = digitalRead(PIN_LIMIT_UJUNG_B);
 
   if (limitB == LOW && statePakan == FEEDER_FORWARD) {
-    posKeretaPixel = PIXEL_UJUNG;
     if (modePakan == MODE_ROUND_TRIP) {
       stopMotorPakan();
       delay(800);
@@ -320,12 +283,11 @@ void loop() {
   }
 
   if (limitA == LOW && statePakan == FEEDER_BACKWARD) {
-    posKeretaPixel = PIXEL_PANGKAL;
     stopMotorPakan();
     posisiKereta = POSISI_PANGKAL_A;
   }
 
-  // 4. PARSER PERINTAH SERIAL
+  // 5. PARSER PERINTAH SERIAL
   if (Serial.available() > 0) {
     String cmd = Serial.readStringUntil('\n');
     cmd.trim();
