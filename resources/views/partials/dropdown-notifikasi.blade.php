@@ -7,26 +7,55 @@
 @endphp
 
 <div class="relative inline-block text-left custom-dropdown-container z-50" id="{{ $id }}">
-    {{-- Trigger Button Lonceng Notifikasi: Murni Ikon dengan Hover Box & Lingkaran Merah di Kanan Atas --}}
-    <button type="button" 
-            onclick="toggleCustomDropdown('{{ $id }}', event)" 
-            class="dropdown-trigger p-2 rounded-lg text-ink hover:bg-surface hover:text-brand transition flex items-center justify-center cursor-pointer focus:outline-none group" 
-            title="Pusat Peringatan & Notifikasi Kandang"
-            aria-haspopup="true"
-            aria-expanded="false"
-            aria-label="Buka Notifikasi">
-        <span class="relative inline-flex">
-            <span class="material-symbols-outlined {{ $isMobile ? 'text-[20px]' : 'text-[22px]' }} transition-transform group-hover:scale-105 select-none leading-none">notifications</span>
-            
-            {{-- Dot Merah Notifikasi di Samping Kanan Atas Lonceng --}}
-            <span data-notif-dot 
-                  class="{{ $unreadCount > 0 ? 'inline-block' : 'hidden' }} absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-white pointer-events-none"
-                  style="position: absolute; top: 0px; right: 0px; width: 10px; height: 10px; border-radius: 9999px; background-color: #e11d48; box-shadow: 0 0 0 2px #ffffff; pointer-events: none;"></span>
-        </span>
-    </button>
+    @if($isMobile)
+        {{-- Mobile Animated Expanding Capsule Button (Dynamic Island Style) --}}
+        <button type="button" 
+                id="btn-capsule-notif"
+                onclick="toggleNotifikasiMobile(event)" 
+                class="dropdown-trigger header-capsule-btn" 
+                title="Pusat Peringatan & Notifikasi Kandang"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="Buka Notifikasi">
+            {{-- Icon Wrapper: Always exact 36px x 36px --}}
+            <span class="capsule-icon-wrap">
+                <span class="relative inline-flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[19px] leading-none select-none">notifications</span>
+                    
+                    {{-- Dot Merah Notifikasi di Samping Kanan Atas Lonceng --}}
+                    <span data-notif-dot 
+                          class="{{ $unreadCount > 0 ? 'inline-block' : 'hidden' }} absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-white pointer-events-none"
+                          style="box-shadow: 0 0 0 2px #ffffff; pointer-events: none;"></span>
+                </span>
+            </span>
+
+            {{-- Expanding Label Wrapper --}}
+            <span class="capsule-label-wrap">
+                <span class="capsule-label-text">Notifikasi</span>
+            </span>
+        </button>
+    @else
+        {{-- Desktop Standard Button --}}
+        <button type="button" 
+                onclick="toggleCustomDropdown('{{ $id }}', event)" 
+                class="dropdown-trigger p-2 rounded-lg text-ink hover:bg-surface hover:text-brand transition flex items-center justify-center cursor-pointer focus:outline-none group active:scale-95" 
+                title="Pusat Peringatan & Notifikasi Kandang"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="Buka Notifikasi">
+            <span class="relative inline-flex">
+                <span class="material-symbols-outlined text-[22px] transition-transform group-hover:scale-105 select-none leading-none">notifications</span>
+                
+                {{-- Dot Merah Notifikasi di Samping Kanan Atas Lonceng --}}
+                <span data-notif-dot 
+                      class="{{ $unreadCount > 0 ? 'inline-block' : 'hidden' }} absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-white pointer-events-none"
+                      style="position: absolute; top: 0px; right: 0px; width: 10px; height: 10px; border-radius: 9999px; background-color: #e11d48; box-shadow: 0 0 0 2px #ffffff; pointer-events: none;"></span>
+            </span>
+        </button>
+    @endif
 
     {{-- Popover Panel Dropdown (Tepat di Bawah Ikon Lonceng, Tanpa Blur) --}}
-    <div class="dropdown-menu hidden absolute right-0 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-white border border-line shadow-2xl p-0 z-50 select-none custom-dropdown-menu">
+    <div class="dropdown-menu hidden {{ $isMobile ? 'fixed inset-x-3.5 top-[4.25rem] max-w-md mx-auto' : 'absolute right-0 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)]' }} rounded-2xl bg-white border border-line shadow-2xl p-0 z-50 select-none custom-dropdown-menu">
         
         {{-- Header Popover Panel --}}
         <div class="p-3.5 border-b border-line/60 bg-surface/30">
@@ -75,7 +104,7 @@
         </div>
 
         {{-- Body: Daftar Notifikasi --}}
-        <div class="max-h-[340px] overflow-y-auto custom-dropdown-scroll divide-y divide-line/40" data-notif-list>
+        <div class="max-h-[55vh] sm:max-h-[340px] overflow-y-auto custom-dropdown-scroll divide-y divide-line/40" data-notif-list>
             @forelse ($alerts as $alert)
                 @php
                     $isUnread = !$alert->dibaca;

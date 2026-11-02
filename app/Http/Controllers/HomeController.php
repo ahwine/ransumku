@@ -36,7 +36,10 @@ class HomeController extends Controller
         $estMarginKotor = $estPendapatanTelur > 0 ? ($estPendapatanTelur - $biayaPakanHariIni) : null;
         $estMarginPerKgTelur = ($biayaKgTelur !== null) ? round($hargaTelurKg - $biayaKgTelur) : null;
 
-        $alerts = $farm->alerts()->where('tanggal_data', '>=', now()->subDays(5))->latest('tanggal_data')->latest('id')->get();
+        $alerts = $farm->alerts()->where('tanggal_data', '>=', now()->subDays(7))->latest('tanggal_data')->latest('id')->get();
+        if ($alerts->isEmpty()) {
+            $alerts = $farm->alerts()->latest('tanggal_data')->latest('id')->limit(5)->get();
+        }
         $terlama = $farm->hargaTerlamaDiperbarui();
         $hargaUsangHari = $terlama && $terlama->lt(now()->subDays(config('ransumku.harga_usang_hari')))
             ? (int) $terlama->diffInDays(now()) : null;
@@ -312,14 +315,7 @@ class HomeController extends Controller
      */
     public function statusSensorLive(Farm $farm, WeatherService $weatherService): JsonResponse
     {
-        $isOnline = $weatherService->isSensorOnline($farm, 60);
-
-        if ($isOnline) {
-            $w = $weatherService->getWeather($farm);
-        } else {
-            // Jika sensor fisik offline (dilepas), sistem otomatis beralih ke cuaca BMKG Open-Meteo
-            $w = $weatherService->fetchOpenMeteo($farm);
-        }
+        $w = $weatherService->getWeather($farm);
 
         $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
 

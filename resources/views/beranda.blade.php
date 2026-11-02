@@ -4,11 +4,130 @@
 @use('App\Support\Fmt')
 
 <div class="space-y-4">
+    @if (isset($weather))
+        @php
+            $weatherType = $weather['weather_type'] ?? 'partly_cloudy';
+            $thiPercent = $weather['thi_percent'] ?? 50.0;
+            $dampakAyam = $weather['dampak_ayam'] ?? ($weather['deskripsi_risiko'] ?? 'Kondisi fisiologi ayam terpantau aman.');
+        @endphp
+    @endif
+
+    {{-- ======================================================== --}}
+    {{-- A. TAMPILAN MOBILE (Persis Sesuai Referensi Gambar 1)     --}}
+    {{-- ======================================================== --}}
+    <div class="lg:hidden space-y-3" data-weather-widget data-live-url="{{ route('api.kandang.sensor.live', $farm ?? auth()->user()->farm) }}" data-current-suhu="{{ $weather['suhu'] ?? 27.0 }}" data-current-rh="{{ $weather['kelembaban'] ?? 80 }}">
+        
+        {{-- 1. Section Header: Ringkasan Hari Ini & Tanggal Aktif --}}
+        <div class="flex items-center justify-between px-1 pt-0.5">
+            <h2 class="text-xs font-black text-ink tracking-tight">Ringkasan Hari Ini</h2>
+            <span class="text-[11px] font-bold text-muted flex items-center gap-1 select-none">
+                <span class="material-symbols-outlined text-[13px] text-brand">calendar_today</span>
+                <span>{{ today()->translatedFormat('l, d M') }}</span>
+            </span>
+        </div>
+
+        {{-- 2. Dua Kartu Metrik Ringkasan Hari Ini (Populasi & Fase Produksi) --}}
+        <div class="grid grid-cols-2 gap-2.5">
+            {{-- Card 1: Populasi --}}
+            <div class="bg-white rounded-2xl border border-line p-3.5 shadow-2xs flex flex-col justify-between">
+                <span class="text-xs font-bold text-ink">Populasi</span>
+                <div class="mt-3">
+                    <span class="text-2xl sm:text-3xl font-black text-ink tracking-tight block">{{ number_format($farm->jumlah_ayam ?? 200, 0, ',', '.') }}</span>
+                    <span class="text-xs font-bold text-brand block mt-1">Ekor</span>
+                </div>
+            </div>
+
+            {{-- Card 2: Fase Produksi --}}
+            <div class="bg-white rounded-2xl border border-line p-3.5 shadow-2xs flex flex-col justify-between">
+                <span class="text-xs font-bold text-ink">Fase Produksi</span>
+                <div class="flex items-end justify-between mt-3">
+                    <span class="text-base sm:text-lg font-black text-ink">{{ ucfirst($farm->fase ?? 'Produksi') }}</span>
+                    <span class="material-symbols-outlined text-[24px] text-brand select-none">sync</span>
+                </div>
+            </div>
+        </div>
+
+        @if (isset($weather))
+            {{-- 3. Card Terpadu: Cuaca Mikro Kandang + Indeks Stres Panas (THI) Persis Gambar Referensi --}}
+            <div class="bg-white rounded-2xl border border-line p-4 shadow-2xs space-y-3.5">
+                {{-- Bagian Atas: Cuaca Mikro Kandang --}}
+                <div class="space-y-2.5">
+                    <span class="text-xs font-black text-ink block">Cuaca Mikro Kandang</span>
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-baseline gap-1">
+                                <span data-live-suhu class="text-3xl font-black text-ink tracking-tight transition-all duration-300">{{ $weather['suhu'] }}</span>
+                                <span class="text-xl font-bold text-ink">°C</span>
+                            </div>
+                            <p data-live-cuaca class="text-xs font-bold text-ink mt-0.5">{{ $weather['cuaca_teks'] }}</p>
+                        </div>
+                        <div data-live-icon-container class="w-14 h-14 shrink-0 grid place-items-center">
+                            @include('partials.weather-svg', ['type' => $weatherType, 'sizeClass' => 'w-14 h-14'])
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-6 pt-1 text-xs font-semibold text-ink">
+                        <span class="flex items-center gap-1.5" title="Kelembaban Relatif (RH)">
+                            <span class="material-symbols-outlined text-[16px] text-blue-500">water_drop</span>
+                            <span><strong data-live-rh>{{ $weather['kelembaban'] }}%</strong> RH</span>
+                        </span>
+                        <span class="flex items-center gap-1.5" title="Kecepatan Angin">
+                            <span class="material-symbols-outlined text-[16px] text-teal-600">air</span>
+                            <span><strong data-live-angin>{{ $weather['angin_kmh'] }}</strong> km/h</span>
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Garis Pemisah Antara Cuaca dan THI --}}
+                <div class="border-t border-line/70"></div>
+
+                {{-- Bagian Bawah: Indeks Stres Panas (THI) --}}
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-ink">Indeks Stres Panas (THI)</span>
+                        <span data-live-thi-badge class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            THI {{ $weather['thi'] }}
+                        </span>
+                    </div>
+
+                    {{-- Visual Bar Gauge THI (3 Segmen Skala Bersih: Aman, Waspada, Bahaya) dengan Marker --}}
+                    <div class="space-y-1 pt-1">
+                        <div class="relative w-full h-3 mb-0.5">
+                            <div data-live-thi-marker class="absolute bottom-0 -translate-x-1/2 flex flex-col items-center transition-all duration-700 ease-out" style="left: {{ $thiPercent }}%;">
+                                <span class="w-2.5 h-2.5 rotate-45 bg-amber-500 shadow-xs"></span>
+                            </div>
+                        </div>
+                        <div class="relative w-full h-2 rounded-full bg-slate-100 overflow-hidden shadow-inner flex">
+                            <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Aman"></div>
+                            <div class="h-full bg-amber-400" style="width: 30%;" title="Zona Waspada"></div>
+                            <div class="h-full bg-rose-500" style="width: 30%;" title="Zona Bahaya"></div>
+                        </div>
+                        <div class="flex w-full text-[10px] text-ink/70 font-bold pt-1 select-none">
+                            <div style="width: 40%;" class="text-center">Aman</div>
+                            <div style="width: 30%;" class="text-center">Waspada</div>
+                            <div style="width: 30%;" class="text-center">Bahaya</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 4. Card Kondisi Ayam --}}
+            <div class="bg-white rounded-2xl border border-line p-4 shadow-2xs space-y-1.5">
+                <h3 class="text-xs font-black text-ink">Kondisi Ayam</h3>
+                <p data-live-dampak class="text-xs text-ink/80 font-medium leading-relaxed">{{ $dampakAyam }}</p>
+            </div>
+        @endif
+    </div>
+
+    {{-- ======================================================== --}}
+    {{-- B. TAMPILAN DESKTOP (100% SAMA SEPERTI ASLINYA)          --}}
+    {{-- ======================================================== --}}
     {{-- Card Utama Dashboard: Identitas Kandang, Cuaca Mikro, & 4-Kuadran Metrik --}}
     <div class="bg-white rounded-xl border border-line shadow-2xs overflow-hidden">
 
-        {{-- 1. Baris Atas: Identitas Kandang & Toolbar Metrik --}}
-        <div data-dropdown-section class="p-4 md:p-5 border-b border-line space-y-3 bg-white relative z-30">
+        {{-- 1. Baris Atas: Identitas Kandang & Toolbar Metrik (Khusus Desktop lg+) --}}
+        <div data-dropdown-section class="hidden lg:block p-4 md:p-5 border-b border-line space-y-3 bg-white relative z-30">
             {{-- Header Baris Atas: Nama Kandang di Kiri & Tombol Aksi Sejajar Horizontal di Kanan --}}
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h1 class="text-lg md:text-xl font-extrabold text-ink tracking-tight whitespace-nowrap">
@@ -60,9 +179,9 @@
             </div>
         </div>
 
-        {{-- Widget Visual Cuaca Mikro & Indeks Stres Panas (THI) Kandang --}}
+        {{-- Widget Visual Cuaca Mikro & Indeks Stres Panas (THI) Kandang (Khusus Desktop lg+) --}}
         @if (isset($weather))
-            <div class="border-b border-line p-5 md:p-6 bg-white relative z-10">
+            <div class="hidden lg:block border-b border-line p-5 md:p-6 bg-white relative z-10">
                 @include('partials.weather-widget')
             </div>
         @endif
@@ -392,7 +511,6 @@
     @endif
 
     {{-- Modal Popups Khusus Beranda --}}
-    @include('partials.modal-catat-harian')
     @include('partials.modal-iot-kandang')
 </div>
 @endsection

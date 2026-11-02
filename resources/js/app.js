@@ -1132,6 +1132,13 @@ document.addEventListener('click', (e) => {
                 trg.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
             }
         });
+        if (typeof window.setMobileHeaderCapsule === 'function') {
+            const menuModal = document.getElementById('modal-menu-mobile');
+            const isMenuOpen = menuModal && !menuModal.classList.contains('hidden');
+            if (!isMenuOpen) {
+                window.setMobileHeaderCapsule(null);
+            }
+        }
     }
 });
 
@@ -1152,14 +1159,192 @@ document.addEventListener('keydown', (e) => {
                 trg.classList.remove('ring-2', 'ring-brand/20', 'border-brand');
             }
         });
+        if (typeof window.setMobileHeaderCapsule === 'function') {
+            const menuModal = document.getElementById('modal-menu-mobile');
+            const isMenuOpen = menuModal && !menuModal.classList.contains('hidden');
+            if (!isMenuOpen) {
+                window.setMobileHeaderCapsule(null);
+            }
+        }
     }
 });
+
+// ==========================================
+// Mobile Header Dynamic Island Capsule Buttons
+// ==========================================
+window.setMobileHeaderCapsule = function(activeName) {
+    const notifBtn = document.getElementById('btn-capsule-notif');
+    const menuBtn = document.getElementById('btn-capsule-menu');
+    const akunBtn = document.getElementById('btn-capsule-akun');
+    const kandangBtn = document.getElementById('btn-nav-kandang-mobile');
+
+    const updateBtn = (btn, isActive) => {
+        if (!btn) return;
+        const labelWrap = btn.querySelector('.capsule-label-wrap') || btn.querySelector('.capsule-label');
+        if (isActive) {
+            btn.classList.add('is-active');
+            if (labelWrap) {
+                labelWrap.style.maxWidth = 'none';
+                const targetW = labelWrap.scrollWidth;
+                labelWrap.style.maxWidth = '0px';
+                void labelWrap.offsetWidth;
+                labelWrap.style.maxWidth = targetW + 'px';
+            }
+        } else {
+            btn.classList.remove('is-active');
+            if (labelWrap) {
+                const currentW = labelWrap.offsetWidth;
+                labelWrap.style.maxWidth = currentW + 'px';
+                void labelWrap.offsetWidth;
+                labelWrap.style.maxWidth = '0px';
+            }
+        }
+    };
+
+    updateBtn(notifBtn, activeName === 'notif');
+    updateBtn(menuBtn, activeName === 'menu');
+    updateBtn(akunBtn, activeName === 'akun');
+
+    // Fade out tab kandang when any capsule expands to avoid collision on small screens
+    if (kandangBtn) {
+        if (activeName !== null) {
+            kandangBtn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-x-0', 'scale-100');
+            kandangBtn.classList.add('opacity-0', 'pointer-events-none', '-translate-x-2', 'scale-95');
+        } else {
+            kandangBtn.classList.remove('opacity-0', 'pointer-events-none', '-translate-x-2', 'scale-95');
+            kandangBtn.classList.add('opacity-100', 'pointer-events-auto', 'translate-x-0', 'scale-100');
+        }
+    }
+};
+
+window.toggleNotifikasiMobile = function(event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    const dropdown = document.getElementById('notifikasi-popover-mobile');
+    if (!dropdown) return;
+    const menu = dropdown.querySelector('.dropdown-menu');
+    const isOpen = menu && !menu.classList.contains('hidden');
+
+    // Close menu modal if open
+    const menuModal = document.getElementById('modal-menu-mobile');
+    if (menuModal && !menuModal.classList.contains('hidden')) {
+        window.tutupModal('modal-menu-mobile');
+    }
+
+    // Close akun dropdown if open
+    const akunDropdown = document.getElementById('akun-popover-mobile');
+    if (akunDropdown) {
+        const m = akunDropdown.querySelector('.dropdown-menu');
+        if (m) m.classList.add('hidden');
+    }
+
+    if (isOpen) {
+        if (menu) menu.classList.add('hidden');
+        window.setMobileHeaderCapsule(null);
+    } else {
+        // Close any other custom dropdowns
+        document.querySelectorAll('.custom-dropdown-container').forEach((c) => {
+            const m = c.querySelector('.dropdown-menu');
+            if (m) m.classList.add('hidden');
+        });
+        if (menu) menu.classList.remove('hidden');
+        window.setMobileHeaderCapsule('notif');
+    }
+};
+
+window.toggleMenuMobile = function(event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    const menuModal = document.getElementById('modal-menu-mobile');
+    const isOpen = menuModal && !menuModal.classList.contains('hidden');
+
+    // Close notif dropdown if open
+    const notifDropdown = document.getElementById('notifikasi-popover-mobile');
+    if (notifDropdown) {
+        const m = notifDropdown.querySelector('.dropdown-menu');
+        if (m) m.classList.add('hidden');
+    }
+
+    // Close akun dropdown if open
+    const akunDropdown = document.getElementById('akun-popover-mobile');
+    if (akunDropdown) {
+        const m = akunDropdown.querySelector('.dropdown-menu');
+        if (m) m.classList.add('hidden');
+    }
+
+    if (isOpen) {
+        window.tutupModal('modal-menu-mobile');
+        window.setMobileHeaderCapsule(null);
+    } else {
+        window.bukaModal('modal-menu-mobile');
+        window.setMobileHeaderCapsule('menu');
+    }
+};
+
+window.toggleAkunMobile = function(event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    const dropdown = document.getElementById('akun-popover-mobile');
+    if (!dropdown) return;
+    const menu = dropdown.querySelector('.dropdown-menu');
+    const isOpen = menu && !menu.classList.contains('hidden');
+
+    // Close menu modal if open
+    const menuModal = document.getElementById('modal-menu-mobile');
+    if (menuModal && !menuModal.classList.contains('hidden')) {
+        window.tutupModal('modal-menu-mobile');
+    }
+
+    // Close notif dropdown if open
+    const notifDropdown = document.getElementById('notifikasi-popover-mobile');
+    if (notifDropdown) {
+        const m = notifDropdown.querySelector('.dropdown-menu');
+        if (m) m.classList.add('hidden');
+    }
+
+    if (isOpen) {
+        if (menu) menu.classList.add('hidden');
+        window.setMobileHeaderCapsule(null);
+    } else {
+        // Close any other custom dropdowns
+        document.querySelectorAll('.custom-dropdown-container').forEach((c) => {
+            const m = c.querySelector('.dropdown-menu');
+            if (m) m.classList.add('hidden');
+        });
+        if (menu) menu.classList.remove('hidden');
+        window.setMobileHeaderCapsule('akun');
+    }
+};
 
 // ==========================================
 // RansumKu Universal Modal & Dialog System
 // ==========================================
 
 window.bukaModal = function(id) {
+    if (id === 'modal-menu-mobile' && typeof window.setMobileHeaderCapsule === 'function') {
+        window.setMobileHeaderCapsule('menu');
+    }
+    if (id === 'modal-pilih-kandang-mobile' || id === 'modal-tambah-kandang' || id.startsWith('modal-edit-kandang-')) {
+        if (typeof window.setMobileHeaderCapsule === 'function') {
+            window.setMobileHeaderCapsule(null);
+        }
+        const notifDropdown = document.getElementById('notifikasi-popover-mobile');
+        if (notifDropdown) {
+            const m = notifDropdown.querySelector('.dropdown-menu');
+            if (m) m.classList.add('hidden');
+        }
+        const akunDropdown = document.getElementById('akun-popover-mobile');
+        if (akunDropdown) {
+            const m = akunDropdown.querySelector('.dropdown-menu');
+            if (m) m.classList.add('hidden');
+        }
+    }
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.remove('hidden');
@@ -1172,9 +1357,20 @@ window.bukaModal = function(id) {
         }
     });
     document.body.classList.add('overflow-hidden');
+
+    if (id === 'modal-catat-harian') {
+        const centerDot = document.getElementById('nav-center-dot');
+        if (centerDot) {
+            centerDot.classList.remove('bg-transparent', 'scale-0');
+            centerDot.classList.add('bg-brand', 'scale-100');
+        }
+    }
 };
 
 window.tutupModal = function(id) {
+    if (id === 'modal-menu-mobile' && typeof window.setMobileHeaderCapsule === 'function') {
+        window.setMobileHeaderCapsule(null);
+    }
     const el = document.getElementById(id);
     if (!el) return;
     const card = el.querySelector('[data-modal-card]');
@@ -1187,6 +1383,14 @@ window.tutupModal = function(id) {
         el.classList.add('hidden');
         document.body.classList.remove('overflow-hidden');
     }, 200);
+
+    if (id === 'modal-catat-harian') {
+        const centerDot = document.getElementById('nav-center-dot');
+        if (centerDot) {
+            centerDot.classList.add('bg-transparent', 'scale-0');
+            centerDot.classList.remove('bg-brand', 'scale-100');
+        }
+    }
 };
 
 // Global escape key to close active modal
@@ -1559,15 +1763,16 @@ window.tandaiSemuaNotifikasiDibaca = function () {
 // Real-time Live Sensor & Microclimate Poller
 // ==========================================
 function initLiveSensorPoller() {
-    const pollerTarget = document.querySelector('[data-weather-widget], [data-controller-widget]');
-    if (!pollerTarget) return;
+    const widgets = document.querySelectorAll('[data-weather-widget]');
+    const controllerWidget = document.querySelector('[data-controller-widget]');
+    if (!widgets.length && !controllerWidget) return;
 
-    const liveUrl = pollerTarget.getAttribute('data-live-url');
+    const firstWidget = widgets.length ? widgets[0] : controllerWidget;
+    const liveUrl = firstWidget.getAttribute('data-live-url');
     if (!liveUrl) return;
 
-    const widget = document.querySelector('[data-weather-widget]');
-    let currentSuhu = widget ? widget.getAttribute('data-current-suhu') : null;
-    let currentRh = widget ? widget.getAttribute('data-current-rh') : null;
+    let currentSuhu = firstWidget.getAttribute('data-current-suhu');
+    let currentRh = firstWidget.getAttribute('data-current-rh');
     let lastSensorOnline = null;
 
     const iconSVGs = {
@@ -1613,108 +1818,116 @@ function initLiveSensorPoller() {
             }
             lastSensorOnline = isSensorOnline;
 
-            const suhuEl = widget.querySelector('[data-live-suhu]');
-            const rhEl = widget.querySelector('[data-live-rh]');
-            const apparentEl = widget.querySelector('[data-live-apparent]');
-            const anginEl = widget.querySelector('[data-live-angin]');
-            const cuacaEl = widget.querySelector('[data-live-cuaca]');
-            const updatedEl = widget.querySelector('[data-live-updated]');
-            const sumberBadge = widget.querySelector('[data-live-sumber-badge]');
-            const pulseDot = widget.querySelector('[data-live-pulse-dot]');
-            const thiBadge = widget.querySelector('[data-live-thi-badge]');
-            const thiMarker = widget.querySelector('[data-live-thi-marker]');
-            const thiPinText = widget.querySelector('[data-live-thi-pin-text]');
-            const dampakEl = widget.querySelector('[data-live-dampak]');
-            const liveBadge = widget.querySelector('[data-live-indicator-badge]');
-            const iconContainer = widget.querySelector('[data-live-icon-container]');
-
             const newSuhuStr = String(data.suhu);
             const newRhStr = String(data.kelembaban);
 
-            // Jika suhu berubah
-            if (currentSuhu !== newSuhuStr) {
-                if (suhuEl) {
-                    suhuEl.textContent = data.suhu;
-                    suhuEl.classList.add('text-brand', 'scale-110');
-                    setTimeout(() => {
-                        suhuEl.classList.remove('text-brand', 'scale-110');
-                    }, 800);
+            widgets.forEach((widget) => {
+                const suhuEl = widget.querySelector('[data-live-suhu]');
+                const rhEl = widget.querySelector('[data-live-rh]');
+                const apparentEl = widget.querySelector('[data-live-apparent]');
+                const anginEl = widget.querySelector('[data-live-angin]');
+                const cuacaEl = widget.querySelector('[data-live-cuaca]');
+                const updatedEl = widget.querySelector('[data-live-updated]');
+                const sumberBadge = widget.querySelector('[data-live-sumber-badge]');
+                const pulseDot = widget.querySelector('[data-live-pulse-dot]');
+                const thiBadge = widget.querySelector('[data-live-thi-badge]');
+                const thiMarker = widget.querySelector('[data-live-thi-marker]');
+                const thiPinText = widget.querySelector('[data-live-thi-pin-text]');
+                const dampakEl = widget.querySelector('[data-live-dampak]');
+                const liveBadge = widget.querySelector('[data-live-indicator-badge]');
+                const iconContainer = widget.querySelector('[data-live-icon-container]');
+
+                // Jika suhu berubah
+                if (currentSuhu !== newSuhuStr) {
+                    if (suhuEl) {
+                        suhuEl.textContent = data.suhu;
+                        suhuEl.classList.add('text-brand', 'scale-110');
+                        setTimeout(() => {
+                            suhuEl.classList.remove('text-brand', 'scale-110');
+                        }, 800);
+                    }
+                    if (liveBadge) {
+                        liveBadge.classList.remove('hidden');
+                        setTimeout(() => liveBadge.classList.add('hidden'), 4000);
+                    }
+                    widget.setAttribute('data-current-suhu', newSuhuStr);
                 }
-                if (liveBadge) {
-                    liveBadge.classList.remove('hidden');
-                    setTimeout(() => liveBadge.classList.add('hidden'), 4000);
+
+                // Jika kelembaban berubah
+                if (currentRh !== newRhStr) {
+                    if (rhEl) rhEl.textContent = data.kelembaban + '%';
+                    widget.setAttribute('data-current-rh', newRhStr);
                 }
-                currentSuhu = newSuhuStr;
-                if (widget) widget.setAttribute('data-current-suhu', newSuhuStr);
-            }
 
-            // Jika kelembaban berubah
-            if (currentRh !== newRhStr) {
-                if (rhEl) rhEl.textContent = data.kelembaban + '%';
-                currentRh = newRhStr;
-                if (widget) widget.setAttribute('data-current-rh', newRhStr);
-            }
-
-            if (apparentEl && data.apparent_temp !== undefined) {
-                apparentEl.textContent = data.apparent_temp + '°C';
-            }
-            if (anginEl && data.angin_kmh !== undefined) {
-                anginEl.textContent = data.angin_kmh;
-            }
-            if (cuacaEl && data.cuaca_teks) {
-                cuacaEl.textContent = data.cuaca_teks;
-            }
-            if (updatedEl && data.updated_at) {
-                updatedEl.textContent = 'Pembaruan: ' + data.updated_at;
-            }
-
-            // Update Ikon Cuaca
-            if (iconContainer && data.weather_type && iconSVGs[data.weather_type]) {
-                if (iconContainer.getAttribute('data-current-type') !== data.weather_type) {
-                    iconContainer.innerHTML = iconSVGs[data.weather_type];
-                    iconContainer.setAttribute('data-current-type', data.weather_type);
+                if (apparentEl && data.apparent_temp !== undefined) {
+                    apparentEl.textContent = data.apparent_temp + '°C';
                 }
-            }
-
-            // Update THI Badge & Kategori
-            if (thiBadge && data.thi !== undefined) {
-                thiBadge.textContent = 'THI ' + data.thi + ' · ' + (data.thi_kategori_singkat || '');
-                if (data.badge_class) {
-                    thiBadge.className = 'px-3.5 py-1 rounded-full text-xs font-bold shadow-2xs transition-all duration-300 ' + data.badge_class;
+                if (anginEl && data.angin_kmh !== undefined) {
+                    anginEl.textContent = data.angin_kmh;
                 }
-            }
+                if (cuacaEl && data.cuaca_teks) {
+                    cuacaEl.textContent = data.cuaca_teks;
+                }
+                if (updatedEl && data.updated_at) {
+                    updatedEl.textContent = 'Pembaruan: ' + data.updated_at;
+                }
 
-            // Update THI Pin Marker di atas bar gauge
-            if (thiMarker && data.thi_percent !== undefined) {
-                thiMarker.style.left = data.thi_percent + '%';
-            }
-            if (thiPinText && data.thi !== undefined) {
-                thiPinText.textContent = 'THI ' + data.thi;
-            }
+                // Update Ikon Cuaca
+                if (iconContainer && data.weather_type && iconSVGs[data.weather_type]) {
+                    if (iconContainer.getAttribute('data-current-type') !== data.weather_type) {
+                        iconContainer.innerHTML = iconSVGs[data.weather_type];
+                        iconContainer.setAttribute('data-current-type', data.weather_type);
+                    }
+                }
 
-            // Update Dampak Ayam
-            if (dampakEl && data.dampak_ayam) {
-                dampakEl.innerHTML = '<strong class="font-bold">Kondisi Ayam:</strong> ' + data.dampak_ayam;
-            }
+                // Update THI Badge & Kategori
+                if (thiBadge && data.thi !== undefined) {
+                    thiBadge.textContent = 'THI ' + data.thi + (data.thi_kategori_singkat ? ' · ' + data.thi_kategori_singkat : '');
+                    if (data.badge_class) {
+                        thiBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs transition-all duration-300 ' + data.badge_class;
+                    }
+                }
 
-            // Update Indikator Status Sensor
-            const isSensor = isSensorOnline;
-            if (sumberBadge) {
-                sumberBadge.textContent = isSensor ? 'Sensor IoT Live' : 'Prakiraan BMKG';
-                sumberBadge.className = isSensor
-                    ? 'text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all bg-emerald-50 text-emerald-800 border border-emerald-200'
-                    : 'text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all bg-surface text-muted border border-line';
-            }
-            if (pulseDot) {
-                pulseDot.className = isSensor
-                    ? 'w-2 h-2 rounded-full transition-colors bg-emerald-500 animate-pulse'
-                    : 'w-2 h-2 rounded-full transition-colors bg-blue-400';
-                pulseDot.title = isSensor ? 'Sensor IoT Fisik Terhubung' : 'Prakiraan Cuaca Terbuka';
-            }
+                // Update THI Pin Marker di atas bar gauge
+                if (thiMarker && data.thi_percent !== undefined) {
+                    thiMarker.style.left = data.thi_percent + '%';
+                }
+                if (thiPinText && data.thi !== undefined) {
+                    thiPinText.textContent = 'THI ' + data.thi;
+                }
 
-            // Update Kontroler Aktuator Pintar jika ada di halaman
-            if (data.kontrol && typeof window.updateControllerUI === 'function') {
-                window.updateControllerUI(data.kontrol);
+                // Update Dampak Ayam
+                if (dampakEl && data.dampak_ayam) {
+                    dampakEl.textContent = data.dampak_ayam;
+                }
+
+                // Update Indikator Status Sensor
+                const isSensor = isSensorOnline;
+                if (sumberBadge) {
+                    sumberBadge.textContent = isSensor ? 'Sensor IoT Live' : 'Prakiraan BMKG';
+                    sumberBadge.className = isSensor
+                        ? 'text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : 'text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all bg-surface text-muted border border-line';
+                }
+                if (pulseDot) {
+                    pulseDot.className = isSensor
+                        ? 'w-2 h-2 rounded-full transition-colors bg-emerald-500 animate-pulse'
+                        : 'w-2 h-2 rounded-full transition-colors bg-blue-400';
+                    pulseDot.title = isSensor ? 'Sensor IoT Fisik Terhubung' : 'Prakiraan Cuaca Terbuka';
+                }
+            });
+
+            currentSuhu = newSuhuStr;
+            currentRh = newRhStr;
+
+            // Update Kontroler Aktuator Pintar & 3D Digital Twin jika ada di halaman
+            if (data.kontrol) {
+                if (typeof window.updateControllerUI === 'function') {
+                    window.updateControllerUI(data.kontrol);
+                }
+                if (typeof window.syncKandang3DState === 'function') {
+                    window.syncKandang3DState(data.kontrol);
+                }
             }
         } catch (e) {
             // Ignore temporary network errors
