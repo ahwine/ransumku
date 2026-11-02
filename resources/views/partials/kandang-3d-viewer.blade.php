@@ -112,7 +112,8 @@
 
 <script>
 let scene3D, camera3D, renderer3D, controls3D;
-let feederCart3D, fanBlades3D, roofWaterParticles3D;
+let feederCart3D, roofWaterParticles3D;
+let fanBladesList = [];
 let feedP_L_T1, feedP_L_T2, feedP_R_T1, feedP_R_T2;
 let coopLight1, coopLight2;
 let cableMeshA, cableMeshB;
@@ -572,26 +573,49 @@ function buildKandang3DScene() {
 
     updateCableLines();
 
-    // G. Kipas Blower Sirkulasi 3D DI ATAS (Puncak Segitiga Dinding Atap / Gable Apex)
-    const fanGroup = new THREE.Group();
-    fanGroup.position.set(9.4, 4.3, 0); // KETINGGIAN 4.3 METER DI PUNCAK ATAP ATAS!
-    fanGroup.rotation.y = -Math.PI / 2;
+    // G. Kipas Blower Sirkulasi 3D DI ATAS (Dipasang Berseri Berjarak per 4.5 Meter di Plafon/Puncak Atap)
+    fanBladesList = [];
 
-    const fanFrame = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.09, 16, 32), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-    fanGroup.add(fanFrame);
+    function createCeilingFanUnit(xPos, yPos, zPos, isExhaustWall = false) {
+        const fanGroup = new THREE.Group();
+        fanGroup.position.set(xPos, yPos, zPos);
+        fanGroup.rotation.y = -Math.PI / 2;
 
-    fanBlades3D = new THREE.Group();
-    const bladeGeo = new THREE.BoxGeometry(0.18, 0.75, 0.02);
-    const bladeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
-    for (let i = 0; i < 4; i++) {
-        const blade = new THREE.Mesh(bladeGeo, bladeMat);
-        blade.rotation.z = (Math.PI / 2) * i;
-        blade.position.y = 0.32 * Math.sin((Math.PI / 2) * i);
-        blade.position.x = 0.32 * Math.cos((Math.PI / 2) * i);
-        fanBlades3D.add(blade);
+        const radius = isExhaustWall ? 0.85 : 0.65;
+        const fanFrame = new THREE.Mesh(
+            new THREE.TorusGeometry(radius, 0.08, 16, 32),
+            new THREE.MeshStandardMaterial({ color: isExhaustWall ? 0x1e293b : 0x334155, metalness: 0.7 })
+        );
+        fanGroup.add(fanFrame);
+
+        // Rangka gantungan ke plafon atap
+        if (!isExhaustWall) {
+            const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7), new THREE.MeshStandardMaterial({ color: 0x64748b }));
+            strut.position.set(0, 0.7, 0);
+            fanGroup.add(strut);
+        }
+
+        const blades = new THREE.Group();
+        const bladeGeo = new THREE.BoxGeometry(0.16, radius * 0.88, 0.02);
+        const bladeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
+        for (let i = 0; i < 4; i++) {
+            const blade = new THREE.Mesh(bladeGeo, bladeMat);
+            blade.rotation.z = (Math.PI / 2) * i;
+            blade.position.y = (radius * 0.38) * Math.sin((Math.PI / 2) * i);
+            blade.position.x = (radius * 0.38) * Math.cos((Math.PI / 2) * i);
+            blades.add(blade);
+        }
+        fanGroup.add(blades);
+        scene3D.add(fanGroup);
+        fanBladesList.push(blades);
+        return fanGroup;
     }
-    fanGroup.add(fanBlades3D);
-    scene3D.add(fanGroup);
+
+    // Pasang kipas berseri di plafon atas berjarak beberapa meter (Sesuai Arahan Aditya)
+    createCeilingFanUnit(-4.5, 4.3, 0); // Kipas Sirkulasi Atas Zona 1
+    createCeilingFanUnit(0.0, 4.3, 0);  // Kipas Sirkulasi Atas Zona 2 (Tengah)
+    createCeilingFanUnit(4.5, 4.3, 0);  // Kipas Sirkulasi Atas Zona 3
+    createCeilingFanUnit(9.4, 4.3, 0, true); // Kipas Exhaust Dinding Belakang Atas (Gable Apex)
 
     // H. Partikel Air Sprinkler Atap (Particle System di Puncak Atap Bubungan)
     const particleCount = 200;
@@ -716,9 +740,11 @@ function animateThreeJS() {
         chicken.rotation.x = Math.sin(chickenBobTime + i) * 0.12;
     }
 
-    // 3. Animasi Kipas Blower Berputar
-    if (isFanSpinning3D && fanBlades3D) {
-        fanBlades3D.rotation.z += 0.35; // Putaran kencang
+    // 3. Animasi Seluruh Kipas Blower Atas Berputar Bersama
+    if (isFanSpinning3D && fanBladesList.length > 0) {
+        for (let i = 0; i < fanBladesList.length; i++) {
+            fanBladesList[i].rotation.z += 0.35; // Putaran kencang serempak
+        }
     }
 
     // 4. Animasi Percikan Air Sprinkler Atap
