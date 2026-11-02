@@ -41,6 +41,10 @@
                 <span class="material-symbols-outlined text-[15px]">360</span>
                 <span>Auto-Putar</span>
             </button>
+            <button type="button" onclick="toggleLabelsIoT3D()" id="btn-labels-iot" class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer flex items-center gap-1 transition" title="Tampilkan / Sembunyikan Label Pin Komponen IoT">
+                <span class="material-symbols-outlined text-[15px]">pin_drop</span>
+                <span>Pin IoT</span>
+            </button>
         </div>
     </div>
 
@@ -118,6 +122,8 @@ let feedP_L_T1, feedP_L_T2, feedP_R_T1, feedP_R_T2;
 let coopLight1, coopLight2;
 let cableMeshA, cableMeshB;
 let chickensList = [];
+let iotLabelsGroup;
+let isLabelsVisible = true;
 
 // Status & Variabel Animasi 3D
 let isFeederRunning3D = false;
@@ -508,11 +514,21 @@ function buildKandang3DScene() {
         new THREE.MeshStandardMaterial({ color: 0x10b981 }));
     stA.position.set(-8.5, 1.3, 0);
     scene3D.add(stA);
-    // Motor gearbox kuning
+
+    // Motor gearbox kuning (Motor DC 12V High-Torque)
     const motorBox = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.38),
         new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.3 }));
     motorBox.position.set(-8.5, 2.6, 0);
     scene3D.add(motorBox);
+
+    // Spool Katrol Gulungan Kawat Sling
+    const spoolWinch = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.09, 0.18, 16),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85 })
+    );
+    spoolWinch.rotation.x = Math.PI / 2;
+    spoolWinch.position.set(-8.5, 2.6, 0);
+    scene3D.add(spoolWinch);
 
     // Stasiun Pulley B (Titik ujung, warna merah)
     const stB = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.6),
@@ -522,6 +538,221 @@ function buildKandang3DScene() {
     const pulley = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.1, 16), steelMat);
     pulley.position.set(8.5, 2.6, 0);
     scene3D.add(pulley);
+
+    // =====================================================================
+    // KOMPONEN IOT PENGGERAK & SENSOR DIGITAL TWIN (HARDWARE ASLI)
+    // =====================================================================
+    iotLabelsGroup = new THREE.Group();
+
+    // Helper membuat 3D Badge Sprite Label Melayang
+    function createBadgeSprite(text, colorHex = '#38bdf8', icon = '⚙️') {
+        const canvas = document.createElement('canvas');
+        canvas.width = 300;
+        canvas.height = 76;
+        const ctx = canvas.getContext('2d');
+        
+        // Background pill rounded
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+        if (ctx.roundRect) {
+            ctx.roundRect(4, 4, 292, 68, 14);
+        } else {
+            ctx.rect(4, 4, 292, 68);
+        }
+        ctx.fill();
+        
+        // Border berwarna
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = colorHex;
+        ctx.stroke();
+
+        // Teks label
+        ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${icon} ${text}`, 150, 38);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.needsUpdate = true;
+        const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.scale.set(1.85, 0.46, 1);
+        return sprite;
+    }
+
+    // 1. PANEL KONTROL MASTER IOT (ESP32 + 4-CHANNEL RELAY IP65 BOX)
+    // Dipasang di tiang pangkal lorong dekat stasiun A
+    const boxGroup = new THREE.Group();
+    boxGroup.position.set(-8.5, 1.55, -1.05);
+
+    // Kotak Panel Putih Industri
+    const boxEnclosure = new THREE.Mesh(
+        new THREE.BoxGeometry(0.36, 0.50, 0.22),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 })
+    );
+    boxGroup.add(boxEnclosure);
+
+    // Pintu / Bezel Hitam
+    const boxDoor = new THREE.Mesh(
+        new THREE.BoxGeometry(0.34, 0.48, 0.02),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 })
+    );
+    boxDoor.position.z = 0.11;
+    boxGroup.add(boxDoor);
+
+    // Layar OLED 0.96" Menyala Cyan (Menampilkan Telemetri Suhu & Status)
+    const oledScreen = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14, 0.09, 0.02),
+        new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, roughness: 0.2 })
+    );
+    oledScreen.position.set(0, 0.08, 0.12);
+    boxGroup.add(oledScreen);
+
+    // 3 LED Indikator IoT (Power Hijau, WiFi Biru, Relay Aktif Oranye)
+    const ledGreen = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x16a34a }));
+    ledGreen.position.set(-0.08, -0.08, 0.12);
+    boxGroup.add(ledGreen);
+
+    const ledBlue = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x3b82f6, emissive: 0x2563eb }));
+    ledBlue.position.set(0, -0.08, 0.12);
+    boxGroup.add(ledBlue);
+
+    const ledAmber = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706 }));
+    ledAmber.position.set(0.08, -0.08, 0.12);
+    boxGroup.add(ledAmber);
+
+    // Pipa konduit fleksibel dari panel ke motor
+    const conduit = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0x334155 }));
+    conduit.position.set(0, 0.55, 0);
+    boxGroup.add(conduit);
+
+    scene3D.add(boxGroup);
+
+    const lblPanel = createBadgeSprite('Panel ESP32 & Relay', '#06b6d4', '⚡');
+    lblPanel.position.set(-8.5, 2.05, -1.05);
+    iotLabelsGroup.add(lblPanel);
+
+    // 2. MODUL DRIVER MOTOR L298N (PENGGERAK KATROL PAKAN)
+    const l298Group = new THREE.Group();
+    l298Group.position.set(-8.5, 2.45, -0.32);
+
+    // PCB Biru
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.02, 0.18),
+        new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+    l298Group.add(pcb);
+
+    // Heatsink Aluminium Merah khas L298N
+    const heatsink = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.10, 0.14),
+        new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.6 }));
+    heatsink.position.y = 0.06;
+    l298Group.add(heatsink);
+
+    scene3D.add(l298Group);
+
+    const lblMotor = createBadgeSprite('Motor & Driver L298N', '#f59e0b', '⚙️');
+    lblMotor.position.set(-8.5, 2.95, 0);
+    iotLabelsGroup.add(lblMotor);
+
+    // 3. LIMIT SWITCH TITIK A & TITIK B (SENSOR PEMBATAS KERETA PAKAN)
+    // Limit Switch A di Titik Pangkal (x = -7.2)
+    const limA = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.06),
+        new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+    limA.position.set(-7.2, 2.65, 0.44);
+    scene3D.add(limA);
+
+    const lblLimA = createBadgeSprite('Limit Switch A', '#ef4444', '🛑');
+    lblLimA.position.set(-7.2, 2.98, 0.44);
+    iotLabelsGroup.add(lblLimA);
+
+    // Limit Switch B di Titik Ujung (x = 7.2)
+    const limB = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.06),
+        new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+    limB.position.set(7.2, 2.65, 0.44);
+    scene3D.add(limB);
+
+    const lblLimB = createBadgeSprite('Limit Switch B', '#ef4444', '🛑');
+    lblLimB.position.set(7.2, 2.98, 0.44);
+    iotLabelsGroup.add(lblLimB);
+
+    // 4. SISTEM PENGGERAK SPRINKLER (TANDON AIR + POMPA DIAFRAGMA 12V + RISER PIPE)
+    // Tandon Air Biru (Toren 100 Liter) di Sisi Luar Belakang
+    const torenGroup = new THREE.Group();
+    torenGroup.position.set(-8.8, 0.48, -4.0);
+
+    const torenBody = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.96, 16),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 })
+    );
+    torenGroup.add(torenBody);
+
+    const torenCap = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.20, 0.20, 0.08, 16),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b })
+    );
+    torenCap.position.y = 0.52;
+    torenGroup.add(torenCap);
+
+    scene3D.add(torenGroup);
+
+    // Pompa Booster Diafragma 12V (Penggerak Semprot Air Atap)
+    const pumpMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.12, 0.12),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7 })
+    );
+    pumpMesh.position.set(-8.8, 0.15, -3.4);
+    scene3D.add(pumpMesh);
+
+    // Pipa Riser Saluran Air Naik Menyusuri Tiang Kolom ke Puncak Nok Atap
+    const riserPipe = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.025, 0.025, 4.88),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85 })
+    );
+    riserPipe.position.set(-8.8, 2.58, -3.48);
+    scene3D.add(riserPipe);
+
+    const lblPump = createBadgeSprite('Tandon & Pompa Sprinkler', '#38bdf8', '💧');
+    lblPump.position.set(-8.8, 1.35, -4.0);
+    iotLabelsGroup.add(lblPump);
+
+    // 5. NODE SENSOR LINGKUNGAN IOT (ZONA TENGAH KANDANG)
+    // Sensor DHT22 (Suhu & Kelembaban Udara di Zona Ayam)
+    const dht22 = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.11, 0.05),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
+    );
+    dht22.position.set(0, 1.35, -1.33);
+    scene3D.add(dht22);
+
+    const lblDHT = createBadgeSprite('Sensor DHT22 Suhu', '#10b981', '🌡️');
+    lblDHT.position.set(0, 1.72, -1.33);
+    iotLabelsGroup.add(lblDHT);
+
+    // Sensor MQ-137 (Gas Amonia di Zona Kotoran Bawah)
+    const mq137Group = new THREE.Group();
+    mq137Group.position.set(0, 0.28, -1.33);
+    const mqPcb = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.015, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+    mq137Group.add(mqPcb);
+    const mqMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.045, 12),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 }));
+    mqMesh.position.y = 0.03;
+    mq137Group.add(mqMesh);
+    scene3D.add(mq137Group);
+
+    const lblMQ = createBadgeSprite('Sensor Amonia MQ-137', '#8b5cf6', '💨');
+    lblMQ.position.set(0, 0.62, -1.33);
+    iotLabelsGroup.add(lblMQ);
+
+    // 6. Label Kipas Blower Sirkulasi
+    const lblFan = createBadgeSprite('Blower Sirkulasi 12V', '#38bdf8', '🌀');
+    lblFan.position.set(0, 3.65, 0);
+    iotLabelsGroup.add(lblFan);
+
+    scene3D.add(iotLabelsGroup);
 
     // H. Kereta Pakan (Travelling Hopper) — Tangga Vertikal + Corong Biru
     feederCart3D = new THREE.Group();
@@ -895,6 +1126,18 @@ function toggleAutoRotate3D() {
         btn.className = controls3D.autoRotate
             ? 'px-3 py-1.5 rounded-lg text-[11px] font-bold bg-purple-600 text-white shadow-2xs cursor-pointer flex items-center gap-1'
             : 'px-3 py-1.5 rounded-lg text-[11px] font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition shadow-2xs cursor-pointer flex items-center gap-1';
+    }
+}
+
+function toggleLabelsIoT3D() {
+    if (!iotLabelsGroup) return;
+    isLabelsVisible = !isLabelsVisible;
+    iotLabelsGroup.visible = isLabelsVisible;
+    const btn = document.getElementById('btn-labels-iot');
+    if (btn) {
+        btn.className = isLabelsVisible
+            ? 'px-3 py-1.5 rounded-lg text-[11px] font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer flex items-center gap-1 transition'
+            : 'px-3 py-1.5 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 transition shadow-2xs cursor-pointer flex items-center gap-1';
     }
 }
 
