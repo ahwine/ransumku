@@ -78,7 +78,10 @@
         </div>
     </div>
 
-    {{-- 2. Card Utama: Pusat Kendali Aktuator Interaktif (Mode Otomatis & Manual) --}}
+    {{-- 2. Digital Twin 3D: Simulasi Fisik Interaktif Kandang Ayam & Kereta Pakan Katrol (WebGL Three.js) --}}
+    @include('partials.kandang-3d-viewer')
+
+    {{-- 3. Card Utama: Pusat Kendali Aktuator Interaktif (Mode Otomatis & Manual) --}}
     <div class="bg-white rounded-2xl border border-line p-5 md:p-6 shadow-2xs">
         @include('partials.controller-widget')
     </div>

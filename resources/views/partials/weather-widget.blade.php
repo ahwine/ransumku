@@ -14,6 +14,10 @@
             <span data-live-pulse-dot class="w-2 h-2 rounded-full transition-colors {{ $isSensorAktif ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400' }}" title="{{ $isSensorAktif ? 'Sensor IoT Fisik Terhubung' : 'Prakiraan Cuaca Terbuka' }}"></span>
         </span>
         <div class="flex items-center gap-2">
+            <a href="{{ route('kontroler.index') }}" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-tiny font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition shadow-2xs" title="Lihat Simulasi 3D Digital Twin & Smart Controller">
+                <span class="material-symbols-outlined text-[13px]">view_in_ar</span>
+                <span>3D Digital Twin</span>
+            </a>
             <span data-live-sumber-badge class="text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all {{ $isSensorAktif ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-surface text-muted border border-line' }}">
                 {{ $isSensorAktif ? 'Sensor IoT Live' : 'Prakiraan BMKG' }}
             </span>

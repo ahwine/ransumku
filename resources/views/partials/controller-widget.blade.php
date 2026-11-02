@@ -441,6 +441,16 @@ function updateControllerUI(kontrol) {
     updateAktuatorCardDetail('misting', Boolean(kontrol.relay_misting));
     updateAktuatorCardDetail('lampu', Boolean(kontrol.relay_lampu));
     updateAktuatorCardDetail('pakan', Boolean(kontrol.relay_pakan));
+
+    // Sinkronkan ke Simulasi 3D Digital Twin jika tersedia
+    if (typeof window.syncKandang3DState === 'function') {
+        window.syncKandang3DState({
+            kipas: Boolean(kontrol.relay_kipas),
+            misting: Boolean(kontrol.relay_misting),
+            lampu: Boolean(kontrol.relay_lampu),
+            pakan: Boolean(kontrol.relay_pakan)
+        });
+    }
 }
 
 function updateAktuatorCardDetail(alat, isAktif) {

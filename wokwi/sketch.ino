@@ -1,14 +1,16 @@
 /**
  * =========================================================================
- * SIMULASI UTUH: SMART CLOSED-HOUSE LAYER FARM IoT (RANSUMKU)
+ * SIMULASI WOKWI: SMART CLOSED-HOUSE LAYER FARM IoT (RANSUMKU)
  * Inovator: Aditya Ramadhani (SMKN 2 Surabaya)
  * 
- * 1. LAYAR DISPLAY OLED (LAYAR LED):
- *    Murni khusus menampilkan parameter: Suhu, Kelembaban, THI, dan Status Alat.
- * 2. ALAT PEMBERI PAKAN:
- *    Beroperasi langsung secara fisik menggunakan MOTOR KATROL PENARIK PAKAN!
- * 3. KIPAS SIRKULASI: Otomatis ON saat suhu >= 31°C atau THI >= 78.0
- * 4. SPRINKLER ATAP: Otomatis ON saat suhu >= 33°C
+ * FITUR AUTO-RUN LIVE DEMO:
+ * 1. BEGITU KLIK PLAY ▶, MOTOR LANGSUNG OTOMATIS BERPUTAR JALAN!
+ *    (Tidak perlu ketik apa-apa di Serial Monitor)
+ * 2. Motor Katrol Pakan berputar maju 5 detik dari A -> B
+ * 3. Sampai di B, berhenti jeda 2 detik
+ * 4. Otomatis berputar mundur 5 detik dari B -> A
+ * 5. Siklus pakan berulang otomatis untuk presentasi langsung di depan juri!
+ * 6. Layar OLED Display menampilkan data Suhu, RH, THI, dan Status Alat.
  * =========================================================================
  */
 
@@ -32,21 +34,23 @@ const int PIN_LIMIT_PANGKAL_A   = 33; // Sakelar Batas Pangkal (Titik A)
 const int PIN_LIMIT_UJUNG_B     = 32; // Sakelar Batas Ujung (Titik B)
 
 DHTesp dhtSensor;
-Servo motorPenarikPakan; // Motor Fisik Langsung Penarik Tali Pakan
+Servo motorPenarikPakan;
 
-// --- STATE SISTEM & MODE PAKAN ---
+// --- STATE SISTEM & SIKLUS DEMO OTOMATIS ---
 enum FeederMode     { MODE_SHUTTLE, MODE_ROUND_TRIP };
-enum FeederState    { FEEDER_IDLE, FEEDER_FORWARD, FEEDER_BACKWARD };
+enum FeederState    { FEEDER_IDLE, FEEDER_FORWARD, FEEDER_BACKWARD, FEEDER_PAUSE_END, FEEDER_PAUSE_START };
 enum FeederPosition { POSISI_PANGKAL_A, POSISI_UJUNG_B };
 
-FeederMode modePakan        = MODE_SHUTTLE;     // Default: Mode Shuttle (Ujung-ke-Ujung)
-FeederState statePakan      = FEEDER_IDLE;
-FeederPosition posisiKereta = POSISI_PANGKAL_A; // Start di Pangkal A
+FeederMode modePakan        = MODE_SHUTTLE;
+FeederState statePakan      = FEEDER_FORWARD;   // Langsung AUTO-RUN Maju saat pertama start!
+FeederPosition posisiKereta = POSISI_PANGKAL_A;
 
 int motorAngle = 0;
 int motorDir   = 1;
 unsigned long waktuMulaiJalan = 0;
+unsigned long waktuJeda = 0;
 const unsigned long DURASI_JALAN_MS = 5000; // Motor jalan 5 detik dari A ke B
+const unsigned long JEDA_PARKIR_MS  = 2000; // Jeda parkir 2 detik sebelum sesi berikutnya
 
 bool statusKipas     = false;
 bool statusSprinkler = false;
@@ -60,38 +64,19 @@ unsigned long lastSensorRead = 0;
 unsigned long lastDisplayUpdate = 0;
 
 void stopMotorPakan() {
-  motorPenarikPakan.write(0); // Motor berhenti
-  statePakan = FEEDER_IDLE;
+  motorPenarikPakan.write(0); // Motor diam
 }
 
 void jalanFeederMaju() {
   statePakan = FEEDER_FORWARD;
   waktuMulaiJalan = millis();
-  Serial.println(F(">> [MOTOR PAKAN]: AKTIF! Motor katrol berputar MAJU menarik wadah pakan dari A ke B..."));
+  Serial.println(F(">> [AUTO-DEMO]: Motor katrol LANGSUNG BERPUTAR MAJU menarik wadah pakan (A -> B)..."));
 }
 
 void jalanFeederMundur() {
   statePakan = FEEDER_BACKWARD;
   waktuMulaiJalan = millis();
-  Serial.println(F(">> [MOTOR PAKAN]: AKTIF! Motor katrol berputar MUNDUR menarik wadah pakan dari B ke A..."));
-}
-
-void picuPakan() {
-  if (statePakan != FEEDER_IDLE) {
-    Serial.println(F(">> [MOTOR]: Sedang aktif berjalan!"));
-    return;
-  }
-
-  if (modePakan == MODE_ROUND_TRIP) {
-    jalanFeederMaju();
-  } else {
-    // Mode Shuttle: Bergantian sesuai posisi parkir saat ini
-    if (posisiKereta == POSISI_PANGKAL_A) {
-      jalanFeederMaju();
-    } else {
-      jalanFeederMundur();
-    }
-  }
+  Serial.println(F(">> [AUTO-DEMO]: Motor katrol LANGSUNG BERPUTAR MUNDUR menarik wadah pakan (B -> A)..."));
 }
 
 // Menampilkan Parameter Telemetri Suhu, Kelembaban, THI, dan Status Alat di Layar Display
@@ -136,8 +121,10 @@ void renderDisplay() {
     display.print("PAKAN: >> MAJU (A->B)");
   } else if (statePakan == FEEDER_BACKWARD) {
     display.print("PAKAN: << MUNDUR (B->A)");
+  } else if (statePakan == FEEDER_PAUSE_END) {
+    display.print("PAKAN: PARKIR DI B (JEDA)");
   } else {
-    display.printf("PAKAN: PARKIR TITIK %s", posisiKereta == POSISI_PANGKAL_A ? "A" : "B");
+    display.print("PAKAN: PARKIR DI A (JEDA)");
   }
 
   display.display();
@@ -150,6 +137,7 @@ void setup() {
   Serial.println(F("=========================================================="));
   Serial.println(F("  SMART CLOSED-HOUSE LAYER FARM IoT - RANSUMKU            "));
   Serial.println(F("  Inovator: Aditya Ramadhani (SMKN 2 Surabaya)            "));
+  Serial.println(F("  MODE: AUTO-RUN LIVE DEMO (Langsung Berjalan Sendiri)    "));
   Serial.println(F("=========================================================="));
 
   pinMode(PIN_RELAY_KIPAS, OUTPUT);
@@ -165,7 +153,6 @@ void setup() {
 
   // Inisialisasi Motor Fisik Langsung Penarik Tali Pakan
   motorPenarikPakan.attach(PIN_MOTOR_PAKAN);
-  stopMotorPakan();
 
   dhtSensor.setup(PIN_DHT, DHTesp::DHT22);
 
@@ -179,43 +166,61 @@ void setup() {
     display.setCursor(10, 35);
     display.println("SMKN 2 SURABAYA");
     display.display();
-    delay(1200);
+    delay(1000);
   }
 
-  Serial.println(F("[OK] Seluruh sistem siap!"));
-  Serial.println(F("[INFO] Layar Display murni menampilkan Suhu, RH, THI, dan Status Alat."));
-  Serial.println(F("[INFO] Alat pakan langsung digerakkan oleh MOTOR KATROL FISIK."));
+  // AUTO-START: Langsung jalan maju di detik awal!
+  waktuMulaiJalan = millis();
+  Serial.println(F("[AUTO-START]: Simulasi dimulai! Motor katrol pakan langsung berputar jalan."));
 }
 
 void loop() {
   unsigned long now = millis();
 
-  // 1. GERAKAN MOTOR FISIK PENARIK PAKAN (Berputar Langsung Saat Aktif)
-  if (statePakan != FEEDER_IDLE) {
-    // Putaran lengan motor fisik nyata bolak-balik selama menarik tali pakan
-    motorAngle += 12 * motorDir;
+  // 1. SIKLUS GERAK MOTOR PAKAN OTOMATIS (AUTO-RUN DEMO)
+  // A. Saat sedang MAJU (A -> B)
+  if (statePakan == FEEDER_FORWARD) {
+    // Putaran tuas motor fisik berayun aktif menarik tali
+    motorAngle += 14 * motorDir;
     if (motorAngle >= 170) { motorAngle = 170; motorDir = -1; }
     else if (motorAngle <= 10) { motorAngle = 10; motorDir = 1; }
     motorPenarikPakan.write(motorAngle);
 
-    // Deteksi Waktu Tempuh Lorong (5 Detik)
     if (now - waktuMulaiJalan >= DURASI_JALAN_MS) {
-      if (statePakan == FEEDER_FORWARD) {
-        if (modePakan == MODE_ROUND_TRIP) {
-          stopMotorPakan();
-          renderDisplay();
-          delay(800);
-          jalanFeederMundur();
-        } else {
-          stopMotorPakan();
-          posisiKereta = POSISI_UJUNG_B;
-          Serial.println(F(">> [STATUS]: Wadah pakan sampai di Titik B. Motor berhenti parkir."));
-        }
-      } else if (statePakan == FEEDER_BACKWARD) {
-        stopMotorPakan();
-        posisiKereta = POSISI_PANGKAL_A;
-        Serial.println(F(">> [STATUS]: Wadah pakan sampai di Titik A. Motor berhenti parkir."));
-      }
+      stopMotorPakan();
+      posisiKereta = POSISI_UJUNG_B;
+      statePakan = FEEDER_PAUSE_END;
+      waktuJeda = now;
+      Serial.println(F(">> [AUTO-DEMO]: Sampai di Ujung B! Parkir jeda 2 detik..."));
+    }
+  }
+  // B. Jeda di Ujung B (2 detik) lalu otomatis MUNDUR
+  else if (statePakan == FEEDER_PAUSE_END) {
+    stopMotorPakan();
+    if (now - waktuJeda >= JEDA_PARKIR_MS) {
+      jalanFeederMundur();
+    }
+  }
+  // C. Saat sedang MUNDUR (B -> A)
+  else if (statePakan == FEEDER_BACKWARD) {
+    motorAngle -= 14 * motorDir;
+    if (motorAngle <= 10) { motorAngle = 10; motorDir = -1; }
+    else if (motorAngle >= 170) { motorAngle = 170; motorDir = 1; }
+    motorPenarikPakan.write(motorAngle);
+
+    if (now - waktuMulaiJalan >= DURASI_JALAN_MS) {
+      stopMotorPakan();
+      posisiKereta = POSISI_PANGKAL_A;
+      statePakan = FEEDER_PAUSE_START;
+      waktuJeda = now;
+      Serial.println(F(">> [AUTO-DEMO]: Sampai di Pangkal A! Parkir jeda 2 detik..."));
+    }
+  }
+  // D. Jeda di Pangkal A (2 detik) lalu otomatis MAJU lagi (Looping Presentasi)
+  else if (statePakan == FEEDER_PAUSE_START) {
+    stopMotorPakan();
+    if (now - waktuJeda >= JEDA_PARKIR_MS) {
+      jalanFeederMaju();
     }
   }
 
@@ -272,44 +277,16 @@ void loop() {
   int limitB = digitalRead(PIN_LIMIT_UJUNG_B);
 
   if (limitB == LOW && statePakan == FEEDER_FORWARD) {
-    if (modePakan == MODE_ROUND_TRIP) {
-      stopMotorPakan();
-      delay(800);
-      jalanFeederMundur();
-    } else {
-      stopMotorPakan();
-      posisiKereta = POSISI_UJUNG_B;
-    }
+    stopMotorPakan();
+    posisiKereta = POSISI_UJUNG_B;
+    statePakan = FEEDER_PAUSE_END;
+    waktuJeda = now;
   }
 
   if (limitA == LOW && statePakan == FEEDER_BACKWARD) {
     stopMotorPakan();
     posisiKereta = POSISI_PANGKAL_A;
-  }
-
-  // 5. PARSER PERINTAH SERIAL
-  if (Serial.available() > 0) {
-    String cmd = Serial.readStringUntil('\n');
-    cmd.trim();
-    cmd.toLowerCase();
-
-    if (cmd == "pakan" || cmd == "beri_pakan") {
-      picuPakan();
-    } else if (cmd == "stop") {
-      stopMotorPakan();
-      Serial.println(F(">> [STOP]: Motor pakan dihentikan seketika."));
-    } else if (cmd == "mode_shuttle") {
-      modePakan = MODE_SHUTTLE;
-      Serial.println(F(">> [MODE]: SHUTTLE (Ujung-ke-Ujung Bergantian)."));
-    } else if (cmd == "mode_trip") {
-      modePakan = MODE_ROUND_TRIP;
-      Serial.println(F(">> [MODE]: BOLAK-BALIK (A -> B -> A)."));
-    } else if (cmd == "sound_on") {
-      statusSound = true;
-      digitalWrite(PIN_BUZZER_SOUND, HIGH);
-    } else if (cmd == "sound_off") {
-      statusSound = false;
-      digitalWrite(PIN_BUZZER_SOUND, LOW);
-    }
+    statePakan = FEEDER_PAUSE_START;
+    waktuJeda = now;
   }
 }
