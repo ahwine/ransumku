@@ -55,8 +55,8 @@
             </div>
         @endif
 
-        {{-- ChatGPT Interface Window (Light Mode) --}}
-        <div class="card !p-0 overflow-hidden border border-line/80 shadow-2xs flex flex-col md:flex-row rounded-xl bg-white text-ink chatgpt-layout-container lg:flex-1 lg:min-h-0">
+        {{-- ChatGPT Interface Window (Light Mode) - KHUSUS DESKTOP (md:flex) --}}
+        <div class="hidden md:flex card !p-0 overflow-hidden border border-line/80 shadow-2xs flex-col md:flex-row rounded-xl bg-white text-ink chatgpt-layout-container lg:flex-1 lg:min-h-0">
             
             {{-- Left Sidebar: ChatGPT Navigation (Pinned & Recents & Akun) --}}
             <aside class="chatgpt-sidebar w-full md:w-72 lg:w-80 shrink-0 bg-[#f9faf9] border-b md:border-b-0 md:border-r border-line/70 flex flex-col justify-between select-none">
@@ -237,7 +237,7 @@
                         </div>
                     </div>
 
-                    {{-- Messages Stream Container --}}
+                    {{-- Messages Stream Container (Desktop) --}}
                     <div id="messages-container" class="w-full space-y-4 flex flex-col">
                         @foreach ($chats as $c)
                             @if ($c->role === 'user')
@@ -262,7 +262,7 @@
                     <div id="chat-bawah"></div>
                 </div>
 
-                {{-- Real-Time Input Area (Sejajar Sempurna dengan Akun Sidebar, Tanpa Border Sendiri) --}}
+                {{-- Real-Time Input Area (Desktop) --}}
                 <div class="p-3 bg-white flex items-center shrink-0 h-16 min-h-[64px]">
                     <form id="form-chat" action="javascript:void(0);" onsubmit="return handleFormSubmit(event);" class="relative flex items-center w-full">
                         @csrf
@@ -275,20 +275,330 @@
             </main>
         </div>
 
-        {{-- Disclaimer AI diletakkan di luar chat box, posisi vertikal seimbang dan tidak terpotong --}}
-        <div class="flex items-center justify-center py-2 shrink-0">
+        {{-- Disclaimer AI Desktop --}}
+        <div class="hidden md:flex items-center justify-center py-2 shrink-0">
             <p class="text-[11px] text-muted text-center flex items-center justify-center gap-1.5 leading-none">
                 <span class="material-symbols-outlined text-[13px] text-muted">info</span>
                 <span>{{ config('ransumku.disclaimer_ai') }}</span>
             </p>
         </div>
+
+        {{-- ========================================================================= --}}
+        {{-- MOBILE ASISTEN CERDAS (Sesuai Desain Gambar 1 & Gambar 3)                 --}}
+        {{-- ========================================================================= --}}
+        <div class="block md:hidden">
+            {{-- SUB-VIEW 1: TAMPILAN CHAT MOBILE (Gambar 1) --}}
+            <div id="mobile-chat-view" class="flex flex-col h-[calc(100dvh-13.5rem)] min-h-[480px]">
+                
+                {{-- Bagian Riwayat Chat (Horizontal Scrollable Cards) --}}
+                <div class="shrink-0 mb-2 space-y-2">
+                    <div class="flex items-center justify-between px-0.5">
+                        <h4 class="font-extrabold text-sm text-ink tracking-tight">Riwayat Chat</h4>
+                        <button type="button" onclick="bukaRiwayatMobile()" class="text-xs font-bold text-brand hover:underline flex items-center gap-0.5 cursor-pointer">
+                            <span>Lihat semua</span>
+                            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                        </button>
+                    </div>
+
+                    {{-- Horizontal Cards Row --}}
+                    <div id="mobile-recent-cards" class="flex items-center gap-2.5 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar select-none">
+                        {{-- Tombol + Obrolan Baru Card --}}
+                        <button type="button" 
+                                onclick="mulaiObrolanBaru()" 
+                                class="w-[82px] min-w-[82px] h-[78px] rounded-2xl border-2 border-dashed border-line hover:border-brand bg-white/60 hover:bg-white text-muted hover:text-brand flex flex-col items-center justify-center gap-1 shrink-0 transition-all cursor-pointer shadow-2xs group active:scale-95" 
+                                title="Mulai Obrolan Baru">
+                            <span class="material-symbols-outlined text-[20px] text-brand group-hover:scale-110 transition-transform">add</span>
+                            <span class="text-[11px] font-bold">Baru</span>
+                        </button>
+
+                        @foreach ($chatSessions->take(10) as $s)
+                            @php
+                                $isActive = ($activeSession && $activeSession->id === $s->id);
+                                $tglTeks = $s->updated_at->translatedFormat('d M');
+                            @endphp
+                            <button type="button" 
+                                    data-session-card-id="{{ $s->id }}"
+                                    onclick="pilihSession({{ $s->id }})" 
+                                    class="mobile-session-card w-[108px] min-w-[108px] h-[78px] rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-left transition-all cursor-pointer active:scale-95 {{ $isActive ? 'bg-brand text-white shadow-xs' : 'bg-white text-ink border border-line/80 shadow-2xs hover:border-brand/40' }}"
+                                    style="{{ $isActive ? 'background-color: #116a3a; color: #ffffff;' : 'background-color: #ffffff; color: #053b26;' }}">
+                                <span class="font-bold text-xs truncate block leading-snug mobile-card-title">{{ $s->judul }}</span>
+                                <div class="flex items-center justify-between text-[11px]">
+                                    <span class="mobile-card-date {{ $isActive ? 'text-white/80' : 'text-muted' }} font-medium text-[10px]" style="{{ $isActive ? 'color: rgba(255,255,255,0.8);' : 'color: #5c7a6d;' }}">{{ $tglTeks }}</span>
+                                    <span class="mobile-card-dot w-2 h-2 rounded-full {{ $isActive ? 'bg-white' : ($s->pinned ? 'bg-amber-400' : 'bg-emerald-500') }}" style="{{ $isActive ? 'background-color: #ffffff;' : ($s->pinned ? 'background-color: #f59e0b;' : 'background-color: #10b981;') }}"></span>
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Centered Date Divider --}}
+                <div class="shrink-0 flex items-center justify-center my-1 select-none">
+                    <span class="text-[11px] font-medium text-muted/70 bg-surface-2 px-3 py-0.5 rounded-full">Hari ini</span>
+                </div>
+
+                {{-- Messages Stream Container (Mobile) --}}
+                <div id="mobile-chat-box" class="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 py-1 custom-scrollbar">
+                    {{-- Welcome Screen Mobile (ketika sesi kosong) --}}
+                    <div id="mobile-welcome-card" class="{{ $chats->isEmpty() ? '' : 'hidden' }} my-auto py-3 text-center space-y-2.5 max-w-sm mx-auto">
+                        <div class="w-12 h-12 rounded-2xl bg-brand/10 border border-brand/20 text-brand grid place-items-center mx-auto shadow-2xs">
+                            <span class="material-symbols-outlined text-[24px] icon-fill">auto_awesome</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-ink">Halo, Peternak Cerdas!</h4>
+                            <p class="text-[11px] text-muted mt-1 leading-relaxed">
+                                Tanyakan kendala performa kandang, analisa pakan, atau konsultasi ayam petelur kepada Asisten AI.
+                            </p>
+                        </div>
+                        {{-- Suggestion Prompts Ringkas --}}
+                        <div class="space-y-2 text-left pt-1">
+                            <button type="button" onclick="isiDanKirim('apakah kamu bisa cek konsumsi pakan naik kenapa kok telurnya turun?')" class="w-full p-2.5 rounded-xl border border-line bg-surface/40 hover:bg-white text-xs text-ink flex items-center justify-between gap-2 shadow-2xs active:scale-98 transition">
+                                <span class="font-medium text-[11px] truncate">Pakan naik, kenapa telur turun?</span>
+                                <span class="material-symbols-outlined text-[14px] text-brand shrink-0">arrow_forward</span>
+                            </button>
+                            <button type="button" onclick="isiDanKirim('THI hari ini tinggi, apa yang harus saya lakukan untuk mengurangi heat stress pada ayam?')" class="w-full p-2.5 rounded-xl border border-line bg-surface/40 hover:bg-white text-xs text-ink flex items-center justify-between gap-2 shadow-2xs active:scale-98 transition">
+                                <span class="font-medium text-[11px] truncate">THI tinggi & penanganan heat stress?</span>
+                                <span class="material-symbols-outlined text-[14px] text-brand shrink-0">arrow_forward</span>
+                            </button>
+                            <button type="button" onclick="isiDanKirim('Apa bahan pakan pengganti jagung yang murah dan aman?')" class="w-full p-2.5 rounded-xl border border-line bg-surface/40 hover:bg-white text-xs text-ink flex items-center justify-between gap-2 shadow-2xs active:scale-98 transition">
+                                <span class="font-medium text-[11px] truncate">Bahan pakan alternatif murah & aman?</span>
+                                <span class="material-symbols-outlined text-[14px] text-brand shrink-0">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Message Feed Mobile --}}
+                    <div id="mobile-messages-container" class="space-y-3 flex flex-col">
+                        @foreach ($chats as $c)
+                            @if ($c->role === 'user')
+                                <div class="flex flex-col items-end max-w-[85%] self-end">
+                                    <div class="bg-brand text-white rounded-2xl rounded-tr-xs px-3.5 py-2.5 text-xs leading-relaxed shadow-xs" style="background-color: #116a3a; color: #ffffff;">
+                                        {{ $c->isi }}
+                                        <div class="flex items-center justify-end gap-1 mt-1 text-[10px] text-white/70">
+                                            <span>{{ $c->created_at->format('H:i') }}</span>
+                                            <span class="material-symbols-outlined text-[13px] leading-none">done_all</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="flex items-start gap-2 max-w-[90%] self-start">
+                                    <div class="w-8 h-8 rounded-full bg-[#EBF5EE] border border-[#CDE5D6] text-brand grid place-items-center shrink-0 mt-0.5 shadow-2xs" style="background-color: #EBF5EE; border-color: #CDE5D6; color: #116a3a;">
+                                        <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+                                    </div>
+                                    <div class="bg-[#F8FAF9] border border-line/70 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-ink leading-relaxed shadow-2xs flex-1 min-w-0" style="background-color: #f8faf9;">
+                                        {!! App\Support\Fmt::markdownAi($c->isi) !!}
+                                        <div class="text-[10px] text-muted text-right mt-1 font-medium">
+                                            {{ $c->created_at->format('H:i') }}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Bottom Pinned Input Bar (Gambar 1 - Tanpa Upload File) --}}
+                <div class="shrink-0 pt-2 pb-1 bg-white border-t border-line/60">
+                    <form id="mobile-form-chat" action="javascript:void(0);" onsubmit="return handleMobileFormSubmit(event);" class="relative flex items-center w-full">
+                        <input id="mobile-input-pesan" 
+                               type="text" 
+                               class="w-full bg-[#F8FAF9] hover:bg-white focus:bg-white text-ink placeholder:text-muted border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 rounded-full pl-4 pr-12 py-3 text-xs outline-none transition-all shadow-2xs" 
+                               style="background-color: #f8faf9;"
+                               placeholder="Ketik pertanyaan..." 
+                               required 
+                               autocomplete="off">
+                        <button id="mobile-btn-kirim" 
+                                type="button" 
+                                onclick="handleMobileFormSubmit(event)" 
+                                class="absolute right-1.5 w-9 h-9 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-40" 
+                                style="background-color: #116a3a; color: #ffffff;"
+                                aria-label="Kirim" 
+                                title="Kirim pesan">
+                            <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {{-- SUB-VIEW 2: HALAMAN RIWAYAT CHAT KHUSUS MOBILE (Gambar 3) --}}
+            <div id="mobile-history-view" class="hidden space-y-4 pb-4">
+                {{-- Top Bar: Back Button & Total Sessions --}}
+                <div class="flex items-center justify-between gap-2 pb-1 border-b border-line/60">
+                    <button type="button" onclick="tutupRiwayatMobile()" class="flex items-center gap-1 text-xs font-bold text-brand hover:text-brand-dark py-1.5 px-2.5 -ml-2 rounded-xl hover:bg-surface transition cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                        <span>Kembali ke Chat</span>
+                    </button>
+                    <div class="text-[11px] font-semibold text-muted">
+                        {{ $chatSessions->count() }} Sesi
+                    </div>
+                </div>
+
+                {{-- Filter Pills (Gambar 3) --}}
+                <div class="flex items-center gap-2 select-none">
+                    <button type="button" 
+                            data-history-filter="semua" 
+                            onclick="filterRiwayatMobile('semua')" 
+                            class="history-filter-pill px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-brand text-white shadow-2xs cursor-pointer"
+                            style="background-color: #116a3a; color: #ffffff;">
+                        Semua
+                    </button>
+                    <button type="button" 
+                            data-history-filter="disematkan" 
+                            onclick="filterRiwayatMobile('disematkan')" 
+                            class="history-filter-pill px-4 py-1.5 rounded-full text-xs font-semibold transition-all bg-surface-2 text-muted hover:text-ink border border-line/60 cursor-pointer"
+                            style="background-color: #eaefec; color: #5c7a6d;">
+                        Disematkan
+                    </button>
+                    <button type="button" 
+                            data-history-filter="hari_ini" 
+                            onclick="filterRiwayatMobile('hari_ini')" 
+                            class="history-filter-pill px-4 py-1.5 rounded-full text-xs font-semibold transition-all bg-surface-2 text-muted hover:text-ink border border-line/60 cursor-pointer"
+                            style="background-color: #eaefec; color: #5c7a6d;">
+                        Hari Ini
+                    </button>
+                </div>
+
+                {{-- Section Disematkan (Pinned) --}}
+                @php
+                    $pinnedMobile = $chatSessions->where('pinned', true);
+                    $unpinnedMobile = $chatSessions->where('pinned', false);
+                @endphp
+                <div id="history-section-pinned" class="space-y-2 {{ $pinnedMobile->isEmpty() ? 'hidden' : '' }}">
+                    <div class="flex items-center justify-between text-xs font-bold text-ink uppercase tracking-wider px-1">
+                        <span class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[16px] text-brand">push_pin</span>
+                            <span>Disematkan</span>
+                        </span>
+                        <button type="button" onclick="filterRiwayatMobile('disematkan')" class="text-xs font-bold text-brand hover:underline cursor-pointer lowercase first-letter:uppercase">Kelola</button>
+                    </div>
+
+                    <div class="space-y-1.5" id="history-pinned-list">
+                        @foreach ($pinnedMobile as $s)
+                            @php
+                                $lastMsg = $s->messages->first()?->isi ?? 'Belum ada pesan.';
+                                $tglStr = $s->updated_at->translatedFormat('d M');
+                                $isToday = $s->updated_at->isToday();
+                            @endphp
+                            <div data-history-item 
+                                 data-session-id="{{ $s->id }}" 
+                                 data-is-pinned="1" 
+                                 data-is-today="{{ $isToday ? '1' : '0' }}"
+                                 class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-white hover:bg-surface/60 border border-line/80 hover:border-brand/40 transition-all shadow-2xs cursor-pointer group"
+                                 onclick="pilihSessionDanTutupHistory({{ $s->id }})">
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                    <div class="w-10 h-10 rounded-full bg-[#EBF5EE] text-brand grid place-items-center shrink-0 shadow-2xs" style="background-color: #EBF5EE; color: #116a3a;">
+                                        <span class="material-symbols-outlined text-[18px]">chat</span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <h5 class="font-bold text-xs text-ink truncate">{{ $s->judul }}</h5>
+                                        <p class="text-[11px] text-muted truncate mt-0.5">{{ Str::limit(strip_tags($lastMsg), 65) }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end gap-1 shrink-0 select-none">
+                                    <span class="text-[10px] text-muted font-medium">{{ $tglStr }}</span>
+                                    <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                        <button type="button" onclick="togglePinSession({{ $s->id }}, event)" class="p-1 text-brand hover:text-brand-dark rounded cursor-pointer transition" title="Lepas Sematan">
+                                            <span class="material-symbols-outlined text-[16px]">push_pin</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Section Semua Percakapan --}}
+                <div id="history-section-unpinned" class="space-y-2">
+                    <div class="flex items-center justify-between text-xs font-bold text-ink uppercase tracking-wider px-1">
+                        <span>Semua Percakapan</span>
+                        <span class="text-[11px] text-muted font-semibold">{{ $unpinnedMobile->count() }}</span>
+                    </div>
+
+                    <div class="space-y-1.5" id="history-unpinned-list">
+                        @forelse ($unpinnedMobile as $s)
+                            @php
+                                $lastMsg = $s->messages->first()?->isi ?? 'Belum ada pesan.';
+                                $tglStr = $s->updated_at->translatedFormat('d M');
+                                $isToday = $s->updated_at->isToday();
+                            @endphp
+                            <div data-history-item 
+                                 data-session-id="{{ $s->id }}" 
+                                 data-is-pinned="0" 
+                                 data-is-today="{{ $isToday ? '1' : '0' }}"
+                                 class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-white hover:bg-surface/60 border border-line/80 hover:border-brand/40 transition-all shadow-2xs cursor-pointer group"
+                                 onclick="pilihSessionDanTutupHistory({{ $s->id }})">
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                    <div class="w-10 h-10 rounded-full bg-[#F4F7F5] text-muted grid place-items-center shrink-0 shadow-2xs" style="background-color: #F4F7F5;">
+                                        <span class="material-symbols-outlined text-[18px]">chat</span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <h5 class="font-bold text-xs text-ink truncate">{{ $s->judul }}</h5>
+                                        <p class="text-[11px] text-muted truncate mt-0.5">{{ Str::limit(strip_tags($lastMsg), 65) }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end gap-1 shrink-0 select-none">
+                                    <span class="text-[10px] text-muted font-medium">{{ $tglStr }}</span>
+                                    <div class="relative" onclick="event.stopPropagation()">
+                                        <button type="button" onclick="toggleHistoryDropdown({{ $s->id }}, event)" class="p-1 text-muted hover:text-ink rounded-lg hover:bg-surface-2 transition cursor-pointer" title="Menu Sesi">
+                                            <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                                        </button>
+                                        <div id="history-dropdown-{{ $s->id }}" class="history-dropdown-menu hidden absolute right-0 bottom-full mb-1 w-36 bg-white rounded-xl shadow-lg border border-line py-1 z-30">
+                                            <button type="button" onclick="togglePinSession({{ $s->id }}, event); tutupSemuaHistoryDropdown();" class="w-full px-3 py-2 text-left text-xs text-ink hover:bg-surface flex items-center gap-2 cursor-pointer">
+                                                <span class="material-symbols-outlined text-[16px] text-brand">push_pin</span>
+                                                <span>Sematkan</span>
+                                            </button>
+                                            <button type="button" onclick="hapusSession({{ $s->id }}, event); tutupSemuaHistoryDropdown();" class="w-full px-3 py-2 text-left text-xs text-danger hover:bg-danger-soft/30 flex items-center gap-2 cursor-pointer">
+                                                <span class="material-symbols-outlined text-[16px] text-danger">delete</span>
+                                                <span>Hapus Sesi</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            @if ($pinnedMobile->isEmpty())
+                                <div class="p-6 text-center text-xs text-muted italic bg-surface/30 rounded-2xl border border-line/60">
+                                    Belum ada riwayat obrolan tersimpan.
+                                </div>
+                            @endif
+                        @endforelse
+                    </div>
+                </div>
+
+                {{-- Bottom + Obrolan Baru button in History view --}}
+                <div class="pt-2">
+                    <button type="button" onclick="mulaiObrolanBaru(); tutupRiwayatMobile();" class="w-full py-3 px-4 rounded-full bg-brand hover:bg-brand-dark text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-98 cursor-pointer" style="background-color: #116a3a; color: #ffffff;">
+                        <span class="material-symbols-outlined text-[18px]">add</span>
+                        <span>+ Obrolan Baru</span>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Disclaimer Mobile --}}
+            <div class="py-2 text-center">
+                <p class="text-[10px] text-muted inline-flex items-center justify-center gap-1 leading-none">
+                    <span class="material-symbols-outlined text-[12px] text-muted">info</span>
+                    <span>{{ config('ransumku.disclaimer_ai') }}</span>
+                </p>
+            </div>
+        </div>
     </section>
 
-    {{-- Tab 2: Peringatan Dini Kandang --}}
-    <section data-panel="peringatan" class="{{ $tabAktif === 'peringatan' ? '' : 'hidden' }} space-y-4 pr-1 custom-scrollbar">
-        @forelse ($alerts as $alert)
-            @include('partials.alert-card', ['alert' => $alert])
-        @empty
+    {{-- Tab 2: Peringatan Dini Kandang (Sesuai Gambar 2, Berlaku Desktop & Mobile) --}}
+    <section data-panel="peringatan" class="{{ $tabAktif === 'peringatan' ? '' : 'hidden' }} space-y-5 pr-1 custom-scrollbar">
+        @php
+            $groupedAlerts = $alerts->groupBy(function($alert) {
+                $tgl = $alert->tanggal_data ?? $alert->created_at;
+                if ($tgl->isToday()) {
+                    return 'Hari Ini';
+                }
+                if ($tgl->isYesterday()) {
+                    return 'Kemarin';
+                }
+                return 'Sebelumnya';
+            });
+        @endphp
+
+        @if ($alerts->isEmpty())
             <div class="card text-center py-12 px-6 space-y-3 rounded-2xl border border-line shadow-2xs bg-white">
                 <div class="w-14 h-14 rounded-full bg-brand-soft text-brand flex items-center justify-center mx-auto shadow-2xs">
                     <span class="material-symbols-outlined text-[32px] icon-fill">verified</span>
@@ -298,9 +608,113 @@
                     Tidak ditemukan anomali pada konsumsi pakan, produksi telur, maupun mortalitas ayam berdasarkan data harian yang tercatat.
                 </p>
             </div>
-        @endforelse
+        @else
+            @foreach (['Hari Ini', 'Kemarin', 'Sebelumnya'] as $grupNama)
+                @if (isset($groupedAlerts[$grupNama]) && $groupedAlerts[$grupNama]->isNotEmpty())
+                    <div class="space-y-3">
+                        <h3 class="text-xs sm:text-sm font-extrabold text-ink tracking-tight px-1">
+                            {{ $grupNama }}
+                        </h3>
 
-        {{-- Panduan Aturan Deteksi Anomali (Tanpa Card agar Bersih & Tidak Menyatu/Berebut dengan Isu) --}}
+                        <div class="space-y-3">
+                            @foreach ($groupedAlerts[$grupNama] as $alert)
+                                @php
+                                    // Tipe kartu sesuai desain Gambar 2:
+                                    // - "BIAYA PAKAN NAIK TAJAM" -> Waspada (Kuning / Krem)
+                                    // - "PRODUKSI TELUR TURUN" -> Bahaya (Pink / Merah)
+                                    // - "KONSUMSI PAKAN TINGGI" -> Waspada (Kuning / Krem)
+                                    // - "LONJAKAN MORTALITAS AYAM" -> Bahaya (Pink / Merah)
+                                    // - "KONDISI CUACA EKSTREM" -> Info (Mint / Hijau)
+                                    if ($alert->jenis === 'pakan_naik_telur_turun' || $alert->jenis === 'lonjakan_kematian' || $alert->level === 'bahaya') {
+                                        $cardType = 'bahaya';
+                                    } elseif ($alert->jenis === 'biaya_per_kg_telur_naik' || $alert->jenis === 'konsumsi_pakan_tinggi' || $alert->level === 'waspada' || $alert->level === 'perhatian') {
+                                        $cardType = 'waspada';
+                                    } else {
+                                        $cardType = 'info';
+                                    }
+
+                                    // Mapping Judul Huruf Besar (Gambar 2)
+                                    $titles = [
+                                        'biaya_per_kg_telur_naik' => 'BIAYA PAKAN NAIK TAJAM',
+                                        'pakan_naik_telur_turun' => 'PRODUKSI TELUR TURUN',
+                                        'lonjakan_kematian' => 'LONJAKAN MORTALITAS AYAM',
+                                        'konsumsi_pakan_tinggi' => 'KONSUMSI PAKAN TINGGI',
+                                        'cuaca_ekstrem' => 'KONDISI CUACA EKSTREM',
+                                    ];
+                                    $judulPeringatan = $titles[$alert->jenis] ?? strtoupper(str_replace('_', ' ', $alert->jenis));
+
+                                    // Mapping Waktu
+                                    $tgl = $alert->tanggal_data ?? $alert->created_at;
+                                    if ($tgl->isToday()) {
+                                        $waktuTeks = $alert->created_at ? $alert->created_at->format('H:i') : 'Hari ini';
+                                    } elseif ($tgl->isYesterday()) {
+                                        $waktuTeks = 'Kemarin';
+                                    } else {
+                                        $diffHari = (int) $tgl->diffInDays(now());
+                                        $waktuTeks = $diffHari > 0 ? $diffHari . ' hari lalu' : $tgl->translatedFormat('d M');
+                                    }
+
+                                    // Styling per tipe kartu dengan Inline Style Presisi (Anti-Bentrok Tailwind)
+                                    if ($cardType === 'bahaya') {
+                                        $cardStyle = 'background-color: #FFF1F2; border: 1px solid #FECDD3;';
+                                        $badgeStyle = 'background-color: #FFE4E6; color: #BE123C;';
+                                        $badgeText = 'Bahaya';
+                                        $badgeIcon = 'warning';
+                                        $dotStyle = 'background-color: #E11D48;';
+                                    } elseif ($cardType === 'waspada') {
+                                        $cardStyle = 'background-color: #FFFBEB; border: 1px solid #FDE68A;';
+                                        $badgeStyle = 'background-color: #FEF3C7; color: #B45309;';
+                                        $badgeText = 'Waspada';
+                                        $badgeIcon = 'warning';
+                                        $dotStyle = 'background-color: #D97706;';
+                                    } else {
+                                        $cardStyle = 'background-color: #F0FDF4; border: 1px solid #BBF7D0;';
+                                        $badgeStyle = 'background-color: #DCFCE7; color: #15803D;';
+                                        $badgeText = 'Info';
+                                        $badgeIcon = 'description';
+                                        $dotStyle = 'background-color: #16A34A;';
+                                    }
+
+                                    $tanyaPrompt = 'Tolong berikan analisis mendalam dan rekomendasi solusi cepat untuk kendala di kandang saya: ' . $alert->pesan;
+                                @endphp
+
+                                <div onclick="konsultasiPeringatan('{{ addslashes($tanyaPrompt) }}')"
+                                     style="{{ $cardStyle }}"
+                                     class="rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-all cursor-pointer relative group flex items-start justify-between gap-3">
+                                    <div class="space-y-1.5 flex-1 min-w-0 pr-2">
+                                        {{-- Badge & Waktu --}}
+                                        <div class="flex items-center justify-between">
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold" style="{{ $badgeStyle }}">
+                                                <span class="material-symbols-outlined text-[15px]">{{ $badgeIcon }}</span>
+                                                <span>{{ $badgeText }}</span>
+                                            </span>
+                                            <span class="text-xs text-muted font-medium">{{ $waktuTeks }}</span>
+                                        </div>
+
+                                        {{-- Judul Huruf Besar --}}
+                                        <h4 class="font-extrabold text-xs sm:text-sm text-ink tracking-tight pt-1">
+                                            {{ $judulPeringatan }}
+                                        </h4>
+
+                                        {{-- Pesan Deskripsi --}}
+                                        <p class="text-xs sm:text-sm text-ink/85 leading-relaxed">
+                                            {{ $alert->pesan }}
+                                        </p>
+                                    </div>
+
+                                    {{-- Titik Status di Kanan --}}
+                                    <div class="pt-2 shrink-0 self-center">
+                                        <span class="block w-2.5 h-2.5 rounded-full" style="{{ $dotStyle }}"></span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+        @endif
+
+        {{-- Panduan Aturan Deteksi Anomali --}}
         <div class="pt-2 px-1 space-y-2">
             <div class="font-bold text-xs uppercase tracking-wider text-muted flex items-center gap-2">
                 <span class="material-symbols-outlined text-[18px] text-brand">rule</span>
@@ -448,14 +862,184 @@ function isiDanKirim(teks) {
     }
 }
 
+function scrollToBottom() {
+    setTimeout(() => {
+        const chatBox = document.getElementById('chat-box');
+        if (chatBox) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        const mobileChatBox = document.getElementById('mobile-chat-box');
+        if (mobileChatBox) {
+            mobileChatBox.scrollTop = mobileChatBox.scrollHeight;
+        }
+    }, 30);
+}
+
+function isiDanKirim(teks) {
+    const inputDesktop = document.getElementById('input-pesan');
+    const inputMobile = document.getElementById('mobile-input-pesan');
+    if (inputDesktop) inputDesktop.value = teks;
+    if (inputMobile) inputMobile.value = teks;
+    kirimPesanRealtime();
+}
+
+function bukaRiwayatMobile() {
+    const chatView = document.getElementById('mobile-chat-view');
+    const histView = document.getElementById('mobile-history-view');
+    if (chatView && histView) {
+        chatView.classList.add('hidden');
+        histView.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function tutupRiwayatMobile() {
+    const chatView = document.getElementById('mobile-chat-view');
+    const histView = document.getElementById('mobile-history-view');
+    if (chatView && histView) {
+        histView.classList.add('hidden');
+        chatView.classList.remove('hidden');
+        scrollToBottom();
+    }
+}
+
+function filterRiwayatMobile(filterType) {
+    document.querySelectorAll('.history-filter-pill').forEach(btn => {
+        if (btn.getAttribute('data-history-filter') === filterType) {
+            btn.className = 'history-filter-pill px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-brand text-white shadow-2xs cursor-pointer';
+            btn.style.backgroundColor = '#116a3a';
+            btn.style.color = '#ffffff';
+        } else {
+            btn.className = 'history-filter-pill px-4 py-1.5 rounded-full text-xs font-semibold transition-all bg-surface-2 text-muted hover:text-ink border border-line/60 cursor-pointer';
+            btn.style.backgroundColor = '#eaefec';
+            btn.style.color = '#5c7a6d';
+        }
+    });
+
+    const secPinned = document.getElementById('history-section-pinned');
+    const secUnpinned = document.getElementById('history-section-unpinned');
+    let visiblePinned = 0;
+    let visibleUnpinned = 0;
+
+    document.querySelectorAll('#mobile-history-view [data-history-item]').forEach(item => {
+        const isPinned = item.getAttribute('data-is-pinned') === '1';
+        const isToday = item.getAttribute('data-is-today') === '1';
+
+        let show = false;
+        if (filterType === 'semua') {
+            show = true;
+        } else if (filterType === 'disematkan') {
+            show = isPinned;
+        } else if (filterType === 'hari_ini') {
+            show = isToday;
+        }
+
+        item.style.display = show ? 'flex' : 'none';
+        if (show) {
+            if (isPinned) visiblePinned++;
+            else visibleUnpinned++;
+        }
+    });
+
+    if (secPinned) {
+        if (filterType === 'hari_ini') {
+            secPinned.style.display = (visiblePinned > 0) ? 'block' : 'none';
+        } else {
+            secPinned.style.display = (visiblePinned > 0) ? 'block' : 'none';
+        }
+    }
+    if (secUnpinned) {
+        secUnpinned.style.display = (visibleUnpinned > 0 || filterType === 'semua') ? 'block' : 'none';
+    }
+}
+
+function toggleHistoryDropdown(id, event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById(`history-dropdown-${id}`);
+    const isHidden = menu ? menu.classList.contains('hidden') : true;
+    tutupSemuaHistoryDropdown();
+    if (menu && isHidden) {
+        menu.classList.remove('hidden');
+    }
+}
+
+function tutupSemuaHistoryDropdown() {
+    document.querySelectorAll('.history-dropdown-menu').forEach(m => m.classList.add('hidden'));
+}
+
+document.addEventListener('click', () => {
+    tutupSemuaHistoryDropdown();
+});
+
+function pilihSessionDanTutupHistory(id) {
+    pilihSession(id);
+    tutupRiwayatMobile();
+}
+
+function konsultasiPeringatan(promptText) {
+    // 1. Pindah tab ke 'tanya'
+    const btnTabTanya = document.querySelector('button[data-tab="tanya"]');
+    if (btnTabTanya) {
+        btnTabTanya.click();
+    }
+    // 2. Tutup riwayat mobile jika terbuka
+    tutupRiwayatMobile();
+
+    // 3. Auto fill dan kirim
+    setTimeout(() => {
+        isiDanKirim(promptText);
+    }, 250);
+}
+
+function updateMobileCardHighlight(activeId) {
+    document.querySelectorAll('.mobile-session-card').forEach(card => {
+        const cardId = parseInt(card.getAttribute('data-session-card-id'));
+        const isThisActive = (activeId && cardId === activeId);
+        const dateEl = card.querySelector('.mobile-card-date');
+        const dotEl = card.querySelector('.mobile-card-dot');
+
+        if (isThisActive) {
+            card.className = 'mobile-session-card w-[108px] min-w-[108px] h-[78px] rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-left transition-all cursor-pointer active:scale-95 bg-brand text-white shadow-xs';
+            card.style.backgroundColor = '#116a3a';
+            card.style.color = '#ffffff';
+            if (dateEl) {
+                dateEl.className = 'mobile-card-date text-white/80 font-medium text-[10px]';
+                dateEl.style.color = 'rgba(255, 255, 255, 0.8)';
+            }
+            if (dotEl) {
+                dotEl.className = 'mobile-card-dot w-2 h-2 rounded-full bg-white';
+                dotEl.style.backgroundColor = '#ffffff';
+            }
+        } else {
+            card.className = 'mobile-session-card w-[108px] min-w-[108px] h-[78px] rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-left transition-all cursor-pointer active:scale-95 bg-white text-ink border border-line/80 shadow-2xs hover:border-brand/40';
+            card.style.backgroundColor = '#ffffff';
+            card.style.color = '#053b26';
+            if (dateEl) {
+                dateEl.className = 'mobile-card-date text-muted font-medium text-[10px]';
+                dateEl.style.color = '#5c7a6d';
+            }
+            if (dotEl) {
+                dotEl.className = 'mobile-card-dot w-2 h-2 rounded-full bg-emerald-500';
+                dotEl.style.backgroundColor = '#10b981';
+            }
+        }
+    });
+}
+
 function mulaiObrolanBaru() {
     currentSessionId = null;
-    document.getElementById('messages-container').innerHTML = '';
-    document.getElementById('welcome-card').classList.remove('hidden');
-    document.getElementById('current-session-title').textContent = 'Percakapan Baru';
-    document.getElementById('current-session-subtitle').textContent = 'Konsultasi Nutrisi & Manajemen Unggas';
     
-    // Hapus highlight aktif di sidebar
+    // Reset desktop
+    const deskContainer = document.getElementById('messages-container');
+    if (deskContainer) deskContainer.innerHTML = '';
+    const deskWelcome = document.getElementById('welcome-card');
+    if (deskWelcome) deskWelcome.classList.remove('hidden');
+    const deskTitle = document.getElementById('current-session-title');
+    if (deskTitle) deskTitle.textContent = 'Percakapan Baru';
+    const deskSubtitle = document.getElementById('current-session-subtitle');
+    if (deskSubtitle) deskSubtitle.textContent = 'Konsultasi Nutrisi & Manajemen Unggas';
+
+    // Hapus highlight aktif di desktop sidebar
     document.querySelectorAll('.session-item').forEach(el => {
         el.classList.remove('bg-surface', 'border', 'border-line/80', 'font-bold', 'shadow-2xs', 'bg-slate-200', 'text-slate-900', 'border-slate-300');
         el.classList.add('text-ink/75');
@@ -466,15 +1050,23 @@ function mulaiObrolanBaru() {
         }
     });
 
+    // Reset mobile
+    const mobContainer = document.getElementById('mobile-messages-container');
+    if (mobContainer) mobContainer.innerHTML = '';
+    const mobWelcome = document.getElementById('mobile-welcome-card');
+    if (mobWelcome) mobWelcome.classList.remove('hidden');
+    updateMobileCardHighlight(null);
+    tutupRiwayatMobile();
+
     window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
-    const input = document.getElementById('input-pesan');
+    const input = window.innerWidth >= 768 ? document.getElementById('input-pesan') : document.getElementById('mobile-input-pesan');
     if (input) input.focus();
 }
 
 async function pilihSession(id) {
     currentSessionId = id;
     
-    // Highlight di sidebar
+    // 1. Highlight di desktop sidebar
     document.querySelectorAll('.session-item').forEach(el => {
         el.classList.remove('bg-surface', 'border', 'border-line/80', 'font-bold', 'shadow-2xs', 'bg-slate-200', 'text-slate-900', 'border-slate-300');
         el.classList.add('text-ink/75');
@@ -495,16 +1087,25 @@ async function pilihSession(id) {
         }
     }
 
+    // 2. Highlight di mobile horizontal cards
+    updateMobileCardHighlight(id);
+
     const welcomeCard = document.getElementById('welcome-card');
     const container = document.getElementById('messages-container');
+    const mobWelcomeCard = document.getElementById('mobile-welcome-card');
+    const mobContainer = document.getElementById('mobile-messages-container');
 
     if (welcomeCard) welcomeCard.classList.add('hidden');
-    container.innerHTML = `
+    if (mobWelcomeCard) mobWelcomeCard.classList.add('hidden');
+
+    const loaderHtml = `
         <div class="flex gap-2.5 items-start max-w-[85%] py-2 text-xs text-muted">
             <span class="material-symbols-outlined text-[18px] animate-spin text-brand">sync</span>
             <span>Memuat pesan percakapan...</span>
         </div>
     `;
+    if (container) container.innerHTML = loaderHtml;
+    if (mobContainer) mobContainer.innerHTML = loaderHtml;
 
     try {
         const res = await fetch(endpointChat, {
@@ -518,52 +1119,101 @@ async function pilihSession(id) {
             body: JSON.stringify({ aksi: 'ambil_session', session_id: id })
         });
         const data = await res.json();
-        container.innerHTML = '';
+        if (container) container.innerHTML = '';
+        if (mobContainer) mobContainer.innerHTML = '';
 
         if (data.status === 'success') {
-            document.getElementById('current-session-title').textContent = data.session_title;
-            document.getElementById('current-session-subtitle').textContent = `Sesi ID #${id} • ${data.messages.length} pesan`;
+            const titleEl = document.getElementById('current-session-title');
+            if (titleEl) titleEl.textContent = data.session_title;
+            const subtitleEl = document.getElementById('current-session-subtitle');
+            if (subtitleEl) subtitleEl.textContent = `Sesi ID #${id} • ${data.messages.length} pesan`;
+            
             window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
 
             data.messages.forEach(m => {
-                if (m.role === 'user') {
-                    const ub = document.createElement('div');
-                    ub.className = 'flex gap-2 items-start justify-end max-w-[85%] self-end';
-                    ub.innerHTML = `<div class="p-3 rounded-2xl rounded-tr-xs bg-brand text-white text-xs sm:text-sm leading-relaxed shadow-xs">${escapeHtml(m.isi)}</div>`;
-                    container.appendChild(ub);
-                } else {
-                    const ab = document.createElement('div');
-                    ab.className = 'flex gap-2.5 items-start w-full';
-                    ab.innerHTML = `
-                        <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0 mt-0.5">
-                            <span class="material-symbols-outlined text-[16px]">smart_toy</span>
-                        </div>
-                        <div class="p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0" data-raw="${escapeHtml(m.isi)}">
-                            ${formatAiMarkdown(m.isi)}
-                        </div>
-                    `;
-                    container.appendChild(ab);
+                const timeText = escapeHtml(m.time || '');
+
+                // A. Render Desktop
+                if (container) {
+                    if (m.role === 'user') {
+                        const ub = document.createElement('div');
+                        ub.className = 'flex gap-2 items-start justify-end max-w-[85%] self-end';
+                        ub.innerHTML = `<div class="p-3 rounded-2xl rounded-tr-xs bg-brand text-white text-xs sm:text-sm leading-relaxed shadow-xs">${escapeHtml(m.isi)}</div>`;
+                        container.appendChild(ub);
+                    } else {
+                        const ab = document.createElement('div');
+                        ab.className = 'flex gap-2.5 items-start w-full';
+                        ab.innerHTML = `
+                            <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0 mt-0.5">
+                                <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+                            </div>
+                            <div class="p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0" data-raw="${escapeHtml(m.isi)}">
+                                ${formatAiMarkdown(m.isi)}
+                            </div>
+                        `;
+                        container.appendChild(ab);
+                    }
+                }
+
+                // B. Render Mobile (Gambar 1)
+                if (mobContainer) {
+                    if (m.role === 'user') {
+                        const mobU = document.createElement('div');
+                        mobU.className = 'flex flex-col items-end max-w-[85%] self-end';
+                        mobU.innerHTML = `
+                            <div class="bg-brand text-white rounded-2xl rounded-tr-xs px-3.5 py-2.5 text-xs leading-relaxed shadow-xs" style="background-color: #116a3a; color: #ffffff;">
+                                ${escapeHtml(m.isi)}
+                                <div class="flex items-center justify-end gap-1 mt-1 text-[10px] text-white/70">
+                                    <span>${timeText}</span>
+                                    <span class="material-symbols-outlined text-[13px] leading-none">done_all</span>
+                                </div>
+                            </div>
+                        `;
+                        mobContainer.appendChild(mobU);
+                    } else {
+                        const mobA = document.createElement('div');
+                        mobA.className = 'flex items-start gap-2 max-w-[90%] self-start';
+                        mobA.innerHTML = `
+                            <div class="w-8 h-8 rounded-full bg-[#EBF5EE] border border-[#CDE5D6] text-brand grid place-items-center shrink-0 mt-0.5 shadow-2xs" style="background-color: #EBF5EE; border-color: #CDE5D6; color: #116a3a;">
+                                <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+                            </div>
+                            <div class="bg-[#F8FAF9] border border-line/70 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-ink leading-relaxed shadow-2xs flex-1 min-w-0" style="background-color: #f8faf9;" data-raw="${escapeHtml(m.isi)}">
+                                ${formatAiMarkdown(m.isi)}
+                                <div class="text-[10px] text-muted text-right mt-1 font-medium">
+                                    ${timeText}
+                                </div>
+                            </div>
+                        `;
+                        mobContainer.appendChild(mobA);
+                    }
                 }
             });
             scrollToBottom();
         }
     } catch (e) {
-        container.innerHTML = '';
+        if (container) container.innerHTML = '';
+        if (mobContainer) mobContainer.innerHTML = '';
         tampilkanErrorChat('Gagal memuat pesan sesi.');
     }
 }
 
 /**
- * Streaming perkata ala ChatGPT: Menghasilkan kata demi kata secara bertahap
- * dengan kursor berkedip di ujung teks dan autoscroll mulus.
+ * Streaming perkata ala ChatGPT: Mendukung elemen tunggal maupun array elemen
  */
-function streamWords(element, fullText, onDone) {
+function streamWords(elements, fullText, onDone) {
+    if (!Array.isArray(elements)) {
+        elements = [elements].filter(Boolean);
+    } else {
+        elements = elements.filter(Boolean);
+    }
     const tokens = fullText.split(/(\s+)/);
     let current = '';
     let idx = 0;
-    const speed = 20; // 20ms per token
+    const speed = 20;
 
-    element.innerHTML = '<span class="inline-block w-1.5 h-3.5 bg-brand ml-1 animate-pulse align-middle"></span>';
+    elements.forEach(el => {
+        el.innerHTML = '<span class="inline-block w-1.5 h-3.5 bg-brand ml-1 animate-pulse align-middle"></span>';
+    });
 
     function tick() {
         if (idx < tokens.length) {
@@ -573,11 +1223,13 @@ function streamWords(element, fullText, onDone) {
                 current += tokens[idx];
                 idx++;
             }
-            element.innerHTML = formatAiMarkdown(current) + '<span class="inline-block w-1.5 h-3.5 bg-brand ml-1 animate-pulse align-middle"></span>';
+            const formatted = formatAiMarkdown(current) + '<span class="inline-block w-1.5 h-3.5 bg-brand ml-1 animate-pulse align-middle"></span>';
+            elements.forEach(el => el.innerHTML = formatted);
             scrollToBottom();
             setTimeout(tick, speed);
         } else {
-            element.innerHTML = formatAiMarkdown(fullText);
+            const formattedFinal = formatAiMarkdown(fullText);
+            elements.forEach(el => el.innerHTML = formattedFinal);
             scrollToBottom();
             if (onDone) onDone();
         }
@@ -594,47 +1246,117 @@ function handleFormSubmit(e) {
     return false;
 }
 
-async function kirimPesanRealtime() {
-    const input = document.getElementById('input-pesan');
-    const btn = document.getElementById('btn-kirim');
-    const container = document.getElementById('messages-container');
-    const welcomeCard = document.getElementById('welcome-card');
+function handleMobileFormSubmit(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    const mobInput = document.getElementById('mobile-input-pesan');
+    const deskInput = document.getElementById('input-pesan');
+    if (mobInput && deskInput) {
+        deskInput.value = mobInput.value;
+    }
+    kirimPesanRealtime();
+    if (mobInput) {
+        mobInput.value = '';
+    }
+    return false;
+}
 
-    const pesan = input.value.trim();
+async function kirimPesanRealtime() {
+    const inputDesk = document.getElementById('input-pesan');
+    const inputMob = document.getElementById('mobile-input-pesan');
+    const btnDesk = document.getElementById('btn-kirim');
+    const btnMob = document.getElementById('mobile-btn-kirim');
+    const deskContainer = document.getElementById('messages-container');
+    const mobContainer = document.getElementById('mobile-messages-container');
+    const deskWelcome = document.getElementById('welcome-card');
+    const mobWelcome = document.getElementById('mobile-welcome-card');
+
+    const pesan = (inputMob && inputMob.value.trim() ? inputMob.value.trim() : (inputDesk ? inputDesk.value.trim() : ''));
     if (!pesan) return;
 
-    if (welcomeCard) welcomeCard.classList.add('hidden');
+    if (deskWelcome) deskWelcome.classList.add('hidden');
+    if (mobWelcome) mobWelcome.classList.add('hidden');
 
-    // 1. Tampilkan gelembung pesan Pengguna langsung di chat feed
-    const userBubble = document.createElement('div');
-    userBubble.className = 'flex gap-2 items-start justify-end max-w-[85%] self-end';
-    userBubble.innerHTML = `<div class="p-3 rounded-2xl rounded-tr-xs bg-brand text-white text-xs sm:text-sm leading-relaxed shadow-xs">${escapeHtml(pesan)}</div>`;
-    container.appendChild(userBubble);
+    // 1. Tampilkan bubble pesan user di Desktop & Mobile
+    if (deskContainer) {
+        const ubDesk = document.createElement('div');
+        ubDesk.className = 'flex gap-2 items-start justify-end max-w-[85%] self-end';
+        ubDesk.innerHTML = `<div class="p-3 rounded-2xl rounded-tr-xs bg-brand text-white text-xs sm:text-sm leading-relaxed shadow-xs">${escapeHtml(pesan)}</div>`;
+        deskContainer.appendChild(ubDesk);
+    }
+    if (mobContainer) {
+        const ubMob = document.createElement('div');
+        ubMob.className = 'flex flex-col items-end max-w-[85%] self-end';
+        ubMob.innerHTML = `
+            <div class="bg-brand text-white rounded-2xl rounded-tr-xs px-3.5 py-2.5 text-xs leading-relaxed shadow-xs" style="background-color: #116a3a; color: #ffffff;">
+                ${escapeHtml(pesan)}
+                <div class="flex items-center justify-end gap-1 mt-1 text-[10px] text-white/70">
+                    <span>Baru saja</span>
+                    <span class="material-symbols-outlined text-[13px] leading-none">done_all</span>
+                </div>
+            </div>
+        `;
+        mobContainer.appendChild(ubMob);
+    }
 
-    input.value = '';
-    input.disabled = true;
-    btn.disabled = true;
+    if (inputDesk) {
+        inputDesk.value = '';
+        inputDesk.disabled = true;
+    }
+    if (inputMob) {
+        inputMob.value = '';
+        inputMob.disabled = true;
+    }
+    if (btnDesk) btnDesk.disabled = true;
+    if (btnMob) btnMob.disabled = true;
 
-    // 2. Buat gelembung Asisten AI LANGSUNG di bawahnya dengan indikator berdenyut ala ChatGPT
-    const aiBubble = document.createElement('div');
-    aiBubble.className = 'flex gap-2.5 items-start w-full';
-    
-    const contentBox = document.createElement('div');
-    contentBox.className = 'p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0';
-    contentBox.innerHTML = `
-        <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium">
-            <span class="w-2 h-2 rounded-full bg-brand animate-ping"></span>
-            <span class="animate-pulse text-muted">Asisten sedang menganalisis & menyusun jawaban...</span>
-        </div>
-    `;
+    // 2. Buat gelembung Asisten AI di Desktop & Mobile
+    let deskContentBox = null;
+    let mobContentBox = null;
 
-    aiBubble.innerHTML = `
-        <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0 mt-0.5">
-            <span class="material-symbols-outlined text-[16px]">smart_toy</span>
-        </div>
-    `;
-    aiBubble.appendChild(contentBox);
-    container.appendChild(aiBubble);
+    if (deskContainer) {
+        const aiBubbleDesk = document.createElement('div');
+        aiBubbleDesk.className = 'flex gap-2.5 items-start w-full';
+        deskContentBox = document.createElement('div');
+        deskContentBox.className = 'p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0';
+        deskContentBox.innerHTML = `
+            <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium">
+                <span class="w-2 h-2 rounded-full bg-brand animate-ping"></span>
+                <span class="animate-pulse text-muted">Asisten sedang menganalisis & menyusun jawaban...</span>
+            </div>
+        `;
+        aiBubbleDesk.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0 mt-0.5">
+                <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+            </div>
+        `;
+        aiBubbleDesk.appendChild(deskContentBox);
+        deskContainer.appendChild(aiBubbleDesk);
+    }
+
+    if (mobContainer) {
+        const aiBubbleMob = document.createElement('div');
+        aiBubbleMob.className = 'flex items-start gap-2 max-w-[90%] self-start';
+        mobContentBox = document.createElement('div');
+        mobContentBox.className = 'bg-[#F8FAF9] border border-line/70 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-ink leading-relaxed shadow-2xs flex-1 min-w-0';
+        mobContentBox.style.backgroundColor = '#f8faf9';
+        mobContentBox.innerHTML = `
+            <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium" style="color: #116a3a;">
+                <span class="w-2 h-2 rounded-full bg-brand animate-ping" style="background-color: #116a3a;"></span>
+                <span class="animate-pulse text-muted">Sedang menganalisis...</span>
+            </div>
+        `;
+        aiBubbleMob.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-[#EBF5EE] border border-[#CDE5D6] text-brand grid place-items-center shrink-0 mt-0.5 shadow-2xs" style="background-color: #EBF5EE; border-color: #CDE5D6; color: #116a3a;">
+                <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+            </div>
+        `;
+        aiBubbleMob.appendChild(mobContentBox);
+        mobContainer.appendChild(aiBubbleMob);
+    }
+
     scrollToBottom();
 
     try {
@@ -659,56 +1381,77 @@ async function kirimPesanRealtime() {
         const data = await response.json();
 
         if (data.status === 'success') {
-            // Jalankan penulisan kata-demi-kata (Streaming / Typewriter Effect)
-            streamWords(contentBox, data.jawaban);
+            const boxes = [deskContentBox, mobContentBox].filter(Boolean);
+            streamWords(boxes, data.jawaban, () => {
+                if (mobContentBox) {
+                    const timeEl = document.createElement('div');
+                    timeEl.className = 'text-[10px] text-muted text-right mt-1 font-medium';
+                    timeEl.textContent = data.created_at || 'Baru saja';
+                    mobContentBox.appendChild(timeEl);
+                }
+            });
 
-            // Update sesi jika sesi baru
             if (data.is_new_session && data.session_id) {
                 currentSessionId = data.session_id;
-                document.getElementById('current-session-title').textContent = data.session_title;
-                document.getElementById('current-session-subtitle').textContent = `Sesi ID #${data.session_id} • 2 pesan`;
+                const titleEl = document.getElementById('current-session-title');
+                if (titleEl) titleEl.textContent = data.session_title;
+                const subtitleEl = document.getElementById('current-session-subtitle');
+                if (subtitleEl) subtitleEl.textContent = `Sesi ID #${data.session_id} • 2 pesan`;
 
                 window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
                 tambahSesiKeSidebar(data.session_id, data.session_title);
             }
         } else {
-            contentBox.innerHTML = `
+            const errHtml = `
                 <div class="flex items-center gap-2 text-xs text-danger-ink bg-danger-soft border border-danger/30 rounded-xl p-3">
                     <span class="material-symbols-outlined text-[16px]">error</span>
                     <span>${escapeHtml(data.message || 'Gagal memproses jawaban.')}</span>
                 </div>
             `;
+            if (deskContentBox) deskContentBox.innerHTML = errHtml;
+            if (mobContentBox) mobContentBox.innerHTML = errHtml;
         }
     } catch (err) {
-        contentBox.innerHTML = `
+        const errHtml = `
             <div class="flex items-center gap-2 text-xs text-danger-ink bg-danger-soft border border-danger/30 rounded-xl p-3">
                 <span class="material-symbols-outlined text-[16px]">error</span>
                 <span>Gagal menghubungi server AI (${escapeHtml(err.message || 'Koneksi terputus')}). Pastikan server web aktif.</span>
             </div>
         `;
+        if (deskContentBox) deskContentBox.innerHTML = errHtml;
+        if (mobContentBox) mobContentBox.innerHTML = errHtml;
     } finally {
-        input.disabled = false;
-        btn.disabled = false;
-        input.focus();
+        if (inputDesk) {
+            inputDesk.disabled = false;
+            if (window.innerWidth >= 768) inputDesk.focus();
+        }
+        if (inputMob) {
+            inputMob.disabled = false;
+            if (window.innerWidth < 768) inputMob.focus();
+        }
+        if (btnDesk) btnDesk.disabled = false;
+        if (btnMob) btnMob.disabled = false;
         scrollToBottom();
     }
 }
 
 function tampilkanErrorChat(teks) {
     const container = document.getElementById('messages-container');
+    const mobContainer = document.getElementById('mobile-messages-container');
     const errEl = document.createElement('div');
     errEl.className = 'flex items-center gap-2 text-xs text-danger-ink bg-danger-soft border border-danger/30 rounded-xl p-3 max-w-[85%]';
     errEl.innerHTML = `<span class="material-symbols-outlined text-[16px]">error</span><span>${escapeHtml(teks)}</span>`;
-    container.appendChild(errEl);
+    if (container) container.appendChild(errEl);
+    if (mobContainer) mobContainer.appendChild(errEl.cloneNode(true));
     scrollToBottom();
 }
 
 function tambahSesiKeSidebar(id, judul) {
+    // 1. Tambah ke desktop sidebar
     const recentsList = document.getElementById('recents-list');
     const emptyNotice = document.getElementById('empty-history-notice');
     if (emptyNotice) emptyNotice.remove();
 
-    // Hapus highlight sebelumnya
     document.querySelectorAll('.session-item').forEach(el => {
         el.classList.remove('bg-surface', 'border', 'border-line/80', 'font-bold', 'shadow-2xs', 'bg-slate-200', 'text-slate-900', 'border-slate-300');
         el.classList.add('text-ink/75');
@@ -719,24 +1462,95 @@ function tambahSesiKeSidebar(id, judul) {
         }
     });
 
-    const item = document.createElement('div');
-    item.id = `session-item-${id}`;
-    item.className = 'session-item group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors duration-150 bg-surface text-ink font-bold border border-line/80 shadow-2xs';
-    item.innerHTML = `
-        <button type="button" onclick="pilihSession(${id})" class="flex items-center gap-2 flex-1 min-w-0 pr-2 text-left cursor-pointer">
-            <span class="material-symbols-outlined text-[15px] session-icon text-brand">chat_bubble_outline</span>
-            <span class="truncate session-title text-ink font-bold">${escapeHtml(judul)}</span>
-        </button>
-        <div class="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button type="button" onclick="togglePinSession(${id}, event)" class="p-1 hover:text-brand text-muted cursor-pointer rounded" title="Sematkan">
-                <span class="material-symbols-outlined text-[14px]">push_pin</span>
+    if (recentsList) {
+        const item = document.createElement('div');
+        item.id = `session-item-${id}`;
+        item.className = 'session-item group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors duration-150 bg-surface text-ink font-bold border border-line/80 shadow-2xs';
+        item.innerHTML = `
+            <button type="button" onclick="pilihSession(${id})" class="flex items-center gap-2 flex-1 min-w-0 pr-2 text-left cursor-pointer">
+                <span class="material-symbols-outlined text-[15px] session-icon text-brand">chat_bubble_outline</span>
+                <span class="truncate session-title text-ink font-bold">${escapeHtml(judul)}</span>
             </button>
-            <button type="button" onclick="hapusSession(${id}, event)" class="p-1 hover:text-danger text-muted cursor-pointer rounded" title="Hapus Sesi">
-                <span class="material-symbols-outlined text-[14px]">delete</span>
-            </button>
-        </div>
-    `;
-    recentsList.insertBefore(item, recentsList.firstChild);
+            <div class="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button type="button" onclick="togglePinSession(${id}, event)" class="p-1 hover:text-brand text-muted cursor-pointer rounded" title="Sematkan">
+                    <span class="material-symbols-outlined text-[14px]">push_pin</span>
+                </button>
+                <button type="button" onclick="hapusSession(${id}, event)" class="p-1 hover:text-danger text-muted cursor-pointer rounded" title="Hapus Sesi">
+                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                </button>
+            </div>
+        `;
+        recentsList.insertBefore(item, recentsList.firstChild);
+    }
+
+    // 2. Tambah ke mobile horizontal recent cards (Gambar 1)
+    const mobileCardsContainer = document.getElementById('mobile-recent-cards');
+    if (mobileCardsContainer) {
+        updateMobileCardHighlight(null);
+
+        const newCard = document.createElement('button');
+        newCard.type = 'button';
+        newCard.setAttribute('data-session-card-id', id);
+        newCard.onclick = () => pilihSession(id);
+        newCard.className = 'mobile-session-card w-[108px] min-w-[108px] h-[78px] rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-left transition-all cursor-pointer active:scale-95 bg-brand text-white shadow-xs';
+        newCard.style.backgroundColor = '#116a3a';
+        newCard.style.color = '#ffffff';
+        newCard.innerHTML = `
+            <span class="font-bold text-xs truncate block leading-snug mobile-card-title">${escapeHtml(judul)}</span>
+            <div class="flex items-center justify-between text-[11px]">
+                <span class="mobile-card-date text-white/80 font-medium text-[10px]" style="color: rgba(255, 255, 255, 0.8);">Hari ini</span>
+                <span class="mobile-card-dot w-2 h-2 rounded-full bg-white" style="background-color: #ffffff;"></span>
+            </div>
+        `;
+        const btnBaru = mobileCardsContainer.firstElementChild;
+        if (btnBaru && btnBaru.nextSibling) {
+            mobileCardsContainer.insertBefore(newCard, btnBaru.nextSibling);
+        } else {
+            mobileCardsContainer.appendChild(newCard);
+        }
+    }
+
+    // 3. Tambah ke mobile history list (Gambar 3)
+    const histUnpinnedList = document.getElementById('history-unpinned-list');
+    if (histUnpinnedList) {
+        const histItem = document.createElement('div');
+        histItem.setAttribute('data-history-item', '');
+        histItem.setAttribute('data-session-id', id);
+        histItem.setAttribute('data-is-pinned', '0');
+        histItem.setAttribute('data-is-today', '1');
+        histItem.className = 'flex items-center justify-between gap-3 p-3 rounded-2xl bg-white hover:bg-surface/60 border border-line/80 hover:border-brand/40 transition-all shadow-2xs cursor-pointer group';
+        histItem.onclick = () => pilihSessionDanTutupHistory(id);
+        histItem.innerHTML = `
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-full bg-[#F4F7F5] text-muted grid place-items-center shrink-0 shadow-2xs" style="background-color: #F4F7F5;">
+                    <span class="material-symbols-outlined text-[18px]">chat</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h5 class="font-bold text-xs text-ink truncate">${escapeHtml(judul)}</h5>
+                    <p class="text-[11px] text-muted truncate mt-0.5">Sesi baru dibuat.</p>
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 shrink-0 select-none">
+                <span class="text-[10px] text-muted font-medium">Hari ini</span>
+                <div class="relative" onclick="event.stopPropagation()">
+                    <button type="button" onclick="toggleHistoryDropdown(${id}, event)" class="p-1 text-muted hover:text-ink rounded-lg hover:bg-surface-2 transition cursor-pointer" title="Menu Sesi">
+                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                    </button>
+                    <div id="history-dropdown-${id}" class="history-dropdown-menu hidden absolute right-0 bottom-full mb-1 w-36 bg-white rounded-xl shadow-lg border border-line py-1 z-30">
+                        <button type="button" onclick="togglePinSession(${id}, event); tutupSemuaHistoryDropdown();" class="w-full px-3 py-2 text-left text-xs text-ink hover:bg-surface flex items-center gap-2 cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px] text-brand">push_pin</span>
+                            <span>Sematkan</span>
+                        </button>
+                        <button type="button" onclick="hapusSession(${id}, event); tutupSemuaHistoryDropdown();" class="w-full px-3 py-2 text-left text-xs text-danger hover:bg-danger-soft/30 flex items-center gap-2 cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px] text-danger">delete</span>
+                            <span>Hapus Sesi</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        histUnpinnedList.insertBefore(histItem, histUnpinnedList.firstChild);
+    }
 }
 
 function hapusSession(id, e) {
@@ -759,8 +1573,16 @@ function hapusSession(id, e) {
                 });
                 const d = await res.json();
                 if (d.status === 'success') {
-                    const el = document.getElementById(`session-item-${id}`);
-                    if (el) el.remove();
+                    // Hapus dari desktop
+                    const elDesk = document.getElementById(`session-item-${id}`);
+                    if (elDesk) elDesk.remove();
+                    // Hapus dari mobile card
+                    const elCard = document.querySelector(`.mobile-session-card[data-session-card-id="${id}"]`);
+                    if (elCard) elCard.remove();
+                    // Hapus dari mobile history
+                    const elHist = document.querySelector(`#mobile-history-view [data-session-id="${id}"]`);
+                    if (elHist) elHist.remove();
+
                     if (currentSessionId === id) {
                         mulaiObrolanBaru();
                     }
@@ -824,13 +1646,24 @@ function hapusSemua() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Cegah native submit pada input teks dengan tombol Enter
-    const inputPesan = document.getElementById('input-pesan');
-    if (inputPesan) {
-        inputPesan.addEventListener('keydown', (e) => {
+    // Cegah native submit pada input teks desktop dengan tombol Enter
+    const inputPesanDesk = document.getElementById('input-pesan');
+    if (inputPesanDesk) {
+        inputPesanDesk.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleFormSubmit(e);
+            }
+        });
+    }
+
+    // Cegah native submit pada input teks mobile dengan tombol Enter
+    const inputPesanMob = document.getElementById('mobile-input-pesan');
+    if (inputPesanMob) {
+        inputPesanMob.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleMobileFormSubmit(e);
             }
         });
     }

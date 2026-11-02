@@ -317,12 +317,9 @@ class HomeController extends Controller
     {
         $isOnline = $weatherService->isSensorOnline($farm, 60);
 
-        if ($isOnline) {
-            $w = $weatherService->getWeather($farm);
-        } else {
-            // Jika sensor fisik offline (dilepas), sistem otomatis beralih ke cuaca BMKG Open-Meteo
-            $w = $weatherService->fetchOpenMeteo($farm);
-        }
+        // Gunakan getWeather yang sudah mengutamakan sensor online atau cache cuaca Open-Meteo/BMKG
+        // sehingga tidak memblokir server single-threaded PHP built-in dengan request HTTP outbound terus-menerus
+        $w = $weatherService->getWeather($farm);
 
         $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
 

@@ -1801,7 +1801,10 @@ function initLiveSensorPoller() {
         thunderstorm: '<svg class="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 64 64" fill="none"><path d="M19 36H45C48.3 36 51 33.3 51 30C51 26.7 48.3 24 45 24C44.7 24 44.4 24.02 44.1 24.06C43.1 19.32 38.9 16 34 16C28.5 16 24 20.5 24 26C24 26.3 24.01 26.6 24.05 26.9C21.1 27.4 19 29.9 19 32.8C19 34.6 20.4 36 22.2 36H19Z" fill="#475569"/><polygon points="34,34 26,46 33,46 29,58 41,44 34,44" fill="#FACC15" stroke="#EAB308" stroke-width="1"/></svg>',
     };
 
+    let isPolling = false;
     async function pollSensor() {
+        if (isPolling) return;
+        isPolling = true;
         try {
             const res = await fetch(liveUrl, {
                 headers: {
@@ -1950,6 +1953,8 @@ function initLiveSensorPoller() {
             }
         } catch (e) {
             // Ignore temporary network errors
+        } finally {
+            isPolling = false;
         }
     }
 

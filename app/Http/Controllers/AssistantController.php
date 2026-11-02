@@ -18,12 +18,13 @@ class AssistantController extends Controller
             $farm->alerts()->where('dibaca', false)->update(['dibaca' => true]);
         }
 
-        $alerts = $farm->alerts()->latest('tanggal_data')->latest('id')->limit(10)->get();
+        $alerts = $farm->alerts()->latest('tanggal_data')->latest('id')->limit(30)->get();
         $aiAktif = app(AiAssistant::class)->tersedia();
 
         // Ambil semua sesi percakapan peternak (pinned di atas, lalu terbaru)
         $chatSessions = $farm->chatSessions()
             ->withCount('messages')
+            ->with(['messages' => fn ($q) => $q->latest('id')->limit(1)])
             ->orderByDesc('pinned')
             ->orderByDesc('updated_at')
             ->get();
