@@ -31,7 +31,25 @@ class LogController extends Controller
         $selectedDate = $r->query('tanggal', today()->toDateString());
         $form = $farm->logs()->whereDate('tanggal', $selectedDate)->first() ?? new DailyLog(['tanggal' => \Illuminate\Support\Carbon::parse($selectedDate)]);
         $isEdit = $farm->logs()->whereDate('tanggal', $selectedDate)->exists();
-        $riwayat = $farm->logs()->orderByDesc('tanggal')->paginate(5)->withQueryString();
+
+        $filterPeriode = $r->query('periode', 'semua');
+        $cariTanggal = $r->query('cari_tanggal');
+
+        $riwayatQuery = $farm->logs()->orderByDesc('tanggal');
+
+        if ($cariTanggal) {
+            $riwayatQuery->whereDate('tanggal', $cariTanggal);
+        } elseif ($filterPeriode === 'bulan_ini') {
+            $riwayatQuery->whereBetween('tanggal', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()]);
+        } elseif ($filterPeriode === 'bulan_lalu') {
+            $riwayatQuery->whereBetween('tanggal', [now()->subMonth()->startOfMonth()->toDateString(), now()->subMonth()->endOfMonth()->toDateString()]);
+        } elseif ($filterPeriode === '30_hari') {
+            $riwayatQuery->where('tanggal', '>=', now()->subDays(29)->toDateString());
+        } elseif ($filterPeriode === '7_hari') {
+            $riwayatQuery->where('tanggal', '>=', now()->subDays(6)->toDateString());
+        }
+
+        $riwayat = $riwayatQuery->paginate(5)->withQueryString();
         $allLogs = $farm->logs()->orderByDesc('tanggal')->get();
 
         $yesterdayDate = today()->subDay()->toDateString();
@@ -54,7 +72,7 @@ class LogController extends Controller
         $bahan = $farm->ingredients()->orderBy('nama')->get();
         $selisihTotal = $beli->sum(fn ($p) => ($p->harga_nyata - $p->harga_estimasi) * $p->kg);
 
-        return view('catatan.index', compact('farm', 'rentang', 'logs', 'grafik', 'laporan', 'form', 'isEdit', 'riwayat', 'allLogs', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam'));
+        return view('catatan.index', compact('farm', 'rentang', 'logs', 'grafik', 'laporan', 'form', 'isEdit', 'riwayat', 'allLogs', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam', 'filterPeriode', 'cariTanggal'));
     }
 
     public function store(Request $r, AnomalyDetector $detector)
