@@ -258,74 +258,88 @@ function buildKandang3DScene() {
     grid.position.y = 0.01;
     scene3D.add(grid);
 
-    // B. Tiang Rangka Baja Ringan Kandang (A-Frame Portal)
+    // B. Tiang Rangka Baja Ringan Kandang (A-Frame Portal Megah & Tinggi)
     const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6, roughness: 0.3 });
     for (let x = -9; x <= 9; x += 4.5) {
-        // Kolom Kiri
-        const colL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 4), steelMat);
-        colL.position.set(x, 2, -3.5);
+        // Kolom Kiri (Tinggi 5.2 meter)
+        const colL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 5.2), steelMat);
+        colL.position.set(x, 2.6, -3.8);
         scene3D.add(colL);
 
-        // Kolom Kanan
-        const colR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 4), steelMat);
-        colR.position.set(x, 2, 3.5);
+        // Kolom Kanan (Tinggi 5.2 meter)
+        const colR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 5.2), steelMat);
+        colR.position.set(x, 2.6, 3.8);
         scene3D.add(colR);
 
-        // Kuda-Kuda Atap Kiri
-        const rafterL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.2), steelMat);
-        rafterL.position.set(x, 4.6, -1.8);
-        rafterL.rotation.x = Math.PI / 5.5;
+        // Kuda-Kuda Rangka Atap Kiri (Membentang naik dari 5.2m ke puncak 7.2m)
+        const rafterL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.4), steelMat);
+        rafterL.position.set(x, 6.2, -1.9);
+        rafterL.rotation.x = Math.atan2(2.0, 3.8);
         scene3D.add(rafterL);
 
-        // Kuda-Kuda Atap Kanan
-        const rafterR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.2), steelMat);
-        rafterR.position.set(x, 4.6, 1.8);
-        rafterR.rotation.x = -Math.PI / 5.5;
+        // Kuda-Kuda Rangka Atap Kanan
+        const rafterR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.4), steelMat);
+        rafterR.position.set(x, 6.2, 1.9);
+        rafterR.rotation.x = -Math.atan2(2.0, 3.8);
         scene3D.add(rafterR);
     }
 
-    // C. Atap Seng Kandang Rapat (Solid Seng Galvalum Penahan Panas)
+    // C. Atap Seng Kandang Rapat Tinggi (Solid Galvalum Penahan Panas)
     const roofMat = new THREE.MeshStandardMaterial({ 
-        color: 0x475569, 
-        metalness: 0.75, 
+        color: 0x334155, 
+        metalness: 0.8, 
         roughness: 0.3, 
         side: THREE.DoubleSide 
     });
 
     const roofL = new THREE.Mesh(new THREE.PlaneGeometry(19, 4.4), roofMat);
-    roofL.position.set(0, 4.6, -1.8);
-    roofL.rotation.x = Math.PI / 5.5;
+    roofL.position.set(0, 6.22, -1.9);
+    roofL.rotation.x = Math.atan2(2.0, 3.8);
     scene3D.add(roofL);
 
     const roofR = new THREE.Mesh(new THREE.PlaneGeometry(19, 4.4), roofMat);
-    roofR.position.set(0, 4.6, 1.8);
-    roofR.rotation.x = -Math.PI / 5.5;
+    roofR.position.set(0, 6.22, 1.9);
+    roofR.rotation.x = -Math.atan2(2.0, 3.8);
     scene3D.add(roofR);
 
-    // Nok Penutup Bubungan Puncak Atap (Ridge Cap) - Rapat menutup celah tengah
+    // Nok Penutup Bubungan Puncak Atap (Ridge Cap) - Ketinggian 7.28 meter
     const ridgeCap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.25, 0.25, 19, 8),
-        new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.25 })
+        new THREE.CylinderGeometry(0.28, 0.28, 19, 8),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.25 })
     );
     ridgeCap.rotation.z = Math.PI / 2;
-    ridgeCap.position.set(0, 5.35, 0);
+    ridgeCap.position.set(0, 7.28, 0);
     scene3D.add(ridgeCap);
 
-    // Pipa Sprinkler MURNI DI LUAR ATAP (Di Atas Nok Bubungan Luar)
+    // Dinding Segitiga Ujung Belakang Kandang (Gable End)
+    const gableShape = new THREE.Shape();
+    gableShape.moveTo(-3.8, 5.2);
+    gableShape.lineTo(0, 7.2);
+    gableShape.lineTo(3.8, 5.2);
+    gableShape.closePath();
+    const gableGeo = new THREE.ShapeGeometry(gableShape);
+    const gableMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, side: THREE.DoubleSide });
+
+    const gableBack = new THREE.Mesh(gableGeo, gableMat);
+    gableBack.position.set(9.4, 0, 0);
+    gableBack.rotation.y = -Math.PI / 2;
+    scene3D.add(gableBack);
+
+    // Pipa Sprinkler MURNI DI LUAR ATAP (Ketinggian 7.5 Meter di Luar)
     const ridgePipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 19), steelMat);
     ridgePipe.rotation.z = Math.PI / 2;
-    ridgePipe.position.set(0, 5.55, 0); // Di luar atap atas!
+    ridgePipe.position.set(0, 7.5, 0); // Jauh tinggi di luar atap!
     scene3D.add(ridgePipe);
 
     // Nozzle-nozzle Sprinkler di Luar Atap Mengarah ke Lereng Kiri dan Kanan
     for (let nx = -8; nx <= 8; nx += 2) {
-        const nozL = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.08, 6), steelMat);
-        nozL.position.set(nx, 5.55, -0.07);
+        const nozL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 6), steelMat);
+        nozL.position.set(nx, 7.5, -0.08);
         nozL.rotation.x = Math.PI / 3;
         scene3D.add(nozL);
 
-        const nozR = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.08, 6), steelMat);
-        nozR.position.set(nx, 5.55, 0.07);
+        const nozR = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 6), steelMat);
+        nozR.position.set(nx, 7.5, 0.08);
         nozR.rotation.x = -Math.PI / 3;
         scene3D.add(nozR);
     }
@@ -631,31 +645,31 @@ function buildKandang3DScene() {
         return fanGroup;
     }
 
-    // Pasang kipas berseri di plafon atas berjarak beberapa meter (Sesuai Arahan Aditya)
-    createCeilingFanUnit(-4.5, 4.3, 0); // Kipas Sirkulasi Atas Zona 1
-    createCeilingFanUnit(0.0, 4.3, 0);  // Kipas Sirkulasi Atas Zona 2 (Tengah)
-    createCeilingFanUnit(4.5, 4.3, 0);  // Kipas Sirkulasi Atas Zona 3
-    createCeilingFanUnit(9.4, 4.3, 0, true); // Kipas Exhaust Dinding Belakang Atas (Gable Apex)
+    // Pasang kipas berseri di plafon atas berjarak beberapa meter (Ketinggian 5.2m & 6.0m)
+    createCeilingFanUnit(-4.5, 5.2, 0); // Kipas Sirkulasi Atas Zona 1
+    createCeilingFanUnit(0.0, 5.2, 0);  // Kipas Sirkulasi Atas Zona 2 (Tengah)
+    createCeilingFanUnit(4.5, 5.2, 0);  // Kipas Sirkulasi Atas Zona 3
+    createCeilingFanUnit(9.4, 6.0, 0, true); // Kipas Exhaust Dinding Belakang Atas (Gable Apex di 6.0m)
 
-    // H. Partikel Air Sprinkler MURNI DI LUAR ATAP (Outer Roof Slope Flow)
-    const particleCount = 260;
+    // H. Partikel Air Sprinkler MURNI DI LUAR ATAP TINGGI (Ketinggian 7.4m - 5.4m di Luar Seng)
+    const particleCount = 280;
     const waterGeo = new THREE.BufferGeometry();
     const waterPositions = new Float32Array(particleCount * 3);
     for (let k = 0; k < particleCount; k++) {
         const i = k * 3;
         const isLeft = k % 2 === 0;
         const x = (Math.random() - 0.5) * 18;
-        // z mengalir di lereng atap luar: dari z = ±0.25 ke z = ±3.7
+        // z mengalir di lereng atap luar: dari z = ±0.25 ke z = ±3.85
         const progress = Math.random();
-        const z = isLeft ? (-0.25 - progress * 3.45) : (0.25 + progress * 3.45);
-        const y = 5.48 - 0.39 * Math.abs(z); // Tepat di atas permukaan luar seng
+        const z = isLeft ? (-0.25 - progress * 3.6) : (0.25 + progress * 3.6);
+        const y = 7.42 - (2.0 / 3.8) * Math.abs(z); // Tepat di atas permukaan luar seng tinggi!
 
         waterPositions[i] = x;
         waterPositions[i + 1] = y;
         waterPositions[i + 2] = z;
     }
     waterGeo.setAttribute('position', new THREE.BufferAttribute(waterPositions, 3));
-    const waterMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.16, transparent: true, opacity: 0.9 });
+    const waterMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.17, transparent: true, opacity: 0.9 });
     roofWaterParticles3D = new THREE.Points(waterGeo, waterMat);
     roofWaterParticles3D.visible = false;
     scene3D.add(roofWaterParticles3D);
@@ -775,7 +789,7 @@ function animateThreeJS() {
         }
     }
 
-    // 4. Animasi Percikan Air Sprinkler 100% DI LUAR ATAP SENG
+    // 4. Animasi Percikan Air Sprinkler 100% DI LUAR ATAP SENG TINGGI (7.4m - 5.4m)
     if (isSprinklerActive3D && roofWaterParticles3D) {
         roofWaterParticles3D.visible = true;
         const pos = roofWaterParticles3D.geometry.attributes.position.array;
@@ -784,19 +798,19 @@ function animateThreeJS() {
             const isLeft = pos[i + 2] < 0;
             if (isLeft) {
                 pos[i + 2] -= 0.055; // Mengalir turun di lereng kiri LUAR
-                if (pos[i + 2] < -3.75) {
-                    pos[i + 2] = -0.25; // Reset kembali ke nok bubungan atas luar
+                if (pos[i + 2] < -3.85) {
+                    pos[i + 2] = -0.25; // Reset kembali ke puncak nok bubungan luar
                     pos[i] = (Math.random() - 0.5) * 18;
                 }
             } else {
                 pos[i + 2] += 0.055; // Mengalir turun di lereng kanan LUAR
-                if (pos[i + 2] > 3.75) {
-                    pos[i + 2] = 0.25; // Reset kembali ke nok bubungan atas luar
+                if (pos[i + 2] > 3.85) {
+                    pos[i + 2] = 0.25; // Reset kembali ke puncak nok bubungan luar
                     pos[i] = (Math.random() - 0.5) * 18;
                 }
             }
-            // Ketinggian Y selalu berada tepat di atas seng luar (tidak pernah di dalam ruangan)
-            pos[i + 1] = 5.48 - 0.39 * Math.abs(pos[i + 2]);
+            // Ketinggian Y selalu berada tepat di atas seng luar atap tinggi (7.42m - 5.4m)
+            pos[i + 1] = 7.42 - (2.0 / 3.8) * Math.abs(pos[i + 2]);
         }
         roofWaterParticles3D.geometry.attributes.position.needsUpdate = true;
     } else if (roofWaterParticles3D) {
@@ -826,13 +840,13 @@ function onWindowResize3D() {
 function setKamera3D(tipe) {
     if (!camera3D || !controls3D) return;
     if (tipe === 'perspektif') {
-        camera3D.position.set(13, 9, 14);
-        controls3D.target.set(0, 2, 0);
+        camera3D.position.set(16, 11, 16);
+        controls3D.target.set(0, 2.8, 0);
     } else if (tipe === 'lorong') {
-        camera3D.position.set(feederPositionX - 3.2, 2.5, 0);
-        controls3D.target.set(feederPositionX + 4, 1.8, 0);
+        camera3D.position.set(feederPositionX - 3.2, 1.7, 0);
+        controls3D.target.set(feederPositionX + 4, 1.4, 0);
     } else if (tipe === 'atas') {
-        camera3D.position.set(0, 22, 0.01);
+        camera3D.position.set(0, 26, 0.01);
         controls3D.target.set(0, 0, 0);
     }
     controls3D.update();
