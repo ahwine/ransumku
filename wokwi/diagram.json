@@ -3,55 +3,55 @@
   "author": "Aditya Ramadhani - RansumKu (SMKN 2 Surabaya)",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 80, "left": 100, "attrs": {} },
-    { "type": "wokwi-dht22", "id": "dht22", "top": -120, "left": -80, "attrs": { "temperature": "34.5", "humidity": "72" } },
-    { "type": "wokwi-ssd1306", "id": "oled", "top": -120, "left": 120, "attrs": { "height": "64", "width": "128" } },
+    { "type": "wokwi-dht22", "id": "dht22", "top": 40, "left": 40, "attrs": { "temperature": "34.5", "humidity": "72" } },
+    { "type": "wokwi-ssd1306", "id": "oled", "top": 30, "left": 220, "attrs": { "height": "64", "width": "128" } },
+    { "type": "wokwi-servo", "id": "motor_penarik_pakan", "top": 30, "left": 460, "attrs": { "label": "MOTOR PENARIK KERETA PAKAN" } },
 
-    { "type": "wokwi-servo", "id": "motor_penarik_pakan", "top": -120, "left": 360, "attrs": { "label": "MOTOR PENARIK KERETA PAKAN (KATROL TALI)" } },
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 180, "left": 220, "attrs": {} },
 
-    { "type": "wokwi-relay-module", "id": "relay_kipas", "top": 120, "left": 360, "attrs": {} },
-    { "type": "wokwi-relay-module", "id": "relay_sprinkler", "top": 240, "left": 360, "attrs": {} },
-    { "type": "wokwi-led", "id": "led_kipas", "top": 140, "left": 530, "attrs": { "color": "cyan", "label": "Kipas Blower Sirkulasi" } },
-    { "type": "wokwi-led", "id": "led_sprinkler", "top": 260, "left": 530, "attrs": { "color": "blue", "label": "Pompa Sprinkler Atap" } },
+    { "type": "wokwi-pushbutton", "id": "btn_limit_pangkal", "top": 200, "left": 50, "attrs": { "color": "green", "label": "Limit Switch Pangkal A" } },
+    { "type": "wokwi-pushbutton", "id": "btn_limit_ujung", "top": 280, "left": 50, "attrs": { "color": "red", "label": "Limit Switch Ujung B" } },
+    { "type": "wokwi-buzzer", "id": "buzzer_sound", "top": 360, "left": 50, "attrs": { "label": "Audio Anti-Stres" } },
 
-    { "type": "wokwi-pushbutton", "id": "btn_limit_pangkal", "top": 200, "left": -90, "attrs": { "color": "green", "label": "Limit Switch Pangkal (Titik A)" } },
-    { "type": "wokwi-pushbutton", "id": "btn_limit_ujung", "top": 280, "left": -90, "attrs": { "color": "red", "label": "Limit Switch Ujung (Titik B)" } },
-    { "type": "wokwi-buzzer", "id": "buzzer_sound", "top": 100, "left": -90, "attrs": { "label": "Audio Anti-Stres" } }
+    { "type": "wokwi-relay-module", "id": "relay_kipas", "top": 200, "left": 470, "attrs": {} },
+    { "type": "wokwi-relay-module", "id": "relay_sprinkler", "top": 330, "left": 470, "attrs": {} },
+    { "type": "wokwi-led", "id": "led_kipas", "top": 210, "left": 630, "attrs": { "color": "cyan", "label": "Kipas Blower" } },
+    { "type": "wokwi-led", "id": "led_sprinkler", "top": 340, "left": 630, "attrs": { "color": "blue", "label": "Sprinkler Atap" } }
   ],
   "connections": [
-    [ "esp:3V3", "dht22:VCC", "red", [ "v0" ] ],
-    [ "esp:GND.1", "dht22:GND", "black", [ "v0" ] ],
-    [ "esp:15", "dht22:SDA", "gold", [ "v0" ] ],
+    [ "esp:3V3", "dht22:VCC", "red", [ "v-50", "h-150" ] ],
+    [ "esp:GND.1", "dht22:GND", "black", [ "v-40", "h-140" ] ],
+    [ "esp:15", "dht22:SDA", "gold", [ "v-30", "h-130" ] ],
 
-    [ "esp:3V3", "oled:VCC", "red", [ "h-20", "v-80" ] ],
-    [ "esp:GND.1", "oled:GND", "black", [ "h-30", "v-70" ] ],
-    [ "esp:22", "oled:SCL", "yellow", [ "h-10", "v-60" ] ],
-    [ "esp:21", "oled:SDA", "blue", [ "h10", "v-60" ] ],
+    [ "esp:3V3", "oled:VCC", "red", [ "v-30", "h-20" ] ],
+    [ "esp:GND.1", "oled:GND", "black", [ "v-20", "h-10" ] ],
+    [ "esp:22", "oled:SCL", "yellow", [ "v-50", "h10" ] ],
+    [ "esp:21", "oled:SDA", "blue", [ "v-40", "h20" ] ],
 
-    [ "esp:5V", "motor_penarik_pakan:V+", "red", [ "h30", "v-90" ] ],
-    [ "esp:GND.2", "motor_penarik_pakan:GND", "black", [ "h40", "v-80" ] ],
-    [ "esp:18", "motor_penarik_pakan:PWM", "orange", [ "h60", "v-140" ] ],
+    [ "esp:5V", "motor_penarik_pakan:V+", "red", [ "v-60", "h180" ] ],
+    [ "esp:GND.2", "motor_penarik_pakan:GND", "black", [ "v-50", "h170" ] ],
+    [ "esp:18", "motor_penarik_pakan:PWM", "orange", [ "v-40", "h160" ] ],
 
-    [ "esp:5V", "relay_kipas:VCC", "red", [ "h30", "v20" ] ],
-    [ "esp:GND.2", "relay_kipas:GND", "black", [ "h40", "v30" ] ],
-    [ "esp:12", "relay_kipas:IN", "cyan", [ "h50", "v-10" ] ],
+    [ "esp:5V", "relay_kipas:VCC", "red", [ "v20", "h120" ] ],
+    [ "esp:GND.2", "relay_kipas:GND", "black", [ "v30", "h130" ] ],
+    [ "esp:12", "relay_kipas:IN", "cyan", [ "v10", "h110" ] ],
     [ "relay_kipas:NO", "led_kipas:A", "cyan", [ "h20" ] ],
-    [ "esp:GND.2", "led_kipas:C", "black", [ "h50", "v10" ] ],
+    [ "esp:GND.2", "led_kipas:C", "black", [ "v40", "h240" ] ],
 
-    [ "esp:5V", "relay_sprinkler:VCC", "red", [ "h30", "v140" ] ],
-    [ "esp:GND.2", "relay_sprinkler:GND", "black", [ "h40", "v150" ] ],
-    [ "esp:14", "relay_sprinkler:IN", "blue", [ "h50", "v110" ] ],
+    [ "esp:5V", "relay_sprinkler:VCC", "red", [ "v140", "h120" ] ],
+    [ "esp:GND.2", "relay_sprinkler:GND", "black", [ "v150", "h130" ] ],
+    [ "esp:14", "relay_sprinkler:IN", "blue", [ "v130", "h110" ] ],
     [ "relay_sprinkler:NO", "led_sprinkler:A", "blue", [ "h20" ] ],
-    [ "esp:GND.2", "led_sprinkler:C", "black", [ "h50", "v130" ] ],
+    [ "esp:GND.2", "led_sprinkler:C", "black", [ "v160", "h240" ] ],
 
-    [ "esp:33", "btn_limit_pangkal:2.l", "green", [ "h-40", "v30" ] ],
-    [ "esp:GND.1", "btn_limit_pangkal:1.l", "black", [ "h-50", "v40" ] ],
+    [ "esp:33", "btn_limit_pangkal:2.l", "green", [ "h-80", "v20" ] ],
+    [ "esp:GND.1", "btn_limit_pangkal:1.l", "black", [ "h-90", "v30" ] ],
 
-    [ "esp:32", "btn_limit_ujung:2.l", "red", [ "h-40", "v80" ] ],
-    [ "esp:GND.1", "btn_limit_ujung:1.l", "black", [ "h-50", "v90" ] ],
+    [ "esp:32", "btn_limit_ujung:2.l", "red", [ "h-80", "v80" ] ],
+    [ "esp:GND.1", "btn_limit_ujung:1.l", "black", [ "h-90", "v90" ] ],
 
-    [ "esp:25", "buzzer_sound:2", "magenta", [ "h-30", "v-20" ] ],
-    [ "esp:GND.1", "buzzer_sound:1", "black", [ "h-40", "v-10" ] ]
+    [ "esp:25", "buzzer_sound:2", "magenta", [ "h-70", "v140" ] ],
+    [ "esp:GND.1", "buzzer_sound:1", "black", [ "h-80", "v150" ] ]
   ],
   "dependencies": {}
 }
