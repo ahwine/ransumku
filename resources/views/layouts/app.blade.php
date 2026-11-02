@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-[#EBF1EB] text-ink antialiased">
+<body class="min-h-screen bg-[#f2f7f3] text-ink antialiased">
 
 {{-- 1. Sidebar Desktop --}}
 <aside class="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col bg-white border-r border-line p-5 z-40">
@@ -282,12 +282,12 @@
                 <span class="text-[10px] leading-none tracking-tight mt-[3px] transition-colors {{ request()->routeIs('beranda') ? 'text-brand font-bold' : 'text-[#88998F] font-semibold group-hover:text-ink' }}">Dashboard</span>
             </a>
 
-            {{-- 2. Produksi / Buku Kandang --}}
-            <a href="{{ route('catatan.index') }}" class="group flex flex-col items-center justify-center h-full transition-all" aria-label="Produksi & Buku Kandang" title="Produksi & Buku Kandang">
+            {{-- 2. Buku Kandang --}}
+            <a href="{{ route('catatan.index') }}" class="group flex flex-col items-center justify-center h-full transition-all" aria-label="Buku Kandang" title="Buku Kandang">
                 <div class="w-12 h-7 rounded-full flex items-center justify-center transition-all duration-200 {{ request()->routeIs('catatan.*') ? 'bg-brand/12 text-brand font-bold' : 'bg-transparent text-[#88998F] group-hover:text-ink' }}">
                     <span class="material-symbols-outlined text-[20px] leading-none transition-colors {{ request()->routeIs('catatan.*') ? 'icon-fill' : '' }}">menu_book</span>
                 </div>
-                <span class="text-[10px] leading-none tracking-tight mt-[3px] transition-colors {{ request()->routeIs('catatan.*') ? 'text-brand font-bold' : 'text-[#88998F] font-semibold group-hover:text-ink' }}">Produksi</span>
+                <span class="text-[9.5px] sm:text-[10px] leading-none tracking-tight mt-[3px] transition-colors whitespace-nowrap {{ request()->routeIs('catatan.*') ? 'text-brand font-bold' : 'text-[#88998F] font-semibold group-hover:text-ink' }}">Buku Kandang</span>
             </a>
 
             {{-- 3. Ruang Tengah dengan Label 'Catat' di bawah tombol ayam --}}
