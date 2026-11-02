@@ -10,8 +10,9 @@
 const root = document.documentElement;
 const STORAGE_KEY = 'rk_login_intro';
 const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-
+const GLTF_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
 const stageEl = document.getElementById('lg-stage');
+const MODEL_URL = (stageEl && stageEl.dataset && stageEl.dataset.modelUrl) || '/models/chicken.glb';
 const flashEl = document.getElementById('lg-flash');
 const skipBtn = document.getElementById('lg-skip');
 const emailInput = document.getElementById('email');
@@ -136,6 +137,9 @@ function setupForm() {
             if (!form.checkValidity()) {
                 return;
             }
+            try {
+                sessionStorage.setItem('rk_login_submitted', '1');
+            } catch (e) {}
             submit.classList.add('is-loading');
             submit.setAttribute('aria-busy', 'true');
             window.setTimeout(() => {
@@ -160,7 +164,7 @@ const EGG_R = 0.235;
 const EGG_SPLIT_Y = 0.06;
 const EGG_X = -0.9;
 
-function buildIntro(THREE, host, hooks) {
+function buildIntro(THREE, host, hooks, gltfData) {
     const isMobile = window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches;
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -201,6 +205,12 @@ function buildIntro(THREE, host, hooks) {
     keyLight.shadow.bias = -0.0006;
     keyLight.shadow.normalBias = 0.02;
     scene.add(keyLight, keyLight.target);
+
+    const fillLight = new THREE.DirectionalLight(0xdfe9ff, 0.3);
+    fillLight.position.set(-4, 3, 3);
+    const rimLight = new THREE.DirectionalLight(0xfff0d0, 0.45);
+    rimLight.position.set(-2, 4, -5);
+    scene.add(fillLight, rimLight);
 
     const emeraldLight = new THREE.PointLight(0x2fd48a, 0, 4.5);
     scene.add(emeraldLight);
@@ -287,6 +297,24 @@ function buildIntro(THREE, host, hooks) {
     shadowFloor.receiveShadow = true;
     scene.add(shadowFloor);
 
+    /* Bayangan kontak lembut (ambient occlusion palsu) di bawah ayam dan telur */
+    const aoTex = radialTexture([
+        [0, 'rgba(20,35,25,0.6)'],
+        [0.55, 'rgba(20,35,25,0.22)'],
+        [1, 'rgba(20,35,25,0)'],
+    ]);
+    const makeAo = () => {
+        const mat = track(new THREE.MeshBasicMaterial({ map: aoTex, transparent: true, depthWrite: false, opacity: 0 }));
+        const m = new THREE.Mesh(track(new THREE.PlaneGeometry(1, 1)), mat);
+        m.rotation.x = -Math.PI / 2;
+        m.position.y = 0.004;
+        m.renderOrder = 1;
+        scene.add(m);
+        return m;
+    };
+    const chickenAo = makeAo();
+    const eggAo = makeAo();
+
     /* ---------- Material ---------- */
     const fadeMats = [];
     const fadeMat = (mat) => {
@@ -295,14 +323,55 @@ function buildIntro(THREE, host, hooks) {
         return track(mat);
     };
 
-    const featherMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0xfbfaf4, roughness: 0.92, metalness: 0, bumpMap: featherTex, bumpScale: 1.1 }));
+    const legCanvas = makeCanvas(64);
+    {
+        const g = legCanvas.getContext('2d');
+        g.fillStyle = '#9a9a9a';
+        g.fillRect(0, 0, 64, 64);
+        for (let y = 0; y < 64; y += 6) {
+            const grad = g.createLinearGradient(0, y, 0, y + 6);
+            grad.addColorStop(0, '#d0d0d0');
+            grad.addColorStop(0.8, '#707070');
+            grad.addColorStop(1, '#3a3a3a');
+            g.fillStyle = grad;
+            g.fillRect(0, y, 64, 5);
+        }
+    }
+    const legTex = track(new THREE.CanvasTexture(legCanvas));
+    legTex.wrapS = THREE.RepeatWrapping;
+    legTex.wrapT = THREE.RepeatWrapping;
+    legTex.repeat.set(1, 3);
+
+    const featherMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0xfbfaf4, roughness: 0.92, metalness: 0, bumpMap: featherTex, bumpScale: 1.1, vertexColors: true }));
     const combMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0xd23a33, roughness: 0.55 }));
     const beakMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0xf0b43c, roughness: 0.45 }));
-    const legMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0xe6a238, roughness: 0.6 }));
+    const legMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0xe6a238, roughness: 0.55, bumpMap: legTex, bumpScale: 0.8 }));
+    const irisMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0xd9822b, roughness: 0.3 }));
+    const glintMat = fadeMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
     const eyeMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0x15110e, roughness: 0.15, metalness: 0.2 }));
     const lidMat = fadeMat(new THREE.MeshStandardMaterial({ color: 0xf1efe6, roughness: 0.9 }));
 
+    /* Gradasi warna bulu: punggung putih hangat, perut sedikit keabu-abuan (vertex color). */
+    const tintFeather = (geo) => {
+        geo.computeBoundingBox();
+        const { min, max } = geo.boundingBox;
+        const pos = geo.attributes.position;
+        const colors = new Float32Array(pos.count * 3);
+        for (let i = 0; i < pos.count; i++) {
+            const k = clamp01((pos.getY(i) - min.y) / (max.y - min.y || 1));
+            const noise = 0.015 * Math.sin(pos.getX(i) * 23.0 + pos.getZ(i) * 17.0);
+            const v = lerp(0.84, 1.0, smooth(k)) + noise;
+            colors[i * 3] = v;
+            colors[i * 3 + 1] = v;
+            colors[i * 3 + 2] = v * lerp(0.95, 0.985, k);
+        }
+        geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    };
+
     const mk = (geo, mat) => {
+        if (mat === featherMat) {
+            tintFeather(geo);
+        }
         const m = new THREE.Mesh(track(geo), mat);
         m.castShadow = true;
         m.receiveShadow = true;
@@ -325,12 +394,31 @@ function buildIntro(THREE, host, hooks) {
     breast.position.set(0.36, 0.74, 0);
     torso.add(breast);
 
+    const saddle = mk(sphere(0.3, 24, 16), featherMat);
+    saddle.scale.set(1.5, 0.7, 1.3);
+    saddle.position.set(-0.18, 0.96, 0);
+    torso.add(saddle);
+
+    [-1, 0, 1].forEach((i) => {
+        const hackle = mk(sphere(0.15, 18, 12), featherMat);
+        hackle.scale.set(1, 1.15, 0.9);
+        hackle.position.set(0.36, 1.02, i * 0.12);
+        torso.add(hackle);
+    });
+
     const wings = [1, -1].map((s) => {
         const wing = mk(sphere(0.4, 28, 18), featherMat);
         wing.scale.set(1, 0.6, 0.2);
         wing.position.set(-0.08, 0.8, s * 0.44);
         wing.rotation.z = 0.12;
         wing.rotation.y = -s * 0.12;
+        [1, 2, 3].forEach((k) => {
+            const primary = mk(sphere(0.3, 18, 12), featherMat);
+            primary.scale.set(0.85, 0.42, 1.8);
+            primary.position.set(-0.22 - k * 0.1, -0.05 - k * 0.07, s * 0.35);
+            primary.rotation.z = 0.08 * k;
+            wing.add(primary);
+        });
         torso.add(wing);
         return wing;
     });
@@ -360,25 +448,45 @@ function buildIntro(THREE, host, hooks) {
     const skull = mk(sphere(0.17, 28, 20), featherMat);
     skull.scale.set(1.15, 1, 0.88);
     head.add(skull);
-    [0, 1, 2].forEach((i) => {
-        const lobe = mk(sphere(i === 1 ? 0.06 : 0.048, 16, 12), combMat);
-        lobe.scale.set(0.8, 1.1, 0.45);
-        lobe.position.set(-0.05 + i * 0.06, 0.17 + (i === 1 ? 0.03 : 0), 0);
+    const combBase = mk(sphere(0.05, 16, 10), combMat);
+    combBase.scale.set(2.4, 0.5, 0.4);
+    combBase.position.set(0, 0.155, 0);
+    head.add(combBase);
+    [0.04, 0.052, 0.058, 0.05, 0.038].forEach((size, i) => {
+        const lobe = mk(sphere(size, 16, 12), combMat);
+        lobe.scale.set(0.75, 1.25, 0.4);
+        lobe.position.set(-0.075 + i * 0.045, 0.165 + [0, 0.02, 0.035, 0.022, 0.004][i], 0);
         head.add(lobe);
+    });
+    [1, -1].forEach((s) => {
+        const earLobe = mk(sphere(0.03, 14, 10), lidMat);
+        earLobe.scale.set(0.8, 1, 0.35);
+        earLobe.position.set(-0.01, -0.04, s * 0.15);
+        head.add(earLobe);
     });
     const beak = mk(new THREE.ConeGeometry(0.06, 0.17, 18), beakMat);
     beak.rotation.z = -Math.PI / 2;
-    beak.position.set(0.22, -0.015, 0);
+    beak.position.set(0.22, -0.01, 0);
     head.add(beak);
-    const wattle = mk(sphere(0.045, 14, 10), combMat);
-    wattle.scale.set(0.6, 1.6, 0.5);
-    wattle.position.set(0.13, -0.14, 0);
+    const lowerBeak = mk(new THREE.ConeGeometry(0.045, 0.12, 14), beakMat);
+    lowerBeak.rotation.z = -Math.PI / 2;
+    lowerBeak.position.set(0.19, -0.045, 0);
+    head.add(lowerBeak);
+    const wattle = mk(sphere(0.05, 14, 10), combMat);
+    wattle.scale.set(0.6, 1.9, 0.5);
+    wattle.position.set(0.13, -0.16, 0);
     head.add(wattle);
     const lids = [1, -1].map((s) => {
-        const eye = mk(sphere(0.028, 14, 10), eyeMat);
+        const eye = mk(sphere(0.032, 16, 12), irisMat);
         eye.position.set(0.11, 0.04, s * 0.14);
         head.add(eye);
-        const lid = mk(sphere(0.033, 14, 10), lidMat);
+        const pupil = mk(sphere(0.02, 12, 10), eyeMat);
+        pupil.position.set(0.116, 0.04, s * 0.16);
+        head.add(pupil);
+        const glint = mk(sphere(0.006, 8, 6), glintMat);
+        glint.position.set(0.124, 0.05, s * 0.172);
+        head.add(glint);
+        const lid = mk(sphere(0.036, 14, 10), lidMat);
         lid.position.copy(eye.position);
         lid.scale.set(1, 0.7, 1);
         lid.visible = false;
@@ -426,6 +534,296 @@ function buildIntro(THREE, host, hooks) {
 
     scene.add(chicken);
 
+    /* ---------- Ayam GLTF Photorealistic (Jika model tersedia) ---------- */
+    let mixer = null;
+    let gltfChicken = null;
+    let gltfWalkAction = null;
+    let gltfIdleAction = null;
+    let gltfLayAction = null;
+    const gltfMats = [];
+    const gltfBones = {};
+    let rigBones = null;
+
+    /**
+     * Membangun rig skeletal 7-tulang (GPU SkinnedMesh) secara otomatis untuk mesh ayam
+     * photogrammetry statis (seperti Object_5 pada chicken.glb) agar dapat berjalan,
+     * mematuk, bernapas, dan merunduk bertelur secara mulus tanpa glitch keyframe.
+     */
+    function buildStaticRiggedChicken(sourceMesh, maxAniso) {
+        const rawGeo = sourceMesh.geometry.clone();
+        rawGeo.computeBoundingBox();
+        const bb = rawGeo.boundingBox;
+        const minY = bb.min.y;
+        const maxY = bb.max.y;
+        const rawH = Math.max(0.1, maxY - minY);
+
+        /* Geser geometri agar ujung cakar menyentuh tepat Y = 0 di ruang lokal mesh. */
+        const pos = rawGeo.attributes.position;
+        const count = pos.count;
+        const skinIndices = new Uint16Array(count * 4);
+        const skinWeights = new Float32Array(count * 4);
+
+        for (let i = 0; i < count; i++) {
+            const x = pos.getX(i);
+            const rawY = pos.getY(i);
+            const z = pos.getZ(i);
+            const y = rawY - minY;
+            pos.setY(i, y);
+
+            /* Normalisasi tinggi ke skala referensi [0 .. 3.87] */
+            const yn = (y / rawH) * 3.869;
+
+            /* Pemisahan anatomi kaki kanan (X < 0, langkah depan) vs kaki kiri (X >= 0, langkah belakang) */
+            const isRightLeg = z - x > -0.05;
+            const legBoneIdx = isRightLeg ? 5 : 6;
+            const wy = yn <= 0.16 ? 1 : yn >= 0.90 ? 0 : 1 - smooth((yn - 0.16) / 0.74);
+            const wx = yn < 0.74 ? 1 : smooth((Math.abs(x) - 0.12) / 0.18);
+            const wLeg = wy * wx;
+
+            const wUpper = 1 - wLeg;
+            const fSpine = smooth((yn - 0.82) / 0.38);
+            const wRoot = wUpper * (1 - fSpine);
+            const wBody = wUpper * fSpine;
+
+            const fTail = smooth((-0.75 - z) / 0.45) * smooth((yn - 1.80) / 0.35);
+            const fNeckHead = smooth((yn - 2.45) / 0.35) * smooth((z - 0.55) / 0.35);
+            const fHead = smooth((yn + 0.35 * (z - 1.25) - 3.05) / 0.22);
+
+            const wTail = wBody * fTail;
+            const wHead = wBody * fNeckHead * fHead;
+            const wNeck = wBody * fNeckHead * (1 - fHead);
+            const wSpine = wBody * Math.max(0, 1 - fTail - fNeckHead);
+
+            /* Maksimal 3 tulang aktif per verteks (selalu muat di 4 slot vec4 WebGL) */
+            const active = [];
+            if (wRoot > 1e-5) {
+                active.push([0, wRoot]);
+            }
+            if (wSpine > 1e-5) {
+                active.push([1, wSpine]);
+            }
+            if (wNeck > 1e-5) {
+                active.push([2, wNeck]);
+            }
+            if (wHead > 1e-5) {
+                active.push([3, wHead]);
+            }
+            if (wTail > 1e-5) {
+                active.push([4, wTail]);
+            }
+            if (wLeg > 1e-5) {
+                active.push([legBoneIdx, wLeg]);
+            }
+            active.sort((a, b) => b[1] - a[1]);
+
+            let wSum = 0;
+            const slots = Math.min(4, active.length);
+            for (let k = 0; k < slots; k++) {
+                wSum += active[k][1];
+            }
+            const invSum = wSum > 0 ? 1 / wSum : 1;
+            const base = i * 4;
+            for (let k = 0; k < 4; k++) {
+                if (k < slots) {
+                    skinIndices[base + k] = active[k][0];
+                    skinWeights[base + k] = active[k][1] * invSum;
+                } else {
+                    skinIndices[base + k] = 0;
+                    skinWeights[base + k] = 0;
+                }
+            }
+        }
+
+        pos.needsUpdate = true;
+        rawGeo.setAttribute('skinIndex', new THREE.BufferAttribute(skinIndices, 4));
+        rawGeo.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeights, 4));
+        rawGeo.computeBoundingSphere();
+
+        /* Ekstrak tekstur dari material asli (mendukung standar PBR maupun KHR_materials_pbrSpecularGlossiness) */
+        const oldMat = Array.isArray(sourceMesh.material) ? sourceMesh.material[0] : sourceMesh.material;
+        const diffuseMap =
+            (oldMat &&
+                (oldMat.map ||
+                    oldMat.diffuseMap ||
+                    (oldMat.uniforms && oldMat.uniforms.diffuseMap && oldMat.uniforms.diffuseMap.value))) ||
+            null;
+        const specMap =
+            (oldMat &&
+                (oldMat.specularMap ||
+                    oldMat.glossinessMap ||
+                    (oldMat.uniforms &&
+                        oldMat.uniforms.specularGlossinessMap &&
+                        oldMat.uniforms.specularGlossinessMap.value))) ||
+            null;
+
+        if (diffuseMap) {
+            diffuseMap.encoding = THREE.LinearEncoding;
+            diffuseMap.anisotropy = maxAniso;
+            diffuseMap.needsUpdate = true;
+        }
+        if (specMap) {
+            specMap.anisotropy = maxAniso;
+        }
+
+        const stdMat = track(
+            new THREE.MeshStandardMaterial({
+                map: diffuseMap,
+                bumpMap: specMap || diffuseMap,
+                bumpScale: 0.008,
+                roughness: 0.84,
+                metalness: 0.02,
+                side: THREE.FrontSide,
+                skinning: true,
+                transparent: true,
+                opacity: 1,
+            }),
+        );
+        gltfMats.push(stdMat);
+
+        const skinned = new THREE.SkinnedMesh(track(rawGeo), stdMat);
+        skinned.castShadow = true;
+        skinned.receiveShadow = true;
+        skinned.frustumCulled = false;
+
+        /* Hierarki 7 tulang dalam koordinat lokal mesh */
+        const rootBone = new THREE.Bone();
+        rootBone.position.set(0, 1.05, 0);
+
+        const spineBone = new THREE.Bone();
+        spineBone.position.set(0, 0.85, 0);
+        rootBone.add(spineBone);
+
+        const neckBone = new THREE.Bone();
+        neckBone.position.set(0, 0.70, 0.95);
+        spineBone.add(neckBone);
+
+        const headBone = new THREE.Bone();
+        headBone.position.set(0, 0.58, 0.32);
+        neckBone.add(headBone);
+
+        const tailBone = new THREE.Bone();
+        tailBone.position.set(0, 0.35, -0.85);
+        spineBone.add(tailBone);
+
+        const rightFootBone = new THREE.Bone();
+        rightFootBone.position.set(-0.38, 0.15, 0.43);
+
+        const leftFootBone = new THREE.Bone();
+        leftFootBone.position.set(0.36, 0.15, -0.43);
+
+        skinned.add(rootBone, rightFootBone, leftFootBone);
+        skinned.updateMatrixWorld(true);
+
+        const bones = [rootBone, spineBone, neckBone, headBone, tailBone, rightFootBone, leftFootBone];
+        const skeleton = new THREE.Skeleton(bones);
+        skinned.bind(skeleton, new THREE.Matrix4());
+
+        rigBones = {
+            root: rootBone,
+            spine: spineBone,
+            neck: neckBone,
+            head: headBone,
+            tail: tailBone,
+            rightFoot: rightFootBone,
+            leftFoot: leftFootBone,
+        };
+
+        const holder = new THREE.Group();
+        const targetHeight = 1.22;
+        holder.scale.setScalar(targetHeight / rawH);
+        holder.rotation.set(0, Math.PI / 2, 0);
+        holder.add(skinned);
+        return holder;
+    }
+
+    if (gltfData && gltfData.scene) {
+        gltfChicken = new THREE.Group();
+        const model = gltfData.scene;
+        const maxAniso = renderer.capabilities ? renderer.capabilities.getMaxAnisotropy() : 4;
+        const hasClips = Boolean(gltfData.animations && gltfData.animations.length > 0);
+
+        let primaryMesh = null;
+        model.traverse((child) => {
+            if (child.isMesh && !primaryMesh) {
+                primaryMesh = child;
+            }
+        });
+
+        if (!hasClips && primaryMesh) {
+            const riggedHolder = buildStaticRiggedChicken(primaryMesh, maxAniso);
+            gltfChicken.add(riggedHolder);
+            scene.add(gltfChicken);
+            chicken.visible = false;
+        } else {
+            model.scale.setScalar(2.55);
+            model.rotation.set(0, Math.PI / 2, 0);
+            model.position.set(0, 0.01, 0);
+
+            model.traverse((child) => {
+                if (child.name === 'CHICKEN_-Spine_01') {
+                    gltfBones.spine = child;
+                } else if (child.name === 'CHICKEN_-Neck_02') {
+                    gltfBones.neck = child;
+                } else if (child.name === 'CHICKEN_-Head_05') {
+                    gltfBones.head = child;
+                } else if (child.name === 'CHICKEN_-Tail_015') {
+                    gltfBones.tail = child;
+                }
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    child.frustumCulled = false;
+                    const mats = Array.isArray(child.material) ? child.material : [child.material];
+                    mats.forEach((m) => {
+                        if (!m) {
+                            return;
+                        }
+                        if (m.map) {
+                            m.map.encoding = THREE.LinearEncoding;
+                            m.map.anisotropy = maxAniso;
+                            m.map.needsUpdate = true;
+                        }
+                        if (m.normalMap) {
+                            m.normalMap.anisotropy = maxAniso;
+                        }
+                        m.alphaTest = 0.32;
+                        m.depthWrite = true;
+                        m.transparent = true;
+                        m.side = THREE.DoubleSide;
+                        m.roughness = 0.78;
+                        m.metalness = 0.02;
+                        m.needsUpdate = true;
+                        gltfMats.push(m);
+                    });
+                }
+            });
+
+            gltfChicken.add(model);
+            scene.add(gltfChicken);
+            chicken.visible = false;
+
+            if (hasClips) {
+                mixer = new THREE.AnimationMixer(model);
+                const rawClip = gltfData.animations[0];
+
+                const walkClip = rawClip.clone();
+                walkClip.name = 'rk_walk';
+                const idleClip = rawClip.clone();
+                idleClip.name = 'rk_idle';
+                const layClip = rawClip.clone();
+                layClip.name = 'rk_lay';
+
+                gltfWalkAction = mixer.clipAction(walkClip);
+                gltfIdleAction = mixer.clipAction(idleClip);
+                gltfLayAction = mixer.clipAction(layClip);
+
+                gltfWalkAction.play();
+                gltfIdleAction.play();
+                gltfLayAction.play();
+            }
+        }
+    }
+
     /* ---------- Telur ---------- */
     const eggRadiusAtY = (y) => {
         const theta = Math.acos(Math.max(-1, Math.min(1, -y / EGG_H)));
@@ -467,7 +865,9 @@ function buildIntro(THREE, host, hooks) {
         nor.needsUpdate = true;
     };
 
-    const shellMat = track(new THREE.MeshStandardMaterial({
+    const shellMat = track(new THREE.MeshPhysicalMaterial({
+        clearcoat: 0.18,
+        clearcoatRoughness: 0.35,
         color: 0xf6eddc,
         roughness: 0.42,
         metalness: 0,
@@ -619,11 +1019,6 @@ function buildIntro(THREE, host, hooks) {
 
     function poseChicken(t) {
         const fade = smooth(t / 0.9);
-        fadeMats.forEach((m) => {
-            m.opacity = fade;
-        });
-        shadowMat.opacity = 0.2 * fade;
-
         const walkU = clamp01((t - TL.walk0) / (TL.walk1 - TL.walk0));
         const stepU = clamp01((t - TL.step0) / (TL.step1 - TL.step0));
         let x = startX * (1 - smooth(walkU)) + 1.6 * smooth(stepU);
@@ -636,6 +1031,129 @@ function buildIntro(THREE, host, hooks) {
         };
         const walkW = Math.max(env(TL.walk0, TL.walk1), env(TL.step0, TL.step1));
         const layW = smooth((t - TL.layStart) / 0.4) * (1 - smooth((t - 4.1) / 0.3));
+
+        if (gltfChicken) {
+            gltfMats.forEach((m) => {
+                m.opacity = fade;
+                m.transparent = fade < 0.99;
+            });
+            shadowMat.opacity = 0.22 * fade;
+
+            const effort = smooth((t - 3.4) / 0.2) * (1 - smooth((t - 4.1) / 0.25));
+            const idle = (1 - walkW) * (1 - layW);
+            const pulse = (center, spread) => Math.exp(-Math.pow((t - center) / spread, 2));
+            const peck = Math.max(pulse(0.55, 0.1), pulse(0.85, 0.1)) * idle;
+
+            if (rigBones) {
+                const phase = (x - startX) * ((Math.PI * 2) / 0.82);
+                const strideAmp = 0.40;
+
+                /* Posisi langkah kaki di ruang lokal mesh (+Z = maju, -Z = mundur).
+                 * Saat berdiri/merunduk (walkW = 0), kedua kaki dirapatkan sejajar di bawah tubuh. */
+                const zR = 0.08 * (1 - walkW) + Math.sin(phase) * strideAmp * walkW;
+                const zL = -0.08 * (1 - walkW) - Math.sin(phase) * strideAmp * walkW;
+                const liftR = Math.max(0, Math.cos(phase)) * 0.30 * walkW;
+                const liftL = Math.max(0, -Math.cos(phase)) * 0.30 * walkW;
+
+                rigBones.rightFoot.position.set(-0.38, 0.15 + liftR, zR);
+                rigBones.leftFoot.position.set(0.36, 0.15 + liftL, zL);
+                rigBones.rightFoot.rotation.set(liftR * 0.75, 0, 0);
+                rigBones.leftFoot.rotation.set(liftL * 0.75, 0, 0);
+
+                /* Pantulan tubuh saat berjalan & gerakan merunduk (squat) saat bertelur.
+                 * Karena rightFoot & leftFoot terpisah dari root, telapak kaki tetap menapak di y = 0. */
+                const walkBounce = Math.cos(phase * 2) * 0.045 * walkW;
+                const breathY = Math.sin(t * 2.3) * 0.014 * (1 - walkW);
+                const squatY = 0.36 * layW + 0.08 * effort;
+                rigBones.root.position.set(
+                    Math.sin(phase) * 0.025 * walkW,
+                    1.05 + walkBounce + breathY - squatY,
+                    0.06 * peck - 0.05 * layW,
+                );
+
+                /* Torso (spine): goyangan alami, napas halus, condong saat mematuk & bertelur */
+                rigBones.spine.rotation.set(
+                    0.18 * peck + 0.04 * walkW - 0.14 * layW - 0.06 * effort,
+                    Math.sin(phase) * 0.03 * walkW,
+                    Math.sin(phase) * 0.04 * walkW + Math.sin(t * 20) * 0.015 * effort,
+                );
+                rigBones.spine.scale.set(
+                    1 + 0.035 * layW + Math.sin(t * 20) * 0.018 * effort,
+                    1 + Math.sin(t * 2.4) * 0.012 + 0.02 * layW,
+                    1 + 0.025 * layW,
+                );
+
+                /* Leher & kepala: anggukan kepala khas ayam saat berjalan (head-bobbing),
+                 * mematuk lembut saat muncul, dan menoleh penasaran. */
+                const bob = Math.sin(phase * 2 - 0.45) * 0.12 * walkW;
+                rigBones.neck.position.set(0, 0.70, 0.95 + Math.sin(phase * 2 - 0.45) * 0.06 * walkW);
+                rigBones.neck.rotation.set(
+                    bob + 0.42 * peck - 0.08 * layW + Math.sin(t * 1.8) * 0.03 * idle,
+                    Math.sin(t * 1.4) * 0.08 * idle * (1 - peck),
+                    0,
+                );
+
+                rigBones.head.rotation.set(
+                    -bob * 0.85 + 0.28 * peck + 0.12 * layW + Math.sin(t * 2.1) * 0.035 * idle,
+                    Math.sin(t * 1.5) * 0.26 * idle * (1 - peck) + Math.sin(t * 2.2) * 0.28 * layW * (1 - effort),
+                    Math.sin(t * 1.9) * 0.06 * idle * (1 - peck),
+                );
+
+                /* Ekor: terangkat saat merunduk bertelur agar telur keluar secara natural dari bawah ekor */
+                rigBones.tail.rotation.set(
+                    0.34 * layW + 0.12 * effort + Math.sin(phase * 2) * 0.05 * walkW + Math.sin(t * 2.8) * 0.03,
+                    Math.sin(phase) * 0.04 * walkW,
+                    0,
+                );
+
+                gltfChicken.position.set(x, 0, 0);
+                gltfChicken.rotation.set(0, -0.22 * layW, 0);
+            } else if (mixer && gltfWalkAction && gltfIdleAction && gltfLayAction) {
+                const stridePhase = (((x - startX) / 0.78) % 1 + 1) % 1;
+                gltfWalkAction.time = 1.3 + stridePhase * 1.0;
+                gltfIdleAction.time = 0.0;
+                gltfLayAction.time = 3.0;
+
+                const wWalk = walkW;
+                const wLay = (1 - walkW) * layW;
+                const wIdle = Math.max(0.0001, 1 - wWalk - wLay);
+
+                gltfWalkAction.setEffectiveWeight(wWalk);
+                gltfLayAction.setEffectiveWeight(wLay);
+                gltfIdleAction.setEffectiveWeight(wIdle);
+
+                mixer.update(1e-6);
+
+                if (gltfBones.spine) {
+                    gltfBones.spine.rotation.z += Math.sin(t * 2.4) * 0.025 * (1 - walkW) - 0.08 * effort;
+                }
+                if (gltfBones.neck) {
+                    gltfBones.neck.rotation.z += Math.sin(t * 1.8) * 0.04 * idle - 0.35 * peck;
+                }
+                if (gltfBones.head) {
+                    gltfBones.head.rotation.y += Math.sin(t * 1.5) * 0.25 * idle * (1 - peck) + Math.sin(t * 2.2) * 0.3 * layW * (1 - effort);
+                    gltfBones.head.rotation.z += -0.3 * peck + 0.12 * layW;
+                }
+                if (gltfBones.tail) {
+                    gltfBones.tail.rotation.z += 0.28 * layW + Math.sin(t * 24) * 0.05 * effort;
+                }
+
+                gltfChicken.position.set(x, -0.04 * layW, 0);
+                gltfChicken.rotation.y = -0.22 * layW;
+                gltfChicken.rotation.z = -0.04 * layW;
+            }
+
+            chickenAo.position.x = x - 0.05;
+            chickenAo.scale.set(1.9 + 0.25 * layW, 1.15, 1);
+            chickenAo.material.opacity = 0.85 * fade;
+            return;
+        }
+
+        fadeMats.forEach((m) => {
+            m.opacity = fade;
+        });
+        shadowMat.opacity = 0.2 * fade;
+
         const phase = (x - startX) * ((Math.PI * 2) / 0.9);
 
         chicken.position.set(x, 0, 0);
@@ -654,18 +1172,27 @@ function buildIntro(THREE, host, hooks) {
         const effort = smooth((t - 3.4) / 0.2) * (1 - smooth((t - 4.1) / 0.25));
         torso.position.y = Math.cos(phase * 2) * 0.015 * walkW + Math.sin(t * 2.2) * 0.006;
         torso.rotation.z = -0.14 * layW - 0.03 * walkW;
-        torso.rotation.x = Math.sin(t * 26) * 0.022 * effort;
-        torso.scale.set(1, 1 + Math.sin(t * 2.4) * 0.012, 1);
+        torso.rotation.x = Math.sin(t * 26) * 0.022 * effort + Math.sin(phase) * 0.035 * walkW;
+        torso.scale.set(
+            1 + 0.03 * layW,
+            1 + Math.sin(t * 2.4) * 0.012 + 0.03 * layW,
+            1 + 0.04 * layW + Math.sin(t * 20) * 0.02 * effort,
+        );
         tail.rotation.z = 0.55 + 0.35 * layW + Math.sin(t * 3.2) * 0.05 + Math.sin(t * 24) * 0.05 * effort;
-        wings.forEach((w) => {
+        const flapEnv = env(TL.step0 + 0.05, TL.step0 + 0.55);
+        wings.forEach((w, i) => {
+            const side = i === 0 ? 1 : -1;
             w.rotation.z = 0.12 + 0.05 * effort * Math.sin(t * 22);
+            w.rotation.x = side * 0.55 * flapEnv * Math.abs(Math.sin(t * 24));
         });
 
-        neck.position.x = 0.4 + 0.05 * Math.sin(phase + 0.6) * walkW;
-        neck.rotation.z = -0.1 * layW + 0.04 * Math.sin(t * 1.7);
+        const pulse = (center, spread) => Math.exp(-Math.pow((t - center) / spread, 2));
+        const peck = Math.max(pulse(0.55, 0.09), pulse(0.82, 0.09), pulse(1.0, 0.08)) * (1 - walkW) * (1 - layW);
+        neck.position.x = 0.4 + 0.05 * Math.sin(phase + 0.6) * walkW + 0.04 * peck;
+        neck.rotation.z = -0.1 * layW + 0.04 * Math.sin(t * 1.7) - 0.75 * peck;
         const idle = (1 - walkW) * (1 - layW);
-        head.rotation.y = Math.sin(t * 1.4) * 0.32 * idle;
-        head.rotation.z = Math.sin(t * 2.1) * 0.05 * idle + 0.18 * layW;
+        head.rotation.y = Math.sin(t * 1.4) * 0.32 * idle * (1 - peck) + Math.sin(t * 2.3) * 0.4 * layW * (1 - effort);
+        head.rotation.z = Math.sin(t * 2.1) * 0.05 * idle + 0.18 * layW - 0.55 * peck;
         const blink = t % 2.6 < 0.12;
         lids.forEach((lid) => {
             lid.visible = blink;
@@ -679,10 +1206,15 @@ function buildIntro(THREE, host, hooks) {
             minY = Math.min(minY, tmpV.y);
         });
         chicken.position.y = -minY;
+
+        chickenAo.position.x = x - 0.05;
+        chickenAo.scale.set(1.9 + 0.2 * layW, 1.1, 1);
+        chickenAo.material.opacity = 0.8 * fade;
     }
 
     function poseEgg(t) {
         egg.visible = t > TL.eggStart;
+        eggAo.visible = egg.visible;
         if (!egg.visible) {
             return;
         }
@@ -690,16 +1222,21 @@ function buildIntro(THREE, host, hooks) {
         const fall = u * u;
         const s = 0.3 + 0.7 * smooth(u);
         const b = Math.max(0, t - TL.eggLanded);
-        let y = lerp(0.66, EGG_H, fall);
+        let y = lerp(0.52, EGG_H, fall);
         y += 0.06 * Math.abs(Math.sin(b * 9)) * Math.exp(-b * 5);
         let rz = 0.2 * Math.exp(-b * 3.2) * Math.sin(b * 11);
 
         const shakeAmp = 0.045 * smooth((t - TL.shake0) / 0.5) * (t < TL.burst0 ? 1 : 0) * (0.65 + 0.35 * Math.sin(t * 8));
         const rx = Math.sin(t * 47 + 1) * shakeAmp * 0.6;
         rz += Math.sin(t * 52) * shakeAmp;
-        egg.position.set(lerp(-0.62, EGG_X, smooth(u)) + Math.sin(t * 61) * shakeAmp * 0.12, y, 0);
+        egg.position.set(lerp(-0.52, EGG_X, smooth(u)) + Math.sin(t * 61) * shakeAmp * 0.12, y, 0);
         egg.scale.setScalar(s);
         egg.rotation.set(rx, 0, rz);
+
+        const lift = clamp01((y - EGG_H) / 0.4);
+        eggAo.position.x = egg.position.x;
+        eggAo.scale.set(0.75 * s, 0.6 * s, 1);
+        eggAo.material.opacity = 0.9 * (1 - lift) * smooth(u * 1.5);
 
         /* Retakan & cahaya */
         const p = clamp01((t - TL.crack0) / (TL.crack1 - TL.crack0));
@@ -730,7 +1267,10 @@ function buildIntro(THREE, host, hooks) {
             }
             const open = 1.35 * easeOut(bu / 0.55) + 0.6 * smooth((bu - 0.4) / 0.6);
             const out = 0.55 * easeOut(bu) * pt.power;
-            const yAbs = Math.max(0.04, 0.35 + 1.6 * bu - 2.33 * bu * bu);
+            const raw = 0.35 + 1.6 * bu - 2.33 * bu * bu;
+            const landed = Math.max(0, bu - 0.85);
+            const bounce = raw < 0.04 ? 0.05 * Math.abs(Math.sin(landed * 30)) * Math.exp(-landed * 14) : 0;
+            const yAbs = Math.max(0.04, raw) + bounce;
             pt.pivot.position.set(pt.pivotPos.x + pt.dir.x * out, yAbs - EGG_H, pt.pivotPos.z + pt.dir.z * out);
             pt.pivot.quaternion.setFromAxisAngle(pt.axis, open * (0.9 + 0.1 * pt.power));
         });
@@ -784,6 +1324,11 @@ function buildIntro(THREE, host, hooks) {
             tx = lerp(0, -0.52, smooth((t - 3.4) / 1.3));
         }
         const k = smooth((t - 4.4) / 1.3);
+        const nextFov = lerp(32, 27, k);
+        if (Math.abs(camera.fov - nextFov) > 0.01) {
+            camera.fov = nextFov;
+            camera.updateProjectionMatrix();
+        }
         const dolly = lerp(1, 0.6, k) * lerp(1, 0.9, smooth((t - 5.8) / 0.6));
         const dist = 7.2 * fit * dolly;
         const camY = lerp(1.5, 0.85, k);
@@ -871,6 +1416,12 @@ function buildIntro(THREE, host, hooks) {
         cancelAnimationFrame(rafId);
         window.removeEventListener('resize', onResize);
         renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
+        if (mixer) {
+            mixer.stopAllAction();
+            if (gltfData && gltfData.scene) {
+                mixer.uncacheRoot(gltfData.scene);
+            }
+        }
         scene.traverse((obj) => {
             if (obj.geometry) {
                 obj.geometry.dispose();
@@ -898,25 +1449,67 @@ function buildIntro(THREE, host, hooks) {
 /* ----------------------------------------------------------------------------
  * Bootstrap
  * ------------------------------------------------------------------------- */
-function loadThree() {
+function loadScript(url) {
     return new Promise((resolve, reject) => {
-        if (window.THREE) {
-            resolve(window.THREE);
-            return;
-        }
         const script = document.createElement('script');
-        script.src = THREE_URL;
+        script.src = url;
         script.async = true;
-        const timer = window.setTimeout(() => reject(new Error('timeout')), 6000);
+        const timer = window.setTimeout(() => reject(new Error('timeout ' + url)), 8000);
         script.onload = () => {
             window.clearTimeout(timer);
-            window.THREE ? resolve(window.THREE) : reject(new Error('no THREE'));
+            resolve();
         };
         script.onerror = () => {
             window.clearTimeout(timer);
-            reject(new Error('load error'));
+            reject(new Error('error ' + url));
         };
         document.head.appendChild(script);
+    });
+}
+
+function loadThreeAndLoader() {
+    return new Promise((resolve, reject) => {
+        if (window.THREE && window.THREE.GLTFLoader) {
+            resolve(window.THREE);
+            return;
+        }
+        const promiseThree = window.THREE ? Promise.resolve() : loadScript(THREE_URL);
+        promiseThree
+            .then(() => {
+                if (window.THREE && window.THREE.GLTFLoader) {
+                    return Promise.resolve();
+                }
+                return loadScript(GLTF_URL);
+            })
+            .then(() => {
+                window.THREE ? resolve(window.THREE) : reject(new Error('no THREE'));
+            })
+            .catch(reject);
+    });
+}
+
+function loadChickenGLTF(THREE) {
+    return new Promise((resolve) => {
+        if (!THREE.GLTFLoader) {
+            resolve(null);
+            return;
+        }
+        const loader = new THREE.GLTFLoader();
+        const timer = window.setTimeout(() => {
+            resolve(null);
+        }, 8000);
+        loader.load(
+            MODEL_URL,
+            (gltf) => {
+                window.clearTimeout(timer);
+                resolve(gltf);
+            },
+            undefined,
+            () => {
+                window.clearTimeout(timer);
+                resolve(null);
+            }
+        );
     });
 }
 
@@ -930,17 +1523,22 @@ function startIntro() {
         }
     });
 
-    loadThree()
+    loadThreeAndLoader()
         .then((THREE) => {
             if (revealed) {
                 return;
             }
-            activeScene = buildIntro(THREE, stageEl, {
-                onReveal: () => revealForm(false),
-                onEnd: () => disposeScene(),
-                onFail: () => {
-                    revealForm(true);
-                },
+            return loadChickenGLTF(THREE).then((gltfData) => {
+                if (revealed) {
+                    return;
+                }
+                activeScene = buildIntro(THREE, stageEl, {
+                    onReveal: () => revealForm(false),
+                    onEnd: () => disposeScene(),
+                    onFail: () => {
+                        revealForm(true);
+                    },
+                }, gltfData);
             });
         })
         .catch(() => {
