@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
 
 class HomeController extends Controller
 {
@@ -290,6 +291,8 @@ class HomeController extends Controller
 
         Cache::forget("weather_farm_{$farm->id}_{$farm->lokasi_kota}");
         $w = $weatherService->getWeather($farm);
+        $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
+        $kontrol['siap'] = (bool) $farm->controller_siap;
 
         return response()->json([
             'ok' => true,
@@ -300,6 +303,7 @@ class HomeController extends Controller
             'status' => $w['thi_kategori'],
             'level' => $w['thi_level'],
             'saran_manajemen' => $w['saran_manajemen'],
+            'kontrol' => $kontrol,
         ]);
     }
 
@@ -316,6 +320,8 @@ class HomeController extends Controller
             // Jika sensor fisik offline (dilepas), sistem otomatis beralih ke cuaca BMKG Open-Meteo
             $w = $weatherService->fetchOpenMeteo($farm);
         }
+
+        $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
 
         return response()->json([
             'ok' => true,
@@ -339,7 +345,223 @@ class HomeController extends Controller
             'sensor_aktif' => $isOnline,
             'sensor_online' => $isOnline,
             'detik_lalu' => $farm->sensor_updated_at ? Carbon::parse($farm->sensor_updated_at)->diffInSeconds(now()) : null,
+            'kontrol' => $kontrol,
         ]);
+    }
+
+    /**
+     * Mengubah status kesiapan sistem kontroler kandang (Merah Standby <-> Biru Siap).
+     */
+    public function toggleControllerSiap(Request $request, Farm $farm, WeatherService $weatherService): JsonResponse
+    {
+        $statusBaru = ! (bool) $farm->controller_siap;
+        $farm->update([
+            'controller_siap' => $statusBaru,
+        ]);
+
+        $w = $weatherService->getWeather($farm);
+        $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
+        $kontrol['siap'] = (bool) $farm->controller_siap;
+
+        $pesan = $statusBaru
+            ? 'Sistem kontroler berhasil DIAKTIFKAN (Status BIRU). Aktuator kandang siap mengeksekusi kendali mikroklimat!'
+            : 'Sistem kontroler DINONAKTIFKAN (Status MERAH). Seluruh aktuator kandang kembali ke mode siaga.';
+
+        return response()->json([
+            'ok' => true,
+            'pesan' => $pesan,
+            'kontrol' => $kontrol,
+        ]);
+    }
+
+    /**
+     * Mengubah mode operasi kontroler (otomatis <-> manual).
+     */
+    public function ubahModeKontroler(Request $request, Farm $farm, WeatherService $weatherService): JsonResponse
+    {
+        $data = $request->validate([
+            'mode' => 'required|in:otomatis,manual',
+        ]);
+
+        $farm->update([
+            'controller_mode' => $data['mode'],
+            'controller_siap' => true, // Otomatis siap saat mode diatur
+        ]);
+
+        $w = $weatherService->getWeather($farm);
+        $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
+        $kontrol['siap'] = (bool) $farm->controller_siap;
+
+        $pesan = $data['mode'] === 'otomatis'
+            ? 'Mode Kontrol Otomatis diaktifkan. Seluruh aktuator kini dikendalikan penuh secara cerdas oleh AI & biometeorologi THI.'
+            : 'Mode Kontrol Manual diaktifkan. Anda kini dapat mengatur sakelar setiap aktuator secara mandiri.';
+
+        return response()->json([
+            'ok' => true,
+            'pesan' => $pesan,
+            'kontrol' => $kontrol,
+        ]);
+    }
+
+    /**
+     * Mengatur sakelar aktuator fisik secara langsung per controller (Override Manual).
+     */
+    public function ubahSakelarAktuator(Request $request, Farm $farm): JsonResponse
+    {
+        $data = $request->validate([
+            'alat' => 'required|in:kipas,misting,lampu',
+            'status' => 'required|boolean',
+        ]);
+
+        $kolom = 'relay_' . $data['alat'];
+        $farm->update([
+            $kolom => (bool) $data['status'],
+            'controller_siap' => true,
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'pesan' => ucfirst($data['alat']) . ' berhasil di-' . ($data['status'] ? 'nyalakan' : 'matikan') . '.',
+            'kontrol' => [
+                'siap' => true,
+                'relay_kipas' => (bool) $farm->relay_kipas,
+                'relay_misting' => (bool) $farm->relay_misting,
+                'relay_lampu' => (bool) $farm->relay_lampu,
+                'settings' => $farm->getSettingsKontroler(),
+            ],
+        ]);
+    }
+
+    /**
+     * Menyimpan pengaturan otomatisasi kapan alat nyala otomatis dan kapan berhenti.
+     */
+    public function simpanSettingKontroler(Request $request, Farm $farm, WeatherService $weatherService): JsonResponse
+    {
+        $data = $request->validate([
+            'kipas.otomatis' => 'nullable|boolean',
+            'kipas.suhu_nyala' => 'required|numeric|between:20,45',
+            'kipas.thi_nyala' => 'required|numeric|between:65,95',
+
+            'misting.otomatis' => 'nullable|boolean',
+            'misting.thi_nyala' => 'required|numeric|between:70,95',
+            'misting.rh_maksimal' => 'required|numeric|between:50,95',
+
+            'lampu.otomatis' => 'nullable|boolean',
+            'lampu.jam_pagi_mulai' => 'required|string',
+            'lampu.jam_pagi_selesai' => 'required|string',
+            'lampu.jam_sore_mulai' => 'required|string',
+            'lampu.jam_sore_selesai' => 'required|string',
+        ]);
+
+        $settings = [
+            'kipas' => [
+                'otomatis' => (bool) $request->input('kipas.otomatis', false),
+                'suhu_nyala' => (float) $data['kipas']['suhu_nyala'],
+                'thi_nyala' => (float) $data['kipas']['thi_nyala'],
+            ],
+            'misting' => [
+                'otomatis' => (bool) $request->input('misting.otomatis', false),
+                'thi_nyala' => (float) $data['misting']['thi_nyala'],
+                'rh_maksimal' => (float) $data['misting']['rh_maksimal'],
+            ],
+            'lampu' => [
+                'otomatis' => (bool) $request->input('lampu.otomatis', false),
+                'jam_pagi_mulai' => $data['lampu']['jam_pagi_mulai'],
+                'jam_pagi_selesai' => $data['lampu']['jam_pagi_selesai'],
+                'jam_sore_mulai' => $data['lampu']['jam_sore_mulai'],
+                'jam_sore_selesai' => $data['lampu']['jam_sore_selesai'],
+            ],
+        ];
+
+        $farm->update([
+            'controller_settings' => $settings,
+            'controller_siap' => true,
+        ]);
+
+        $w = $weatherService->getWeather($farm);
+        $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
+        $kontrol['siap'] = (bool) $farm->controller_siap;
+
+        return response()->json([
+            'ok' => true,
+            'pesan' => 'Pengaturan otomatisasi alat berhasil disimpan.',
+            'kontrol' => $kontrol,
+        ]);
+    }
+
+    /**
+     * Evaluasi cerdas status aktuator per controller (Kipas, Misting, Lampu) berdasarkan setting otomatisasi & sensor.
+     *
+     * @return array{
+     *     ok: bool,
+     *     siap: bool,
+     *     relay_kipas: bool,
+     *     relay_misting: bool,
+     *     relay_lampu: bool,
+     *     settings: array,
+     *     keterangan_aksi: string
+     * }
+     */
+    public function evaluasiLogikaKontroler(Farm $farm, float $suhu, float $kelembaban, float $thi): array
+    {
+        $settings = $farm->getSettingsKontroler();
+        $updates = [];
+
+        // 1. Kipas Sirkulasi:
+        if (!empty($settings['kipas']['otomatis'])) {
+            $suhuNyala = (float) ($settings['kipas']['suhu_nyala'] ?? 31.0);
+            $thiNyala  = (float) ($settings['kipas']['thi_nyala'] ?? 78.0);
+            $updates['relay_kipas'] = ($suhu >= $suhuNyala || $thi >= $thiNyala);
+        }
+
+        // 2. Misting Pompa Kabut:
+        if (!empty($settings['misting']['otomatis'])) {
+            $thiNyala = (float) ($settings['misting']['thi_nyala'] ?? 80.0);
+            $rhMax    = (float) ($settings['misting']['rh_maksimal'] ?? 75.0);
+            // Safety Lock: Jika kelembaban >= rhMax, misting otomatis OFF agar sekam tidak basah
+            $updates['relay_misting'] = ($thi >= $thiNyala && $kelembaban < $rhMax);
+        }
+
+        // 3. Lampu Fotoperiode:
+        if (!empty($settings['lampu']['otomatis'])) {
+            $jamMenit = Carbon::now('Asia/Jakarta')->format('H:i');
+            $pagiMulai   = $settings['lampu']['jam_pagi_mulai'] ?? '04:00';
+            $pagiSelesai = $settings['lampu']['jam_pagi_selesai'] ?? '07:00';
+            $soreMulai   = $settings['lampu']['jam_sore_mulai'] ?? '18:00';
+            $soreSelesai = $settings['lampu']['jam_sore_selesai'] ?? '21:00';
+
+            $isPagi = ($jamMenit >= $pagiMulai && $jamMenit < $pagiSelesai);
+            $isSore = ($jamMenit >= $soreMulai && $jamMenit < $soreSelesai);
+            $updates['relay_lampu'] = ($isPagi || $isSore);
+        }
+
+        if (!empty($updates)) {
+            $farm->update($updates);
+        }
+
+        $aksi = [];
+        if ($farm->relay_kipas) {
+            $aksi[] = 'Kipas ON';
+        }
+        if ($farm->relay_misting) {
+            $aksi[] = 'Misting ON';
+        }
+        if ($farm->relay_lampu) {
+            $aksi[] = 'Lampu ON';
+        }
+        if (empty($aksi)) {
+            $aksi[] = 'Semua alat siaga (OFF)';
+        }
+
+        return [
+            'ok' => true,
+            'siap' => true,
+            'relay_kipas' => (bool) $farm->relay_kipas,
+            'relay_misting' => (bool) $farm->relay_misting,
+            'relay_lampu' => (bool) $farm->relay_lampu,
+            'settings' => $settings,
+            'keterangan_aksi' => implode(' • ', $aksi),
+        ];
     }
 
     /**
@@ -385,5 +607,23 @@ class HomeController extends Controller
     public function tentang()
     {
         return view('tentang');
+    }
+
+    /**
+     * Halaman Menu Khusus: Pusat Kendali Aktuator Kandang (Smart Closed-Loop Controller).
+     */
+    public function kontroler(WeatherService $weatherService): View
+    {
+        $farm = $this->farm();
+        $weather = $weatherService->getWeather($farm);
+        $isSensorOnline = $weatherService->isSensorOnline($farm, 60);
+        $kontrol = $this->evaluasiLogikaKontroler(
+            $farm,
+            (float) $weather['suhu'],
+            (float) $weather['kelembaban'],
+            (float) $weather['thi']
+        );
+
+        return view('kontroler.index', compact('farm', 'weather', 'isSensorOnline', 'kontrol'));
     }
 }

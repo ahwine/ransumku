@@ -47,6 +47,10 @@
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('beranda') ? 'text-brand' : '' }}">dashboard</span>
                 <span>Dashboard</span>
             </a>
+            <a href="{{ route('kontroler.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('kontroler.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('kontroler.*') ? 'text-brand' : '' }}">tune</span>
+                <span>Smart Controller</span>
+            </a>
             <a href="{{ route('catatan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('catatan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('catatan.*') ? 'text-brand' : '' }}">menu_book</span>
                 <span>Buku Kandang</span>
@@ -154,6 +158,10 @@
             <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('beranda') ? 'icon-fill' : '' }}">dashboard</span>
             <span class="text-[10px] mt-0.5">Dashboard</span>
         </a>
+        <a href="{{ route('kontroler.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('kontroler.*') ? 'text-brand font-bold' : 'text-muted' }}">
+            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('kontroler.*') ? 'icon-fill' : '' }}">tune</span>
+            <span class="text-[10px] mt-0.5">Kontroler</span>
+        </a>
         <a href="{{ route('catatan.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('catatan.*') ? 'text-brand font-bold' : 'text-muted' }}">
             <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('catatan.*') ? 'icon-fill' : '' }}">menu_book</span>
             <span class="text-[10px] mt-0.5">Produksi</span>
@@ -170,10 +178,6 @@
                 </span>
             </div>
             <span class="text-[10px] mt-0.5">Asisten</span>
-        </a>
-        <a href="{{ route('bahan.index') }}" class="flex flex-col items-center justify-center min-w-14 min-h-12 py-1 transition-colors {{ request()->routeIs('bahan.*|acuan.*|tentang') ? 'text-brand font-bold' : 'text-muted' }}">
-            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('bahan.*|acuan.*|tentang') ? 'icon-fill' : '' }}">grain</span>
-            <span class="text-[10px] mt-0.5">Bahan</span>
         </a>
     </div>
 </nav>

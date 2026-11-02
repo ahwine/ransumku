@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('farm')->group(function () {
         Route::get('/', [HomeController::class, 'beranda'])->name('beranda');
+        Route::get('/kontroler', [HomeController::class, 'kontroler'])->name('kontroler.index');
         Route::post('/kandang/lokasi', [HomeController::class, 'updateLokasi'])->name('kandang.lokasi');
         Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
 
@@ -74,3 +75,13 @@ Route::get('/api/kandang/{farm}/sensor', [HomeController::class, 'statusSensorLi
     ->name('api.kandang.sensor.live');
 Route::get('/api/kandang/{farm}/bmkg', [HomeController::class, 'acuanBmkgLive'])
     ->name('api.kandang.bmkg');
+
+// API Kontroler Aktuator Pintar Kandang (Hardware-Agnostic Controller)
+Route::post('/api/kandang/{farm}/kontrol/toggle-siap', [HomeController::class, 'toggleControllerSiap'])
+    ->name('api.kandang.kontrol.toggle-siap');
+Route::post('/api/kandang/{farm}/kontrol/mode', [HomeController::class, 'ubahModeKontroler'])
+    ->name('api.kandang.kontrol.mode');
+Route::post('/api/kandang/{farm}/kontrol/sakelar', [HomeController::class, 'ubahSakelarAktuator'])
+    ->name('api.kandang.kontrol.sakelar');
+Route::post('/api/kandang/{farm}/kontrol/settings', [HomeController::class, 'simpanSettingKontroler'])
+    ->name('api.kandang.kontrol.settings');

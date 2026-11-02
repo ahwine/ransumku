@@ -17,10 +17,6 @@
             <span data-live-sumber-badge class="text-tiny px-2.5 py-0.5 rounded-full font-bold transition-all {{ $isSensorAktif ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-surface text-muted border border-line' }}">
                 {{ $isSensorAktif ? 'Sensor IoT Live' : 'Prakiraan BMKG' }}
             </span>
-            <button type="button" onclick="bukaModal('modal-iot-kandang')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand/10 hover:bg-brand/20 text-brand border border-brand/20 transition font-bold text-tiny cursor-pointer" title="Buka Simulasi & Pengaturan Sensor IoT ESP32 Kandang">
-                <span class="material-symbols-outlined text-[13px]">sensors</span>
-                <span>Uji Sensor IoT</span>
-            </button>
             <span data-live-updated class="text-tiny font-medium text-muted">Pembaruan: {{ $weather['updated_at'] }}</span>
         </div>
     </div>

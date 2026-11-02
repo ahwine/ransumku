@@ -1559,14 +1559,15 @@ window.tandaiSemuaNotifikasiDibaca = function () {
 // Real-time Live Sensor & Microclimate Poller
 // ==========================================
 function initLiveSensorPoller() {
-    const widget = document.querySelector('[data-weather-widget]');
-    if (!widget) return;
+    const pollerTarget = document.querySelector('[data-weather-widget], [data-controller-widget]');
+    if (!pollerTarget) return;
 
-    const liveUrl = widget.getAttribute('data-live-url');
+    const liveUrl = pollerTarget.getAttribute('data-live-url');
     if (!liveUrl) return;
 
-    let currentSuhu = widget.getAttribute('data-current-suhu');
-    let currentRh = widget.getAttribute('data-current-rh');
+    const widget = document.querySelector('[data-weather-widget]');
+    let currentSuhu = widget ? widget.getAttribute('data-current-suhu') : null;
+    let currentRh = widget ? widget.getAttribute('data-current-rh') : null;
     let lastSensorOnline = null;
 
     const iconSVGs = {
@@ -1644,14 +1645,14 @@ function initLiveSensorPoller() {
                     setTimeout(() => liveBadge.classList.add('hidden'), 4000);
                 }
                 currentSuhu = newSuhuStr;
-                widget.setAttribute('data-current-suhu', newSuhuStr);
+                if (widget) widget.setAttribute('data-current-suhu', newSuhuStr);
             }
 
             // Jika kelembaban berubah
             if (currentRh !== newRhStr) {
                 if (rhEl) rhEl.textContent = data.kelembaban + '%';
                 currentRh = newRhStr;
-                widget.setAttribute('data-current-rh', newRhStr);
+                if (widget) widget.setAttribute('data-current-rh', newRhStr);
             }
 
             if (apparentEl && data.apparent_temp !== undefined) {
@@ -1709,6 +1710,11 @@ function initLiveSensorPoller() {
                     ? 'w-2 h-2 rounded-full transition-colors bg-emerald-500 animate-pulse'
                     : 'w-2 h-2 rounded-full transition-colors bg-blue-400';
                 pulseDot.title = isSensor ? 'Sensor IoT Fisik Terhubung' : 'Prakiraan Cuaca Terbuka';
+            }
+
+            // Update Kontroler Aktuator Pintar jika ada di halaman
+            if (data.kontrol && typeof window.updateControllerUI === 'function') {
+                window.updateControllerUI(data.kontrol);
             }
         } catch (e) {
             // Ignore temporary network errors

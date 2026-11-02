@@ -14,7 +14,48 @@ class Farm extends Model
     {
         return [
             'tgl_chick_in' => 'date',
+            'controller_siap' => 'boolean',
+            'relay_kipas' => 'boolean',
+            'relay_misting' => 'boolean',
+            'relay_lampu' => 'boolean',
+            'controller_settings' => 'array',
         ];
+    }
+
+    /**
+     * Pengaturan ambang batas otomatisasi mikroklimat aktuator kandang.
+     *
+     * @return array{
+     *     kipas: array{otomatis: bool, suhu_nyala: float, thi_nyala: float},
+     *     misting: array{otomatis: bool, thi_nyala: float, rh_maksimal: float},
+     *     lampu: array{otomatis: bool, jam_pagi_mulai: string, jam_pagi_selesai: string, jam_sore_mulai: string, jam_sore_selesai: string}
+     * }
+     */
+    public function getSettingsKontroler(): array
+    {
+        $defaults = [
+            'kipas' => [
+                'otomatis' => false,
+                'suhu_nyala' => 31.0,
+                'thi_nyala' => 78.0,
+            ],
+            'misting' => [
+                'otomatis' => false,
+                'thi_nyala' => 80.0,
+                'rh_maksimal' => 75.0,
+            ],
+            'lampu' => [
+                'otomatis' => false,
+                'jam_pagi_mulai' => '04:00',
+                'jam_pagi_selesai' => '07:00',
+                'jam_sore_mulai' => '18:00',
+                'jam_sore_selesai' => '21:00',
+            ],
+        ];
+
+        $current = $this->controller_settings ?? [];
+
+        return array_replace_recursive($defaults, is_array($current) ? $current : []);
     }
 
     /** Umur ayam saat ini dalam satuan minggu. */
