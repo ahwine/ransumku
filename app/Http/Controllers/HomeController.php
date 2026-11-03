@@ -416,14 +416,18 @@ class HomeController extends Controller
         $kolom = 'relay_' . $data['alat'];
         $farm->update([
             $kolom => (bool) $data['status'],
-            'controller_siap' => true,
+        ]);
+        $farm->refresh();
+        $adaAksi = (bool) ($farm->relay_kipas || $farm->relay_misting || $farm->relay_lampu || $farm->relay_pakan);
+        $farm->update([
+            'controller_siap' => $adaAksi,
         ]);
 
         return response()->json([
             'ok' => true,
             'pesan' => ucfirst($data['alat']) . ' berhasil di-' . ($data['status'] ? 'nyalakan' : 'matikan') . '.',
             'kontrol' => [
-                'siap' => true,
+                'siap' => $adaAksi,
                 'relay_kipas' => (bool) $farm->relay_kipas,
                 'relay_misting' => (bool) $farm->relay_misting,
                 'relay_lampu' => (bool) $farm->relay_lampu,
@@ -579,9 +583,12 @@ class HomeController extends Controller
             $aksi[] = 'Semua alat siaga (OFF)';
         }
 
+        $farm->refresh();
+        $adaAksi = (bool) ($farm->relay_kipas || $farm->relay_misting || $farm->relay_lampu || $farm->relay_pakan);
+
         return [
             'ok' => true,
-            'siap' => true,
+            'siap' => $adaAksi,
             'relay_kipas' => (bool) $farm->relay_kipas,
             'relay_misting' => (bool) $farm->relay_misting,
             'relay_lampu' => (bool) $farm->relay_lampu,

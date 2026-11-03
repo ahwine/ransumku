@@ -1939,6 +1939,7 @@ function initLiveSensorPoller() {
                 }
             });
 
+            window.kandangTelemetry = { suhu: newSuhuStr, kelembaban: newRhStr };
             currentSuhu = newSuhuStr;
             currentRh = newRhStr;
 

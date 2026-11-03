@@ -62,6 +62,11 @@
                         <span class="material-symbols-outlined text-[13px] text-slate-400" id="icon-roof-3d">water_drop</span>
                         <span id="text-roof-3d">Sprinkler OFF</span>
                     </span>
+                    <span class="text-slate-600">&bull;</span>
+                    <span class="flex items-center gap-1" id="badge-telur-3d" title="Produksi telur (simulasi)">
+                        <span>Telur</span>
+                        <span id="text-egg-3d">0</span>
+                    </span>
                 </div>
             </div>
 
@@ -81,8 +86,8 @@
         {{-- Hint Navigasi Halus (Bawah Viewport) --}}
         <div class="absolute bottom-2.5 inset-x-3 flex items-center justify-between pointer-events-none text-[10px] text-slate-400 z-20">
             <span class="bg-slate-900/85 px-2 py-0.5 rounded-md backdrop-blur border border-slate-800 text-[10px] flex items-center gap-1">
-                <span class="hidden sm:inline">🖱️ <strong>Klik & Geser</strong> putar · <strong>Scroll</strong> zoom · <strong>Klik Kanan</strong> pan</span>
-                <span class="sm:hidden">👆 <strong>Sentuh & Geser</strong> untuk memutar 360°</span>
+                <span class="hidden sm:inline"><strong>Klik & Geser</strong> putar · <strong>Scroll</strong> zoom · <strong>Klik Kanan</strong> pan</span>
+                <span class="sm:hidden"><strong>Sentuh & Geser</strong> untuk memutar 360°</span>
             </span>
             <span class="hidden sm:inline bg-slate-900/85 px-2 py-0.5 rounded-md backdrop-blur border border-slate-800 font-mono text-emerald-400 text-[10px]">
                 Katrol Tali Sling · L298N
@@ -150,6 +155,7 @@ let feederCart3D, roofWaterParticles3D;
 let fanBladesList = [];
 let feedP_L_T1, feedP_L_T2, feedP_R_T1, feedP_R_T2;
 let coopLight1, coopLight2;
+let ceilingLights = [];
 let cableMeshA, cableMeshB;
 let chickensList = [];
 let iotLabelsGroup;
@@ -185,8 +191,8 @@ function initThreeJSKandang() {
 
     // 1. Scene
     scene3D = new THREE.Scene();
-    scene3D.background = new THREE.Color(0x0a0f1d);
-    scene3D.fog = new THREE.FogExp2(0x0a0f1d, 0.022);
+    scene3D.background = new THREE.Color(0x1a1f2e);
+    scene3D.fog = new THREE.FogExp2(0x1a1f2e, 0.018);
 
     // 2. Camera
     camera3D = new THREE.PerspectiveCamera(50, width / height, 0.1, 80);
@@ -215,24 +221,30 @@ function initThreeJSKandang() {
     }
 
     // 5. Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
-    scene3D.add(ambientLight);
+    scene3D.add(new THREE.AmbientLight(0xc8d8e8, 0.4));
+    scene3D.add(new THREE.HemisphereLight(0xfff4e0, 0x334155, 0.3));
 
-    const dirLight = new THREE.DirectionalLight(0xfffaed, 0.9);
-    dirLight.position.set(15, 20, 10);
+    const dirLight = new THREE.DirectionalLight(0xfff8e7, 0.7);
+    dirLight.position.set(8, 12, 6);
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.left = -14;
+    dirLight.shadow.camera.right = 14;
+    dirLight.shadow.camera.top = 8;
+    dirLight.shadow.camera.bottom = -8;
     scene3D.add(dirLight);
 
-    // Lampu Sorot Dalam Kandang (Kuning Hangat / Fotoperiode Ayam)
-    coopLight1 = new THREE.PointLight(0xffe6a3, 1.3, 20);
-    coopLight1.position.set(-3, 3.8, 0);
-    scene3D.add(coopLight1);
-
-    coopLight2 = new THREE.PointLight(0xffe6a3, 1.3, 20);
-    coopLight2.position.set(3, 3.8, 0);
-    scene3D.add(coopLight2);
+    // Lampu plafon hangat (fotoperiode ayam); coopLight1/2 tetap dipakai syncKandang3DState
+    ceilingLights = [];
+    [-6, -2, 2, 6].forEach((lx) => {
+        const pl = new THREE.PointLight(0xffe8b0, 1.2, 10, 2);
+        pl.position.set(lx, 3.2, 0);
+        scene3D.add(pl);
+        ceilingLights.push(pl);
+    });
+    coopLight1 = ceilingLights[1];
+    coopLight2 = ceilingLights[2];
 
     // 6. Bangun Objek Geometri Kandang Ayam 3D
     buildKandang3DScene();
@@ -250,41 +262,826 @@ function initThreeJSKandang() {
     animateThreeJS();
 }
 
-function createStylizedChicken() {
-    const chicken = new THREE.Group();
+/**
+ * Ayam petelur prosedural: badan, leher, kepala, jengger bergerigi, pial, paruh, ekor, sayap, kaki.
+ * poseIndex: 0 = berdiri, 1 = menunduk makan, 2 = menoleh.
+ */
+const SHARED_CHICKEN_MATS = {
+    comb: new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 }),
+    beak: new THREE.MeshStandardMaterial({ color: 0xf5b301, roughness: 0.4 }),
+    leg: new THREE.MeshStandardMaterial({ color: 0xe0a030, roughness: 0.6 }),
+    eye: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 })
+};
 
-    // Badan Ayam Petelur (Putih Bulu)
-    const bodyGeo = new THREE.SphereGeometry(0.24, 12, 10);
-    bodyGeo.scale(1, 0.85, 1.25);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.85 });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.22;
+function createStylizedChicken(poseIndex = 0) {
+    const chicken = new THREE.Group();
+    const pose = poseIndex % 3;
+
+    const featherTone = new THREE.Color().setHSL(0.1, 0.05, 0.86 + Math.random() * 0.1);
+    const featherMat = new THREE.MeshStandardMaterial({ color: featherTone, roughness: 0.88, metalness: 0 });
+
+    const bodyGeo = new THREE.SphereGeometry(0.2, 14, 10);
+    bodyGeo.scale(1, 0.78, 1.3);
+    const body = new THREE.Mesh(bodyGeo, featherMat);
+    body.position.y = 0.2;
+    body.castShadow = true;
     chicken.add(body);
 
-    // Kepala Ayam
-    const headGeo = new THREE.SphereGeometry(0.12, 10, 8);
-    const head = new THREE.Mesh(headGeo, bodyMat);
-    head.position.set(0, 0.38, 0.16);
-    chicken.add(head);
+    const upper = new THREE.Group();
+    upper.position.set(0, 0.26, 0.17);
+    upper.rotation.x = pose === 1 ? 0.55 : 0;
+    chicken.add(upper);
 
-    // Jengger Merah (Comb)
-    const combGeo = new THREE.BoxGeometry(0.04, 0.1, 0.14);
-    const combMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
-    const comb = new THREE.Mesh(combGeo, combMat);
-    comb.position.set(0, 0.49, 0.16);
-    chicken.add(comb);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.14, 8), featherMat);
+    neck.position.set(0, 0.07, 0.02);
+    upper.add(neck);
 
-    // Paruh Kuning Oranye
-    const beakGeo = new THREE.ConeGeometry(0.05, 0.11, 6);
-    const beakMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
-    const beak = new THREE.Mesh(beakGeo, beakMat);
+    const head = new THREE.Group();
+    head.position.set(0, 0.18, 0.04);
+    head.rotation.y = pose === 2 ? 0.6 : 0;
+    upper.add(head);
+
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), featherMat);
+    head.add(skull);
+
+    for (let c = 0; c < 3; c++) {
+        const spike = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05 + (c === 1 ? 0.025 : 0), 0.035), SHARED_CHICKEN_MATS.comb);
+        spike.position.set(0, 0.085, -0.03 + c * 0.04);
+        head.add(spike);
+    }
+
+    const wattle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, 0.05, 6), SHARED_CHICKEN_MATS.comb);
+    wattle.position.set(0, -0.07, 0.06);
+    head.add(wattle);
+
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.08, 6), SHARED_CHICKEN_MATS.beak);
     beak.rotation.x = Math.PI / 2;
-    beak.position.set(0, 0.36, 0.28);
-    chicken.add(beak);
+    beak.position.set(0, -0.01, 0.1);
+    head.add(beak);
 
+    [-1, 1].forEach((side) => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 6), SHARED_CHICKEN_MATS.eye);
+        eye.position.set(side * 0.06, 0.01, 0.04);
+        head.add(eye);
+
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, 0.22), featherMat);
+        wing.position.set(side * 0.19, 0.22, -0.02);
+        wing.rotation.z = side * -0.25;
+        chicken.add(wing);
+
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 6), SHARED_CHICKEN_MATS.leg);
+        leg.position.set(side * 0.07, 0.06, 0.02);
+        chicken.add(leg);
+    });
+
+    const tailMeshes = [];
+    [0, 1].forEach((t) => {
+        const tail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.14, 0.03), featherMat);
+        tail.position.set(0, 0.3 + t * 0.03, -0.27 - t * 0.02);
+        tail.rotation.x = -0.6 - t * 0.2;
+        tail.userData.baseRotX = tail.rotation.x;
+        chicken.add(tail);
+        tailMeshes.push(tail);
+    });
+
+    const scale = 0.95 + Math.random() * 0.1;
+    chicken.scale.setScalar(scale);
+    chicken.userData.bobOffset = Math.random() * Math.PI * 2;
+    chicken.userData.eatingPose = pose === 1;
+    chicken.userData.upper = upper;
+    chicken.userData.head = head;
+    chicken.userData.tails = tailMeshes;
+    chicken.userData.poseBaseUpperX = pose === 1 ? 0.55 : 0;
+    chicken.userData.poseBaseHeadY = pose === 2 ? 0.6 : 0;
     return chicken;
 }
 
+// =========================================================================
+// KONFIGURASI ANIMASI & PIN (satu tempat untuk menyetel semuanya)
+// =========================================================================
+const KANDANG_ANIM_CONFIG = {
+    telur: {
+        layIntervalSec: 3.0,     // rata-rata jeda antar peristiwa bertelur (seluruh kandang)
+        layDurationSec: 2.5,     // durasi ayam berhenti & bergetar sebelum telur muncul
+        growSec: 0.3,            // telur muncul scale 0 -> 1
+        fallSec: 0.45,           // telur jatuh pendek ke sabuk
+        maxActiveEggs: 32,       // ukuran object pool (telur aktif maksimum)
+        laneCapacity: 8,         // maksimal telur menumpuk per sabuk (4 sabuk)
+        rollSpeed: 0.7,          // m/s kecepatan gulir konstan
+        rollAccel: 0.9,          // m/s^2 percepatan awal
+        beltSlope: 0.01,         // kemiringan sabuk (tinggi turun per meter)
+        eggScale: 1.6            // pembesar visual; 1.0 = ukuran nyata 5x4 cm
+    },
+    makan: {
+        pEatBase: 0.55,          // peluang IDLE -> MAKAN
+        pEatFeeder: 0.95,        // peluang bila troli pakan baru lewat
+        feederReach: 1.8,        // jarak (m) troli yang memicu ayam makan
+        feederBoostSec: 6,
+        eatMinSec: 6, eatMaxSec: 14,
+        idleMinSec: 2.5, idleMaxSec: 7,
+        peckMin: 3, peckMax: 6,
+        peckPeriodMin: 0.28, peckPeriodMax: 0.5,
+        lookPauseMin: 0.8, lookPauseMax: 2.0
+    },
+    performa: {
+        stateUpdateGroups: 6     // keputusan state dihitung per kelompok (1/N ayam per frame)
+    },
+    pin: {
+        labelOffsetPx: 46,
+        gapPx: 6,
+        detailRefreshMs: 500
+    }
+};
+
+const EGG_LANE_X_START = -8.9;
+const EGG_LANE_X_END = 8.85;
+let eggLanes = [];
+let eggPool = [];
+let activeEggs = [];
+let eggStats = { total: 0, perLane: {} };
+let nextLayAt = 0;
+let decisionCursor = 0;
+let lastFrameTimeMs = 0;
+let fanGroups = [];
+let iotPinDefs = [];
+let iotPins = [];
+let iotPinLayer = null;
+let iotPinSvg = null;
+let iotPinPanel = null;
+let selectedPin = null;
+let lastPinDetailRefresh = 0;
+
+const EGG_BASE_SIZE = { x: 0.05, y: 0.04, z: 0.04 };
+const eggGeometry = new THREE.SphereGeometry(0.5, 14, 10);
+const eggMaterial = new THREE.MeshStandardMaterial({ color: 0x8d6450, roughness: 0.7 });
+const eggBeltMaterial = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.7 });
+const eggStopMaterial = new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0.8, roughness: 0.3 });
+
+function randomBetween(min, max) {
+    return min + Math.random() * (max - min);
+}
+
+// ---------------------------------------------------------------------
+// SABUK TELUR MIRING (satu sabuk menerus per sisi & tingkat)
+// ---------------------------------------------------------------------
+function eggLaneHeightAt(lane, x) {
+    return lane.startY - lane.slope * (x - EGG_LANE_X_START);
+}
+
+function createEggLane(side, tierIdx, floorY) {
+    const slope = KANDANG_ANIM_CONFIG.telur.beltSlope;
+    const lane = { side, tierIdx, z: side * 1.52, startY: floorY + 0.12, slope, eggs: [] };
+    const length = EGG_LANE_X_END - EGG_LANE_X_START + 0.1;
+
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(length, 0.015, 0.12), eggBeltMaterial);
+    belt.position.set((EGG_LANE_X_START + EGG_LANE_X_END) / 2, eggLaneHeightAt(lane, 0) - 0.0075, lane.z);
+    belt.rotation.z = -Math.atan(slope);
+    belt.receiveShadow = true;
+    scene3D.add(belt);
+
+    const stop = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.07, 0.14), eggStopMaterial);
+    stop.position.set(EGG_LANE_X_END + 0.015, eggLaneHeightAt(lane, EGG_LANE_X_END) + 0.025, lane.z);
+    scene3D.add(stop);
+
+    eggLanes.push(lane);
+    eggStats.perLane[`${side}_${tierIdx}`] = 0;
+    return lane;
+}
+
+function findEggLane(chicken) {
+    const u = chicken.userData;
+    if (!u.lane) {
+        u.lane = eggLanes.find((l) => l.side === u.side && l.tierIdx === u.tierIdx) || null;
+    }
+    return u.lane;
+}
+
+function acquireEgg() {
+    const cfg = KANDANG_ANIM_CONFIG.telur;
+    let egg = eggPool.find((e) => !e.active);
+    if (!egg && eggPool.length < cfg.maxActiveEggs) {
+        const mesh = new THREE.Mesh(eggGeometry, eggMaterial);
+        mesh.castShadow = true;
+        scene3D.add(mesh);
+        egg = { mesh, active: false, lane: null };
+        eggPool.push(egg);
+    }
+    if (!egg) {
+        egg = activeEggs.shift();
+        releaseEggFromLane(egg);
+    } else {
+        egg.active = false;
+    }
+    return egg;
+}
+
+function releaseEggFromLane(egg) {
+    if (egg.lane) {
+        const idx = egg.lane.eggs.indexOf(egg);
+        if (idx >= 0) egg.lane.eggs.splice(idx, 1);
+    }
+}
+
+function eggRestRadiusY() {
+    return 0.5 * EGG_BASE_SIZE.y * KANDANG_ANIM_CONFIG.telur.eggScale;
+}
+
+/** Munculkan telur di belakang ayam; menambah counter produksi digital twin. */
+function spawnEgg(chicken) {
+    const lane = findEggLane(chicken);
+    if (!lane) return;
+    const cfg = KANDANG_ANIM_CONFIG.telur;
+
+    if (lane.eggs.length >= cfg.laneCapacity) {
+        const oldest = lane.eggs.shift();
+        oldest.active = false;
+        oldest.mesh.visible = false;
+        const aIdx = activeEggs.indexOf(oldest);
+        if (aIdx >= 0) activeEggs.splice(aIdx, 1);
+    }
+
+    const egg = acquireEgg();
+    const spawnPos = chicken.localToWorld(new THREE.Vector3(0, 0.06, -0.28));
+    egg.active = true;
+    egg.lane = lane;
+    egg.state = 'grow';
+    egg.t = 0;
+    egg.vx = 0;
+    egg.spawn = spawnPos.clone();
+    egg.mesh.visible = true;
+    egg.mesh.position.copy(spawnPos);
+    egg.mesh.rotation.set(0, 0, 0);
+    egg.mesh.scale.set(0.0001, 0.0001, 0.0001);
+    activeEggs.push(egg);
+
+    eggStats.total += 1;
+    eggStats.perLane[`${lane.side}_${lane.tierIdx}`] += 1;
+    window.kandangEggStats = eggStats;
+    const hud = document.getElementById('text-egg-3d');
+    if (hud) hud.textContent = String(eggStats.total);
+    window.dispatchEvent(new CustomEvent('kandang3d:telur', { detail: { total: eggStats.total, perLane: eggStats.perLane } }));
+}
+
+/** Update fisika sederhana semua telur aktif: muncul, jatuh, menggelinding, menumpuk. */
+function updateEggRoll(dt) {
+    const cfg = KANDANG_ANIM_CONFIG.telur;
+    const es = cfg.eggScale;
+    const halfLen = 0.5 * EGG_BASE_SIZE.x * es;
+    const radiusY = eggRestRadiusY();
+    const rollRadius = 0.5 * (EGG_BASE_SIZE.x + EGG_BASE_SIZE.y) * 0.5 * es;
+
+    for (let i = 0; i < activeEggs.length; i++) {
+        const egg = activeEggs[i];
+        const mesh = egg.mesh;
+        const lane = egg.lane;
+
+        if (egg.state === 'grow') {
+            egg.t += dt;
+            const k = Math.min(egg.t / cfg.growSec, 1);
+            mesh.scale.set(EGG_BASE_SIZE.x * es * k, EGG_BASE_SIZE.y * es * k, EGG_BASE_SIZE.z * es * k);
+            if (k >= 1) {
+                egg.state = 'fall';
+                egg.t = 0;
+            }
+        } else if (egg.state === 'fall') {
+            egg.t += dt;
+            const k = Math.min(egg.t / cfg.fallSec, 1);
+            const eased = 1 - (1 - k) * (1 - k);
+            const landY = eggLaneHeightAt(lane, egg.spawn.x) + radiusY;
+            mesh.position.x = egg.spawn.x;
+            mesh.position.z = egg.spawn.z + (lane.z - egg.spawn.z) * eased;
+            mesh.position.y = egg.spawn.y + (landY - egg.spawn.y) * k * k;
+            mesh.rotation.z -= dt * 3;
+            if (k >= 1) {
+                egg.state = 'roll';
+                egg.vx = 0;
+                lane.eggs.push(egg);
+            }
+        } else {
+            let rank = 0;
+            for (let j = 0; j < lane.eggs.length; j++) {
+                const other = lane.eggs[j];
+                if (other !== egg && other.mesh.position.x > mesh.position.x) rank++;
+            }
+            const target = EGG_LANE_X_END - halfLen - rank * (2 * halfLen * 1.04);
+            const dist = target - mesh.position.x;
+
+            if (egg.state === 'settled' && dist > 0.002) {
+                egg.state = 'roll';
+                egg.vx = 0;
+            }
+            if (egg.state === 'roll') {
+                egg.vx = Math.min(egg.vx + cfg.rollAccel * dt, cfg.rollSpeed);
+                const brakeLimit = Math.max(0.05, Math.sqrt(2 * cfg.rollAccel * Math.max(dist, 0)));
+                egg.vx = Math.min(egg.vx, brakeLimit);
+                const dx = Math.max(0, Math.min(egg.vx * dt, dist));
+                mesh.position.x += dx;
+                mesh.rotation.z -= dx / rollRadius;
+                if (dist - dx <= 0.001) {
+                    egg.state = 'settled';
+                    egg.vx = 0;
+                }
+            }
+            const wobble = radiusY * 0.12 * Math.abs(Math.sin(mesh.rotation.z));
+            mesh.position.y = eggLaneHeightAt(lane, mesh.position.x) + radiusY + wobble;
+            mesh.position.z = lane.z;
+            mesh.rotation.x = egg.state === 'roll' ? Math.sin(mesh.rotation.z * 2) * 0.05 : 0;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------
+// STATE MACHINE AYAM: IDLE -> MAKAN -> IDLE -> BERTELUR
+// ---------------------------------------------------------------------
+function initChickenState(chicken, now) {
+    const u = chicken.userData;
+    u.state = 'IDLE';
+    u.stateEnd = now + randomBetween(0, KANDANG_ANIM_CONFIG.makan.idleMaxSec) * 1000;
+    u.targetUpperX = 0;
+    u.targetHeadY = 0;
+    u.lookNext = now + randomBetween(500, 3000);
+    u.feedBoostUntil = 0;
+    u.tailRaise = 0;
+}
+
+function startMakan(chicken, now) {
+    const cfg = KANDANG_ANIM_CONFIG.makan;
+    const u = chicken.userData;
+    u.state = 'MAKAN';
+    u.stateEnd = now + randomBetween(cfg.eatMinSec, cfg.eatMaxSec) * 1000;
+    u.peckPhase = 'peck';
+    u.peckCount = Math.round(randomBetween(cfg.peckMin, cfg.peckMax));
+    u.peckPeriod = randomBetween(cfg.peckPeriodMin, cfg.peckPeriodMax);
+    u.peckAngle = 0;
+    u.pecksDone = 0;
+    u.lookEnd = 0;
+    u.lookDir = 0;
+}
+
+function startBertelur(chicken, now) {
+    const u = chicken.userData;
+    u.state = 'BERTELUR';
+    u.stateEnd = now + KANDANG_ANIM_CONFIG.telur.layDurationSec * 1000 * randomBetween(0.9, 1.15);
+}
+
+/** Pilih ayam IDLE yang memenuhi syarat untuk bertelur (menjauh dari area penampungan). */
+function pickLayingChicken(now) {
+    const n = chickensList.length;
+    for (let tries = 0; tries < 16; tries++) {
+        const c = chickensList[Math.floor(Math.random() * n)];
+        const u = c.userData;
+        if (u.state === 'IDLE' && u.homeX <= EGG_LANE_X_END - 1.2 && findEggLane(c)) {
+            startBertelur(c, now);
+            return;
+        }
+    }
+}
+
+function decideChickenState(chicken, now) {
+    const cfg = KANDANG_ANIM_CONFIG.makan;
+    const u = chicken.userData;
+
+    if (isFeederRunning3D && Math.abs(u.homeX - feederPositionX) < cfg.feederReach) {
+        if (now > u.feedBoostUntil && u.state === 'IDLE') {
+            u.stateEnd = Math.min(u.stateEnd, now + randomBetween(100, 900));
+        }
+        u.feedBoostUntil = now + cfg.feederBoostSec * 1000;
+    }
+    const boosted = now < u.feedBoostUntil;
+
+    if (u.state === 'IDLE' && now >= u.stateEnd) {
+        if (Math.random() < (boosted ? cfg.pEatFeeder : cfg.pEatBase)) {
+            startMakan(chicken, now);
+        } else {
+            u.stateEnd = now + randomBetween(cfg.idleMinSec, cfg.idleMaxSec) * 1000;
+        }
+    } else if (u.state === 'MAKAN' && now >= u.stateEnd) {
+        if (boosted) {
+            u.stateEnd = now + randomBetween(2, 5) * 1000;
+        } else {
+            u.state = 'IDLE';
+            u.stateEnd = now + randomBetween(cfg.idleMinSec, cfg.idleMaxSec) * 1000;
+        }
+    }
+}
+
+/** Menunduk & mematok 3-6 kali, jeda, menoleh kiri-kanan, ulangi. */
+function playPeckAnimation(chicken, dt, now) {
+    const cfg = KANDANG_ANIM_CONFIG.makan;
+    const u = chicken.userData;
+    u.targetZ = u.side * 1.78;
+
+    if (u.peckPhase === 'peck') {
+        u.peckAngle += (dt / u.peckPeriod) * Math.PI * 2;
+        const offset = 0.5 - 0.5 * Math.cos(u.peckAngle);
+        u.targetUpperX = 0.5 + 0.38 * offset;
+        u.targetHeadY = 0;
+        if (u.peckAngle >= Math.PI * 2 * (u.pecksDone + 1)) {
+            u.pecksDone += 1;
+            if (u.pecksDone >= u.peckCount) {
+                u.peckPhase = 'look';
+                u.lookEnd = now + randomBetween(cfg.lookPauseMin, cfg.lookPauseMax) * 1000;
+                u.lookDir = Math.random() < 0.5 ? -1 : 1;
+                u.lookStart = now;
+            }
+        }
+    } else {
+        u.targetUpperX = 0.05;
+        u.targetHeadY = Math.sin((now - u.lookStart) * 0.005) * 0.7 * u.lookDir;
+        if (now >= u.lookEnd) {
+            u.peckPhase = 'peck';
+            u.peckCount = Math.round(randomBetween(cfg.peckMin, cfg.peckMax));
+            u.peckPeriod = randomBetween(cfg.peckPeriodMin, cfg.peckPeriodMax);
+            u.peckAngle = 0;
+            u.pecksDone = 0;
+        }
+    }
+}
+
+/** Bertelur: berhenti, badan turun & bergetar, ekor naik, lalu telur muncul. */
+function playLayEggAnimation(chicken, dt, now) {
+    const u = chicken.userData;
+    u.targetUpperX = 0;
+    u.targetHeadY = 0;
+    u.targetZ = u.homeZ;
+    u.tailRaiseTarget = 0.35;
+    u.targetYOffset = -0.03;
+    u.shake = 0.004;
+    if (now >= u.stateEnd) {
+        spawnEgg(chicken);
+        u.state = 'IDLE';
+        u.stateEnd = now + randomBetween(KANDANG_ANIM_CONFIG.makan.idleMinSec, KANDANG_ANIM_CONFIG.makan.idleMaxSec) * 1000;
+    }
+}
+
+function playIdleAnimation(chicken, dt, now) {
+    const u = chicken.userData;
+    u.targetUpperX = u.poseBaseUpperX;
+    u.targetZ = u.homeZ;
+    if (now >= u.lookNext) {
+        u.targetHeadY = u.poseBaseHeadY + randomBetween(-0.7, 0.7);
+        u.lookNext = now + randomBetween(1500, 4000);
+    }
+}
+
+/** Haluskan seluruh sendi/posisi ayam menuju target state. */
+function applyChickenPose(chicken, dt, now) {
+    const u = chicken.userData;
+    const fast = u.state === 'MAKAN' && u.peckPhase === 'peck' ? 20 : 7;
+    const kPose = Math.min(1, dt * fast);
+    const kSlow = Math.min(1, dt * 5);
+
+    u.upper.rotation.x += (u.targetUpperX - u.upper.rotation.x) * kPose;
+    u.head.rotation.y += (u.targetHeadY - u.head.rotation.y) * kSlow;
+
+    const isLaying = u.state === 'BERTELUR';
+    const yOffset = isLaying ? (u.targetYOffset || 0) : 0;
+    chicken.position.y += (u.homeY + yOffset - chicken.position.y) * kSlow;
+    chicken.position.z += ((u.targetZ !== undefined ? u.targetZ : u.homeZ) - chicken.position.z) * Math.min(1, dt * 4);
+    chicken.position.x = u.homeX + (isLaying ? Math.sin(now * 0.05 + u.bobOffset) * u.shake : 0);
+
+    const raise = isLaying ? u.tailRaiseTarget : 0;
+    u.tailRaise += (raise - u.tailRaise) * kSlow;
+    for (let t = 0; t < u.tails.length; t++) {
+        u.tails[t].rotation.x = u.tails[t].userData.baseRotX + u.tailRaise;
+    }
+}
+
+function updateChickenStates(dt, now) {
+    const n = chickensList.length;
+    if (!n) return;
+
+    if (nextLayAt === 0) {
+        nextLayAt = now + 1500;
+        for (let i = 0; i < n; i++) initChickenState(chickensList[i], now);
+    }
+    if (now >= nextLayAt) {
+        nextLayAt = now + KANDANG_ANIM_CONFIG.telur.layIntervalSec * 1000 * randomBetween(0.7, 1.3);
+        pickLayingChicken(now);
+    }
+
+    const groups = Math.max(1, KANDANG_ANIM_CONFIG.performa.stateUpdateGroups);
+    const slice = decisionCursor++ % groups;
+    for (let i = slice; i < n; i += groups) {
+        decideChickenState(chickensList[i], now);
+    }
+
+    for (let i = 0; i < n; i++) {
+        const c = chickensList[i];
+        const state = c.userData.state;
+        if (state === 'MAKAN') {
+            playPeckAnimation(c, dt, now);
+        } else if (state === 'BERTELUR') {
+            playLayEggAnimation(c, dt, now);
+        } else {
+            playIdleAnimation(c, dt, now);
+        }
+        applyChickenPose(c, dt, now);
+    }
+}
+
+// ---------------------------------------------------------------------
+// PERBAIKAN RENDER KIPAS (Bug 1)
+// Penyebab: kipas x=0 & x=9 berimpit dengan penggantung rel / tiang portal,
+// bola LED plafon (x=0) menembus strut, cincin terlalu rendah (menyentuh
+// troli saat lewat), dan atap opak menutupi kipas dari kamera perspektif.
+// ---------------------------------------------------------------------
+function fixFanRendering() {
+    scene3D.updateMatrixWorld(true);
+    const fanSet = new Set();
+    fanGroups.forEach((g) => g.traverse((o) => fanSet.add(o)));
+
+    const obstacles = [];
+    scene3D.traverse((o) => {
+        if (!o.isMesh || fanSet.has(o) || o === feederCart3D) return;
+        if (feederCart3D && feederCart3D.children.includes(o)) return;
+        const box = new THREE.Box3().setFromObject(o);
+        const size = box.getSize(new THREE.Vector3());
+        if (size.x > 6 || box.max.y < 2.3 || box.min.y > 3.7) return;
+        obstacles.push(box);
+    });
+
+    fanGroups.forEach((group) => {
+        for (let attempt = 0; attempt < 12; attempt++) {
+            group.updateMatrixWorld(true);
+            const fanBox = new THREE.Box3().setFromObject(group).expandByScalar(0.02);
+            const hit = obstacles.some((b) => {
+                const shrunk = b.clone().expandByScalar(-0.01);
+                return shrunk.intersectsBox(fanBox);
+            });
+            if (!hit) break;
+            group.position.x += 0.4;
+        }
+        group.traverse((o) => {
+            if (!o.isMesh) return;
+            o.renderOrder = 2;
+            o.castShadow = true;
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            mats.forEach((m) => {
+                m.transparent = false;
+                m.depthWrite = true;
+                m.depthTest = true;
+                m.polygonOffset = true;
+                m.polygonOffsetFactor = -1;
+                m.polygonOffsetUnits = -1;
+            });
+        });
+    });
+}
+
+// ---------------------------------------------------------------------
+// PIN PENJELASAN IOT (Bug 2): overlay HTML, leader line, anti-tumpang-tindih
+// ---------------------------------------------------------------------
+const IOT_PIN_INFO = {
+    'Panel ESP32 & Relay': {
+        short: 'ESP32',
+        name: 'ESP32 + Relay 4-Channel (Panel IP65)',
+        fungsi: 'Otak sistem: membaca sensor, mengatur kipas, sprinkler, lampu, dan driver motor pakan lewat WiFi.',
+        nilai: () => 'Online · menerima data'
+    },
+    'Motor & Driver L298N': {
+        short: 'Motor L298N',
+        name: 'Motor DC + Driver L298N',
+        fungsi: 'Menggulung tali sling sehingga troli pakan bergerak bolak-balik di rel.',
+        nilai: () => (document.getElementById('status-feeder-3d') || {}).textContent || '-'
+    },
+    'Limit Switch A': {
+        short: 'Limit A',
+        name: 'Limit Switch A (Pangkal)',
+        fungsi: 'Menghentikan motor saat troli menyentuh ujung rel di pangkal lorong.',
+        nilai: () => (feederPositionX <= FEEDER_LIMIT_A + 0.1 ? 'TERTEKAN (troli di A)' : 'Terbuka')
+    },
+    'Limit Switch B': {
+        short: 'Limit B',
+        name: 'Limit Switch B (Ujung)',
+        fungsi: 'Menghentikan motor saat troli menyentuh ujung rel di ujung lorong.',
+        nilai: () => (feederPositionX >= FEEDER_LIMIT_B - 0.1 ? 'TERTEKAN (troli di B)' : 'Terbuka')
+    },
+    'Tandon & Pompa Sprinkler': {
+        short: 'Tandon & Pompa',
+        name: 'Tandon Air + Pompa Diafragma',
+        fungsi: 'Menyuplai air bertekanan ke nozzle kabut di atap untuk mendinginkan kandang.',
+        nilai: () => (isSprinklerActive3D ? 'Pompa ON (menyemprot)' : 'Pompa OFF')
+    },
+    'Sensor DHT22 Suhu': {
+        short: 'DHT22',
+        name: 'Sensor DHT22',
+        fungsi: 'Mengukur suhu & kelembaban udara di zona ayam untuk menghitung THI.',
+        nilai: () => {
+            const t = window.kandangTelemetry;
+            return t ? `${t.suhu}°C · RH ${t.kelembaban}%` : 'Menunggu data sensor...';
+        }
+    },
+    'Sensor Amonia MQ-137': {
+        short: 'MQ-137',
+        name: 'Sensor Amonia MQ-137',
+        fungsi: 'Mendeteksi gas amonia dari kotoran agar ventilasi bisa dinaikkan.',
+        nilai: () => 'Normal (simulasi)'
+    },
+    'Blower Sirkulasi 12V': {
+        short: 'Blower',
+        name: 'Kipas Blower Sirkulasi',
+        fungsi: 'Mengalirkan udara sepanjang lorong untuk menurunkan suhu terasa.',
+        nilai: () => (isFanSpinning3D ? 'ON (berputar)' : 'OFF')
+    }
+};
+
+/** Membuat penanda 3D (Object3D kosong) yang posisinya jadi jangkar pin HTML. */
+function registerIoTPinAnchor(text, colorHex, icon) {
+    const anchor = new THREE.Object3D();
+    iotPinDefs.push({ text, colorHex, icon, anchor });
+    return anchor;
+}
+
+function createIoTPins() {
+    const canvasHost = document.getElementById('canvas-container-3d');
+    if (!canvasHost || !canvasHost.parentElement) return;
+    const host = canvasHost.parentElement;
+
+    if (iotPinLayer) iotPinLayer.remove();
+    iotPins = [];
+
+    iotPinLayer = document.createElement('div');
+    iotPinLayer.style.cssText = 'position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:15;';
+
+    iotPinSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    iotPinSvg.setAttribute('style', 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;');
+    iotPinLayer.appendChild(iotPinSvg);
+
+    iotPinDefs.forEach((def) => {
+        const info = IOT_PIN_INFO[def.text] || { name: def.text, fungsi: '', nilai: () => '-' };
+        const world = new THREE.Vector3();
+        def.anchor.getWorldPosition(world);
+        world.y -= 0.28;
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('stroke', def.colorHex);
+        line.setAttribute('stroke-width', '1.6');
+        line.setAttribute('stroke-opacity', '0.9');
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('r', '4');
+        dot.setAttribute('fill', def.colorHex);
+        dot.setAttribute('stroke', '#0f172a');
+        dot.setAttribute('stroke-width', '1.5');
+        iotPinSvg.appendChild(line);
+        iotPinSvg.appendChild(dot);
+
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:10px;background:rgba(15,23,42,0.94);border:1.5px solid ${def.colorHex};color:#fff;font:700 11px/1.15 system-ui,-apple-system,sans-serif;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.5);will-change:transform;user-select:none;`;
+        el.innerHTML = `<span style="width:9px;height:9px;border-radius:50%;background:${def.colorHex};border:1.5px solid rgba(255,255,255,0.85);flex:none"></span><span>${def.text}</span>`;
+        iotPinLayer.appendChild(el);
+
+        const pin = { def, info, world, el, line, dot, labelEl: el.children[1], textNow: def.text, cx: undefined, cy: undefined, hover: false, width: 0, lastSlot: 0, visible: true };
+        el.addEventListener('mouseenter', () => { pin.hover = true; });
+        el.addEventListener('mouseleave', () => { pin.hover = false; });
+        el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            showIoTPinDetail(selectedPin === pin ? null : pin);
+        });
+        iotPins.push(pin);
+    });
+
+    iotPinPanel = document.createElement('div');
+    iotPinPanel.style.cssText = 'position:absolute;left:10px;bottom:38px;max-width:min(280px,calc(100% - 20px));padding:10px 12px;border-radius:12px;background:rgba(15,23,42,0.96);border:1.5px solid #38bdf8;color:#fff;font:500 11px/1.4 system-ui,sans-serif;pointer-events:auto;display:none;z-index:25;box-shadow:0 6px 20px rgba(0,0,0,0.55);';
+    iotPinLayer.appendChild(iotPinPanel);
+
+    host.appendChild(iotPinLayer);
+    setIoTPinsVisible(isLabelsVisible);
+}
+
+function setIoTPinsVisible(visible) {
+    if (iotPinLayer) iotPinLayer.style.display = visible ? 'block' : 'none';
+}
+
+function showIoTPinDetail(pin) {
+    selectedPin = pin;
+    if (!iotPinPanel) return;
+    if (!pin) {
+        iotPinPanel.style.display = 'none';
+        return;
+    }
+    iotPinPanel.style.borderColor = pin.def.colorHex;
+    iotPinPanel.style.display = 'block';
+    refreshIoTPinDetail();
+}
+
+function refreshIoTPinDetail() {
+    if (!selectedPin || !iotPinPanel) return;
+    const { def, info } = selectedPin;
+    iotPinPanel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+            <strong style="font-size:12px">${info.name}</strong>
+            <span data-close style="cursor:pointer;font-size:14px;line-height:1;padding:0 2px">✕</span>
+        </div>
+        <div style="margin-top:4px;color:#cbd5e1">${info.fungsi}</div>
+        <div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:rgba(56,189,248,0.15);color:#7dd3fc;font-weight:700">Nilai langsung: ${info.nilai()}</div>`;
+    const close = iotPinPanel.querySelector('[data-close]');
+    if (close) close.addEventListener('click', () => showIoTPinDetail(null));
+}
+
+/** Proyeksi pin ke layar: urutan tetap, slot stabil (hysteresis), posisi dihaluskan agar tidak bergetar. */
+function updatePinLayout() {
+    if (!iotPinLayer || !camera3D || !isLabelsVisible || !iotPins.length) return;
+    const container = document.getElementById('canvas-container-3d');
+    if (!container) return;
+    const W = container.clientWidth;
+    const H = container.clientHeight;
+    const cfg = KANDANG_ANIM_CONFIG.pin;
+    const narrow = W < 520;
+    const labelH = narrow ? 24 : 28;
+    const tmp = new THREE.Vector3();
+    const base = narrow ? 34 : cfg.labelOffsetPx;
+    const step = labelH + cfg.gapPx;
+    const slots = [-base, -base - step, -base - step * 2, base - 6, base - 6 + step];
+
+    const projected = [];
+    iotPins.forEach((pin) => {
+        tmp.copy(pin.world).applyMatrix4(camera3D.matrixWorldInverse);
+        const behind = tmp.z >= 0;
+        tmp.copy(pin.world).project(camera3D);
+        const sx = (tmp.x * 0.5 + 0.5) * W;
+        const sy = (-tmp.y * 0.5 + 0.5) * H;
+        const visible = !behind && sx > -10 && sx < W + 10 && sy > -10 && sy < H + 10;
+        pin.visible = visible;
+        const display = visible ? 'flex' : 'none';
+        if (pin.el.style.display !== display) {
+            pin.el.style.display = display;
+            pin.line.style.display = visible ? 'block' : 'none';
+            pin.dot.style.display = visible ? 'block' : 'none';
+            pin.cx = undefined;
+        }
+        if (!visible) return;
+
+        const text = narrow && pin.info.short ? pin.info.short : pin.def.text;
+        if (pin.textNow !== text) {
+            pin.labelEl.textContent = text;
+            pin.textNow = text;
+            pin.width = 0;
+        }
+        if (!pin.width) pin.width = pin.el.offsetWidth || 110;
+        pin.el.style.fontSize = narrow ? '10px' : '11px';
+        projected.push({ pin, sx, sy });
+    });
+
+    const placed = [];
+    projected.forEach(({ pin, sx, sy }) => {
+        const w = pin.width;
+        const tx = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, sx));
+        const clamp = (y) => Math.max(labelH / 2 + 4, Math.min(H - labelH / 2 - 4, y));
+        const clashes = (y) => placed.some((p) => Math.abs(tx - p.cx) < (w + p.w) / 2 + cfg.gapPx && Math.abs(y - p.cy) < labelH + cfg.gapPx);
+
+        let slot = pin.lastSlot;
+        let ty = clamp(sy + slots[slot]);
+        if (clashes(ty)) {
+            slot = -1;
+            for (let si = 0; si < slots.length; si++) {
+                const candidate = clamp(sy + slots[si]);
+                if (!clashes(candidate)) {
+                    slot = si;
+                    ty = candidate;
+                    break;
+                }
+            }
+            if (slot === -1) {
+                slot = 0;
+                ty = clamp(sy + slots[0]);
+            }
+            pin.lastSlot = slot;
+        }
+        placed.push({ cx: tx, cy: ty, w });
+
+        if (pin.cx === undefined) {
+            pin.cx = tx;
+            pin.cy = ty;
+        } else {
+            pin.cx += (tx - pin.cx) * 0.22;
+            pin.cy += (ty - pin.cy) * 0.22;
+            if (Math.abs(tx - pin.cx) < 0.3) pin.cx = tx;
+            if (Math.abs(ty - pin.cy) < 0.3) pin.cy = ty;
+        }
+
+        const isActive = pin.hover || selectedPin === pin;
+        const scale = isActive ? 1.1 : 1;
+        pin.el.style.transform = `translate(${Math.round(pin.cx - w / 2)}px, ${Math.round(pin.cy - labelH / 2)}px) scale(${scale})`;
+        pin.el.style.zIndex = isActive ? '5' : '1';
+        pin.el.style.background = isActive ? pin.def.colorHex : 'rgba(15,23,42,0.94)';
+        pin.el.style.color = isActive ? '#0f172a' : '#fff';
+
+        const edgeY = pin.cy < sy ? pin.cy + labelH / 2 : pin.cy - labelH / 2;
+        pin.line.setAttribute('x1', sx.toFixed(1));
+        pin.line.setAttribute('y1', sy.toFixed(1));
+        pin.line.setAttribute('x2', pin.cx.toFixed(1));
+        pin.line.setAttribute('y2', edgeY.toFixed(1));
+        pin.dot.setAttribute('cx', sx.toFixed(1));
+        pin.dot.setAttribute('cy', sy.toFixed(1));
+    });
+
+    const nowMs = performance.now();
+    if (selectedPin && nowMs - lastPinDetailRefresh > cfg.detailRefreshMs) {
+        lastPinDetailRefresh = nowMs;
+        refreshIoTPinDetail();
+    }
+}
 function buildKandang3DScene() {
     // =====================================================================
     // KOORDINAT ARSITEKTUR KANDANG:
@@ -298,17 +1095,19 @@ function buildKandang3DScene() {
     // Kipas Blower: Gantung dari plafon di Y=3.0, berputar di atas lorong
     // =====================================================================
 
-    // A. Lantai Kandang Semen
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9, metalness: 0.05 });
+    // A. Lantai beton krem kasar + garis drainase tengah
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0xd4c9a8, roughness: 0.95, metalness: 0.02 });
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(22, 9.5), floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene3D.add(floor);
 
-    // Grid Lorong Lantai
-    const grid = new THREE.GridHelper(22, 22, 0x475569, 0x334155);
-    grid.position.y = 0.01;
-    scene3D.add(grid);
+    const drainLine = new THREE.Mesh(
+        new THREE.BoxGeometry(22, 0.02, 0.12),
+        new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.9 })
+    );
+    drainLine.position.y = 0.011;
+    scene3D.add(drainLine);
 
     // B. Dinding Kandang:
     // Sisi Belakang (Z = -3.6): Tembok batako rendah (0.45m)
@@ -340,10 +1139,13 @@ function buildKandang3DScene() {
     // Tepi Luar (Eave):   Y = 3.60, Z = ±3.7 (overhang 20cm dari kolom)
     // Panjang Atap:      X = -10.2 s/d +10.2
     const roofMat = new THREE.MeshStandardMaterial({
-        color: 0x475569, // Abu metalik seng galvalum
-        metalness: 0.82,
-        roughness: 0.35,
-        side: THREE.DoubleSide
+        color: 0x8d9ea8, // Abu metalik seng galvalum
+        metalness: 0.88,
+        roughness: 0.28,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.38,
+        depthWrite: false
     });
 
     // Helper untuk membuat bidang atap miring presisi matematis via BufferGeometry
@@ -437,93 +1239,133 @@ function buildKandang3DScene() {
         scene3D.add(nR);
     }
 
-    // F. Rak Kandang Baterai 2 TINGKAT — Sisi Kiri & Kanan Lorong
-    const cageMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.45, roughness: 0.55 });
-    const troughMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.3, metalness: 0.1 }); // Talang KUNING cerah
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x92400e, metalness: 0.55 }); // Rangka cokelat
+    // F. Rak Kandang Baterai 2 TINGKAT — parameterized grid (kiri & kanan lorong)
+    const CAGE_CONFIG = {
+        sides: [-1, 1],            // -1 = Z negatif (kiri), +1 = Z positif (kanan)
+        columnXs: [-8, -6, -4, -2, 0, 2, 4, 6, 8],
+        tierCenterYs: [0.45, 1.35],
+        cageSize: { w: 1.75, h: 0.7, d: 1.4 },
+        cageCenterZ: 2.1,
+        troughZ: 1.32,
+        chickensPerCage: 3
+    };
+
+    const cageMat = new THREE.MeshStandardMaterial({
+        color: 0xbdc8d2, metalness: 0.85, roughness: 0.25, transparent: true, opacity: 0.14, depthWrite: false
+    });
+    const cageWireMat = new THREE.MeshStandardMaterial({ color: 0xc8d4dc, metalness: 0.9, roughness: 0.3, wireframe: true });
+    const troughMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.45, metalness: 0.05 }); // Talang KUNING cerah
+    const aFrameMat = new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0.82, roughness: 0.22 });
+    const eggBeltMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.7 });
+    const eggMat = new THREE.MeshStandardMaterial({ color: 0x8d6450, roughness: 0.7 });
+    const drinkerMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+    const manureMat = new THREE.MeshStandardMaterial({ color: 0x3f2d20, roughness: 0.95 });
 
     chickensList = [];
+    eggLanes = [];
+    activeEggs = [];
+    eggPool = [];
+    iotPinDefs = [];
 
-    // Kawat jaring tampilan kandang (tipis melintang per sel)
-    const wireMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.6, roughness: 0.4, wireframe: false });
+    /** Satu modul sangkar (kandang, talang, sabuk telur, ayam) pada sisi, tingkat, dan kolom tertentu. */
+    function createCageModule(side, tierIndex, x) {
+        const { w, h, d } = CAGE_CONFIG.cageSize;
+        const cy = CAGE_CONFIG.tierCenterYs[tierIndex];
+        const floorY = cy - h / 2;
+        const module = new THREE.Group();
 
-    for (let x = -8; x <= 8; x += 2.0) {
-        // ---- SISI KIRI (Z negatif) ----
-        // Tiang vertikal rangka kiri
-        for (const tz of [-1.3, -2.85]) {
-            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.1, 0.05), frameMat);
-            leg.position.set(x, 1.05, tz);
-            scene3D.add(leg);
+        const cage = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), cageMat);
+        cage.position.set(x, cy, side * CAGE_CONFIG.cageCenterZ);
+        module.add(cage);
+
+        const cageWire = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 10, 3, 7), cageWireMat);
+        cageWire.position.copy(cage.position);
+        module.add(cageWire);
+
+        // Talang pakan kuning
+        const trough = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
+        trough.position.set(x, floorY - 0.0, side * CAGE_CONFIG.troughZ);
+        trough.receiveShadow = true;
+        module.add(trough);
+
+        // Ayam: 3 per kompartemen, tersebar rapi agar tidak saling menembus
+        const slotXs = [-0.55, 0, 0.55];
+        for (let c = 0; c < CAGE_CONFIG.chickensPerCage; c++) {
+            const chicken = createStylizedChicken(c);
+            chicken.position.set(
+                x + slotXs[c] + (Math.random() - 0.5) * 0.06,
+                floorY + 0.02,
+                side * (1.85 + (c % 2) * 0.35)
+            );
+            chicken.rotation.y = (side === -1 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.4;
+            module.add(chicken);
+            chickensList.push(chicken);
+            Object.assign(chicken.userData, {
+                side,
+                tierIdx: tierIndex,
+                homeX: chicken.position.x,
+                homeY: chicken.position.y,
+                homeZ: chicken.position.z
+            });
         }
-        // Kandang Tingkat 1 kiri (bawah)
-        const cL1 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 1.4), cageMat);
-        cL1.position.set(x, 0.45, -2.1);
-        cL1.castShadow = true;
-        scene3D.add(cL1);
-        // Talang kuning T1 kiri
-        const tL1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
-        tL1.position.set(x, 0.35, -1.32);
-        scene3D.add(tL1);
-        // Ayam T1 kiri
-        const ckL1 = createStylizedChicken();
-        ckL1.position.set(x, 0.35, -1.65);
-        ckL1.rotation.y = 0; // Menghadap lorong
-        scene3D.add(ckL1);
-        chickensList.push(ckL1);
+        return module;
+    }
 
-        // Kandang Tingkat 2 kiri (atas)
-        const cL2 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 1.4), cageMat);
-        cL2.position.set(x, 1.35, -2.1);
-        cL2.castShadow = true;
-        scene3D.add(cL2);
-        // Talang kuning T2 kiri
-        const tL2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
-        tL2.position.set(x, 1.25, -1.32);
-        scene3D.add(tL2);
-        // Ayam T2 kiri
-        const ckL2 = createStylizedChicken();
-        ckL2.position.set(x, 1.25, -1.65);
-        ckL2.rotation.y = 0;
-        scene3D.add(ckL2);
-        chickensList.push(ckL2);
-
-        // ---- SISI KANAN (Z positif) ----
-        for (const tz of [1.3, 2.85]) {
-            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.1, 0.05), frameMat);
+    /** Rangka A galvanis: 2 tiang, palang atas, dan penguat diagonal per portal. */
+    function createAFrame(side, x) {
+        const frame = new THREE.Group();
+        const zNear = side * 1.3;
+        const zFar = side * 2.85;
+        [zNear, zFar].forEach((tz) => {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.1, 0.05), aFrameMat);
             leg.position.set(x, 1.05, tz);
-            scene3D.add(leg);
-        }
-        // Kandang Tingkat 1 kanan
-        const cR1 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 1.4), cageMat);
-        cR1.position.set(x, 0.45, 2.1);
-        cR1.castShadow = true;
-        scene3D.add(cR1);
-        // Talang kuning T1 kanan
-        const tR1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
-        tR1.position.set(x, 0.35, 1.32);
-        scene3D.add(tR1);
-        // Ayam T1 kanan
-        const ckR1 = createStylizedChicken();
-        ckR1.position.set(x, 0.35, 1.65);
-        ckR1.rotation.y = Math.PI;
-        scene3D.add(ckR1);
-        chickensList.push(ckR1);
+            leg.castShadow = true;
+            frame.add(leg);
+        });
+        const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, Math.abs(zFar - zNear)), aFrameMat);
+        topBar.position.set(x, 2.05, (zNear + zFar) / 2);
+        frame.add(topBar);
 
-        // Kandang Tingkat 2 kanan
-        const cR2 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 1.4), cageMat);
-        cR2.position.set(x, 1.35, 2.1);
-        cR2.castShadow = true;
-        scene3D.add(cR2);
-        // Talang kuning T2 kanan
-        const tR2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
-        tR2.position.set(x, 1.25, 1.32);
-        scene3D.add(tR2);
-        // Ayam T2 kanan
-        const ckR2 = createStylizedChicken();
-        ckR2.position.set(x, 1.25, 1.65);
-        ckR2.rotation.y = Math.PI;
-        scene3D.add(ckR2);
-        chickensList.push(ckR2);
+        const dz = zFar - zNear;
+        const dy = 1.9;
+        const brace = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, Math.hypot(dz, dy)), aFrameMat);
+        brace.position.set(x, 1.05, (zNear + zFar) / 2);
+        brace.rotation.x = -Math.atan2(dy, dz);
+        frame.add(brace);
+        return frame;
+    }
+
+    CAGE_CONFIG.sides.forEach((side) => {
+        CAGE_CONFIG.columnXs.forEach((x) => {
+            CAGE_CONFIG.tierCenterYs.forEach((_, tierIndex) => {
+                scene3D.add(createCageModule(side, tierIndex, x));
+            });
+        });
+        for (let fx = -9; fx <= 9; fx += 2) {
+            scene3D.add(createAFrame(side, fx));
+        }
+        // Jalur nipple drinker & sabuk kotoran sepanjang deretan, per tingkat
+        CAGE_CONFIG.tierCenterYs.forEach((cy, tierIdx) => {
+            const floorY = cy - CAGE_CONFIG.cageSize.h / 2;
+            const drinker = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 18), drinkerMat);
+            drinker.rotation.z = Math.PI / 2;
+            drinker.position.set(0, floorY + 0.4, side * 2.55);
+            scene3D.add(drinker);
+
+            const manureBelt = new THREE.Mesh(new THREE.BoxGeometry(18, 0.012, 1.3), manureMat);
+            manureBelt.position.set(0, floorY - 0.03, side * CAGE_CONFIG.cageCenterZ);
+            scene3D.add(manureBelt);
+            createEggLane(side, tierIdx, floorY);
+        });
+    });
+
+    // Lampu LED plafon (visual) tiap 3m
+    const bulbGeo = new THREE.SphereGeometry(0.055, 8, 6);
+    const bulbMat = new THREE.MeshStandardMaterial({ color: 0xfff9e0, emissive: 0xffe066, emissiveIntensity: 1.2 });
+    for (let bx = -9; bx <= 9; bx += 3) {
+        const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+        bulb.position.set(bx, 3.45, 0);
+        scene3D.add(bulb);
     }
 
     // G. Rel Suspensi Kereta Pakan (2 rel paralel di Y=2.6, Z=±0.4)
@@ -580,39 +1422,8 @@ function buildKandang3DScene() {
     iotLabelsGroup = new THREE.Group();
 
     // Helper membuat 3D Badge Sprite Label Melayang
-    function createBadgeSprite(text, colorHex = '#38bdf8', icon = '⚙️') {
-        const canvas = document.createElement('canvas');
-        canvas.width = 300;
-        canvas.height = 76;
-        const ctx = canvas.getContext('2d');
-        
-        // Background pill rounded
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-        if (ctx.roundRect) {
-            ctx.roundRect(4, 4, 292, 68, 14);
-        } else {
-            ctx.rect(4, 4, 292, 68);
-        }
-        ctx.fill();
-        
-        // Border berwarna
-        ctx.lineWidth = 3.5;
-        ctx.strokeStyle = colorHex;
-        ctx.stroke();
-
-        // Teks label
-        ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`${icon} ${text}`, 150, 38);
-
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.needsUpdate = true;
-        const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
-        const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(1.85, 0.46, 1);
-        return sprite;
+    function createBadgeSprite(text, colorHex = '#38bdf8', icon = '') {
+        return registerIoTPinAnchor(text, colorHex, icon);
     }
 
     // 1. PANEL KONTROL MASTER IOT (ESP32 + 4-CHANNEL RELAY IP65 BOX)
@@ -623,7 +1434,7 @@ function buildKandang3DScene() {
     // Kotak Panel Putih Industri
     const boxEnclosure = new THREE.Mesh(
         new THREE.BoxGeometry(0.36, 0.50, 0.22),
-        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 })
+        new THREE.MeshStandardMaterial({ color: 0x78909c, roughness: 0.4, metalness: 0.2 })
     );
     boxGroup.add(boxEnclosure);
 
@@ -667,7 +1478,7 @@ function buildKandang3DScene() {
 
     scene3D.add(boxGroup);
 
-    const lblPanel = createBadgeSprite('Panel ESP32 & Relay', '#06b6d4', '⚡');
+    const lblPanel = createBadgeSprite('Panel ESP32 & Relay', '#06b6d4', '');
     lblPanel.position.set(-8.5, 2.05, -1.05);
     iotLabelsGroup.add(lblPanel);
 
@@ -682,13 +1493,13 @@ function buildKandang3DScene() {
 
     // Heatsink Aluminium Merah khas L298N
     const heatsink = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.10, 0.14),
-        new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.6 }));
+        new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.7, roughness: 0.4 }));
     heatsink.position.y = 0.06;
     l298Group.add(heatsink);
 
     scene3D.add(l298Group);
 
-    const lblMotor = createBadgeSprite('Motor & Driver L298N', '#f59e0b', '⚙️');
+    const lblMotor = createBadgeSprite('Motor & Driver L298N', '#f59e0b', '');
     lblMotor.position.set(-8.5, 2.95, 0);
     iotLabelsGroup.add(lblMotor);
 
@@ -699,7 +1510,7 @@ function buildKandang3DScene() {
     limA.position.set(-7.2, 2.65, 0.44);
     scene3D.add(limA);
 
-    const lblLimA = createBadgeSprite('Limit Switch A', '#ef4444', '🛑');
+    const lblLimA = createBadgeSprite('Limit Switch A', '#ef4444', '');
     lblLimA.position.set(-7.2, 2.98, 0.44);
     iotLabelsGroup.add(lblLimA);
 
@@ -709,7 +1520,7 @@ function buildKandang3DScene() {
     limB.position.set(7.2, 2.65, 0.44);
     scene3D.add(limB);
 
-    const lblLimB = createBadgeSprite('Limit Switch B', '#ef4444', '🛑');
+    const lblLimB = createBadgeSprite('Limit Switch B', '#ef4444', '');
     lblLimB.position.set(7.2, 2.98, 0.44);
     iotLabelsGroup.add(lblLimB);
 
@@ -749,7 +1560,7 @@ function buildKandang3DScene() {
     riserPipe.position.set(-8.8, 2.58, -3.48);
     scene3D.add(riserPipe);
 
-    const lblPump = createBadgeSprite('Tandon & Pompa Sprinkler', '#38bdf8', '💧');
+    const lblPump = createBadgeSprite('Tandon & Pompa Sprinkler', '#38bdf8', '');
     lblPump.position.set(-8.8, 1.35, -4.0);
     iotLabelsGroup.add(lblPump);
 
@@ -762,7 +1573,7 @@ function buildKandang3DScene() {
     dht22.position.set(0, 1.35, -1.33);
     scene3D.add(dht22);
 
-    const lblDHT = createBadgeSprite('Sensor DHT22 Suhu', '#10b981', '🌡️');
+    const lblDHT = createBadgeSprite('Sensor DHT22 Suhu', '#10b981', '');
     lblDHT.position.set(0, 1.72, -1.33);
     iotLabelsGroup.add(lblDHT);
 
@@ -778,22 +1589,23 @@ function buildKandang3DScene() {
     mq137Group.add(mqMesh);
     scene3D.add(mq137Group);
 
-    const lblMQ = createBadgeSprite('Sensor Amonia MQ-137', '#8b5cf6', '💨');
+    const lblMQ = createBadgeSprite('Sensor Amonia MQ-137', '#8b5cf6', '');
     lblMQ.position.set(0, 0.62, -1.33);
     iotLabelsGroup.add(lblMQ);
 
     // 6. Label Kipas Blower Sirkulasi
-    const lblFan = createBadgeSprite('Blower Sirkulasi 12V', '#38bdf8', '🌀');
+    const lblFan = createBadgeSprite('Blower Sirkulasi 12V', '#38bdf8', '');
     lblFan.position.set(0, 3.65, 0);
     iotLabelsGroup.add(lblFan);
 
     scene3D.add(iotLabelsGroup);
+    createIoTPins();
 
     // H. Kereta Pakan (Travelling Hopper) — Tangga Vertikal + Corong Biru
     feederCart3D = new THREE.Group();
 
     const ladderMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.7, roughness: 0.3 });
-    const blueHopperMat = new THREE.MeshStandardMaterial({ color: 0x0369a1, metalness: 0.15, roughness: 0.35 });
+    const blueHopperMat = new THREE.MeshStandardMaterial({ color: 0x1565c0, metalness: 0.1, roughness: 0.38 });
     const feedInsideMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.95 });
 
     function createBlueHopperUnit() {
@@ -899,6 +1711,7 @@ function buildKandang3DScene() {
 
     // I. Kipas Blower — Gantung di Plafon Berseri per ~4.5m di Sepanjang Lorong
     fanBladesList = [];
+    fanGroups = [];
 
     function createCeilingFanUnit(xPos, yPos, zPos, isExhaust = false) {
         const fg = new THREE.Group();
@@ -916,13 +1729,13 @@ function buildKandang3DScene() {
         fg.add(frame);
 
         // Batang strut gantung ke balok tarik kuda-kuda (Y = 3.60)
-        const strutLen = 3.60 - (yPos + R);
-        if (strutLen > 0.05) {
+        const strutLen = 3.60 - (yPos + R + 0.045);
+        if (strutLen > 0.03) {
             const strut = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.018, 0.018, strutLen),
                 steelMat
             );
-            strut.position.set(0, R + strutLen / 2, 0);
+            strut.position.set(0, R + 0.045 + strutLen / 2, 0);
             fg.add(strut);
         }
 
@@ -944,14 +1757,18 @@ function buildKandang3DScene() {
 
         scene3D.add(fg);
         fanBladesList.push(blades);
+        fanGroups.push(fg);
         return fg;
     }
 
     // 3 unit kipas sirkulasi plafon berjarak 4.5m sepanjang lorong (ketinggian Y = 3.0m)
-    createCeilingFanUnit(-4.5, 3.0, 0);       // Zona 1 (Pangkal)
-    createCeilingFanUnit( 0.0, 3.0, 0);       // Zona 2 (Tengah)
-    createCeilingFanUnit( 4.5, 3.0, 0);       // Zona 3 (Ujung)
-    createCeilingFanUnit( 9.0, 3.1, 0, true); // Kipas Blower Ujung Portal (Exhaust)
+    // Kipas berjarak seragam 4.5 m, di antara penggantung rel (kelipatan 3 m), tinggi 3.2 m
+    createCeilingFanUnit(-6.75, 3.2, 0);
+    createCeilingFanUnit(-2.25, 3.2, 0);
+    createCeilingFanUnit( 2.25, 3.2, 0);
+    createCeilingFanUnit( 6.75, 3.2, 0);
+    createCeilingFanUnit( 9.6, 3.2, 0, true); // Exhaust ujung portal
+    fixFanRendering();
 
     // J. Partikel Air Sprinkler MURNI DI LUAR ATAP (Puncak Y=4.88 meluncur ke Eaves Y=3.60)
     const particleCount = 300;
@@ -1079,13 +1896,12 @@ function animateThreeJS() {
         setFeedParticlesVisible(false);
     }
 
-    // 2. Animasi Ayam Mematuk Pakan (Bobbing Animation)
-    chickenBobTime += 0.05;
-    for (let i = 0; i < chickensList.length; i++) {
-        const chicken = chickensList[i];
-        // Gerakan paruh mematuk talang pakan
-        chicken.rotation.x = Math.sin(chickenBobTime + i) * 0.12;
-    }
+    // 2. State machine ayam (makan / bertelur) & fisika telur
+    const frameNowMs = performance.now();
+    const frameDt = lastFrameTimeMs ? Math.min((frameNowMs - lastFrameTimeMs) / 1000, 0.05) : 0.016;
+    lastFrameTimeMs = frameNowMs;
+    updateChickenStates(frameDt, frameNowMs);
+    updateEggRoll(frameDt);
 
     // 3. Animasi Seluruh Kipas Blower Atas Berputar Bersama
     if (isFanSpinning3D && fanBladesList.length > 0) {
@@ -1129,6 +1945,7 @@ function animateThreeJS() {
     if (renderer3D && scene3D && camera3D) {
         renderer3D.render(scene3D, camera3D);
     }
+    updatePinLayout();
 }
 
 function onWindowResize3D() {
@@ -1204,6 +2021,7 @@ function toggleLabelsIoT3D() {
     if (!iotLabelsGroup) return;
     isLabelsVisible = !isLabelsVisible;
     iotLabelsGroup.visible = isLabelsVisible;
+    setIoTPinsVisible(isLabelsVisible);
     const btn = document.getElementById('btn-labels-iot');
     if (btn) {
         btn.className = isLabelsVisible
@@ -1355,9 +2173,7 @@ window.syncKandang3DState = function(state) {
     }
 
     if (state.lampu !== undefined) {
-        const intensity = state.lampu ? 1.6 : 0.35;
-        if (coopLight1) coopLight1.intensity = intensity;
-        if (coopLight2) coopLight2.intensity = intensity;
+                ceilingLights.forEach((pl) => { pl.intensity = state.lampu ? 1.2 : 0.25; });
     }
 
     // Hanya override kereta pakan jika pengguna TIDAK sedang mengaktifkan gerak simulasi manual
