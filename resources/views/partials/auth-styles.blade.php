@@ -155,6 +155,12 @@
             0 12px 24px -12px rgba(8, 47, 36, .14),
             0 40px 80px -36px rgba(8, 47, 36, .32);
     }
+    .au-card:hover {
+        box-shadow:
+            0 4px 6px -1px rgba(8, 47, 36, .04),
+            0 24px 54px -12px rgba(8, 47, 36, .20),
+            0 0 0 1px rgba(8, 123, 80, .08);
+    }
     .au-card h2 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; color: var(--au-forest); }
     .au-card .au-sub { margin: 8px 0 24px; font-size: 14.5px; line-height: 1.55; color: var(--au-muted); }
 

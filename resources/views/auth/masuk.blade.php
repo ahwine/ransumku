@@ -135,13 +135,7 @@
         <section class="au-brand">
             <x-auth.logo class="lg-item lg-logo-item" style="--d: .05s" />
             <h1 class="au-headline lg-item" style="--d: .2s">Racik Pakan Lebih Cerdas. <span>Kelola Kandang Lebih Terarah.</span></h1>
-            <p class="au-desc lg-item" style="--d: .32s">RansumKu membantu peternak ayam petelur meracik ransum dengan biaya paling hemat sekaligus memantau suhu, kelembapan, dan produksi kandang dalam satu tempat.</p>
-            <ul class="au-chips lg-item" style="--d: .42s">
-                <li><span class="material-symbols-outlined au-ico-chip" aria-hidden="true">calculate</span>Optimasi ransum</li>
-                <li><span class="material-symbols-outlined au-ico-chip" aria-hidden="true">sensors</span>Pemantauan kandang IoT</li>
-                <li><span class="material-symbols-outlined au-ico-chip" aria-hidden="true">psychology</span>Asisten AI</li>
-            </ul>
-            <p class="au-trust lg-item" style="--d: .5s"><span class="material-symbols-outlined icon-fill" aria-hidden="true">verified</span>Dirancang untuk peternak ayam petelur skala kecil</p>
+            <p class="au-desc lg-item" style="--d: .32s">Sistem manajemen formulasi pakan presisi dan pemantauan peternakan ayam petelur modern.</p>
         </section>
 
         <div class="au-card-col">

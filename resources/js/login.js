@@ -164,10 +164,10 @@ function setupForm() {
 /* ----------------------------------------------------------------------------
  * Intro 3D
  * ------------------------------------------------------------------------- */
-const EGG_H = 0.3;
-const EGG_R = 0.235;
-const EGG_SPLIT_Y = 0.06;
-const EGG_X = -1.2;
+const EGG_H = 0.21;
+const EGG_R = 0.165;
+const EGG_SPLIT_Y = 0.042;
+const EGG_X = -1.10;
 
 function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
     const isMobile = window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches;
@@ -1066,7 +1066,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
     /* Retakan: tabung tipis dengan draw-range progresif */
     const crackMat = track(new THREE.MeshBasicMaterial({ color: 0x4a3b2a }));
     const cracks = [];
-    const addCrack = (points, radius = 0.0045) => {
+    const addCrack = (points, radius = 0.0038) => {
         const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
         const tubular = 140;
         const radial = 5;
@@ -1081,10 +1081,10 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         for (let i = 0; i <= N; i++) {
             const phi = (i / N) * Math.PI * 2;
             const y = EGG_SPLIT_Y + jag(phi);
-            const r = eggRadiusAtY(y) * 1.012;
+            const r = eggRadiusAtY(y) * 1.014;
             ring.push(new THREE.Vector3(r * Math.sin(phi), y, r * Math.cos(phi)));
         }
-        addCrack(ring, 0.0048);
+        addCrack(ring, 0.0042);
 
         const rnd = mulberry32(21);
         const branch = (phi0, thFrom, thTo, steps) => {
@@ -1094,10 +1094,10 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
                 const th = lerp(thFrom, thTo, j / steps);
                 phi += (rnd() - 0.5) * 0.14;
                 const y = -EGG_H * Math.cos(th);
-                const r = eggRadiusAtY(y) * 1.012;
+                const r = eggRadiusAtY(y) * 1.014;
                 pts.push(new THREE.Vector3(r * Math.sin(phi), y, r * Math.cos(phi)));
             }
-            addCrack(pts, 0.0042);
+            addCrack(pts, 0.0036);
         };
         branch(0.7, thetaSplit, Math.PI * 0.82, 16);
         branch(2.6, thetaSplit, Math.PI * 0.78, 16);
@@ -1108,8 +1108,8 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
 
     /* Cahaya dalam telur */
     const orbMat = track(new THREE.MeshBasicMaterial({ color: 0xbdf77a, transparent: true, opacity: 0 }));
-    const orb = new THREE.Mesh(track(sphere(0.17, 24, 16)), orbMat);
-    orb.position.set(0, EGG_SPLIT_Y - 0.08, 0);
+    const orb = new THREE.Mesh(track(sphere(0.12, 24, 16)), orbMat);
+    orb.position.set(0, EGG_SPLIT_Y - 0.05, 0);
     egg.add(orb);
 
     const haloTex = radialTexture([
@@ -1119,7 +1119,8 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
     ]);
     const haloMat = track(new THREE.SpriteMaterial({ map: haloTex, transparent: true, opacity: 0, depthWrite: false, depthTest: false }));
     const halo = new THREE.Sprite(haloMat);
-    halo.position.set(0, EGG_SPLIT_Y + 0.05, 0.1);
+    halo.position.set(0, EGG_SPLIT_Y + 0.03, 0.1);
+    halo.scale.set(0.68, 0.68, 1);
     halo.renderOrder = 10;
     egg.add(halo);
 
@@ -1128,7 +1129,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
     const shardMat = shellMat;
     const shards = [];
     for (let i = 0; i < 8; i++) {
-        const mesh = mk(new THREE.TetrahedronGeometry(0.03 + shardRnd() * 0.025), shardMat);
+        const mesh = mk(new THREE.TetrahedronGeometry(0.022 + shardRnd() * 0.018), shardMat);
         const ang = shardRnd() * Math.PI * 2;
         mesh.visible = false;
         scene.add(mesh);
@@ -1163,7 +1164,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
     const pGeo = track(new THREE.BufferGeometry());
     pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
     pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
-    const pMat = track(new THREE.PointsMaterial({ size: 0.085, map: dotTex, vertexColors: true, transparent: true, opacity: 0, depthWrite: false }));
+    const pMat = track(new THREE.PointsMaterial({ size: 0.072, map: dotTex, vertexColors: true, transparent: true, opacity: 0, depthWrite: false }));
     const particles = new THREE.Points(pGeo, pMat);
     particles.frustumCulled = false;
     particles.visible = false;
@@ -1288,7 +1289,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         feedAo.material.opacity = 0.85 * fadeOut;
 
         const eatProgress = clamp01((t - TL.peck0) / (TL.peck1 - TL.peck0));
-        const moundH = lerp(1.0, 0.38, smooth(eatProgress));
+        const moundH = lerp(1.0, 0.45, smooth(eatProgress));
         feedMound.scale.y = 0.26 * moundH;
         feedMound.position.y = 0.024 * (0.6 + 0.4 * moundH);
 
@@ -1319,7 +1320,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         const offLeft = startX - 1.4;
         const spotX = -3.15;
         const feedPanX = FEED_X;
-        const eatX = feedPanX - 0.55;
+        const eatX = feedPanX - 0.48;
         const offRight = Math.max(3.8, -startX + 1.2);
 
         let x;
@@ -1394,8 +1395,8 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
                 const bounce = Math.cos(phase * 2) * lerp(0.045, 0.075, runW) * movingW;
                 const breathY = Math.sin(t * 2.3) * 0.014 * idle;
 
-                const peckDropY = 0.22 * peck;
-                const peckForwardZ = 0.18 * peck;
+                const peckDropY = 0.50 * peck;
+                const peckForwardZ = 0.35 * peck;
                 const squatY = 0.24 * layW + 0.08 * effort;
 
                 rigBones.root.position.set(
@@ -1405,7 +1406,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
                 );
 
                 rigBones.spine.rotation.set(
-                    0.16 * runW + 0.44 * peck + 0.04 * walkW + 0.14 * spotEnv - 0.12 * layW - 0.06 * effort,
+                    0.16 * runW + 0.72 * peck + 0.04 * walkW + 0.14 * spotEnv - 0.12 * layW - 0.06 * effort,
                     Math.sin(phase) * (0.03 * walkW + 0.06 * runW),
                     Math.sin(phase) * 0.04 * movingW + Math.sin(t * 20) * 0.015 * effort,
                 );
@@ -1418,17 +1419,17 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
                 const bob = Math.sin(phase * 2 - 0.45) * lerp(0.12, 0.18, runW) * movingW;
                 rigBones.neck.position.set(
                     0,
-                    0.70 - 0.18 * peck + 0.06 * spotEnv,
-                    0.95 + 0.25 * peck + 0.18 * spotEnv + 0.05 * runW,
+                    0.70 - 0.40 * peck + 0.06 * spotEnv,
+                    0.95 + 0.36 * peck + 0.18 * spotEnv + 0.05 * runW,
                 );
                 rigBones.neck.rotation.set(
-                    bob + 0.92 * peck + 0.24 * spotEnv - 0.08 * layW,
+                    bob + 1.25 * peck + 0.24 * spotEnv - 0.08 * layW,
                     -0.22 * spotEnv,
                     0,
                 );
 
                 rigBones.head.rotation.set(
-                    -bob * 0.85 + 0.85 * peck + 0.16 * spotEnv + 0.12 * layW,
+                    -bob * 0.85 + 1.02 * peck + 0.16 * spotEnv + 0.12 * layW,
                     -0.25 * spotEnv + Math.sin(t * 2.2) * 0.24 * layW * (1 - effort),
                     0.18 * spotEnv,
                 );
@@ -1469,9 +1470,9 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
             leg.foot.rotation.z = -(leg.upper.rotation.z + leg.lower.rotation.z);
         });
 
-        torso.position.y = Math.cos(phase * 2) * 0.02 * movingW + Math.sin(t * 2.2) * 0.006 - 0.16 * peck - 0.15 * layW;
+        torso.position.y = Math.cos(phase * 2) * 0.02 * movingW + Math.sin(t * 2.2) * 0.006 - 0.38 * peck - 0.15 * layW;
         torso.rotation.z = -0.12 * runW - 0.08 * layW;
-        torso.rotation.x = 0.42 * peck + 0.14 * spotEnv + Math.sin(phase) * 0.04 * movingW;
+        torso.rotation.x = 0.58 * peck + 0.14 * spotEnv + Math.sin(phase) * 0.04 * movingW;
         torso.scale.set(1 + 0.03 * layW, 1 + 0.02 * layW, 1 + 0.03 * layW);
         tail.rotation.z = 0.55 + 0.38 * layW + 0.22 * peck + Math.sin(t * 3.2) * 0.05;
 
@@ -1481,11 +1482,11 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
             w.rotation.x = side * (0.15 + 0.55 * runW * Math.abs(Math.sin(t * 24)));
         });
 
-        neck.position.x = 0.4 + 0.05 * Math.sin(phase + 0.6) * movingW + 0.14 * peck + 0.08 * spotEnv;
-        neck.position.y = 0.2 - 0.14 * peck;
-        neck.rotation.z = 0.04 * Math.sin(t * 1.7) - 0.92 * peck - 0.24 * spotEnv - 0.08 * layW;
+        neck.position.x = 0.4 + 0.05 * Math.sin(phase + 0.6) * movingW + 0.32 * peck + 0.08 * spotEnv;
+        neck.position.y = 0.2 - 0.38 * peck;
+        neck.rotation.z = 0.04 * Math.sin(t * 1.7) - 1.28 * peck - 0.24 * spotEnv - 0.08 * layW;
         head.rotation.y = -0.28 * spotEnv;
-        head.rotation.z = 0.22 * spotEnv + Math.sin(t * 2.1) * 0.05 * idle - 0.85 * peck + 0.12 * layW;
+        head.rotation.z = 0.22 * spotEnv + Math.sin(t * 2.1) * 0.05 * idle - 1.15 * peck + 0.12 * layW;
 
         const blink = t % 2.6 < 0.12;
         lids.forEach((lid) => {
@@ -1516,23 +1517,23 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         const fall = u * u;
         const s = 0.22 + 0.78 * smooth(u);
         const b = Math.max(0, t - TL.eggLanded);
-        let y = lerp(0.50, EGG_H, fall);
-        y += 0.06 * Math.abs(Math.sin(b * 9)) * Math.exp(-b * 5);
-        let rz = 0.2 * Math.exp(-b * 3.2) * Math.sin(b * 11);
+        let y = lerp(0.38, EGG_H, fall);
+        y += 0.045 * Math.abs(Math.sin(b * 9)) * Math.exp(-b * 5);
+        let rz = 0.18 * Math.exp(-b * 3.2) * Math.sin(b * 11);
 
-        const ventX = -1.08;
-        const shakeAmp = 0.045 * smooth((t - TL.shake0) / 0.5) * (t < TL.burst0 ? 1 : 0) * (0.65 + 0.35 * Math.sin(t * 8));
+        const ventX = -0.98;
+        const shakeAmp = 0.042 * smooth((t - TL.shake0) / 0.5) * (t < TL.burst0 ? 1 : 0) * (0.65 + 0.35 * Math.sin(t * 8));
         const rx = Math.sin(t * 47 + 1) * shakeAmp * 0.6;
         rz += Math.sin(t * 52) * shakeAmp;
 
-        const eggX = lerp(ventX, EGG_X, smooth(u)) + Math.sin(t * 61) * shakeAmp * 0.12;
+        const eggX = lerp(ventX, EGG_X, smooth(u)) + Math.sin(t * 61) * shakeAmp * 0.1;
         egg.position.set(eggX, y, 0);
         egg.scale.setScalar(s);
         egg.rotation.set(rx, 0, rz);
 
-        const lift = clamp01((y - EGG_H) / 0.4);
+        const lift = clamp01((y - EGG_H) / 0.3);
         eggAo.position.x = egg.position.x;
-        eggAo.scale.set(0.75 * s, 0.6 * s, 1);
+        eggAo.scale.set(0.52 * s, 0.42 * s, 1);
         eggAo.material.opacity = 0.9 * (1 - lift) * smooth(u * 1.5);
 
         /* Retakan & cahaya */
@@ -1553,7 +1554,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
 
         const lightPulse = (bt < 0 ? glow * 1.1 : 2.6 * (1 - smooth(bt / 1.4)) + 0.35) * (egg.visible ? 1 : 0);
         emeraldLight.intensity = lightPulse;
-        emeraldLight.position.set(egg.position.x, EGG_H + 0.2, 0.55);
+        emeraldLight.position.set(egg.position.x, EGG_H + 0.16, 0.48);
 
         /* Cangkang terbelah */
         petals.forEach((pt) => {
@@ -1563,20 +1564,20 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
                 return;
             }
             const open = 1.35 * easeOut(bu / 0.55) + 0.6 * smooth((bu - 0.4) / 0.6);
-            const out = 0.55 * easeOut(bu) * pt.power;
-            const raw = 0.35 + 1.6 * bu - 2.33 * bu * bu;
+            const out = 0.42 * easeOut(bu) * pt.power;
+            const raw = 0.25 + 1.2 * bu - 1.7 * bu * bu;
             const landed = Math.max(0, bu - 0.85);
-            const bounce = raw < 0.04 ? 0.05 * Math.abs(Math.sin(landed * 30)) * Math.exp(-landed * 14) : 0;
-            const yAbs = Math.max(0.04, raw) + bounce;
+            const bounce = raw < 0.03 ? 0.04 * Math.abs(Math.sin(landed * 30)) * Math.exp(-landed * 14) : 0;
+            const yAbs = Math.max(0.03, raw) + bounce;
             pt.pivot.position.set(pt.pivotPos.x + pt.dir.x * out, yAbs - EGG_H, pt.pivotPos.z + pt.dir.z * out);
             pt.pivot.quaternion.setFromAxisAngle(pt.axis, open * (0.9 + 0.1 * pt.power));
         });
 
         orbMat.opacity = bt < 0 ? 0 : smooth(bt / 0.25) * (1 - smooth((bt - 0.6) / 0.7));
-        orb.position.y = lerp(EGG_SPLIT_Y - 0.08, EGG_SPLIT_Y + 0.22, easeOut(bt / 0.9));
+        orb.position.y = lerp(EGG_SPLIT_Y - 0.05, EGG_SPLIT_Y + 0.16, easeOut(bt / 0.9));
         orb.scale.setScalar(bt < 0 ? 0.01 : 0.7 + 0.5 * easeOut(bt / 0.8));
         haloMat.opacity = bt < 0 ? 0.12 * glow : 0.9 * smooth(bt / 0.3) * (1 - smooth((bt - 0.5) / 0.9));
-        halo.scale.setScalar(bt < 0 ? 0.5 : 0.9 + 2.3 * easeOut(bt / 1.0));
+        halo.scale.setScalar(bt < 0 ? 0.5 : 0.8 + 1.8 * easeOut(bt / 1.0));
 
         /* Serpihan */
         shards.forEach((sh) => {
@@ -1630,17 +1631,17 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
             dist = lerp(7.3, 6.7, u) * fit;
             fov = 32;
         } else if (t < TL.runExit0) {
-            tx = -0.75;
+            tx = -0.68;
             camY = 1.25;
             targetY = 0.54;
             dist = 6.7 * fit;
             fov = 31;
         } else {
             const u = smooth((t - TL.runExit0) / 1.1);
-            tx = lerp(-0.75, EGG_X, u);
-            camY = lerp(1.25, 0.78, u);
-            targetY = lerp(0.54, EGG_H + 0.08, u);
-            const dolly = lerp(1.0, 0.60, u) * lerp(1, 0.9, smooth((t - 7.5) / 0.6));
+            tx = lerp(-0.68, EGG_X, u);
+            camY = lerp(1.25, 0.74, u);
+            targetY = lerp(0.54, EGG_H + 0.07, u);
+            const dolly = lerp(1.0, 0.56, u) * lerp(1, 0.92, smooth((t - 7.5) / 0.6));
             dist = 6.7 * fit * dolly;
             fov = lerp(31, 26, u);
         }
@@ -1650,7 +1651,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
             camera.updateProjectionMatrix();
         }
 
-        camera.position.set(tx + 0.65 + Math.sin(t * 0.32) * 0.15, camY, dist);
+        camera.position.set(tx + 0.65 + Math.sin(t * 0.32) * 0.12, camY, dist);
         camera.lookAt(tx, targetY, 0);
     }
 
@@ -1925,4 +1926,6 @@ if (root.classList.contains('lg-intro') && stageEl) {
     } catch (e) {
         revealForm(true);
     }
+} else {
+    revealForm(true);
 }
