@@ -52,6 +52,11 @@
                     <span class="text-emerald-300 truncate" id="status-feeder-3d">Siaga di Pangkal (Titik A)</span>
                 </div>
 
+                <div id="hud-hen-model" style="display:none" class="items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[10px] font-semibold text-slate-300" role="status" aria-live="polite">
+                    <span id="hud-hen-model-icon" class="material-symbols-outlined text-[13px] text-amber-300 animate-spin">progress_activity</span>
+                    <span id="hud-hen-model-text">Memuat model ayam 3D...</span>
+                </div>
+
                 <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[10px] font-semibold text-slate-300">
                     <span class="flex items-center gap-1" id="badge-kipas-3d">
                         <span class="material-symbols-outlined text-[13px] text-slate-400" id="icon-fan-3d">mode_fan</span>
@@ -63,7 +68,7 @@
                         <span id="text-roof-3d">Sprinkler OFF</span>
                     </span>
                     <span class="text-slate-600">&bull;</span>
-                    <span class="flex items-center gap-1" id="badge-telur-3d" title="Produksi telur (simulasi)">
+                    <span class="flex items-center gap-1" id="badge-telur-3d" title="Telur terkumpul di Bak Pengumpul ujung sabuk">
                         <span>Telur</span>
                         <span id="text-egg-3d">0</span>
                     </span>
@@ -148,8 +153,98 @@
 {{-- Script Three.js & OrbitControls dari CDN Resmi --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <script>
+// =========================================================================
+// KONFIGURASI TUNING UTAMA (MAKAN, LUBANG SANGKAR, JALUR & BAK TELUR)
+// =========================================================================
+const FEED = {
+    cageFrontZ: 1.40,         // |Z| bidang kawat depan sangkar (m); diverifikasi otomatis dari CAGE_CONFIG
+    bodyFrontClear: 0.015,    // celah aman dada ayam di belakang kawat depan (m) agar badan tidak menembus kawat
+    beakFwd: 0.222,           // jarak maju ujung paruh dari poros pusat ayam saat berdiri tegak (m)
+    peckGap: 0.04,            // jarak aman target patokan di luar kawat depan masuk ke talang kuning (m)
+    maxNeck: 0.20,            // julur leher maksimum aReach.x (m) agar leher tetap proporsional
+    peckPitchMax: 0.95,       // amplitudo sudut anggukan kepala maksimum saat mematok (rad)
+    peckHz: 2.4,              // kecepatan gerak matok sinusoidal (siklus per detik)
+    bodyTilt: 0.45,           // porsi anggukan leher yang ikut menundukkan badan di atas kaki
+    headUpFrac: 0.78,         // fraksi anggukan minimum saat kepala di dalam lubang makan (0..1) agar bebas kawat
+    blendSec: 0.25,           // durasi transisi halus feedBlend (0..1) maju/mundur sangkar (dtk)
+    lingerSec: 1.2,           // durasi sisa pakan di talang setelah kereta pakan berlalu (dtk)
+    touchLift: 0.002,         // celah mikro di atas permukaan atas talang (m) agar paruh tepat menyentuh
+    tolerance: 0.004          // toleransi galat kontak paruh terhadap permukaan atas talang (m)
+};
+
+const FEED_HOLE = {
+    width: 0.074,             // lebar celah leher bagian bawah (m) — rentang 0.07-0.08 m
+    archWidth: 0.080,         // lebar lengkung atas "keyhole" tempat kepala masuk (m) — rentang 0.07-0.08 m
+    height: 0.200,            // tinggi total bukaan makan lonjong/keyhole (m) — rentang 0.16-0.20 m
+    bottomOffset: 0.095,      // tinggi tepi bawah lubang dari dasar modul floorY (m), tepat di atas bibir talang
+    slotXs: [-0.58, 0.0, 0.58], // posisi X lokal ke-3 lubang makan per modul sangkar (1 per ayam)
+    wireRadius: 0.0028,       // jari-jari batang kawat sangkar galvanis (m)
+    frameThick: 0.006,        // tebal profil bingkai logam di sekeliling tiap lubang makan (m)
+    frameDepth: 0.014,        // kedalaman profil bingkai logam lubang makan (m)
+    vBars: 25,                // jumlah batang kawat vertikal pada panel depan per modul
+    hBarOffsets: [0.055, 0.095, 0.195, 0.295, 0.44, 0.58] // posisi Y relatif batang kawat horizontal depan (m)
+};
+
+const EGG_PATH = {
+    floorSlopeDeg: 8.5,       // kemiringan lantai kawat sangkar menuju sabuk telur (derajat, ±8-10°)
+    beltZ: 1.52,              // |Z| tengah sabuk telur di tepi depan dalam sangkar (m)
+    beltStartX: -8.90,        // koordinat X pangkal sabuk telur (m)
+    beltEndX: 8.85,           // koordinat X ujung sabuk telur sebelum masuk bak pengumpul (m)
+    beltOffsetY: 0.004,       // tinggi permukaan atas sabuk telur dari floorY modul (m), konstan sepanjang X
+    layScaleSec: 0.20,        // fase 1 (LAY): durasi skala telur membesar halus 0 -> 1 di bawah ekor (dtk)
+    gravity: 9.8,             // fase 2 (DROP): percepatan gravitasi jatuh lurus ke lantai miring (m/s^2)
+    slopeAccel: 0.85,         // fase 3 (ROLL_SLOPE): percepatan konstan menuruni lantai miring (m/s^2)
+    slopeMaxSpeed: 0.55,      // kecepatan maksimum saat menggelinding di lantai miring (m/s)
+    beltSpeed: 0.68,          // fase 4 (ON_BELT): kecepatan konstan di tengah sabuk telur menuju bak (m/s)
+    minSpacing: 0.12,         // jarak minimal antar dua telur berurutan di sabuk yang sama (m)
+    collectSec: 0.30,         // fase 5 (COLLECT): durasi animasi masuk ke bak pengumpul sebelum di-pool (dtk)
+    maxActiveEggs: 60,        // batas maksimum telur aktif di scene (recycle tertua jika terlampaui)
+    eggScale: 1.55,           // faktor skala visual telur cokelat ringan (tanpa memuat egg.glb)
+    layIntervalSec: 2.6,      // rata-rata interval antar kejadian ayam BERTELUR di seluruh kandang (dtk)
+    layDurationSec: 1.05,     // durasi kontraksi & getar halus ayam saat BERTELUR (~1 dtk)
+    layPeakFrac: 0.80         // fraksi durasi BERTELUR saat puncak kontraksi mengeluarkan telur (0..1)
+};
+
+const EGG_COLLECTOR = {
+    x: 9.12,                  // koordinat X pusat bak pengumpul di ujung +X sabuk (beltEndX + 0.27 m)
+    dropDepth: 0.068,         // kedalaman bantalan dasar bak di bawah permukaan ujung sabuk telur (m)
+    zBySide: { '-1': -1.52, '1': 1.52 }, // koordinat Z dunia bak mengikuti sabuk telur kiri & kanan
+    basketSize: { w: 0.42, h: 0.13, d: 0.34 }, // dimensi bak pengumpul (m)
+    labelText: 'BAK PENGUMPUL TELUR',
+    stations: []              // diisi otomatis dari koordinat scene saat buildKandang3DScene()
+};
+
+const HEN_IDLE = {
+    breathHz: 0.95,           // frekuensi napas mikro asinkron per ayam (siklus/dtk)
+    breathSquatM: 0.0035,     // amplitudo naik-turun badan halus saat bernapas (m)
+    breathPitchRad: 0.024,    // ayunan mikro leher mengikuti napas (rad)
+    breathTailRad: 0.032,     // goyang mikro ekor penyeimbang napas (rad)
+    headSnapSpeed: 18.0,      // kecepatan menoleh khas unggas / saccadic head-snap (1/dtk)
+    headBobKickM: 0.015,      // dorongan maju leher sesaat ketika kepala menoleh cepat (m)
+    roamXMax: 0.075,          // batas aman geser kiri-kanan di dalam sekat kompartemen (m)
+    roamAbsZMin: 1.78,        // batas maju saat IDLE agar paruh aman di belakang kawat depan (m)
+    roamAbsZMax: 2.30,        // batas mundur saat IDLE dekat pipa nipple drinker belakang (m)
+    walkSpeed: 0.16,          // kecepatan melangkah pendek di dalam sangkar (m/dtk)
+    walkBobHz: 3.6,           // irama anggukan leher & langkah kaki saat berjalan (Hz)
+    foragePitch: 0.72,        // sudut menunduk saat mematuk eksplorasi lantai kawat (rad)
+    forageHz: 2.8,            // kecepatan patokan kecil saat eksplorasi lantai (Hz)
+    drinkPitch: -0.26,        // sudut mendongak saat minum di pipa nipple belakang (rad)
+    drinkHz: 2.5,             // irama mematuk tetesan air di nipple drinker (Hz)
+    preenYaw: 0.82,           // sudut menoleh ke sayap/punggung saat merapikan bulu (rad)
+    tailWagHz: 5.5,           // frekuensi kibas ekor cepat saat merapikan bulu (Hz)
+    feederAlertDist: 3.6,     // jarak X kereta pakan yang memicu ayam antusias bersiap di depan (m)
+    strideLengthM: 0.072,     // panjang satu siklus langkah kiri-kanan di dalam sangkar (m)
+    minStepHz: 2.8,           // irama angkat cakar minimum saat berputar / menggeser langkah (Hz)
+    scratchHz: 4.3,           // irama cakar mengais lantai kawat pada fase awal FORAGE (Hz)
+    fidgetStepHz: 2.4,        // irama geser tumpuan kaki di lantai miring saat berdiri (Hz)
+    fidgetMinSec: 1.6,        // jeda minimum antar geser tumpuan cakar saat berdiri (dtk)
+    fidgetMaxSec: 3.8,        // jeda maksimum antar geser tumpuan cakar saat berdiri (dtk)
+    weightRollRad: 0.042      // ayunan miring badan mikro mengikuti perpindahan tumpuan kaki kiri-kanan (rad)
+};
+
 let scene3D, camera3D, renderer3D, controls3D;
 let feederCart3D, roofWaterParticles3D;
 let fanBladesList = [];
@@ -176,6 +271,11 @@ let isManualSimulationHot = false;
 let isManualFeederActive = false;
 let feederPauseUntil = 0;
 
+// Siklus hidup scene (disposal) & registri talang pakan
+let rafHandle3D = 0;
+let isDisposed3D = true;
+let feedTroughs = [];
+
 function initThreeJSKandang() {
     const container = document.getElementById('canvas-container-3d');
     const loader = document.getElementById('loader-3d');
@@ -185,6 +285,17 @@ function initThreeJSKandang() {
         setTimeout(initThreeJSKandang, 150);
         return;
     }
+
+    isDisposed3D = false;
+    henModel = PROC_HEN_MODEL;
+    henInst = null;
+    nextLayAt = 0;
+    decisionCursor = 0;
+    lastFrameTimeMs = 0;
+    eggStats = { total: 0, perLane: {} };
+    selectedPin = null;
+    const eggHud = document.getElementById('text-egg-3d');
+    if (eggHud) eggHud.textContent = '0';
 
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -248,6 +359,8 @@ function initThreeJSKandang() {
 
     // 6. Bangun Objek Geometri Kandang Ayam 3D
     buildKandang3DScene();
+    calibrateAllChickens();
+    loadHenModel();
 
     // 7. Event Resize
     window.addEventListener('resize', onWindowResize3D);
@@ -262,129 +375,1042 @@ function initThreeJSKandang() {
     animateThreeJS();
 }
 
-/**
- * Ayam petelur prosedural: badan, leher, kepala, jengger bergerigi, pial, paruh, ekor, sayap, kaki.
- * poseIndex: 0 = berdiri, 1 = menunduk makan, 2 = menoleh.
- */
-const SHARED_CHICKEN_MATS = {
-    comb: new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 }),
-    beak: new THREE.MeshStandardMaterial({ color: 0xf5b301, roughness: 0.4 }),
-    leg: new THREE.MeshStandardMaterial({ color: 0xe0a030, roughness: 0.6 }),
-    eye: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 })
+// =========================================================================
+// AYAM PETELUR: MODEL PROSEDURAL COKELAT (CADANGAN) & MODEL GLB (INSTANCED)
+// =========================================================================
+
+/** Pose bertelur. */
+const HEN_LAY = { squatM: 0.05, procSquatM: 0.03, tailLift: 0.45, shakeAmp: 0.004 };
+
+/** Model GLB. Konstanta rig memakai satuan mentah model (sama dengan buildStaticRiggedChicken di login.js). */
+const HEN_GLB = {
+    url: '{{ asset('models/chicken.glb') }}',
+    heightM: 0.44,                 // tinggi ayam di dalam sangkar (0.42 - 0.45 m)
+    expectedRawHeight: 3.869,      // tinggi mentah chicken.glb yang dipakai untuk kalibrasi rig
+    targetTriangles: 15000,        // decimation ringan yang menjaga sambungan UV bulu tetap utuh
+    uvCell: 0.06,                  // ambang sel UV agar sambungan seam tekstur tidak pernah menyatu
+    timeoutMs: 60000,
+    anisotropyMax: 8,
+    ventLocal: [0, 0.145, -0.145], // titik telur keluar (lokal ayam, meter): tepat di bawah pangkal ekor
+    rig: { pnY: 2.6, pnZ: 0.95, pbY: 1.05, pbZ: 0, ptY: 2.25, ptZ: -0.85, phY: 3.18, phZ: 1.27 }
 };
 
+/** Model kinematika ayam prosedural cokelat Lohmann/ISA Brown (cadangan). Koordinat [y, z] lokal ayam, meter. */
+const PROC_HEN_MODEL = {
+    kind: 'prosedural',
+    get pitchMax() { return FEED.peckPitchMax; },
+    baseBeakFwd: 0.222,
+    rig: { pn: [0.26, 0.17], pb: [0.12, 0] },
+    beakRel: [0.17, 0.18],
+    chestPts: [[0.2, 0.26], [0.3, 0.17], [0.12, 0.2]],
+    vent: [0, 0.06, -0.28],
+    squat: HEN_LAY.procSquatM
+};
+
+let henModel = PROC_HEN_MODEL;
+let henInst = null;
+
+// <FEED_SOLVER_BEGIN>
+function rotateYZ(y, z, angle) {
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return [y * c - z * s, y * s + z * c];
+}
+
+/** Ujung paruh (lokal ayam, meter, sebelum skala instance) untuk anggukan `pitch` dan julur leher `reach`. */
+function henBeakTip(model, pitch, reach) {
+    const fwdDelta = FEED.beakFwd - (model.baseBeakFwd !== undefined ? model.baseBeakFwd : 0.222);
+    const neck = rotateYZ(model.beakRel[0], model.beakRel[1] + reach + fwdDelta, pitch);
+    const lean = rotateYZ(
+        model.rig.pn[0] + neck[0] - model.rig.pb[0],
+        model.rig.pn[1] + neck[1] - model.rig.pb[1],
+        pitch * FEED.bodyTilt
+    );
+    return [model.rig.pb[0] + lean[0], model.rig.pb[1] + lean[1]];
+}
+
+/** Titik dada paling depan (sumbu Z lokal) setelah badan miring mengikuti anggukan. */
+function henChestForward(model, pitch) {
+    let max = -Infinity;
+    const lean = pitch * FEED.bodyTilt;
+    for (let i = 0; i < model.chestPts.length; i += 1) {
+        const pt = model.chestPts[i];
+        const r = rotateYZ(pt[0] - model.rig.pb[0], pt[1] - model.rig.pb[1], lean);
+        max = Math.max(max, model.rig.pb[1] + r[1]);
+    }
+    return max;
+}
+
+/**
+ * Cari pose menyentuh permukaan atas talang kuning (topY diambil dari scene):
+ * - Dada ayam berhenti di belakang kawat depan (`cageFrontZ + bodyFrontClear`) agar tidak menembus kawat.
+ * - Sisa jarak ke permukaan talang ditutup dinamis oleh julur leher `reach` (<= `FEED.maxNeck`).
+ * - Target |Z| berada di bidang terbuka talang kuning (`[farAbsZ + 0.025, min(nearAbsZ, cageFrontZ) - peckGap]`).
+ * - Jika tidak terjangkau, `peckGap` lalu `cageFrontZ` disesuaikan otomatis dan dicatat ke `console.warn`.
+ */
+function solveFeedPose(model, scale, homeY, trough) {
+    const targetY = trough.topY + FEED.touchLift;
+    const yTarget = (targetY - homeY) / scale;
+    const maxReach = FEED.maxNeck / scale;
+    const troughCenterAbsZ = 0.5 * (trough.farAbsZ + trough.nearAbsZ);
+    const minAbsZ = trough.farAbsZ + 0.025;
+
+    const searchWith = (frontWireAbsZ, gap) => {
+        const rawMaxAbsZ = Math.min(trough.nearAbsZ, frontWireAbsZ) - gap;
+        const maxAbsZ = Math.max(minAbsZ + 0.005, rawMaxAbsZ);
+        const idealAbsZ = Math.min(maxAbsZ, Math.max(minAbsZ, troughCenterAbsZ));
+
+        const evaluate = (pitch) => {
+            const t0 = henBeakTip(model, pitch, 0);
+            const t1 = henBeakTip(model, pitch, 1);
+            const slope = t1[0] - t0[0];
+            let reach = Math.abs(slope) > 1e-6 ? (yTarget - t0[0]) / slope : 0;
+            reach = Math.min(maxReach, Math.max(0, reach));
+            const tip = henBeakTip(model, pitch, reach);
+            const chest = henChestForward(model, pitch);
+            const frontAbsZ = frontWireAbsZ + FEED.bodyFrontClear + chest * scale;
+            const beakAbsZ = frontAbsZ - tip[1] * scale;
+            const beakY = homeY + tip[0] * scale;
+            const errBand = beakAbsZ < minAbsZ ? (minAbsZ - beakAbsZ) : (beakAbsZ > maxAbsZ ? (beakAbsZ - maxAbsZ) : 0);
+            const errY = Math.abs(beakY - targetY);
+            const err = Math.hypot(errBand, errY);
+            const score = err * 1000 + Math.abs(beakAbsZ - idealAbsZ) + (reach * scale) * 0.15;
+            return { pitch, reach, chest, frontAbsZ, beakAbsZ, beakY, errBand, errY, err, score };
+        };
+
+        const samples = 120;
+        let best = evaluate(0);
+        for (let i = 1; i <= samples; i += 1) {
+            const cand = evaluate((model.pitchMax * i) / samples);
+            if (cand.score < best.score) {
+                best = cand;
+            }
+        }
+        let step = model.pitchMax / samples;
+        for (let k = 0; k < 16; k += 1) {
+            step *= 0.5;
+            for (let d = -1; d <= 1; d += 2) {
+                const p = best.pitch + d * step;
+                if (p >= 0 && p <= model.pitchMax) {
+                    const cand = evaluate(p);
+                    if (cand.score < best.score) {
+                        best = cand;
+                    }
+                }
+            }
+        }
+        best.gap = gap;
+        best.usedFrontZ = frontWireAbsZ;
+        best.adjusted = false;
+        return best;
+    };
+
+    let result = searchWith(FEED.cageFrontZ, FEED.peckGap);
+    if (result.err > FEED.tolerance) {
+        for (let gap = FEED.peckGap - 0.005; gap >= 0.005 - 1e-9; gap -= 0.005) {
+            const cand = searchWith(FEED.cageFrontZ, Math.max(0.005, gap));
+            cand.adjusted = true;
+            if (cand.err < result.err) {
+                result = cand;
+            }
+            if (cand.err <= FEED.tolerance) {
+                break;
+            }
+        }
+    }
+    if (result.err > FEED.tolerance) {
+        for (let shift = 0.01; shift <= 0.08 + 1e-9; shift += 0.01) {
+            const cand = searchWith(FEED.cageFrontZ - shift, 0.01);
+            cand.adjusted = true;
+            if (cand.err < result.err) {
+                result = cand;
+            }
+            if (cand.err <= FEED.tolerance) {
+                break;
+            }
+        }
+    }
+    result.ok = result.err <= FEED.tolerance;
+    return result;
+}
+// <FEED_SOLVER_END>
+
+// ---------------------------------------------------------------------
+// AYAM PROSEDURAL (cadangan / sementara sebelum GLB siap). Bulu cokelat Lohmann/ISA Brown.
+// ---------------------------------------------------------------------
+let procHenMats = null;
+let procHenAssets = null;
+
+function getProcHenMats() {
+    if (procHenMats) {
+        return procHenMats;
+    }
+    procHenMats = {
+        comb: new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 }),
+        beak: new THREE.MeshStandardMaterial({ color: 0xf5b301, roughness: 0.4 }),
+        leg: new THREE.MeshStandardMaterial({ color: 0xe0a030, roughness: 0.6 }),
+        eye: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 }),
+        tail: new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(0.06, 0.5, 0.2), roughness: 0.9 }),
+        feather: [[0.065, 0.62, 0.36], [0.07, 0.58, 0.42], [0.06, 0.55, 0.32], [0.075, 0.6, 0.46]].map((hsl) => (
+            new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(hsl[0], hsl[1], hsl[2]), roughness: 0.9, metalness: 0 })
+        ))
+    };
+    return procHenMats;
+}
+
+function getProcHenAssets() {
+    if (procHenAssets) {
+        return procHenAssets;
+    }
+    const body = new THREE.SphereGeometry(0.2, 14, 10);
+    body.scale(1, 0.78, 1.3);
+    const skull = new THREE.SphereGeometry(0.072, 12, 10);
+    skull.scale(0.45, 0.86, 0.96);
+    procHenAssets = {
+        body,
+        neck: new THREE.CylinderGeometry(0.03, 0.042, 0.14, 8),
+        skull,
+        spike: [0, 1, 2].map((c) => new THREE.BoxGeometry(0.03, 0.05 + (c === 1 ? 0.025 : 0), 0.035)),
+        wattle: new THREE.CylinderGeometry(0.014, 0.02, 0.05, 6),
+        beak: new THREE.ConeGeometry(0.03, 0.08, 6),
+        eye: new THREE.SphereGeometry(0.01, 6, 6),
+        wing: new THREE.BoxGeometry(0.03, 0.12, 0.22),
+        leg: new THREE.CylinderGeometry(0.012, 0.012, 0.12, 6),
+        foot: new THREE.BoxGeometry(0.032, 0.012, 0.065),
+        tail: new THREE.BoxGeometry(0.1, 0.14, 0.03)
+    };
+    return procHenAssets;
+}
+
+function disposeProcHenAssets() {
+    if (procHenAssets) {
+        const geo = procHenAssets;
+        Object.keys(geo).forEach((key) => {
+            const value = geo[key];
+            (Array.isArray(value) ? value : [value]).forEach((g) => g.dispose());
+        });
+        procHenAssets = null;
+    }
+    if (procHenMats) {
+        Object.keys(procHenMats).forEach((key) => {
+            const value = procHenMats[key];
+            (Array.isArray(value) ? value : [value]).forEach((m) => m.dispose());
+        });
+        procHenMats = null;
+    }
+}
+
+/**
+ * Ayam petelur prosedural. Hierarki: rig > pivot (pinggul, miring) > inner > [badan, upper(leher+kepala), sayap, ekor];
+ * kaki ada di rig (tetap menapak). poseIndex: 0 = berdiri, 1 = kepala sedikit menunduk, 2 = menoleh.
+ * Kepala menghadap +Z lokal; tinggi sekitar 0.45 m.
+ */
 function createStylizedChicken(poseIndex = 0) {
+    const A = getProcHenAssets();
+    const M = getProcHenMats();
     const chicken = new THREE.Group();
     const pose = poseIndex % 3;
+    const featherMat = M.feather[Math.floor(Math.random() * M.feather.length)];
+    const pivotY = PROC_HEN_MODEL.rig.pb[0];
 
-    const featherTone = new THREE.Color().setHSL(0.1, 0.05, 0.86 + Math.random() * 0.1);
-    const featherMat = new THREE.MeshStandardMaterial({ color: featherTone, roughness: 0.88, metalness: 0 });
+    const rig = new THREE.Group();
+    chicken.add(rig);
+    const pivot = new THREE.Group();
+    pivot.position.y = pivotY;
+    rig.add(pivot);
+    const inner = new THREE.Group();
+    inner.position.y = -pivotY;
+    pivot.add(inner);
 
-    const bodyGeo = new THREE.SphereGeometry(0.2, 14, 10);
-    bodyGeo.scale(1, 0.78, 1.3);
-    const body = new THREE.Mesh(bodyGeo, featherMat);
+    const body = new THREE.Mesh(A.body, featherMat);
     body.position.y = 0.2;
-    body.castShadow = true;
-    chicken.add(body);
+    inner.add(body);
 
     const upper = new THREE.Group();
     upper.position.set(0, 0.26, 0.17);
-    upper.rotation.x = pose === 1 ? 0.55 : 0;
-    chicken.add(upper);
+    inner.add(upper);
 
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.14, 8), featherMat);
-    neck.position.set(0, 0.07, 0.02);
+    const neck = new THREE.Mesh(A.neck, featherMat);
     upper.add(neck);
 
     const head = new THREE.Group();
     head.position.set(0, 0.18, 0.04);
-    head.rotation.y = pose === 2 ? 0.6 : 0;
     upper.add(head);
+    head.add(new THREE.Mesh(A.skull, featherMat));
 
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), featherMat);
-    head.add(skull);
-
-    for (let c = 0; c < 3; c++) {
-        const spike = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05 + (c === 1 ? 0.025 : 0), 0.035), SHARED_CHICKEN_MATS.comb);
+    for (let c = 0; c < 3; c += 1) {
+        const spike = new THREE.Mesh(A.spike[c], M.comb);
         spike.position.set(0, 0.085, -0.03 + c * 0.04);
         head.add(spike);
     }
-
-    const wattle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, 0.05, 6), SHARED_CHICKEN_MATS.comb);
+    const wattle = new THREE.Mesh(A.wattle, M.comb);
     wattle.position.set(0, -0.07, 0.06);
     head.add(wattle);
-
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.08, 6), SHARED_CHICKEN_MATS.beak);
+    const beak = new THREE.Mesh(A.beak, M.beak);
     beak.rotation.x = Math.PI / 2;
     beak.position.set(0, -0.01, 0.1);
     head.add(beak);
 
+    const legs = [];
     [-1, 1].forEach((side) => {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 6), SHARED_CHICKEN_MATS.eye);
+        const eye = new THREE.Mesh(A.eye, M.eye);
         eye.position.set(side * 0.06, 0.01, 0.04);
         head.add(eye);
 
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, 0.22), featherMat);
+        const wing = new THREE.Mesh(A.wing, featherMat);
         wing.position.set(side * 0.19, 0.22, -0.02);
         wing.rotation.z = side * -0.25;
-        chicken.add(wing);
+        inner.add(wing);
 
-        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 6), SHARED_CHICKEN_MATS.leg);
-        leg.position.set(side * 0.07, 0.06, 0.02);
-        chicken.add(leg);
+        const legPivot = new THREE.Group();
+        legPivot.position.set(side * 0.07, 0.12, 0.02);
+        const legMesh = new THREE.Mesh(A.leg, M.leg);
+        legMesh.position.y = -0.06;
+        legPivot.add(legMesh);
+        const footMesh = new THREE.Mesh(A.foot, M.leg);
+        footMesh.position.set(0, -0.114, 0.018);
+        legPivot.add(footMesh);
+        legPivot.userData = { isLeft: side < 0, foot: footMesh };
+        rig.add(legPivot);
+        legs.push(legPivot);
     });
 
-    const tailMeshes = [];
+    const tails = [];
     [0, 1].forEach((t) => {
-        const tail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.14, 0.03), featherMat);
+        const tail = new THREE.Mesh(A.tail, M.tail);
         tail.position.set(0, 0.3 + t * 0.03, -0.27 - t * 0.02);
         tail.rotation.x = -0.6 - t * 0.2;
         tail.userData.baseRotX = tail.rotation.x;
-        chicken.add(tail);
-        tailMeshes.push(tail);
+        inner.add(tail);
+        tails.push(tail);
     });
 
-    const scale = 0.95 + Math.random() * 0.1;
-    chicken.scale.setScalar(scale);
+    chicken.scale.setScalar(0.98 + Math.random() * 0.04);
     chicken.userData.bobOffset = Math.random() * Math.PI * 2;
-    chicken.userData.eatingPose = pose === 1;
-    chicken.userData.upper = upper;
-    chicken.userData.head = head;
-    chicken.userData.tails = tailMeshes;
-    chicken.userData.poseBaseUpperX = pose === 1 ? 0.55 : 0;
-    chicken.userData.poseBaseHeadY = pose === 2 ? 0.6 : 0;
+    chicken.userData.idlePitch = pose === 1 ? 0.18 : 0;
+    chicken.userData.idleYaw = pose === 2 ? 0.5 : 0;
+    chicken.userData.rigRefs = { rig, pivot, upper, neck, head, tails, legs };
     return chicken;
 }
 
+/** Terapkan pose ke ayam prosedural (setara dengan shader ayam GLB, termasuk ayunan kaki & cakar). */
+function applyProcHenPose(chicken, pitch, yaw, squat, tailLift, reach, legPhase = 0, legAmp = 0) {
+    const r = chicken.userData.rigRefs;
+    if (!r) {
+        return;
+    }
+    r.pivot.rotation.x = pitch * FEED.bodyTilt;
+    r.pivot.position.y = PROC_HEN_MODEL.rig.pb[0] - squat;
+    r.upper.rotation.x = pitch;
+    const hy = 0.18;
+    const hz = 0.04 + reach;
+    r.head.position.set(0, hy, hz);
+    r.head.rotation.y = yaw;
+    r.neck.position.set(0, hy / 2, hz / 2);
+    r.neck.rotation.x = Math.atan2(hz, hy);
+    r.neck.scale.y = Math.hypot(hy, hz) / 0.14;
+    for (let t = 0; t < r.tails.length; t += 1) {
+        r.tails[t].rotation.x = r.tails[t].userData.baseRotX + tailLift;
+    }
+    if (r.legs) {
+        for (let i = 0; i < r.legs.length; i += 1) {
+            const lp = r.legs[i];
+            const ph = legPhase + (lp.userData.isLeft ? Math.PI : 0);
+            const sw = Math.max(0, Math.cos(ph));
+            const lift = sw * sw * (3 - 2 * sw) * legAmp;
+            lp.rotation.x = -Math.sin(ph) * 0.52 * legAmp;
+            lp.position.y = 0.12 + lift * 0.038;
+            if (lp.userData.foot) {
+                lp.userData.foot.rotation.x = lift * 0.55;
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------
+// AYAM GLB: analisis, bake, decimation, material, shader instanced
+// ---------------------------------------------------------------------
+function henSmooth(x) {
+    const v = Math.min(1, Math.max(0, x));
+    return v * v * (3 - 2 * v);
+}
+
+/** Ukur ujung paruh dan titik dada dari geometri asli (satuan mentah, kaki di y=0), memakai pembobotan yang sama dengan shader. */
+function analyzeHenGeometry(geometry, minY) {
+    const pos = geometry.attributes.position;
+    const edges = [1.0, 1.4, 1.8, 2.2, 2.6, 2.95];
+    const chest = edges.slice(1).map(() => null);
+    let beak = null;
+    for (let i = 0; i < pos.count; i += 1) {
+        const x = pos.getX(i);
+        const y = pos.getY(i) - minY;
+        const z = pos.getZ(i);
+        const wy = y <= 0.16 ? 1 : (y >= 0.9 ? 0 : 1 - henSmooth((y - 0.16) / 0.74));
+        const wx = y < 0.74 ? 1 : henSmooth((Math.abs(x) - 0.12) / 0.18);
+        const wLeg = wy * wx;
+        const neckHead = henSmooth((y - 2.45) / 0.35) * henSmooth((z - 0.55) / 0.35);
+        const head = henSmooth((y + 0.35 * (z - 1.25) - 3.05) / 0.22);
+        if (neckHead > 0.5 && head > 0.5) {
+            if (!beak || z > beak[1]) {
+                beak = [y, z];
+            }
+        } else if (neckHead < 0.35 && wLeg < 0.5) {
+            for (let b = 0; b < chest.length; b += 1) {
+                if (y >= edges[b] && y < edges[b + 1]) {
+                    if (!chest[b] || z > chest[b][1]) {
+                        chest[b] = [y, z];
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    const chestPts = chest.filter(Boolean);
+    if (!beak || chestPts.length < 3) {
+        throw new Error('geometri ayam tidak cocok dengan rig (paruh/dada tidak ditemukan)');
+    }
+    return { beak, chestPts };
+}
+
+/** Geser kaki ke y=0, skalakan ke meter, dan buang atribut yang tidak dipakai. */
+function bakeHenGeometry(source, minY, scale) {
+    const src = source.geometry;
+    if (!src.index || !src.attributes.position) {
+        throw new Error('geometri ayam harus ber-index');
+    }
+    const pos = src.attributes.position;
+    const nor = src.attributes.normal;
+    const uv = src.attributes.uv;
+    const count = pos.count;
+    const p = new Float32Array(count * 3);
+    const n = new Float32Array(count * 3);
+    const t = new Float32Array(count * 2);
+    for (let i = 0; i < count; i += 1) {
+        p[i * 3] = pos.getX(i) * scale;
+        p[i * 3 + 1] = (pos.getY(i) - minY) * scale;
+        p[i * 3 + 2] = pos.getZ(i) * scale;
+        if (nor) {
+            n[i * 3] = nor.getX(i);
+            n[i * 3 + 1] = nor.getY(i);
+            n[i * 3 + 2] = nor.getZ(i);
+        }
+        if (uv) {
+            t[i * 2] = uv.getX(i);
+            t[i * 2 + 1] = uv.getY(i);
+        }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    geometry.setAttribute('normal', new THREE.BufferAttribute(n, 3));
+    if (uv) {
+        geometry.setAttribute('uv', new THREE.BufferAttribute(t, 2));
+    }
+    const idx = src.index.array;
+    geometry.setIndex(new THREE.BufferAttribute(count > 65535 ? new Uint32Array(idx) : new Uint16Array(idx), 1));
+    if (!nor) {
+        geometry.computeVertexNormals();
+    }
+    return geometry;
+}
+
+/** Satu percobaan decimation kedap-celah: posisi 3D disatukan per sel ruang, sedangkan UV & normal dipisah per pulau UV. */
+function clusterHenGeometry(geometry, cell) {
+    const pos = geometry.attributes.position.array;
+    const nor = geometry.attributes.normal.array;
+    const uv = geometry.attributes.uv.array;
+    const index = geometry.index.array;
+    const count = pos.length / 3;
+    const uvCell = HEN_GLB.uvCell;
+    const spatialMap = new Map();
+    const sumSpatialP = [];
+    const cntSpatial = [];
+    const ids = new Map();
+    const remap = new Uint32Array(count);
+    const vertSpatial = [];
+    const sumN = [];
+    const sumT = [];
+    const members = [];
+    for (let i = 0; i < count; i += 1) {
+        const px = pos[i * 3], py = pos[i * 3 + 1], pz = pos[i * 3 + 2];
+        // Jaga detail kepala, jengger, paruh, dan kaki 2x lebih rapat daripada badan
+        const fine = (pz > 0.11 || py < 0.09) ? 0.5 : 1.0;
+        const cs = cell * fine;
+        const sKey = fine + ':' + Math.floor(px / cs) + ',' + Math.floor(py / cs) + ',' + Math.floor(pz / cs);
+        let sId = spatialMap.get(sKey);
+        if (sId === undefined) {
+            sId = cntSpatial.length;
+            spatialMap.set(sKey, sId);
+            sumSpatialP.push(0, 0, 0);
+            cntSpatial.push(0);
+        }
+        sumSpatialP[sId * 3] += px;
+        sumSpatialP[sId * 3 + 1] += py;
+        sumSpatialP[sId * 3 + 2] += pz;
+        cntSpatial[sId] += 1;
+
+        const key = sId + '|' + Math.floor(uv[i * 2] / uvCell) + ',' + Math.floor(uv[i * 2 + 1] / uvCell);
+        let id = ids.get(key);
+        if (id === undefined) {
+            id = members.length;
+            ids.set(key, id);
+            vertSpatial.push(sId);
+            sumN.push(0, 0, 0);
+            sumT.push(0, 0);
+            members.push(0);
+        }
+        remap[i] = id;
+        members[id] += 1;
+        for (let a = 0; a < 3; a += 1) {
+            sumN[id * 3 + a] += nor[i * 3 + a];
+        }
+        sumT[id * 2] += uv[i * 2];
+        sumT[id * 2 + 1] += uv[i * 2 + 1];
+    }
+    const m = members.length;
+    const p = new Float32Array(m * 3);
+    const n = new Float32Array(m * 3);
+    const t = new Float32Array(m * 2);
+    for (let id = 0; id < m; id += 1) {
+        const k = members[id];
+        const sId = vertSpatial[id];
+        const sk = cntSpatial[sId];
+        p[id * 3] = sumSpatialP[sId * 3] / sk;
+        p[id * 3 + 1] = sumSpatialP[sId * 3 + 1] / sk;
+        p[id * 3 + 2] = sumSpatialP[sId * 3 + 2] / sk;
+        const len = Math.hypot(sumN[id * 3], sumN[id * 3 + 1], sumN[id * 3 + 2]) || 1;
+        n[id * 3] = sumN[id * 3] / len;
+        n[id * 3 + 1] = sumN[id * 3 + 1] / len;
+        n[id * 3 + 2] = sumN[id * 3 + 2] / len;
+        t[id * 2] = sumT[id * 2] / k;
+        t[id * 2 + 1] = sumT[id * 2 + 1] / k;
+    }
+    const tris = [];
+    const seen = new Set();
+    for (let k = 0; k < index.length; k += 3) {
+        const a = remap[index[k]];
+        const b = remap[index[k + 1]];
+        const c = remap[index[k + 2]];
+        if (a === b || b === c || a === c) {
+            continue;
+        }
+        const key = [a, b, c].sort((x, y) => x - y).join(',');
+        if (seen.has(key)) {
+            continue;
+        }
+        seen.add(key);
+        tris.push(a, b, c);
+    }
+    const out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    out.setAttribute('normal', new THREE.BufferAttribute(n, 3));
+    out.setAttribute('uv', new THREE.BufferAttribute(t, 2));
+    out.setIndex(new THREE.BufferAttribute(m > 65535 ? new Uint32Array(tris) : new Uint16Array(tris), 1));
+    return { geometry: out, triangles: tris.length / 3 };
+}
+
+/** Decimation ringan: cari ukuran sel terkecil yang masih memenuhi target segitiga. */
+function simplifyHenGeometry(geometry, targetTriangles) {
+    if (!targetTriangles || geometry.index.count / 3 <= targetTriangles || !geometry.attributes.uv) {
+        return geometry;
+    }
+    geometry.computeBoundingBox();
+    const diag = geometry.boundingBox.getSize(new THREE.Vector3()).length();
+    let lo = diag / 800;
+    let hi = diag / 10;
+    let best = null;
+    for (let it = 0; it < 10; it += 1) {
+        const cell = Math.sqrt(lo * hi);
+        const attempt = clusterHenGeometry(geometry, cell);
+        if (attempt.triangles > targetTriangles) {
+            lo = cell;
+        } else {
+            if (best) {
+                best.geometry.dispose();
+            }
+            best = attempt;
+            hi = cell;
+        }
+    }
+    if (!best) {
+        return geometry;
+    }
+    geometry.dispose();
+    return best.geometry;
+}
+
+function disposeMaterialAndTextures(material, keepSet) {
+    const visit = (value) => {
+        if (value && value.isTexture && (!keepSet || !keepSet.has(value))) {
+            value.dispose();
+        }
+    };
+    Object.keys(material).forEach((key) => visit(material[key]));
+    if (material.uniforms) {
+        Object.keys(material.uniforms).forEach((key) => visit(material.uniforms[key].value));
+    }
+    material.dispose();
+}
+
+function disposeGltfScene(gltf, keepSet) {
+    if (!gltf || !gltf.scene) {
+        return;
+    }
+    gltf.scene.traverse((o) => {
+        if (o.geometry) {
+            o.geometry.dispose();
+        }
+        const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+        mats.forEach((m) => disposeMaterialAndTextures(m, keepSet));
+    });
+}
+
+/** Satu MeshStandardMaterial bersama; ekstrak diffuseMap & specularGlossinessMap seperti di login.js. */
+function createHenMaterial(source, maxAnisotropy) {
+    const old = Array.isArray(source.material) ? source.material[0] : source.material;
+    const diffuseMap = (old && (old.map || old.diffuseMap || (old.uniforms && old.uniforms.diffuseMap && old.uniforms.diffuseMap.value))) || null;
+    const specMap = (old && (old.specularMap || old.glossinessMap || (old.uniforms && old.uniforms.specularGlossinessMap && old.uniforms.specularGlossinessMap.value))) || null;
+    if (diffuseMap) {
+        diffuseMap.encoding = THREE.LinearEncoding;
+        diffuseMap.anisotropy = maxAnisotropy;
+        diffuseMap.needsUpdate = true;
+    }
+    if (specMap) {
+        specMap.anisotropy = maxAnisotropy;
+    }
+    const material = new THREE.MeshStandardMaterial({
+        map: diffuseMap,
+        bumpMap: specMap || diffuseMap,
+        bumpScale: 0.008,
+        color: diffuseMap ? 0xffffff : 0x8a5a3a,
+        roughness: 0.84,
+        metalness: 0.02,
+        side: THREE.FrontSide
+    });
+    const textures = new Set([diffuseMap, specMap].filter(Boolean));
+    return { material, textures };
+}
+
+/** GLSL deformasi per-instance: leher + julur, yaw kepala, jongkok, ekor, badan miring, & artikulasi langkah kaki kiri-kanan (aReach.y). */
+function buildHenShaderDecl(scale) {
+    const R = HEN_GLB.rig;
+    const f = (v) => v.toFixed(6);
+    return `
+attribute vec4 aPose;
+attribute vec2 aReach;
+uniform float uTilt;
+#define RK_INV_S ${f(1 / scale)}
+#define RK_PN_Y ${f(R.pnY)}
+#define RK_PN_Z ${f(R.pnZ)}
+#define RK_PB_Y ${f(R.pbY)}
+#define RK_PB_Z ${f(R.pbZ)}
+#define RK_PT_Y ${f(R.ptY)}
+#define RK_PT_Z ${f(R.ptZ)}
+#define RK_PH_Y ${f(R.phY)}
+#define RK_PH_Z ${f(R.phZ)}
+float rkSmooth(float x) { x = clamp(x, 0.0, 1.0); return x * x * (3.0 - 2.0 * x); }
+vec3 rkRotX(vec3 v, float a) { float c = cos(a); float s = sin(a); return vec3(v.x, v.y * c - v.z * s, v.y * s + v.z * c); }
+vec3 rkRotY(vec3 v, float a) { float c = cos(a); float s = sin(a); return vec3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c); }
+vec3 rkDeform(vec3 v, float asPoint) {
+    vec3 pr = position * RK_INV_S;
+    float wy = pr.y <= 0.16 ? 1.0 : (pr.y >= 0.90 ? 0.0 : 1.0 - rkSmooth((pr.y - 0.16) / 0.74));
+    float wx = pr.y < 0.74 ? 1.0 : rkSmooth((abs(pr.x) - 0.12) / 0.18);
+    float wLeg = wy * wx;
+    float wUp = 1.0 - wLeg;
+    float nh = rkSmooth((pr.y - 2.45) / 0.35) * rkSmooth((pr.z - 0.55) / 0.35);
+    float hd = rkSmooth((pr.y + 0.35 * (pr.z - 1.25) - 3.05) / 0.22);
+    float tl = rkSmooth((-0.75 - pr.z) / 0.45) * rkSmooth((pr.y - 1.80) / 0.35);
+    float wNH = wUp * nh;
+    float wHead = wNH * hd;
+    float wTail = wUp * tl;
+    float pitch = aPose.x;
+    float yaw = aPose.y;
+    float squat = aPose.z;
+    float tailUp = aPose.w;
+    float k = mix(1.0, RK_INV_S, asPoint);
+    vec3 q = v * k;
+    vec3 pH = vec3(0.0, RK_PH_Y, RK_PH_Z) * asPoint;
+    q = mix(q, rkRotY(q - pH, yaw) + pH, wHead);
+    vec3 pN = vec3(0.0, RK_PN_Y, RK_PN_Z) * asPoint;
+    vec3 qn = rkRotX(q - pN, pitch) + pN + vec3(0.0, -sin(pitch), cos(pitch)) * (aReach.x * RK_INV_S * asPoint);
+    q = mix(q, qn, wNH);
+    vec3 pT = vec3(0.0, RK_PT_Y, RK_PT_Z) * asPoint;
+    q = mix(q, rkRotX(q - pT, tailUp) + pT, wTail);
+    vec3 pB = vec3(0.0, RK_PB_Y, RK_PB_Z) * asPoint;
+    q = mix(q, rkRotX(q - pB, pitch * uTilt) + pB, wUp);
+    q.y -= squat * RK_INV_S * asPoint * wUp;
+    float legAmp = floor(aReach.y) * 0.001;
+    if (legAmp > 0.0005) {
+        float legPhi = (fract(aReach.y) / 0.998) * 6.2831853;
+        float wyS = pr.y <= 0.46 ? 1.0 : (pr.y >= 0.88 ? 0.0 : 1.0 - rkSmooth((pr.y - 0.46) / 0.42));
+        float wxS = pr.y < 0.70 ? 1.0 : rkSmooth((abs(pr.x) - 0.12) / 0.18);
+        float wStride = wyS * wxS;
+        float isLeft = pr.x < -0.035 ? 1.0 : 0.0;
+        float ph = legPhi + isLeft * 3.14159265;
+        float sw = max(0.0, cos(ph));
+        float lift = sw * sw * (3.0 - 2.0 * sw) * legAmp;
+        float hFrac = clamp((0.86 - pr.y) / 0.74, 0.0, 1.0);
+        float dzBase = (mix(0.36, -0.36, isLeft) + 0.48 * sin(ph)) * legAmp;
+        float hock = -0.12 * lift * sin(hFrac * 3.14159265);
+        float wToe = 1.0 - rkSmooth((pr.y - 0.04) / 0.20);
+        float ankX = mix(0.37, -0.39, isLeft);
+        float ankZ = mix(-0.49, 0.45, isLeft);
+        float dxLeg = -(pr.x - ankX) * (0.22 * lift * wToe);
+        float dyLeg = lift * 0.54 * hFrac - min(0.24, abs(pr.z - ankZ) * 0.35) * lift * wToe;
+        float dzLeg = dzBase * hFrac + hock - (pr.z - ankZ) * (0.34 * lift * wToe);
+        q += vec3(dxLeg, dyLeg, dzLeg) * (wStride * asPoint);
+        q = mix(q, rkRotX(q, (dzBase / 0.74) * 0.65), wStride * (1.0 - asPoint));
+    }
+    return q / k;
+}
+`;
+}
+
+function attachHenShader(material, scale) {
+    const decl = buildHenShaderDecl(scale);
+    material.onBeforeCompile = (shader) => {
+        shader.uniforms.uTilt = { value: FEED.bodyTilt };
+        shader.vertexShader = shader.vertexShader
+            .replace('#include <common>', '#include <common>\n' + decl)
+            .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n    objectNormal = normalize(rkDeform(objectNormal, 0.0));')
+            .replace('#include <begin_vertex>', '#include <begin_vertex>\n    transformed = rkDeform(transformed, 1.0);');
+        material.userData.shader = shader;
+    };
+    material.customProgramCacheKey = () => 'rk-hen-instanced-v2';
+}
+
+// ---------------------------------------------------------------------
+// Pemuatan GLB progresif + HUD + fallback
+// ---------------------------------------------------------------------
+let henLoadToken = 0;
+let henHudTimer = 0;
+
+function setHenHud(text, busy) {
+    const box = document.getElementById('hud-hen-model');
+    const label = document.getElementById('hud-hen-model-text');
+    const icon = document.getElementById('hud-hen-model-icon');
+    window.clearTimeout(henHudTimer);
+    if (!box) {
+        return;
+    }
+    if (!text) {
+        box.style.display = 'none';
+        return;
+    }
+    box.style.display = 'inline-flex';
+    if (label) {
+        label.textContent = text;
+    }
+    if (icon) {
+        icon.textContent = busy ? 'progress_activity' : 'info';
+        icon.className = busy ? 'material-symbols-outlined text-[13px] text-amber-300 animate-spin' : 'material-symbols-outlined text-[13px] text-amber-300';
+    }
+}
+
+function failHenModel(reason) {
+    console.warn('[Digital Twin] Model ayam GLB tidak dipakai, memakai ayam prosedural cokelat:', reason);
+    setHenHud('Model ayam 3D gagal dimuat, memakai ayam sederhana', false);
+    henHudTimer = window.setTimeout(() => setHenHud(''), 6000);
+}
+
+function loadHenModel() {
+    const token = (henLoadToken += 1);
+    if (typeof THREE.GLTFLoader === 'undefined') {
+        failHenModel('GLTFLoader tidak tersedia');
+        return;
+    }
+    setHenHud('Memuat model ayam 3D...', true);
+    let settled = false;
+    const timer = window.setTimeout(() => {
+        if (!settled) {
+            settled = true;
+            failHenModel('timeout ' + HEN_GLB.timeoutMs + ' ms');
+        }
+    }, HEN_GLB.timeoutMs);
+
+    new THREE.GLTFLoader().load(
+        HEN_GLB.url,
+        (gltf) => {
+            if (settled || isDisposed3D || token !== henLoadToken) {
+                disposeGltfScene(gltf, null);
+                return;
+            }
+            settled = true;
+            window.clearTimeout(timer);
+            try {
+                applyHenGlb(gltf);
+                setHenHud('');
+            } catch (err) {
+                disposeGltfScene(gltf, null);
+                failHenModel(err && err.message ? err.message : err);
+            }
+        },
+        (ev) => {
+            if (!settled && ev && ev.lengthComputable && ev.total > 0) {
+                setHenHud('Memuat model ayam 3D... ' + Math.round((ev.loaded / ev.total) * 100) + '%', true);
+            }
+        },
+        (err) => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            window.clearTimeout(timer);
+            failHenModel(err && err.message ? err.message : 'gagal mengunduh');
+        }
+    );
+}
+
+/** Ganti ayam prosedural dengan satu InstancedMesh berisi ayam GLB. */
+function applyHenGlb(gltf) {
+    let source = null;
+    gltf.scene.traverse((o) => {
+        if (o.isMesh && !source) {
+            source = o;
+        }
+    });
+    if (!source) {
+        throw new Error('mesh ayam tidak ditemukan di chicken.glb');
+    }
+    const raw = source.geometry;
+    raw.computeBoundingBox();
+    const minY = raw.boundingBox.min.y;
+    const rawHeight = raw.boundingBox.max.y - minY;
+    if (Math.abs(rawHeight - HEN_GLB.expectedRawHeight) > 0.1) {
+        throw new Error('tinggi model ' + rawHeight.toFixed(3) + ' berbeda dari yang dikalibrasi (' + HEN_GLB.expectedRawHeight + '), rig perlu disetel ulang');
+    }
+    const scale = HEN_GLB.heightM / rawHeight;
+    const analysis = analyzeHenGeometry(raw, minY);
+
+    let geometry = bakeHenGeometry(source, minY, scale);
+    const trisBefore = geometry.index.count / 3;
+    geometry = simplifyHenGeometry(geometry, HEN_GLB.targetTriangles);
+    const trisAfter = geometry.index.count / 3;
+
+    const count = chickensList.length;
+    const pose = new Float32Array(count * 4);
+    const reach = new Float32Array(count * 2);
+    const poseAttr = new THREE.InstancedBufferAttribute(pose, 4);
+    const reachAttr = new THREE.InstancedBufferAttribute(reach, 2);
+    poseAttr.setUsage(THREE.DynamicDrawUsage);
+    reachAttr.setUsage(THREE.DynamicDrawUsage);
+    geometry.setAttribute('aPose', poseAttr);
+    geometry.setAttribute('aReach', reachAttr);
+
+    const maxAniso = Math.min(HEN_GLB.anisotropyMax, renderer3D && renderer3D.capabilities ? renderer3D.capabilities.getMaxAnisotropy() : 4);
+    const built = createHenMaterial(source, maxAniso);
+    attachHenShader(built.material, scale);
+
+    const mesh = new THREE.InstancedMesh(geometry, built.material, count);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+
+    const R = HEN_GLB.rig;
+    henModel = {
+        kind: 'glb',
+        get pitchMax() { return FEED.peckPitchMax; },
+        baseBeakFwd: analysis.beak[1] * scale,
+        rig: { pn: [R.pnY * scale, R.pnZ * scale], pb: [R.pbY * scale, R.pbZ * scale] },
+        beakRel: [(analysis.beak[0] - R.pnY) * scale, (analysis.beak[1] - R.pnZ) * scale],
+        chestPts: analysis.chestPts.map((p) => [p[0] * scale, p[1] * scale]),
+        vent: HEN_GLB.ventLocal,
+        squat: HEN_LAY.squatM
+    };
+
+    chickensList.forEach((chicken, i) => {
+        const u = chicken.userData;
+        if (u.rigRefs) {
+            chicken.remove(u.rigRefs.rig);
+            u.rigRefs = null;
+        }
+        u.instIndex = i;
+    });
+    disposeProcHenAssets();
+
+    henInst = { mesh, pose, reach, poseAttr, reachAttr, material: built.material, textures: built.textures };
+    scene3D.add(mesh);
+    disposeGltfScene(gltf, built.textures);
+    calibrateAllChickens();
+    chickensList.forEach((chicken) => {
+        chicken.updateMatrixWorld(true);
+        mesh.setMatrixAt(chicken.userData.instIndex, chicken.matrixWorld);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    console.info('[Digital Twin] Ayam GLB aktif: ' + count + ' instance, ' + Math.round(trisBefore) + ' -> ' + Math.round(trisAfter) + ' segitiga/ayam.');
+}
+
+function disposeHenInstances() {
+    if (!henInst) {
+        return;
+    }
+    if (henInst.mesh.parent) {
+        henInst.mesh.parent.remove(henInst.mesh);
+    }
+    henInst.mesh.geometry.dispose();
+    henInst.material.dispose();
+    if (henInst.textures) {
+        henInst.textures.forEach((tex) => tex.dispose());
+    }
+    henInst.mesh.dispose();
+    henInst = null;
+}
+
+// ---------------------------------------------------------------------
+// Fungsi tinggi lantai miring sangkar (±8.5°) & permukaan sabuk telur
+// ---------------------------------------------------------------------
+function cageBeltTopY(floorY) {
+    return floorY + EGG_PATH.beltOffsetY;
+}
+
+function cageFloorHeightAtAbsZ(floorY, absZ) {
+    const slopeTan = Math.tan((EGG_PATH.floorSlopeDeg * Math.PI) / 180);
+    const dZ = Math.max(0, absZ - EGG_PATH.beltZ);
+    return cageBeltTopY(floorY) + dZ * slopeTan;
+}
+
+// ---------------------------------------------------------------------
+// Kalibrasi pose makan tiap ayam terhadap talang kuning di scene
+// ---------------------------------------------------------------------
+function findFeedTrough(u) {
+    for (let i = 0; i < feedTroughs.length; i += 1) {
+        const t = feedTroughs[i];
+        if (t.side === u.side && t.tierIdx === u.tierIdx && Math.abs(u.holeX - t.x) <= t.halfLenX - 0.02) {
+            return t;
+        }
+    }
+    return null;
+}
+
+function calibrateAllChickens() {
+    const stats = { total: 0, adjusted: 0, failed: 0, noTrough: 0, worst: 0, minGap: FEED.peckGap, minFrontZ: FEED.cageFrontZ };
+    chickensList.forEach((chicken) => {
+        const u = chicken.userData;
+        u.trough = findFeedTrough(u);
+        u.feedPose = null;
+        if (!u.trough) {
+            stats.noTrough += 1;
+            return;
+        }
+        // Hitung tinggi pijakan kaki di depan sangkar secara konsisten terhadap lantai miring 8.5°
+        let frontY = cageFloorHeightAtAbsZ(u.floorY, FEED.cageFrontZ + 0.23);
+        let res = solveFeedPose(henModel, u.sc, frontY, u.trough);
+        frontY = cageFloorHeightAtAbsZ(u.floorY, res.frontAbsZ);
+        res = solveFeedPose(henModel, u.sc, frontY, u.trough);
+        res.frontY = frontY;
+
+        stats.total += 1;
+        stats.worst = Math.max(stats.worst, res.err);
+        if (res.adjusted) {
+            stats.adjusted += 1;
+            stats.minGap = Math.min(stats.minGap, res.gap);
+            stats.minFrontZ = Math.min(stats.minFrontZ, res.usedFrontZ);
+        }
+        if (res.ok) {
+            u.feedPose = res;
+        } else {
+            stats.failed += 1;
+        }
+    });
+    if (stats.noTrough) {
+        console.warn('[Digital Twin] ' + stats.noTrough + ' ayam tidak punya talang di depannya; ayam itu tidak akan makan.');
+    }
+    if (stats.adjusted) {
+        console.warn('[Digital Twin] ' + stats.adjusted + ' ayam membutuhkan penyesuaian otomatis agar paruh menyentuh talang kuning (peckGap -> ' + stats.minGap.toFixed(3) + ' m, cageFrontZ -> ' + stats.minFrontZ.toFixed(3) + ' m).');
+    }
+    if (stats.failed) {
+        console.warn('[Digital Twin] ' + stats.failed + ' ayam tidak dapat menjangkau talang kuning (galat terburuk ' + (stats.worst * 1000).toFixed(1) + ' mm > maxNeck); patokan ditahan agar tidak mematok di udara.');
+    }
+    return stats;
+}
+
+window.kandangFeed = {
+    config: FEED,
+    holeConfig: FEED_HOLE,
+    eggPathConfig: EGG_PATH,
+    eggCollector: EGG_COLLECTOR,
+    idleConfig: HEN_IDLE,
+    recalibrate: () => calibrateAllChickens()
+};
+
+/** Diagnostik cepat di konsol browser untuk memeriksa Masalah 1, 2, 3, dan variasi gerak alami ayam. */
+window.kandangVerify3D = function() {
+    let maxBeakErrMm = 0, maxReachM = 0, maxHoleDxMm = 0, maxFeedYawRad = 0, feedingCount = 0;
+    let steppingLegCount = 0, maxLegAmp = 0;
+    const idleSubCounts = {};
+    chickensList.forEach((c) => {
+        const u = c.userData;
+        if (u.state === 'IDLE' && u.idleSub) {
+            idleSubCounts[u.idleSub] = (idleSubCounts[u.idleSub] || 0) + 1;
+        }
+        const curLegAmp = u.legAmpEff || 0;
+        if (curLegAmp > 0.05) {
+            steppingLegCount += 1;
+        }
+        maxLegAmp = Math.max(maxLegAmp, curLegAmp);
+        if (u.feedPose) {
+            maxBeakErrMm = Math.max(maxBeakErrMm, u.feedPose.err * 1000);
+            maxReachM = Math.max(maxReachM, u.feedPose.reach * u.sc);
+        }
+        if (u.state === 'MAKAN' && u.feedBlend > 0.98) {
+            feedingCount += 1;
+            maxHoleDxMm = Math.max(maxHoleDxMm, Math.abs(c.position.x - u.holeX) * 1000);
+            const yawEff = (henInst && u.instIndex !== undefined)
+                ? Math.abs(henInst.pose[u.instIndex * 4 + 1])
+                : Math.abs(u.yawNow * (1 - smooth01(Math.min(1, u.feedBlend * 1.65))));
+            maxFeedYawRad = Math.max(maxFeedYawRad, yawEff);
+        }
+    });
+    let minBeltGapM = Infinity;
+    eggLanes.forEach((l) => {
+        const sorted = l.eggs.slice().sort((a, b) => b.x - a.x);
+        for (let i = 1; i < sorted.length; i += 1) {
+            minBeltGapM = Math.min(minBeltGapM, sorted[i - 1].x - sorted[i].x);
+        }
+    });
+    return {
+        henModel: henModel.kind,
+        totalHens: chickensList.length,
+        feedingCount,
+        steppingLegCount,
+        maxLegAmp: +maxLegAmp.toFixed(3),
+        idleSubCounts,
+        maxBeakErrMm: +maxBeakErrMm.toFixed(3),
+        maxReachM: +maxReachM.toFixed(4),
+        maxHoleDxMm: +maxHoleDxMm.toFixed(3),
+        maxFeedYawRad: +maxFeedYawRad.toFixed(4),
+        holeSpec: {
+            widthM: FEED_HOLE.width,
+            archWidthM: FEED_HOLE.archWidth,
+            heightM: FEED_HOLE.height,
+            bottomOffsetM: FEED_HOLE.bottomOffset,
+            totalHoles: chickensList.length
+        },
+        eggCollectorStations: EGG_COLLECTOR.stations.map((st) => ({
+            side: st.side, tier: st.tierIdx, x: st.x, y: +st.padY.toFixed(3), z: st.z
+        })),
+        activeEggs: activeEggs.length,
+        poolSize: eggPool.length,
+        minBeltGapM: minBeltGapM === Infinity ? null : +minBeltGapM.toFixed(4),
+        collectedTotal: eggStats.total,
+        hudEggText: (document.getElementById('text-egg-3d') || {}).textContent
+    };
+};
+
 // =========================================================================
-// KONFIGURASI ANIMASI & PIN (satu tempat untuk menyetel semuanya)
+// KONFIGURASI ANIMASI & PIN (terhubung ke FEED, FEED_HOLE, EGG_PATH, EGG_COLLECTOR)
 // =========================================================================
 const KANDANG_ANIM_CONFIG = {
-    telur: {
-        layIntervalSec: 3.0,     // rata-rata jeda antar peristiwa bertelur (seluruh kandang)
-        layDurationSec: 2.5,     // durasi ayam berhenti & bergetar sebelum telur muncul
-        growSec: 0.3,            // telur muncul scale 0 -> 1
-        fallSec: 0.45,           // telur jatuh pendek ke sabuk
-        maxActiveEggs: 32,       // ukuran object pool (telur aktif maksimum)
-        laneCapacity: 8,         // maksimal telur menumpuk per sabuk (4 sabuk)
-        rollSpeed: 0.7,          // m/s kecepatan gulir konstan
-        rollAccel: 0.9,          // m/s^2 percepatan awal
-        beltSlope: 0.01,         // kemiringan sabuk (tinggi turun per meter)
-        eggScale: 1.6            // pembesar visual; 1.0 = ukuran nyata 5x4 cm
-    },
     makan: {
-        pEatBase: 0.55,          // peluang IDLE -> MAKAN
-        pEatFeeder: 0.95,        // peluang bila troli pakan baru lewat
-        feederReach: 1.8,        // jarak (m) troli yang memicu ayam makan
-        feederBoostSec: 6,
+        pEatFeeder: 0.96,        // peluang IDLE -> MAKAN saat kereta pakan dalam jangkauan X
+        feederReach: 1.85,       // jarak X (m) kereta pakan yang memicu ayam makan
         eatMinSec: 6, eatMaxSec: 14,
         idleMinSec: 2.5, idleMaxSec: 7,
-        peckMin: 3, peckMax: 6,
-        peckPeriodMin: 0.28, peckPeriodMax: 0.5,
-        lookPauseMin: 0.8, lookPauseMax: 2.0
+        peckMin: 4, peckMax: 8,  // jumlah matokan beruntun per siklus (frekuensi FEED.peckHz)
+        lookPauseMin: 0.25, lookPauseMax: 0.55 // jeda singkat kepala tetap lurus (headYaw=0) di lubang makan
     },
     performa: {
-        stateUpdateGroups: 6     // keputusan state dihitung per kelompok (1/N ayam per frame)
+        stateUpdateGroups: 6     // keputusan transisi state dibagi ke 6 kelompok frame
     },
     pin: {
         labelOffsetPx: 46,
@@ -393,8 +1419,8 @@ const KANDANG_ANIM_CONFIG = {
     }
 };
 
-const EGG_LANE_X_START = -8.9;
-const EGG_LANE_X_END = 8.85;
+const EGG_LANE_X_START = EGG_PATH.beltStartX;
+const EGG_LANE_X_END = EGG_PATH.beltEndX;
 let eggLanes = [];
 let eggPool = [];
 let activeEggs = [];
@@ -412,40 +1438,240 @@ let selectedPin = null;
 let lastPinDetailRefresh = 0;
 
 const EGG_BASE_SIZE = { x: 0.05, y: 0.04, z: 0.04 };
-const eggGeometry = new THREE.SphereGeometry(0.5, 14, 10);
-const eggMaterial = new THREE.MeshStandardMaterial({ color: 0x8d6450, roughness: 0.7 });
-const eggBeltMaterial = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.7 });
-const eggStopMaterial = new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0.8, roughness: 0.3 });
+const _eggTmpVec = new THREE.Vector3();
+const _eggTmpQuadA = new THREE.Vector3();
+const _eggTmpQuadB = new THREE.Vector3();
+let eggAssets = null;
+
+function getEggAssets() {
+    if (eggAssets) {
+        return eggAssets;
+    }
+    eggAssets = {
+        geo: new THREE.SphereGeometry(0.5, 14, 10),
+        mat: new THREE.MeshStandardMaterial({ color: 0xc28254, roughness: 0.55, metalness: 0.02 }),
+        beltMat: new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.62, metalness: 0.08 }),
+        beltEdgeMat: new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.25, roughness: 0.38 }),
+        trayMat: new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.20, roughness: 0.48 }),
+        rimMat: new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.15, roughness: 0.35 }),
+        padMat: new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.75, metalness: 0.04 })
+    };
+    return eggAssets;
+}
+
+function disposeEggAssets() {
+    if (!eggAssets) {
+        return;
+    }
+    Object.keys(eggAssets).forEach((k) => {
+        if (eggAssets[k] && typeof eggAssets[k].dispose === 'function') {
+            eggAssets[k].dispose();
+        }
+    });
+    eggAssets = null;
+}
 
 function randomBetween(min, max) {
     return min + Math.random() * (max - min);
 }
 
-// ---------------------------------------------------------------------
-// SABUK TELUR MIRING (satu sabuk menerus per sisi & tingkat)
-// ---------------------------------------------------------------------
-function eggLaneHeightAt(lane, x) {
-    return lane.startY - lane.slope * (x - EGG_LANE_X_START);
+function eggRestRadiusY() {
+    return 0.5 * EGG_BASE_SIZE.y * EGG_PATH.eggScale;
 }
 
-function createEggLane(side, tierIdx, floorY) {
-    const slope = KANDANG_ANIM_CONFIG.telur.beltSlope;
-    const lane = { side, tierIdx, z: side * 1.52, startY: floorY + 0.12, slope, eggs: [] };
-    const length = EGG_LANE_X_END - EGG_LANE_X_START + 0.1;
+function eggRollRadius() {
+    return 0.25 * (EGG_BASE_SIZE.x + EGG_BASE_SIZE.y) * EGG_PATH.eggScale;
+}
 
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(length, 0.015, 0.12), eggBeltMaterial);
-    belt.position.set((EGG_LANE_X_START + EGG_LANE_X_END) / 2, eggLaneHeightAt(lane, 0) - 0.0075, lane.z);
-    belt.rotation.z = -Math.atan(slope);
+// ---------------------------------------------------------------------
+// SABUK TELUR KONSTAN & BAK PENGUMPUL (EGG_COLLECTOR) DI UJUNG +X BARIS
+// ---------------------------------------------------------------------
+function eggLaneHeightAt(lane) {
+    return lane.y;
+}
+
+function createCollectorBadgeSprite(text) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 72;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 4;
+    const r = 16;
+    ctx.beginPath();
+    ctx.moveTo(r, 4);
+    ctx.lineTo(316 - r, 4);
+    ctx.quadraticCurveTo(316, 4, 316, 4 + r);
+    ctx.lineTo(316, 68 - r);
+    ctx.quadraticCurveTo(316, 68, 316 - r, 68);
+    ctx.lineTo(r, 68);
+    ctx.quadraticCurveTo(4, 68, 4, 68 - r);
+    ctx.lineTo(4, 4 + r);
+    ctx.quadraticCurveTo(4, 4, r, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(28, 36, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fef3c7';
+    ctx.font = 'bold 21px system-ui, -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 48, 37);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: true, depthWrite: false });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(0.95, 0.215, 1);
+    return sprite;
+}
+
+/** Bangun sabuk telur konstan & bak pengumpul terlihat di koordinat ujung sabuk (EGG_COLLECTOR). */
+function createEggLaneAndCollector(side, tierIdx, floorY) {
+    const EA = getEggAssets();
+    const beltY = cageBeltTopY(floorY);
+    const beltZ = side * EGG_PATH.beltZ;
+    const length = EGG_PATH.beltEndX - EGG_PATH.beltStartX;
+    const centerX = 0.5 * (EGG_PATH.beltStartX + EGG_PATH.beltEndX);
+
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(length, 0.014, 0.12), EA.beltMat);
+    belt.position.set(centerX, beltY - 0.007, beltZ);
     belt.receiveShadow = true;
     scene3D.add(belt);
 
-    const stop = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.07, 0.14), eggStopMaterial);
-    stop.position.set(EGG_LANE_X_END + 0.015, eggLaneHeightAt(lane, EGG_LANE_X_END) + 0.025, lane.z);
-    scene3D.add(stop);
+    // Rel pemandu tipis di kedua tepi sabuk telur agar jalur tampak tegas
+    [-0.062, 0.062].forEach((dz) => {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(length, 0.018, 0.006), EA.beltEdgeMat);
+        rail.position.set(centerX, beltY + 0.004, beltZ + dz);
+        scene3D.add(rail);
+    });
 
+    // Bak pengumpul telur (EGG_COLLECTOR) di ujung +X sabuk telur
+    const { w, h, d } = EGG_COLLECTOR.basketSize;
+    const colX = EGG_COLLECTOR.x;
+    const colZ = beltZ;
+    const padY = beltY - EGG_COLLECTOR.dropDepth;
+    const group = new THREE.Group();
+    group.position.set(colX, padY, colZ);
+
+    // Dasar bak & bantalan hijau peredam benturan telur
+    const base = new THREE.Mesh(new THREE.BoxGeometry(w, 0.016, d), EA.trayMat);
+    base.position.y = -0.008;
+    group.add(base);
+
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(w - 0.03, 0.010, d - 0.03), EA.padMat);
+    pad.position.y = 0.003;
+    group.add(pad);
+
+    // Dinding keliling bak (sisi -X menghadap sabuk dibuat lebih rendah sebagai bibir masuk)
+    const wallThick = 0.014;
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, h, d), EA.trayMat);
+    backWall.position.set(w / 2 - wallThick / 2, h / 2 - 0.008, 0);
+    group.add(backWall);
+
+    const frontLipH = Math.max(0.032, EGG_COLLECTOR.dropDepth - 0.018);
+    const frontWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, frontLipH, d), EA.trayMat);
+    frontWall.position.set(-w / 2 + wallThick / 2, frontLipH / 2 - 0.008, 0);
+    group.add(frontWall);
+
+    [-1, 1].forEach((sz) => {
+        const sideWall = new THREE.Mesh(new THREE.BoxGeometry(w, h, wallThick), EA.trayMat);
+        sideWall.position.set(0, h / 2 - 0.008, sz * (d / 2 - wallThick / 2));
+        group.add(sideWall);
+
+        const sideRim = new THREE.Mesh(new THREE.BoxGeometry(w + 0.01, 0.014, 0.018), EA.rimMat);
+        sideRim.position.set(0, h - 0.004, sz * (d / 2 - wallThick / 2));
+        group.add(sideRim);
+    });
+
+    const endRim = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.016, d + 0.01), EA.rimMat);
+    endRim.position.set(w / 2 - wallThick / 2, h - 0.004, 0);
+    group.add(endRim);
+
+    // Peluncur miring (chute) penghubung ujung sabuk X=8.85 m ke bibir dalam bak
+    const chuteDx = (colX - w / 2 + 0.03) - EGG_PATH.beltEndX;
+    const chuteDy = EGG_COLLECTOR.dropDepth - 0.018;
+    const chuteLen = Math.hypot(chuteDx, chuteDy);
+    const chute = new THREE.Mesh(new THREE.BoxGeometry(chuteLen, 0.010, 0.13), EA.beltEdgeMat);
+    chute.position.set(-w / 2 - chuteDx / 2 + 0.02, EGG_COLLECTOR.dropDepth - chuteDy / 2 - 0.004, 0);
+    chute.rotation.z = -Math.atan2(chuteDy, chuteDx);
+    group.add(chute);
+
+    // Indikator lampu LED hijau yang menyala terang sesaat tiap telur masuk bak
+    const beaconMat = new THREE.MeshStandardMaterial({
+        color: 0x10b981,
+        emissive: 0x059669,
+        emissiveIntensity: 0.75,
+        roughness: 0.25
+    });
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), beaconMat);
+    beacon.position.set(w / 2 - 0.01, h + 0.022, 0);
+    group.add(beacon);
+
+    scene3D.add(group);
+
+    // Tiang penyangga stasiun bak pengumpul & label penanda di atas tingkat 2 (1x per baris)
+    if (tierIdx === 1) {
+        const postH = padY + h + 0.08;
+        [-1, 1].forEach((sz) => {
+            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, postH, 8), EA.beltEdgeMat);
+            post.position.set(colX + w / 2 - 0.02, postH / 2, colZ + sz * (d / 2 - 0.02));
+            scene3D.add(post);
+        });
+        const badge = createCollectorBadgeSprite(EGG_COLLECTOR.labelText);
+        badge.position.set(colX, padY + h + 0.42, colZ);
+        scene3D.add(badge);
+    }
+
+    const collector = {
+        side,
+        tierIdx,
+        x: colX,
+        y: padY,
+        z: colZ,
+        padY: padY + 0.008,
+        beltEndY: beltY,
+        flash: 0,
+        beaconMat,
+        group
+    };
+    EGG_COLLECTOR.stations.push(collector);
+
+    const lane = { side, tierIdx, z: beltZ, y: beltY, eggs: [], collector };
     eggLanes.push(lane);
     eggStats.perLane[`${side}_${tierIdx}`] = 0;
     return lane;
+}
+
+/** Hitung sekali daftar waypoint polyline jalur telur untuk satu slot ayam pada modul sangkar. */
+function buildSlotEggWaypoints(side, floorY, slotX, lane) {
+    const rY = eggRestRadiusY();
+    const rearAbsZ = 2.68;
+    const lipAbsZ = EGG_PATH.beltZ + 0.045;
+    const col = lane.collector;
+    const W0 = new THREE.Vector3(slotX, cageFloorHeightAtAbsZ(floorY, rearAbsZ) + rY, side * rearAbsZ);
+    const W1 = new THREE.Vector3(slotX, cageFloorHeightAtAbsZ(floorY, lipAbsZ) + rY, side * lipAbsZ);
+    const W2 = new THREE.Vector3(slotX, lane.y + rY, lane.z);
+    const W3 = new THREE.Vector3(EGG_PATH.beltEndX, lane.y + rY, lane.z);
+    const W4 = new THREE.Vector3(0.5 * (EGG_PATH.beltEndX + col.x), lane.y + rY - 0.014, col.z);
+    const W5 = new THREE.Vector3(col.x, col.padY + rY, col.z);
+    const slopeLen1 = W0.distanceTo(W1);
+    const slopeLen2 = W1.distanceTo(W2);
+    return {
+        points: [W0, W1, W2, W3, W4, W5],
+        rearAbsZ,
+        lipAbsZ,
+        slopeLen1,
+        slopeLen2,
+        slopeTotal: slopeLen1 + slopeLen2,
+        beltLen: Math.max(0.001, W3.x - W2.x),
+        collector: col
+    };
 }
 
 function findEggLane(chicken) {
@@ -456,294 +1682,808 @@ function findEggLane(chicken) {
     return u.lane;
 }
 
-function acquireEgg() {
-    const cfg = KANDANG_ANIM_CONFIG.telur;
-    let egg = eggPool.find((e) => !e.active);
-    if (!egg && eggPool.length < cfg.maxActiveEggs) {
-        const mesh = new THREE.Mesh(eggGeometry, eggMaterial);
-        mesh.castShadow = true;
-        scene3D.add(mesh);
-        egg = { mesh, active: false, lane: null };
-        eggPool.push(egg);
-    }
-    if (!egg) {
-        egg = activeEggs.shift();
-        releaseEggFromLane(egg);
-    } else {
-        egg.active = false;
-    }
-    return egg;
-}
-
 function releaseEggFromLane(egg) {
-    if (egg.lane) {
+    if (egg && egg.lane) {
         const idx = egg.lane.eggs.indexOf(egg);
-        if (idx >= 0) egg.lane.eggs.splice(idx, 1);
-    }
-}
-
-function eggRestRadiusY() {
-    return 0.5 * EGG_BASE_SIZE.y * KANDANG_ANIM_CONFIG.telur.eggScale;
-}
-
-/** Munculkan telur di belakang ayam; menambah counter produksi digital twin. */
-function spawnEgg(chicken) {
-    const lane = findEggLane(chicken);
-    if (!lane) return;
-    const cfg = KANDANG_ANIM_CONFIG.telur;
-
-    if (lane.eggs.length >= cfg.laneCapacity) {
-        const oldest = lane.eggs.shift();
-        oldest.active = false;
-        oldest.mesh.visible = false;
-        const aIdx = activeEggs.indexOf(oldest);
-        if (aIdx >= 0) activeEggs.splice(aIdx, 1);
-    }
-
-    const egg = acquireEgg();
-    const spawnPos = chicken.localToWorld(new THREE.Vector3(0, 0.06, -0.28));
-    egg.active = true;
-    egg.lane = lane;
-    egg.state = 'grow';
-    egg.t = 0;
-    egg.vx = 0;
-    egg.spawn = spawnPos.clone();
-    egg.mesh.visible = true;
-    egg.mesh.position.copy(spawnPos);
-    egg.mesh.rotation.set(0, 0, 0);
-    egg.mesh.scale.set(0.0001, 0.0001, 0.0001);
-    activeEggs.push(egg);
-
-    eggStats.total += 1;
-    eggStats.perLane[`${lane.side}_${lane.tierIdx}`] += 1;
-    window.kandangEggStats = eggStats;
-    const hud = document.getElementById('text-egg-3d');
-    if (hud) hud.textContent = String(eggStats.total);
-    window.dispatchEvent(new CustomEvent('kandang3d:telur', { detail: { total: eggStats.total, perLane: eggStats.perLane } }));
-}
-
-/** Update fisika sederhana semua telur aktif: muncul, jatuh, menggelinding, menumpuk. */
-function updateEggRoll(dt) {
-    const cfg = KANDANG_ANIM_CONFIG.telur;
-    const es = cfg.eggScale;
-    const halfLen = 0.5 * EGG_BASE_SIZE.x * es;
-    const radiusY = eggRestRadiusY();
-    const rollRadius = 0.5 * (EGG_BASE_SIZE.x + EGG_BASE_SIZE.y) * 0.5 * es;
-
-    for (let i = 0; i < activeEggs.length; i++) {
-        const egg = activeEggs[i];
-        const mesh = egg.mesh;
-        const lane = egg.lane;
-
-        if (egg.state === 'grow') {
-            egg.t += dt;
-            const k = Math.min(egg.t / cfg.growSec, 1);
-            mesh.scale.set(EGG_BASE_SIZE.x * es * k, EGG_BASE_SIZE.y * es * k, EGG_BASE_SIZE.z * es * k);
-            if (k >= 1) {
-                egg.state = 'fall';
-                egg.t = 0;
-            }
-        } else if (egg.state === 'fall') {
-            egg.t += dt;
-            const k = Math.min(egg.t / cfg.fallSec, 1);
-            const eased = 1 - (1 - k) * (1 - k);
-            const landY = eggLaneHeightAt(lane, egg.spawn.x) + radiusY;
-            mesh.position.x = egg.spawn.x;
-            mesh.position.z = egg.spawn.z + (lane.z - egg.spawn.z) * eased;
-            mesh.position.y = egg.spawn.y + (landY - egg.spawn.y) * k * k;
-            mesh.rotation.z -= dt * 3;
-            if (k >= 1) {
-                egg.state = 'roll';
-                egg.vx = 0;
-                lane.eggs.push(egg);
-            }
-        } else {
-            let rank = 0;
-            for (let j = 0; j < lane.eggs.length; j++) {
-                const other = lane.eggs[j];
-                if (other !== egg && other.mesh.position.x > mesh.position.x) rank++;
-            }
-            const target = EGG_LANE_X_END - halfLen - rank * (2 * halfLen * 1.04);
-            const dist = target - mesh.position.x;
-
-            if (egg.state === 'settled' && dist > 0.002) {
-                egg.state = 'roll';
-                egg.vx = 0;
-            }
-            if (egg.state === 'roll') {
-                egg.vx = Math.min(egg.vx + cfg.rollAccel * dt, cfg.rollSpeed);
-                const brakeLimit = Math.max(0.05, Math.sqrt(2 * cfg.rollAccel * Math.max(dist, 0)));
-                egg.vx = Math.min(egg.vx, brakeLimit);
-                const dx = Math.max(0, Math.min(egg.vx * dt, dist));
-                mesh.position.x += dx;
-                mesh.rotation.z -= dx / rollRadius;
-                if (dist - dx <= 0.001) {
-                    egg.state = 'settled';
-                    egg.vx = 0;
-                }
-            }
-            const wobble = radiusY * 0.12 * Math.abs(Math.sin(mesh.rotation.z));
-            mesh.position.y = eggLaneHeightAt(lane, mesh.position.x) + radiusY + wobble;
-            mesh.position.z = lane.z;
-            mesh.rotation.x = egg.state === 'roll' ? Math.sin(mesh.rotation.z * 2) * 0.05 : 0;
+        if (idx >= 0) {
+            egg.lane.eggs.splice(idx, 1);
         }
     }
 }
 
+function recycleEggToPool(egg) {
+    if (!egg) {
+        return;
+    }
+    releaseEggFromLane(egg);
+    egg.active = false;
+    if (egg.mesh) {
+        egg.mesh.visible = false;
+    }
+    const idx = activeEggs.indexOf(egg);
+    if (idx >= 0) {
+        activeEggs.splice(idx, 1);
+    }
+}
+
+function acquireEgg() {
+    let egg = eggPool.find((e) => !e.active);
+    if (!egg && eggPool.length < EGG_PATH.maxActiveEggs) {
+        const EA = getEggAssets();
+        const mesh = new THREE.Mesh(EA.geo, EA.mat);
+        mesh.castShadow = false;
+        mesh.visible = false;
+        scene3D.add(mesh);
+        egg = { mesh, active: false, lane: null, counted: false };
+        eggPool.push(egg);
+    }
+    if (!egg && activeEggs.length > 0) {
+        // Pool penuh (> maxActiveEggs): recycle telur tertua secara bersih
+        egg = activeEggs[0];
+        recycleEggToPool(egg);
+    }
+    return egg;
+}
+
+/** Catat telur yang selesai masuk ke EGG_COLLECTOR (sekali per telur) lalu kembalikan ke pool. */
+function completeEggCollection(egg) {
+    if (!egg.counted && egg.lane) {
+        egg.counted = true;
+        const laneKey = `${egg.lane.side}_${egg.lane.tierIdx}`;
+        eggStats.total += 1;
+        eggStats.perLane[laneKey] = (eggStats.perLane[laneKey] || 0) + 1;
+        window.kandangEggStats = eggStats;
+        const hud = document.getElementById('text-egg-3d');
+        if (hud) {
+            hud.textContent = String(eggStats.total);
+        }
+        if (egg.lane.collector) {
+            egg.lane.collector.flash = 1.0;
+        }
+        window.dispatchEvent(new CustomEvent('kandang3d:telur', {
+            detail: {
+                total: eggStats.total,
+                perLane: eggStats.perLane,
+                collector: egg.lane.collector ? {
+                    x: egg.lane.collector.x,
+                    y: egg.lane.collector.padY,
+                    z: egg.lane.collector.z
+                } : null
+            }
+        }));
+    }
+    recycleEggToPool(egg);
+}
+
+/** Fase 1 (LAY): munculkan telur tepat dari bawah ekor ayam mengikuti posisi (X, Y, Z) badan ayam sebenarnya. */
+function spawnEgg(chicken) {
+    const u = chicken.userData;
+    const lane = findEggLane(chicken);
+    if (!lane || !u.eggPath) {
+        return null;
+    }
+    const egg = acquireEgg();
+    if (!egg) {
+        return null;
+    }
+
+    chicken.updateWorldMatrix(true, false);
+    const vent = henModel.vent;
+    const spawnPos = chicken.localToWorld(new THREE.Vector3(vent[0], vent[1], vent[2]));
+    const path = u.eggPath;
+    const rY = eggRestRadiusY();
+    const clampedAbsZ = Math.min(path.rearAbsZ, Math.max(path.lipAbsZ + 0.04, Math.abs(spawnPos.z)));
+    const landY = cageFloorHeightAtAbsZ(u.floorY, clampedAbsZ) + rY;
+    const uSlope0 = (path.rearAbsZ - clampedAbsZ) / Math.max(0.001, path.rearAbsZ - path.lipAbsZ);
+
+    egg.active = true;
+    egg.counted = false;
+    egg.lane = lane;
+    egg.path = path;
+    egg.side = u.side;
+    egg.state = 'LAY';
+    egg.t = 0;
+    egg.vy = 0;
+    egg.speed = 0;
+    egg.spawnX = spawnPos.x;
+    egg.spawnY = Math.max(spawnPos.y, landY + 0.025);
+    egg.spawnZ = u.side * clampedAbsZ;
+    egg.landY = landY;
+    egg.dxOffset = spawnPos.x - path.points[0].x;
+    egg.slopeDist = Math.min(path.slopeLen1 * 0.96, Math.max(0, uSlope0 * path.slopeLen1));
+    egg.x = path.points[2].x;
+    egg.rollX = 0;
+    egg.rollZ = 0;
+
+    egg.mesh.visible = true;
+    egg.mesh.position.set(egg.spawnX, egg.spawnY, egg.spawnZ);
+    egg.mesh.rotation.set(0, 0, 0);
+    egg.mesh.scale.set(0.0001, 0.0001, 0.0001);
+    activeEggs.push(egg);
+    return egg;
+}
+
+/**
+ * State machine deterministik per telur (tanpa fisika/mantul acak):
+ * 1. LAY -> 2. DROP -> 3. ROLL_SLOPE -> 4. ON_BELT (minSpacing 0.12 m) -> 5. COLLECT (masuk bak & kembali ke pool).
+ */
+function updateEggRoll(dt) {
+    const es = EGG_PATH.eggScale;
+    const fullX = EGG_BASE_SIZE.x * es;
+    const fullY = EGG_BASE_SIZE.y * es;
+    const fullZ = EGG_BASE_SIZE.z * es;
+    const rollR = eggRollRadius();
+
+    // Redupkan halus lampu indikator bak pengumpul setelah menerima telur
+    for (let s = 0; s < EGG_COLLECTOR.stations.length; s += 1) {
+        const st = EGG_COLLECTOR.stations[s];
+        if (st.flash > 0) {
+            st.flash = Math.max(0, st.flash - dt * 2.6);
+            st.beaconMat.emissiveIntensity = 0.75 + st.flash * 2.2;
+        }
+    }
+
+    // Tahap A: proses fase LAY, DROP, ROLL_SLOPE, dan COLLECT
+    for (let i = activeEggs.length - 1; i >= 0; i -= 1) {
+        const egg = activeEggs[i];
+        const mesh = egg.mesh;
+        const pts = egg.path.points;
+
+        if (egg.state === 'LAY') {
+            egg.t += dt;
+            const k = smooth01(egg.t / EGG_PATH.layScaleSec);
+            const s = Math.max(0.002, k);
+            mesh.scale.set(fullX * s, fullY * s, fullZ * s);
+            mesh.position.set(egg.spawnX, egg.spawnY, egg.spawnZ);
+            if (egg.t >= EGG_PATH.layScaleSec) {
+                mesh.scale.set(fullX, fullY, fullZ);
+                egg.state = 'DROP';
+                egg.vy = 0;
+            }
+        } else if (egg.state === 'DROP') {
+            egg.vy += EGG_PATH.gravity * dt;
+            mesh.position.x = egg.spawnX;
+            mesh.position.z = egg.spawnZ;
+            mesh.position.y -= egg.vy * dt;
+            if (mesh.position.y <= egg.landY) {
+                mesh.position.y = egg.landY;
+                egg.state = 'ROLL_SLOPE';
+                egg.speed = 0;
+            }
+        } else if (egg.state === 'ROLL_SLOPE') {
+            const s1 = egg.path.slopeLen1;
+            const s2 = egg.path.slopeLen2;
+            const sTotal = egg.path.slopeTotal;
+            const entryX = pts[2].x;
+
+            // Cek apakah ada telur di sabuk yang sedang melintas tepat di depan titik masuk slot ini
+            let beltBlocked = false;
+            if (egg.slopeDist >= s1 - 0.015) {
+                const laneEggs = egg.lane.eggs;
+                for (let j = 0; j < laneEggs.length; j += 1) {
+                    if (Math.abs(laneEggs[j].x - entryX) < EGG_PATH.minSpacing) {
+                        beltBlocked = true;
+                        break;
+                    }
+                }
+            }
+
+            if (beltBlocked && egg.slopeDist >= s1) {
+                egg.speed = 0;
+                egg.slopeDist = s1;
+            } else {
+                egg.speed = Math.min(egg.speed + EGG_PATH.slopeAccel * dt, EGG_PATH.slopeMaxSpeed);
+                const limitDist = beltBlocked ? s1 : sTotal;
+                const ds = Math.max(0, Math.min(egg.speed * dt, limitDist - egg.slopeDist));
+                egg.slopeDist += ds;
+                egg.rollX += (-egg.side) * (ds / rollR);
+            }
+
+            if (egg.slopeDist <= s1) {
+                const u = s1 > 1e-5 ? egg.slopeDist / s1 : 1;
+                mesh.position.lerpVectors(pts[0], pts[1], u);
+                mesh.position.x += egg.dxOffset * (1 - u);
+            } else {
+                const u = s2 > 1e-5 ? smooth01((egg.slopeDist - s1) / s2) : 1;
+                mesh.position.lerpVectors(pts[1], pts[2], u);
+            }
+            mesh.rotation.set(egg.rollX, 0, 0);
+
+            if (!beltBlocked && egg.slopeDist >= sTotal - 1e-4) {
+                egg.state = 'ON_BELT';
+                egg.x = pts[2].x;
+                egg.speed = EGG_PATH.beltSpeed;
+                mesh.position.copy(pts[2]);
+                egg.lane.eggs.push(egg);
+            }
+        } else if (egg.state === 'COLLECT') {
+            egg.t += dt;
+            const rawU = Math.min(1, egg.t / EGG_PATH.collectSec);
+            const u = smooth01(rawU);
+            // Interpolasi kurva Bezier kuadratik melalui waypoint [W3, W4, W5] masuk ke bak pengumpul
+            const om = 1 - u;
+            _eggTmpQuadA.copy(pts[3]).multiplyScalar(om * om);
+            _eggTmpQuadB.copy(pts[4]).multiplyScalar(2 * om * u);
+            _eggTmpVec.copy(pts[5]).multiplyScalar(u * u).add(_eggTmpQuadA).add(_eggTmpQuadB);
+
+            const ds = mesh.position.distanceTo(_eggTmpVec);
+            mesh.position.copy(_eggTmpVec);
+            egg.rollZ -= ds / rollR;
+            mesh.rotation.set(0, 0, egg.rollZ);
+
+            const shrink = rawU > 0.72 ? (1 - smooth01((rawU - 0.72) / 0.28) * 0.65) : 1;
+            mesh.scale.set(fullX * shrink, fullY * shrink, fullZ * shrink);
+
+            if (egg.t >= EGG_PATH.collectSec) {
+                completeEggCollection(egg);
+            }
+        }
+    }
+
+    // Tahap B: proses fase ON_BELT per jalur dari depan (+X) ke belakang (-X) untuk menjaga jarak >= minSpacing (0.12 m)
+    for (let l = 0; l < eggLanes.length; l += 1) {
+        const lane = eggLanes[l];
+        if (!lane.eggs.length) {
+            continue;
+        }
+        lane.eggs.sort((a, b) => b.x - a.x);
+        for (let idx = 0; idx < lane.eggs.length; idx += 1) {
+            const egg = lane.eggs[idx];
+            const pts = egg.path.points;
+            let desiredSpeed = EGG_PATH.beltSpeed;
+            let maxAllowedX = pts[3].x;
+
+            if (idx > 0) {
+                const ahead = lane.eggs[idx - 1];
+                const gap = ahead.x - egg.x;
+                const slowBand = EGG_PATH.minSpacing * 1.45;
+                if (gap < slowBand) {
+                    const ratio = smooth01((gap - EGG_PATH.minSpacing) / Math.max(0.01, slowBand - EGG_PATH.minSpacing));
+                    desiredSpeed = EGG_PATH.beltSpeed * ratio;
+                }
+                maxAllowedX = Math.min(maxAllowedX, Math.max(egg.x, ahead.x - EGG_PATH.minSpacing));
+            }
+
+            egg.speed = desiredSpeed;
+            const nextX = Math.min(maxAllowedX, egg.x + egg.speed * dt);
+            const dx = Math.max(0, nextX - egg.x);
+            egg.x += dx;
+
+            const uBelt = Math.min(1, Math.max(0, (egg.x - pts[2].x) / egg.path.beltLen));
+            meshPositionOnBelt(egg, pts[2], pts[3], uBelt, dx, rollR);
+
+            if (egg.x >= pts[3].x - 1e-4) {
+                lane.eggs.splice(idx, 1);
+                idx -= 1;
+                egg.state = 'COLLECT';
+                egg.t = 0;
+            }
+        }
+    }
+}
+
+function meshPositionOnBelt(egg, wStart, wEnd, uBelt, dx, rollR) {
+    const mesh = egg.mesh;
+    mesh.position.lerpVectors(wStart, wEnd, uBelt);
+    egg.rollZ -= dx / rollR;
+    const dampRollX = egg.rollX * Math.max(0, 1 - uBelt * 5);
+    mesh.rotation.set(dampRollX, 0, egg.rollZ);
+}
+
 // ---------------------------------------------------------------------
-// STATE MACHINE AYAM: IDLE -> MAKAN -> IDLE -> BERTELUR
+// STATE MACHINE AYAM: IDLE <-> MAKAN (di lubang makan & talang kuning) <-> BERTELUR
 // ---------------------------------------------------------------------
+function smooth01(x) {
+    const v = Math.min(1, Math.max(0, x));
+    return v * v * (3 - 2 * v);
+}
+
 function initChickenState(chicken, now) {
     const u = chicken.userData;
     u.state = 'IDLE';
     u.stateEnd = now + randomBetween(0, KANDANG_ANIM_CONFIG.makan.idleMaxSec) * 1000;
-    u.targetUpperX = 0;
-    u.targetHeadY = 0;
-    u.lookNext = now + randomBetween(500, 3000);
-    u.feedBoostUntil = 0;
-    u.tailRaise = 0;
+    u.lookNext = now + randomBetween(200, 1400);
+    u.feedUntil = 0;
+    u.feedBlend = 0;
+    u.targetBlend = 0;
+    u.wave = 0;
+    u.peckT = 0;
+    u.peckTarget = 0;
+    u.peckPhase = 'look';
+    u.yawNow = u.idleYaw;
+    u.targetYaw = u.idleYaw;
+    u.squatNow = 0;
+    u.targetSquat = 0;
+    u.tailNow = 0;
+    u.targetTail = 0;
+    u.shake = 0;
+    u.pendingLay = false;
+    u.layStart = 0;
+    u.layDurationMs = EGG_PATH.layDurationSec * 1000;
+    u.laySpawned = false;
+
+    // Variabel gerak hidup alami (micro-life & sub-aktivitas IDLE di dalam sekat sangkar)
+    u.breathMul = 0.86 + Math.random() * 0.28;
+    u.idleX = u.homeX;
+    u.idleAbsZ = Math.min(HEN_IDLE.roamAbsZMax, Math.max(HEN_IDLE.roamAbsZMin, Math.abs(u.homeZ)));
+    u.idleTargetX = u.idleX;
+    u.idleTargetAbsZ = u.idleAbsZ;
+    u.bodyYawOffset = u.yawJitter;
+    u.targetBodyYawOffset = u.yawJitter;
+    u.idlePitchNow = u.idlePitch;
+    u.idleTargetPitch = u.idlePitch;
+    u.idleReachNow = 0;
+    u.idleTargetReach = 0;
+    u.saccadeKick = 0;
+    u.walkPhase = Math.random() * Math.PI * 2;
+    u.walkStepAmp = 0;
+    u.legPhase = Math.random() * Math.PI * 2;
+    u.legAmp = 0;
+    u.legAmpEff = 0;
+    u.scratchActive = false;
+    u.fidgetActive = false;
+    u.fidgetNext = now + randomBetween(200, HEN_IDLE.fidgetMaxSec * 1000);
+    u.fidgetUntil = 0;
+    u.prevWorldX = u.idleX;
+    u.prevAbsZ = u.idleAbsZ;
+    u.prevRotY = u.sideYaw + u.bodyYawOffset;
+    u.idleSub = 'LOOK';
+    u.subStart = now;
+    u.subEnd = now + randomBetween(300, 2600);
+    u.preenKind = 'wag';
+    u.preenSide = Math.random() < 0.5 ? -1 : 1;
+}
+
+/** Kereta pakan sedang jalan dan berada dalam jangkauan ayam pada sumbu X. */
+function isFeederNear(u) {
+    return isFeederRunning3D && Boolean(feederCart3D)
+        && Math.abs(u.holeX - feederPositionX) < KANDANG_ANIM_CONFIG.makan.feederReach;
+}
+
+/** Kereta pakan sedang mendekat sehingga ayam mulai antusias menghadap talang. */
+function isFeederApproaching(u) {
+    return isFeederRunning3D && Boolean(feederCart3D)
+        && Math.abs(u.holeX - feederPositionX) < HEN_IDLE.feederAlertDist;
+}
+
+/** Perbarui masa tersedianya pakan di talang depan ayam; true bila pakan masih ada. */
+function updateFeedAvailability(u, now) {
+    if (u.feedPose && isFeederNear(u)) {
+        if (now >= u.feedUntil && u.state === 'IDLE' && !u.pendingLay) {
+            u.stateEnd = Math.min(u.stateEnd, now + randomBetween(80, 360));
+        }
+        u.feedUntil = now + FEED.lingerSec * 1000;
+    }
+    return now < u.feedUntil;
 }
 
 function startMakan(chicken, now) {
     const cfg = KANDANG_ANIM_CONFIG.makan;
     const u = chicken.userData;
+    const phaseDelayMs = ((u.peckPhaseOffset || 0) / (Math.PI * 2)) * (1000 / Math.max(0.5, FEED.peckHz));
     u.state = 'MAKAN';
     u.stateEnd = now + randomBetween(cfg.eatMinSec, cfg.eatMaxSec) * 1000;
-    u.peckPhase = 'peck';
-    u.peckCount = Math.round(randomBetween(cfg.peckMin, cfg.peckMax));
-    u.peckPeriod = randomBetween(cfg.peckPeriodMin, cfg.peckPeriodMax);
-    u.peckAngle = 0;
-    u.pecksDone = 0;
-    u.lookEnd = 0;
-    u.lookDir = 0;
+    u.peckPhase = 'look';
+    u.peckT = 0;
+    u.peckTarget = Math.round(randomBetween(cfg.peckMin, cfg.peckMax));
+    u.lookStart = now;
+    u.lookEnd = now + phaseDelayMs;
+    u.targetYaw = 0;
+    u.targetBodyYawOffset = 0;
 }
 
 function startBertelur(chicken, now) {
     const u = chicken.userData;
+    u.pendingLay = false;
     u.state = 'BERTELUR';
-    u.stateEnd = now + KANDANG_ANIM_CONFIG.telur.layDurationSec * 1000 * randomBetween(0.9, 1.15);
+    u.layStart = now;
+    u.layDurationMs = EGG_PATH.layDurationSec * 1000 * randomBetween(0.92, 1.08);
+    u.stateEnd = now + u.layDurationMs;
+    u.laySpawned = false;
+    u.targetBodyYawOffset = u.yawJitter * 0.4;
 }
 
-/** Pilih ayam IDLE yang memenuhi syarat untuk bertelur (menjauh dari area penampungan). */
+/** Pilih ayam untuk bertelur (menghadap depan, tidak sedang minum ke belakang atau makan). */
 function pickLayingChicken(now) {
     const n = chickensList.length;
-    for (let tries = 0; tries < 16; tries++) {
+    for (let tries = 0; tries < 24; tries += 1) {
         const c = chickensList[Math.floor(Math.random() * n)];
         const u = c.userData;
-        if (u.state === 'IDLE' && u.homeX <= EGG_LANE_X_END - 1.2 && findEggLane(c)) {
+        if (!findEggLane(c) || !u.eggPath) {
+            continue;
+        }
+        if (u.state === 'IDLE' && u.feedBlend < 0.05 && now >= u.feedUntil && Math.abs(u.bodyYawOffset) < 0.55) {
             startBertelur(c, now);
             return;
         }
+    }
+    const fallback = chickensList[Math.floor(Math.random() * n)];
+    if (fallback && fallback.userData && fallback.userData.state !== 'BERTELUR') {
+        fallback.userData.pendingLay = true;
     }
 }
 
 function decideChickenState(chicken, now) {
     const cfg = KANDANG_ANIM_CONFIG.makan;
     const u = chicken.userData;
-
-    if (isFeederRunning3D && Math.abs(u.homeX - feederPositionX) < cfg.feederReach) {
-        if (now > u.feedBoostUntil && u.state === 'IDLE') {
-            u.stateEnd = Math.min(u.stateEnd, now + randomBetween(100, 900));
-        }
-        u.feedBoostUntil = now + cfg.feederBoostSec * 1000;
+    if (u.state === 'IDLE' && u.pendingLay && u.feedBlend < 0.05 && Math.abs(u.bodyYawOffset) < 0.55) {
+        startBertelur(chicken, now);
+        return;
     }
-    const boosted = now < u.feedBoostUntil;
-
     if (u.state === 'IDLE' && now >= u.stateEnd) {
-        if (Math.random() < (boosted ? cfg.pEatFeeder : cfg.pEatBase)) {
+        if (u.feedPose && now < u.feedUntil && !u.pendingLay && Math.random() < cfg.pEatFeeder) {
             startMakan(chicken, now);
         } else {
             u.stateEnd = now + randomBetween(cfg.idleMinSec, cfg.idleMaxSec) * 1000;
         }
-    } else if (u.state === 'MAKAN' && now >= u.stateEnd) {
-        if (boosted) {
-            u.stateEnd = now + randomBetween(2, 5) * 1000;
-        } else {
-            u.state = 'IDLE';
-            u.stateEnd = now + randomBetween(cfg.idleMinSec, cfg.idleMaxSec) * 1000;
-        }
     }
 }
 
-/** Menunduk & mematok 3-6 kali, jeda, menoleh kiri-kanan, ulangi. */
+/** Pilih sub-perilaku alami berikutnya saat ayam berada pada state IDLE. */
+function chooseNextIdleSub(u, now) {
+    u.subStart = now;
+
+    // Jika kereta pakan mendekat, ayam antusias maju ke dekat bagian depan sekatnya
+    if (isFeederApproaching(u) && !u.pendingLay) {
+        u.idleSub = 'ALERT';
+        u.subEnd = now + randomBetween(700, 1400);
+        u.idleTargetX = u.holeX + randomBetween(-0.025, 0.025);
+        u.idleTargetAbsZ = HEN_IDLE.roamAbsZMin;
+        u.targetBodyYawOffset = randomBetween(-0.10, 0.10);
+        u.idleTargetPitch = -0.08;
+        u.idleTargetReach = 0.01;
+        u.lookNext = now + randomBetween(180, 450);
+        return;
+    }
+
+    // Jika baru selesai DRINK (menghadap belakang), kembalikan arah hadap ke depan terlebih dahulu
+    if (u.idleSub === 'DRINK') {
+        u.idleSub = 'LOOK';
+        u.subEnd = now + randomBetween(1400, 2600);
+        u.targetBodyYawOffset = randomBetween(-0.30, 0.30);
+        u.idleTargetAbsZ = randomBetween(HEN_IDLE.roamAbsZMin + 0.04, 2.12);
+        u.idleTargetPitch = randomBetween(-0.04, 0.16);
+        u.idleTargetReach = 0;
+        u.lookNext = now + 350;
+        return;
+    }
+
+    const r = Math.random();
+    if (r < 0.26) {
+        u.idleSub = 'LOOK';
+        u.subEnd = now + randomBetween(1600, 3400);
+        u.idleTargetPitch = randomBetween(-0.10, 0.22);
+        u.idleTargetReach = randomBetween(0, 0.015);
+        u.lookNext = now + randomBetween(120, 600);
+    } else if (r < 0.54) {
+        u.idleSub = 'STEP';
+        u.subEnd = now + randomBetween(1400, 2700);
+        u.idleTargetX = u.holeX + randomBetween(-HEN_IDLE.roamXMax, HEN_IDLE.roamXMax);
+        u.idleTargetAbsZ = randomBetween(HEN_IDLE.roamAbsZMin, HEN_IDLE.roamAbsZMax - 0.04);
+        const moveAngle = Math.atan2(u.idleTargetX - u.idleX, Math.max(0.04, Math.abs(u.idleAbsZ - u.idleTargetAbsZ)));
+        u.targetBodyYawOffset = Math.max(-0.42, Math.min(0.42, moveAngle * 0.45 + randomBetween(-0.28, 0.28)));
+        u.idleTargetPitch = randomBetween(0.04, 0.20);
+        u.targetYaw = randomBetween(-0.28, 0.28);
+        u.saccadeKick = 0.8;
+    } else if (r < 0.76) {
+        u.idleSub = 'FORAGE';
+        u.subEnd = now + randomBetween(1800, 3400);
+        u.targetBodyYawOffset = randomBetween(-0.35, 0.35);
+        u.targetYaw = randomBetween(-0.32, 0.32);
+        u.idleTargetPitch = HEN_IDLE.foragePitch * randomBetween(0.85, 1.06);
+        u.saccadeKick = 1.0;
+    } else if (r < 0.88 && !u.pendingLay) {
+        u.idleSub = 'DRINK';
+        u.subEnd = now + randomBetween(2200, 3500);
+        u.idleTargetX = u.holeX + randomBetween(-0.04, 0.04);
+        u.idleTargetAbsZ = HEN_IDLE.roamAbsZMax;
+        const turnSign = u.slotIdx === 0 ? 1 : (u.slotIdx === 2 ? -1 : (Math.random() < 0.5 ? -1 : 1));
+        u.targetBodyYawOffset = turnSign * randomBetween(2.45, 2.78);
+        u.targetYaw = 0;
+        u.idleTargetPitch = HEN_IDLE.drinkPitch;
+    } else {
+        u.idleSub = 'PREEN';
+        u.preenKind = Math.random() < 0.48 ? 'wag' : 'wing';
+        u.preenSide = Math.random() < 0.5 ? -1 : 1;
+        u.subEnd = now + (u.preenKind === 'wag' ? randomBetween(1100, 1700) : randomBetween(2000, 3200));
+        u.targetYaw = u.preenKind === 'wing' ? u.preenSide * HEN_IDLE.preenYaw : randomBetween(-0.2, 0.2);
+        u.idleTargetPitch = u.preenKind === 'wing' ? 0.34 : 0.08;
+        u.saccadeKick = 0.7;
+    }
+}
+
+/** Mematok di permukaan talang kuning melalui tengah lubang makan (headYaw dijaga ~0 agar tidak menabrak kawat). */
 function playPeckAnimation(chicken, dt, now) {
     const cfg = KANDANG_ANIM_CONFIG.makan;
     const u = chicken.userData;
-    u.targetZ = u.side * 1.78;
+    u.targetBlend = 1;
+    u.targetSquat = 0;
+    u.targetTail = 0;
+    u.shake = 0;
+    u.targetYaw = 0;
+    u.targetBodyYawOffset = 0;
 
     if (u.peckPhase === 'peck') {
-        u.peckAngle += (dt / u.peckPeriod) * Math.PI * 2;
-        const offset = 0.5 - 0.5 * Math.cos(u.peckAngle);
-        u.targetUpperX = 0.5 + 0.38 * offset;
-        u.targetHeadY = 0;
-        if (u.peckAngle >= Math.PI * 2 * (u.pecksDone + 1)) {
-            u.pecksDone += 1;
-            if (u.pecksDone >= u.peckCount) {
-                u.peckPhase = 'look';
-                u.lookEnd = now + randomBetween(cfg.lookPauseMin, cfg.lookPauseMax) * 1000;
-                u.lookDir = Math.random() < 0.5 ? -1 : 1;
-                u.lookStart = now;
-            }
+        u.peckT += dt * FEED.peckHz * u.peckHzMul;
+        if (u.peckT >= u.peckTarget) {
+            u.peckT = u.peckTarget;
+            u.wave = 0;
+            u.peckPhase = 'look';
+            u.lookStart = now;
+            u.lookEnd = now + randomBetween(cfg.lookPauseMin, cfg.lookPauseMax) * 1000;
+        } else {
+            u.wave = 0.5 + 0.5 * Math.sin(Math.PI * 2 * u.peckT - Math.PI / 2);
         }
     } else {
-        u.targetUpperX = 0.05;
-        u.targetHeadY = Math.sin((now - u.lookStart) * 0.005) * 0.7 * u.lookDir;
+        u.wave = 0;
         if (now >= u.lookEnd) {
             u.peckPhase = 'peck';
-            u.peckCount = Math.round(randomBetween(cfg.peckMin, cfg.peckMax));
-            u.peckPeriod = randomBetween(cfg.peckPeriodMin, cfg.peckPeriodMax);
-            u.peckAngle = 0;
-            u.pecksDone = 0;
+            u.peckT = 0;
+            u.peckTarget = Math.round(randomBetween(cfg.peckMin, cfg.peckMax));
         }
     }
 }
 
-/** Bertelur: berhenti, badan turun & bergetar, ekor naik, lalu telur muncul. */
+/** Bertelur (~1 dtk): ayam merunduk, ekor terangkat, bergetar halus, telur keluar tepat di puncak kontraksi. */
 function playLayEggAnimation(chicken, dt, now) {
     const u = chicken.userData;
-    u.targetUpperX = 0;
-    u.targetHeadY = 0;
-    u.targetZ = u.homeZ;
-    u.tailRaiseTarget = 0.35;
-    u.targetYOffset = -0.03;
-    u.shake = 0.004;
-    if (now >= u.stateEnd) {
+    const progress = Math.min(1, Math.max(0, (now - u.layStart) / Math.max(1, u.layDurationMs)));
+    const contractEnv = progress < EGG_PATH.layPeakFrac
+        ? smooth01(progress / EGG_PATH.layPeakFrac)
+        : 1 - 0.35 * smooth01((progress - EGG_PATH.layPeakFrac) / Math.max(0.05, 1 - EGG_PATH.layPeakFrac));
+
+    u.targetBlend = 0;
+    u.wave = 0;
+    u.targetYaw = 0;
+    u.targetBodyYawOffset = 0;
+    u.idleTargetPitch = 0.06;
+    u.idleTargetReach = 0;
+    u.targetSquat = henModel.squat * contractEnv;
+    u.targetTail = HEN_LAY.tailLift * contractEnv;
+    u.shake = HEN_LAY.shakeAmp * contractEnv;
+
+    if (!u.laySpawned && progress >= EGG_PATH.layPeakFrac) {
+        u.laySpawned = true;
         spawnEgg(chicken);
+    }
+    if (now >= u.stateEnd) {
         u.state = 'IDLE';
+        u.shake = 0;
         u.stateEnd = now + randomBetween(KANDANG_ANIM_CONFIG.makan.idleMinSec, KANDANG_ANIM_CONFIG.makan.idleMaxSec) * 1000;
+        chooseNextIdleSub(u, now);
     }
 }
 
+/**
+ * Perilaku alami saat IDLE: napas berkelanjutan, saccadic head-snap khas unggas,
+ * langkah pendek di dalam sekat, eksplorasi lantai, minum di pipa nipple belakang, & kibas ekor/merapikan bulu.
+ */
 function playIdleAnimation(chicken, dt, now) {
     const u = chicken.userData;
-    u.targetUpperX = u.poseBaseUpperX;
-    u.targetZ = u.homeZ;
-    if (now >= u.lookNext) {
-        u.targetHeadY = u.poseBaseHeadY + randomBetween(-0.7, 0.7);
-        u.lookNext = now + randomBetween(1500, 4000);
+    u.targetBlend = 0;
+    u.wave = 0;
+
+    if (now >= u.subEnd || (isFeederApproaching(u) && u.idleSub !== 'ALERT' && u.idleSub !== 'DRINK')) {
+        chooseNextIdleSub(u, now);
+    }
+
+    const tSec = (now - u.subStart) * 0.001;
+    u.shake = 0;
+    u.targetSquat = 0;
+    u.targetTail = 0;
+    u.idleTargetReach = 0;
+    u.scratchActive = false;
+
+    // Geser tumpuan cakar berkala di atas kawat miring 8.5° agar kaki tidak kaku saat ayam berdiri di tempat
+    if (now >= u.fidgetNext) {
+        u.fidgetUntil = now + randomBetween(460, 820);
+        u.fidgetNext = now + randomBetween(HEN_IDLE.fidgetMinSec, HEN_IDLE.fidgetMaxSec) * 1000;
+        if (u.idleSub === 'LOOK' || u.idleSub === 'PREEN') {
+            u.idleTargetX = Math.max(
+                u.holeX - HEN_IDLE.roamXMax,
+                Math.min(u.holeX + HEN_IDLE.roamXMax, u.idleX + randomBetween(-0.024, 0.024))
+            );
+            u.idleTargetAbsZ = Math.max(
+                HEN_IDLE.roamAbsZMin,
+                Math.min(HEN_IDLE.roamAbsZMax - 0.04, u.idleAbsZ + randomBetween(-0.025, 0.025))
+            );
+        }
+    }
+    u.fidgetActive = now < u.fidgetUntil;
+
+    if (u.idleSub === 'LOOK' || u.idleSub === 'ALERT') {
+        const fast = u.idleSub === 'ALERT';
+        if (now >= u.lookNext) {
+            u.targetYaw = randomBetween(fast ? -0.38 : -0.68, fast ? 0.38 : 0.68);
+            u.idleTargetPitch = fast ? randomBetween(-0.12, 0.08) : randomBetween(-0.12, 0.26);
+            u.saccadeKick = 1.0;
+            u.lookNext = now + (fast ? randomBetween(280, 680) : randomBetween(550, 1550));
+        }
+        u.targetSquat = fast ? -0.004 : 0;
+        u.targetTail = fast ? 0.10 : 0.02;
+    } else if (u.idleSub === 'STEP') {
+        if (now >= u.lookNext) {
+            u.targetYaw = randomBetween(-0.42, 0.42);
+            u.saccadeKick = 0.75;
+            u.lookNext = now + randomBetween(500, 1200);
+        }
+        u.targetTail = 0.06;
+    } else if (u.idleSub === 'FORAGE') {
+        // Pola alami ayam: mengais lantai kawat dengan cakar bergantian (45% awal siklus), lalu mematuk (55% sisa siklus)
+        const forageCycle = ((tSec * 0.85) + (u.bobOffset / (Math.PI * 2))) % 1;
+        if (forageCycle < 0.45) {
+            u.scratchActive = true;
+            u.idleTargetPitch = 0.34 + 0.06 * Math.sin(tSec * 12.0);
+            u.idleTargetReach = 0.012;
+            u.targetSquat = 0.010;
+            u.targetTail = 0.18;
+        } else {
+            const peckWave = Math.max(0, Math.sin(tSec * Math.PI * 2 * HEN_IDLE.forageHz + u.bobOffset));
+            const pulse = peckWave * peckWave;
+            u.idleTargetPitch = HEN_IDLE.foragePitch + 0.16 * pulse;
+            u.idleTargetReach = 0.028 * pulse;
+            u.targetSquat = 0.016 + 0.006 * pulse;
+            u.targetTail = 0.12 + 0.06 * pulse;
+        }
+    } else if (u.idleSub === 'DRINK') {
+        const turnedEnough = Math.abs(u.bodyYawOffset) > 1.75;
+        const sip = turnedEnough ? Math.max(0, Math.sin(tSec * Math.PI * 2 * HEN_IDLE.drinkHz + u.bobOffset)) : 0;
+        u.idleTargetPitch = turnedEnough ? (HEN_IDLE.drinkPitch - 0.10 * sip) : 0.06;
+        u.idleTargetReach = turnedEnough ? (0.020 * sip) : 0;
+        u.targetSquat = -0.004 * sip;
+        u.targetTail = -0.05;
+    } else if (u.idleSub === 'PREEN') {
+        if (u.preenKind === 'wag') {
+            u.fidgetActive = true;
+            u.targetSquat = 0.018;
+            u.targetTail = 0.24 + 0.20 * Math.sin(tSec * Math.PI * 2 * HEN_IDLE.tailWagHz);
+            u.shake = 0.0022;
+        } else {
+            const nibble = 0.08 * Math.sin(tSec * 14.0);
+            u.targetSquat = 0.026;
+            u.targetYaw = u.preenSide * HEN_IDLE.preenYaw;
+            u.idleTargetPitch = 0.34 + nibble;
+            u.targetTail = 0.08;
+        }
     }
 }
 
-/** Haluskan seluruh sendi/posisi ayam menuju target state. */
+/**
+ * Hitung pose akhir ayam:
+ * - Saat IDLE: gabungkan napas mikro asinkron, head-snap khas unggas, langkah & kaisan cakar kaki kiri-kanan, & sub-aktivitas.
+ * - Saat MAKAN (feedBlend -> 1): kaki melangkah maju saat menuju lubang lalu menapak mantap di lantai miring 8.5°,
+ *   X terkunci ke u.holeX, dan headYaw -> 0 agar kepala lolos bersih tanpa menyentuh kawat.
+ */
 function applyChickenPose(chicken, dt, now) {
     const u = chicken.userData;
-    const fast = u.state === 'MAKAN' && u.peckPhase === 'peck' ? 20 : 7;
-    const kPose = Math.min(1, dt * fast);
-    const kSlow = Math.min(1, dt * 5);
+    const fp = u.feedPose;
 
-    u.upper.rotation.x += (u.targetUpperX - u.upper.rotation.x) * kPose;
-    u.head.rotation.y += (u.targetHeadY - u.head.rotation.y) * kSlow;
+    const step = dt / FEED.blendSec;
+    const target = (u.targetBlend && fp) ? 1 : 0;
+    u.feedBlend += Math.max(-step, Math.min(step, target - u.feedBlend));
+    const eBody = smooth01(u.feedBlend);
+    const eHead = smooth01(Math.min(1, u.feedBlend * 1.65));
+    const idleFade = u.state === 'BERTELUR' ? 0 : (1 - eBody);
+    const idleHeadFade = u.state === 'BERTELUR' ? 0 : (1 - eHead);
 
-    const isLaying = u.state === 'BERTELUR';
-    const yOffset = isLaying ? (u.targetYOffset || 0) : 0;
-    chicken.position.y += (u.homeY + yOffset - chicken.position.y) * kSlow;
-    chicken.position.z += ((u.targetZ !== undefined ? u.targetZ : u.homeZ) - chicken.position.z) * Math.min(1, dt * 4);
-    chicken.position.x = u.homeX + (isLaying ? Math.sin(now * 0.05 + u.bobOffset) * u.shake : 0);
+    // Pergeseran langkah kaki halus di dalam sekat kompartemen saat IDLE
+    if (u.state === 'IDLE' && eBody < 0.05) {
+        const dx = u.idleTargetX - u.idleX;
+        const dz = u.idleTargetAbsZ - u.idleAbsZ;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 0.002) {
+            const move = Math.min(dist, HEN_IDLE.walkSpeed * dt);
+            u.idleX += (dx / dist) * move;
+            u.idleAbsZ += (dz / dist) * move;
+            u.walkPhase += dt * Math.PI * 2 * HEN_IDLE.walkBobHz;
+            u.walkStepAmp = Math.min(1, u.walkStepAmp + dt * 9);
+        } else {
+            u.walkStepAmp = Math.max(0, u.walkStepAmp - dt * 8);
+        }
+    } else {
+        u.walkStepAmp = Math.max(0, u.walkStepAmp - dt * 10);
+    }
 
-    const raise = isLaying ? u.tailRaiseTarget : 0;
-    u.tailRaise += (raise - u.tailRaise) * kSlow;
-    for (let t = 0; t < u.tails.length; t++) {
-        u.tails[t].rotation.x = u.tails[t].userData.baseRotX + u.tailRaise;
+    // Saccadic head-snap (cepat untuk kepala/leher khas ayam, mulus untuk badan)
+    const kSnap = Math.min(1, dt * HEN_IDLE.headSnapSpeed);
+    const kBody = Math.min(1, dt * 6.5);
+    u.yawNow += (u.targetYaw - u.yawNow) * kSnap;
+    u.idlePitchNow += (u.idleTargetPitch - u.idlePitchNow) * Math.min(1, dt * 11);
+    u.idleReachNow += (u.idleTargetReach - u.idleReachNow) * Math.min(1, dt * 12);
+    u.bodyYawOffset += (u.targetBodyYawOffset - u.bodyYawOffset) * Math.min(1, dt * 5.2);
+    u.squatNow += (u.targetSquat - u.squatNow) * kBody;
+    u.tailNow += (u.targetTail - u.tailNow) * Math.min(1, dt * 10);
+    u.saccadeKick = Math.max(0, u.saccadeKick - dt * 6.5);
+
+    const frontAbs = fp ? fp.frontAbsZ : u.idleAbsZ;
+    const curAbsZ = u.idleAbsZ + (frontAbs - u.idleAbsZ) * eBody;
+    const shakeX = (u.state === 'BERTELUR' || u.shake > 0)
+        ? Math.sin(now * 0.055 + u.bobOffset) * u.shake * (1 - eBody)
+        : 0;
+    const curX = u.idleX + (u.holeX - u.idleX) * eBody + shakeX;
+    const curY = cageFloorHeightAtAbsZ(u.floorY, curAbsZ);
+    const rotY = u.sideYaw + u.bodyYawOffset * (1 - eBody);
+
+    // Kinematika langkah kaki & cakar unggas (sinkron dengan perpindahan nyata, putaran badan, kaisan lantai, & geser tumpuan)
+    const prevX = u.prevWorldX !== undefined ? u.prevWorldX : curX;
+    const prevZ = u.prevAbsZ !== undefined ? u.prevAbsZ : curAbsZ;
+    const prevRot = u.prevRotY !== undefined ? u.prevRotY : rotY;
+    const dPos = Math.hypot(curX - prevX, curAbsZ - prevZ);
+    const dTurn = Math.abs(rotY - prevRot) * 0.11;
+    u.prevWorldX = curX;
+    u.prevAbsZ = curAbsZ;
+    u.prevRotY = rotY;
+
+    const footTravel = dPos + dTurn;
+    const footSpeed = footTravel / Math.max(dt, 0.001);
+    let targetLegAmp = 0;
+    if (u.state !== 'BERTELUR' && eBody <= 0.99) {
+        if (u.state === 'IDLE' && u.scratchActive && eBody < 0.05) {
+            u.legPhase = (u.legPhase + dt * Math.PI * 2 * HEN_IDLE.scratchHz) % (Math.PI * 2);
+            targetLegAmp = 0.94;
+        } else if (footSpeed > 0.006) {
+            const dPhi = Math.max(
+                (footTravel / HEN_IDLE.strideLengthM) * Math.PI * 2,
+                dt * Math.PI * 2 * HEN_IDLE.minStepHz
+            );
+            u.legPhase = (u.legPhase + dPhi) % (Math.PI * 2);
+            targetLegAmp = Math.min(1.0, 0.64 + footSpeed * 2.6);
+        } else if (u.state === 'IDLE' && u.fidgetActive && eBody < 0.05) {
+            u.legPhase = (u.legPhase + dt * Math.PI * 2 * HEN_IDLE.fidgetStepHz) % (Math.PI * 2);
+            targetLegAmp = 0.58;
+        }
+    }
+    const ampRate = targetLegAmp > u.legAmp ? 13.0 : 8.5;
+    u.legAmp += (targetLegAmp - u.legAmp) * Math.min(1, dt * ampRate);
+    if (u.legAmp < 0.002) {
+        u.legAmp = 0;
+    }
+    const plantFade = 1 - smooth01((eBody - 0.92) / 0.08);
+    const legAmpEff = u.legAmp * plantFade;
+    u.legAmpEff = legAmpEff;
+
+    // Napas berkelanjutan & ayunan langkah mikro mengikuti irama kaki kiri-kanan (padam 0 saat masuk lubang makan)
+    const breathWave = Math.sin(now * 0.001 * Math.PI * 2 * HEN_IDLE.breathHz * u.breathMul + u.bobOffset);
+    const stepDoubleBob = Math.abs(Math.cos(u.legPhase)) * legAmpEff;
+    const microPitch = (breathWave * HEN_IDLE.breathPitchRad + stepDoubleBob * 0.085) * idleHeadFade;
+    const microReach = (u.saccadeKick * (1 - u.saccadeKick) * 4 * HEN_IDLE.headBobKickM
+        + stepDoubleBob * 0.018) * idleHeadFade;
+    const microSquat = (breathWave * HEN_IDLE.breathSquatM + stepDoubleBob * 0.006) * idleFade;
+    const microTail = (breathWave * HEN_IDLE.breathTailRad + Math.sin(u.legPhase) * 0.045 * legAmpEff) * idleFade;
+
+    let pitch = u.idlePitchNow * (1 - eHead) + microPitch;
+    let reach = u.idleReachNow * idleHeadFade + microReach;
+    if (fp && u.feedBlend > 0) {
+        const wavePart = FEED.headUpFrac + (1 - FEED.headUpFrac) * u.wave;
+        pitch += fp.pitch * (eHead * wavePart);
+        reach += fp.reach * (eBody * wavePart);
+    }
+
+    const yawEffective = u.yawNow * (1 - eHead);
+    const squatEffective = Math.max(-0.01, u.squatNow + microSquat);
+    const tailEffective = u.tailNow + microTail;
+
+    chicken.position.set(curX, curY, u.side * curAbsZ);
+    chicken.rotation.set(
+        0,
+        rotY,
+        Math.sin(u.legPhase) * HEN_IDLE.weightRollRad * legAmpEff * (1 - eBody)
+    );
+
+    if (henInst && u.instIndex !== undefined) {
+        chicken.updateMatrixWorld(true);
+        henInst.mesh.setMatrixAt(u.instIndex, chicken.matrixWorld);
+        const o = u.instIndex * 4;
+        henInst.pose[o] = pitch;
+        henInst.pose[o + 1] = yawEffective;
+        henInst.pose[o + 2] = squatEffective;
+        henInst.pose[o + 3] = tailEffective;
+        const ampInt = Math.round(Math.min(1, Math.max(0, legAmpEff)) * 1000);
+        const phi01 = (((u.legPhase / (Math.PI * 2)) % 1) + 1) % 1;
+        henInst.reach[u.instIndex * 2] = reach;
+        henInst.reach[u.instIndex * 2 + 1] = ampInt > 0 ? (ampInt + phi01 * 0.998) : 0;
+    } else {
+        applyProcHenPose(chicken, pitch, yawEffective, squatEffective, tailEffective, reach, u.legPhase, legAmpEff);
     }
 }
 
@@ -752,12 +2492,19 @@ function updateChickenStates(dt, now) {
     if (!n) return;
 
     if (nextLayAt === 0) {
-        nextLayAt = now + 1500;
-        for (let i = 0; i < n; i++) initChickenState(chickensList[i], now);
+        nextLayAt = now + 1200;
+        for (let i = 0; i < n; i += 1) {
+            initChickenState(chickensList[i], now);
+            chooseNextIdleSub(chickensList[i].userData, now);
+        }
     }
     if (now >= nextLayAt) {
-        nextLayAt = now + KANDANG_ANIM_CONFIG.telur.layIntervalSec * 1000 * randomBetween(0.7, 1.3);
+        nextLayAt = now + EGG_PATH.layIntervalSec * 1000 * randomBetween(0.75, 1.25);
         pickLayingChicken(now);
+    }
+
+    for (let i = 0; i < n; i += 1) {
+        updateFeedAvailability(chickensList[i].userData, now);
     }
 
     const groups = Math.max(1, KANDANG_ANIM_CONFIG.performa.stateUpdateGroups);
@@ -766,17 +2513,33 @@ function updateChickenStates(dt, now) {
         decideChickenState(chickensList[i], now);
     }
 
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < n; i += 1) {
         const c = chickensList[i];
-        const state = c.userData.state;
-        if (state === 'MAKAN') {
+        const u = c.userData;
+        if (u.state === 'MAKAN' && (now >= u.feedUntil || now >= u.stateEnd)) {
+            u.state = 'IDLE';
+            u.stateEnd = now + randomBetween(KANDANG_ANIM_CONFIG.makan.idleMinSec, KANDANG_ANIM_CONFIG.makan.idleMaxSec) * 1000;
+        }
+        if (u.state === 'IDLE' && u.pendingLay && u.feedBlend < 0.05) {
+            startBertelur(c, now);
+        }
+        if (u.state === 'MAKAN') {
             playPeckAnimation(c, dt, now);
-        } else if (state === 'BERTELUR') {
+        } else if (u.state === 'BERTELUR') {
             playLayEggAnimation(c, dt, now);
         } else {
             playIdleAnimation(c, dt, now);
         }
         applyChickenPose(c, dt, now);
+    }
+
+    if (henInst) {
+        henInst.mesh.instanceMatrix.needsUpdate = true;
+        henInst.poseAttr.needsUpdate = true;
+        henInst.reachAttr.needsUpdate = true;
+        if (henInst.material.userData.shader) {
+            henInst.material.userData.shader.uniforms.uTilt.value = FEED.bodyTilt;
+        }
     }
 }
 
@@ -1250,62 +3013,358 @@ function buildKandang3DScene() {
         chickensPerCage: 3
     };
 
-    const cageMat = new THREE.MeshStandardMaterial({
-        color: 0xbdc8d2, metalness: 0.85, roughness: 0.25, transparent: true, opacity: 0.14, depthWrite: false
+    const cageWireSolidMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.24, roughness: 0.42 });
+    const keyholeFrameMat = new THREE.MeshStandardMaterial({
+        color: 0xf8fafc,
+        emissive: 0x38bdf8,
+        emissiveIntensity: 0.10,
+        metalness: 0.20,
+        roughness: 0.28
     });
-    const cageWireMat = new THREE.MeshStandardMaterial({ color: 0xc8d4dc, metalness: 0.9, roughness: 0.3, wireframe: true });
     const troughMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.45, metalness: 0.05 }); // Talang KUNING cerah
     const aFrameMat = new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0.82, roughness: 0.22 });
-    const eggBeltMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.7 });
-    const eggMat = new THREE.MeshStandardMaterial({ color: 0x8d6450, roughness: 0.7 });
     const drinkerMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
     const manureMat = new THREE.MeshStandardMaterial({ color: 0x3f2d20, roughness: 0.95 });
 
     chickensList = [];
+    feedTroughs = [];
     eggLanes = [];
+    EGG_COLLECTOR.stations = [];
     activeEggs = [];
     eggPool = [];
     iotPinDefs = [];
 
-    /** Satu modul sangkar (kandang, talang, sabuk telur, ayam) pada sisi, tingkat, dan kolom tertentu. */
-    function createCageModule(side, tierIndex, x) {
+    /** Tambahkan satu batang kotak tipis berorientasi bebas ke array BufferGeometry gabungan (hemat draw call). */
+    function pushWireBar(posArr, norArr, idxArr, x1, y1, z1, x2, y2, z2, rZ, rPerp) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const dz = z2 - z1;
+        const len = Math.hypot(dx, dy, dz);
+        if (len < 0.002) {
+            return;
+        }
+        const tx = dx / len, ty = dy / len, tz = dz / len;
+        let ux = 0, uy = 1, uz = 0;
+        if (Math.abs(ty) > 0.92) {
+            ux = 1; uy = 0; uz = 0;
+        }
+        // s1 = normalize(t x u), s2 = t x s1
+        let s1x = ty * uz - tz * uy;
+        let s1y = tz * ux - tx * uz;
+        let s1z = tx * uy - ty * ux;
+        const s1L = Math.hypot(s1x, s1y, s1z) || 1;
+        s1x /= s1L; s1y /= s1L; s1z /= s1L;
+        const s2x = ty * s1z - tz * s1y;
+        const s2y = tz * s1x - tx * s1z;
+        const s2z = tx * s1y - ty * s1x;
+
+        const r1 = rPerp !== undefined ? rPerp : rZ;
+        const r2 = rZ;
+        const faces = [
+            { nx: s1x, ny: s1y, nz: s1z, ax: s1x * r1, ay: s1y * r1, az: s1z * r1, bx: s2x * r2, by: s2y * r2, bz: s2z * r2 },
+            { nx: -s1x, ny: -s1y, nz: -s1z, ax: -s1x * r1, ay: -s1y * r1, az: -s1z * r1, bx: -s2x * r2, by: -s2y * r2, bz: -s2z * r2 },
+            { nx: s2x, ny: s2y, nz: s2z, ax: s2x * r2, ay: s2y * r2, az: s2z * r2, bx: -s1x * r1, by: -s1y * r1, bz: -s1z * r1 },
+            { nx: -s2x, ny: -s2y, nz: -s2z, ax: -s2x * r2, ay: -s2y * r2, az: -s2z * r2, bx: s1x * r1, by: s1y * r1, bz: s1z * r1 }
+        ];
+        for (let f = 0; f < 4; f += 1) {
+            const fc = faces[f];
+            const base = posArr.length / 3;
+            posArr.push(
+                x1 + fc.ax - fc.bx, y1 + fc.ay - fc.by, z1 + fc.az - fc.bz,
+                x1 + fc.ax + fc.bx, y1 + fc.ay + fc.by, z1 + fc.az + fc.bz,
+                x2 + fc.ax + fc.bx, y2 + fc.ay + fc.by, z2 + fc.az + fc.bz,
+                x2 + fc.ax - fc.bx, y2 + fc.ay - fc.by, z2 + fc.az - fc.bz
+            );
+            for (let v = 0; v < 4; v += 1) {
+                norArr.push(fc.nx, fc.ny, fc.nz);
+            }
+            idxArr.push(base, base + 1, base + 2, base, base + 2, base + 3);
+        }
+    }
+
+    /** Potong interval [segMin, segMax] dengan daftar bukaan [[cutA, cutB], ...]. */
+    function subtractWireIntervals(segMin, segMax, cuts) {
+        let parts = [[segMin, segMax]];
+        for (let i = 0; i < cuts.length; i += 1) {
+            const cA = cuts[i][0];
+            const cB = cuts[i][1];
+            const next = [];
+            for (let j = 0; j < parts.length; j += 1) {
+                const a = parts[j][0];
+                const b = parts[j][1];
+                if (cB <= a || cA >= b) {
+                    next.push([a, b]);
+                } else {
+                    if (cA - a > 0.004) next.push([a, cA]);
+                    if (b - cB > 0.004) next.push([cB, b]);
+                }
+            }
+            parts = next;
+        }
+        return parts;
+    }
+
+    /**
+     * Geometri kawat 1 modul sangkar (+Z lokal menghadap talang kuning):
+     * - Panel depan memiliki 3 bukaan makan lonjong/"keyhole" (batang yang memotong lubang dihilangkan).
+     * - Lantai kawat miring ±8.5° menurun ke sabuk telur depan (+Z lokal) + sekat kompartemen 3 ayam.
+     */
+    function buildCageWireModuleGeometry() {
         const { w, h, d } = CAGE_CONFIG.cageSize;
+        const r = FEED_HOLE.wireRadius;
+        const rFrame = r * 1.45;
+        const xMin = -w / 2, xMax = w / 2;
+        const yMin = -h / 2, yMax = h / 2;
+        const zBack = -d / 2, zFront = d / 2;
+        const pos = [], nor = [], idx = [];
+
+        // 1. Rangka tepi luar modul sangkar
+        pushWireBar(pos, nor, idx, xMin, yMin, zFront, xMax, yMin, zFront, rFrame);
+        pushWireBar(pos, nor, idx, xMin, yMax, zFront, xMax, yMax, zFront, rFrame);
+        pushWireBar(pos, nor, idx, xMin, yMin, zBack, xMax, yMin, zBack, rFrame);
+        pushWireBar(pos, nor, idx, xMin, yMax, zBack, xMax, yMax, zBack, rFrame);
+        [xMin, xMax].forEach((xv) => {
+            pushWireBar(pos, nor, idx, xv, yMin, zFront, xv, yMax, zFront, rFrame);
+            pushWireBar(pos, nor, idx, xv, yMin, zBack, xv, yMax, zBack, rFrame);
+            pushWireBar(pos, nor, idx, xv, yMin, zBack, xv, yMin, zFront, rFrame);
+            pushWireBar(pos, nor, idx, xv, yMax, zBack, xv, yMax, zFront, rFrame);
+        });
+
+        // 2. Panel kawat depan (+Z lokal = |Z| dunia 1.40 m) dengan 3 bukaan makan keyhole bebas kawat
+        const yHoleMin = yMin + FEED_HOLE.bottomOffset;
+        const yHoleMax = yHoleMin + FEED_HOLE.height;
+        const halfArch = FEED_HOLE.archWidth / 2;
+        const halfSlot = FEED_HOLE.width / 2;
+
+        for (let i = 1; i < FEED_HOLE.vBars - 1; i += 1) {
+            const vx = xMin + (w * i) / (FEED_HOLE.vBars - 1);
+            const vCuts = [];
+            for (let k = 0; k < FEED_HOLE.slotXs.length; k += 1) {
+                if (Math.abs(vx - FEED_HOLE.slotXs[k]) <= halfArch + r * 1.2) {
+                    vCuts.push([yHoleMin, yHoleMax]);
+                }
+            }
+            const segs = subtractWireIntervals(yMin, yMax, vCuts);
+            for (let s = 0; s < segs.length; s += 1) {
+                pushWireBar(pos, nor, idx, vx, segs[s][0], zFront, vx, segs[s][1], zFront, r);
+            }
+        }
+
+        for (let i = 0; i < FEED_HOLE.hBarOffsets.length; i += 1) {
+            const hy = yMin + FEED_HOLE.hBarOffsets[i];
+            if (hy <= yMin + 0.01 || hy >= yMax - 0.01) {
+                continue;
+            }
+            const hCuts = [];
+            if (hy > yHoleMin + 0.002 && hy < yHoleMax - 0.002) {
+                const uY = (hy - yHoleMin) / FEED_HOLE.height;
+                const hw = uY >= 0.50 ? halfArch : halfSlot;
+                for (let k = 0; k < FEED_HOLE.slotXs.length; k += 1) {
+                    hCuts.push([FEED_HOLE.slotXs[k] - hw, FEED_HOLE.slotXs[k] + hw]);
+                }
+            }
+            const segs = subtractWireIntervals(xMin, xMax, hCuts);
+            for (let s = 0; s < segs.length; s += 1) {
+                pushWireBar(pos, nor, idx, segs[s][0], hy, zFront, segs[s][1], hy, zFront, r);
+            }
+        }
+
+        // 3. Kawat atap, belakang, samping, dan 2 sekat dalam pembagi 3 kompartemen ayam
+        for (let i = 1; i <= 5; i += 1) {
+            const zv = zBack + (d * i) / 6;
+            pushWireBar(pos, nor, idx, xMin, yMax, zv, xMax, yMax, zv, r * 0.85);
+        }
+        for (let i = 1; i <= 8; i += 1) {
+            const xv = xMin + (w * i) / 9;
+            pushWireBar(pos, nor, idx, xv, yMin, zBack, xv, yMax, zBack, r * 0.85);
+            pushWireBar(pos, nor, idx, xv, yMax, zBack, xv, yMax, zFront, r * 0.8);
+        }
+        [0.22, 0.46].forEach((off) => {
+            pushWireBar(pos, nor, idx, xMin, yMin + off, zBack, xMax, yMin + off, zBack, r * 0.85);
+            pushWireBar(pos, nor, idx, xMin, yMin + off, zBack, xMin, yMin + off, zFront, r * 0.85);
+            pushWireBar(pos, nor, idx, xMax, yMin + off, zBack, xMax, yMin + off, zFront, r * 0.85);
+        });
+        [-w / 6, w / 6].forEach((px) => {
+            pushWireBar(pos, nor, idx, px, yMin + 0.08, zBack, px, yMax, zFront - 0.04, r * 0.8);
+        });
+
+        // 4. Lantai kawat miring ±8.5° (dari belakang sangkar menurun ke bibir sabuk telur di depan)
+        const rearAbsZ = CAGE_CONFIG.cageCenterZ + d / 2 - 0.02;
+        const lipAbsZ = EGG_PATH.beltZ + 0.02;
+        const zSlopeBack = CAGE_CONFIG.cageCenterZ - rearAbsZ;
+        const zSlopeFront = CAGE_CONFIG.cageCenterZ - lipAbsZ;
+        const slopeTan = Math.tan((EGG_PATH.floorSlopeDeg * Math.PI) / 180);
+        const ySlopeBack = yMin + EGG_PATH.beltOffsetY + (rearAbsZ - EGG_PATH.beltZ) * slopeTan;
+        const ySlopeFront = yMin + EGG_PATH.beltOffsetY + (lipAbsZ - EGG_PATH.beltZ) * slopeTan;
+
+        for (let i = 0; i <= 12; i += 1) {
+            const fx = xMin + 0.04 + ((w - 0.08) * i) / 12;
+            pushWireBar(pos, nor, idx, fx, ySlopeBack, zSlopeBack, fx, ySlopeFront, zSlopeFront, r * 0.85);
+        }
+        [0.15, 0.5, 0.88].forEach((t) => {
+            const zy = ySlopeBack + (ySlopeFront - ySlopeBack) * t;
+            const zz = zSlopeBack + (zSlopeFront - zSlopeBack) * t;
+            pushWireBar(pos, nor, idx, xMin, zy, zz, xMax, zy, zz, r * 0.85);
+        });
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        geo.setIndex(idx);
+        return geo;
+    }
+
+    /** Geometri bingkai tipis logam berbentuk lonjong/"keyhole" (1 geometri di-instance 108x). */
+    function buildKeyholeFrameGeometry() {
+        const ft = FEED_HOLE.frameThick;
+        const fd = FEED_HOLE.frameDepth;
+        const H = FEED_HOLE.height;
+        const hs = FEED_HOLE.width / 2;
+        const ha = FEED_HOLE.archWidth / 2;
+        const shoulderY = H * 0.50;
+        const archCenterY = H - ha;
+        const pos = [], nor = [], idx = [];
+
+        // Ambang bawah & tiang leher bawah
+        pushWireBar(pos, nor, idx, -hs - ft, 0, 0, hs + ft, 0, 0, fd * 0.5, ft * 0.5);
+        pushWireBar(pos, nor, idx, -hs, 0, 0, -hs, shoulderY, 0, fd * 0.5, ft * 0.5);
+        pushWireBar(pos, nor, idx, hs, 0, 0, hs, shoulderY, 0, fd * 0.5, ft * 0.5);
+
+        // Bahu pelebaran keyhole & pipi atas
+        pushWireBar(pos, nor, idx, -hs, shoulderY, 0, -ha, shoulderY + 0.012, 0, fd * 0.5, ft * 0.5);
+        pushWireBar(pos, nor, idx, hs, shoulderY, 0, ha, shoulderY + 0.012, 0, fd * 0.5, ft * 0.5);
+        pushWireBar(pos, nor, idx, -ha, shoulderY + 0.012, 0, -ha, archCenterY, 0, fd * 0.5, ft * 0.5);
+        pushWireBar(pos, nor, idx, ha, shoulderY + 0.012, 0, ha, archCenterY, 0, fd * 0.5, ft * 0.5);
+
+        // Busur atas melengkung (8 segmen halus)
+        const arcSegs = 8;
+        for (let a = 0; a < arcSegs; a += 1) {
+            const a0 = (Math.PI * a) / arcSegs;
+            const a1 = (Math.PI * (a + 1)) / arcSegs;
+            const x0 = Math.cos(a0) * ha;
+            const y0 = archCenterY + Math.sin(a0) * ha;
+            const x1 = Math.cos(a1) * ha;
+            const y1 = archCenterY + Math.sin(a1) * ha;
+            pushWireBar(pos, nor, idx, x0, y0, 0, x1, y1, 0, fd * 0.5, ft * 0.5);
+        }
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        geo.setIndex(idx);
+        return geo;
+    }
+
+    const totalModules = CAGE_CONFIG.sides.length * CAGE_CONFIG.columnXs.length * CAGE_CONFIG.tierCenterYs.length;
+    const totalHoles = totalModules * CAGE_CONFIG.chickensPerCage;
+    const cageWireInst = new THREE.InstancedMesh(buildCageWireModuleGeometry(), cageWireSolidMat, totalModules);
+    const feedHoleFrameInst = new THREE.InstancedMesh(buildKeyholeFrameGeometry(), keyholeFrameMat, totalHoles);
+    cageWireInst.receiveShadow = true;
+    scene3D.add(cageWireInst);
+    scene3D.add(feedHoleFrameInst);
+    let moduleInstCursor = 0;
+    let holeInstCursor = 0;
+    const _instDummy = new THREE.Object3D();
+
+    // Buat terlebih dahulu sabuk telur, bak pengumpul (EGG_COLLECTOR), drinker, & sabuk kotoran per sisi dan tingkat
+    CAGE_CONFIG.sides.forEach((side) => {
+        for (let fx = -9; fx <= 9; fx += 2) {
+            scene3D.add(createAFrame(side, fx));
+        }
+        CAGE_CONFIG.tierCenterYs.forEach((cy, tierIdx) => {
+            const floorY = cy - CAGE_CONFIG.cageSize.h / 2;
+            const drinker = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 17.6), drinkerMat);
+            drinker.rotation.z = Math.PI / 2;
+            drinker.position.set(0, floorY + 0.52, side * 2.58);
+            scene3D.add(drinker);
+
+            const manureBelt = new THREE.Mesh(new THREE.BoxGeometry(17.7, 0.012, 1.18), manureMat);
+            manureBelt.position.set(0, floorY - 0.035, side * 2.18);
+            scene3D.add(manureBelt);
+
+            createEggLaneAndCollector(side, tierIdx, floorY);
+        });
+    });
+
+    /** Satu modul sangkar (kawat berlubang makan, bingkai keyhole, talang kuning, waypoint telur, & 3 ayam). */
+    function createCageModule(side, tierIndex, x) {
+        const { h, d } = CAGE_CONFIG.cageSize;
+        const cageFront = CAGE_CONFIG.cageCenterZ - d / 2;
+        if (Math.abs(FEED.cageFrontZ - cageFront) > 0.001) {
+            console.warn('[Digital Twin] FEED.cageFrontZ (' + FEED.cageFrontZ + ') berbeda dari kawat depan di scene (' + cageFront + '); memakai nilai scene.');
+            FEED.cageFrontZ = cageFront;
+        }
         const cy = CAGE_CONFIG.tierCenterYs[tierIndex];
         const floorY = cy - h / 2;
+        const rotY = side === -1 ? 0 : Math.PI;
         const module = new THREE.Group();
 
-        const cage = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), cageMat);
-        cage.position.set(x, cy, side * CAGE_CONFIG.cageCenterZ);
-        module.add(cage);
+        // Instance kawat sangkar berlubang makan (1 draw call untuk 36 modul)
+        _instDummy.position.set(x, cy, side * CAGE_CONFIG.cageCenterZ);
+        _instDummy.rotation.set(0, rotY, 0);
+        _instDummy.scale.set(1, 1, 1);
+        _instDummy.updateMatrix();
+        cageWireInst.setMatrixAt(moduleInstCursor++, _instDummy.matrix);
 
-        const cageWire = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 10, 3, 7), cageWireMat);
-        cageWire.position.copy(cage.position);
-        module.add(cageWire);
+        // Instance 3 bingkai logam lubang makan keyhole pada bidang kawat depan |Z| = cageFront
+        for (let k = 0; k < FEED_HOLE.slotXs.length; k += 1) {
+            _instDummy.position.set(x + FEED_HOLE.slotXs[k], floorY + FEED_HOLE.bottomOffset, side * cageFront);
+            _instDummy.rotation.set(0, rotY, 0);
+            _instDummy.updateMatrix();
+            feedHoleFrameInst.setMatrixAt(holeInstCursor++, _instDummy.matrix);
+        }
 
-        // Talang pakan kuning
+        // Talang pakan kuning (posisi & ukuran asli dipertahankan)
         const trough = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat);
-        trough.position.set(x, floorY - 0.0, side * CAGE_CONFIG.troughZ);
+        trough.position.set(x, floorY, side * CAGE_CONFIG.troughZ);
         trough.receiveShadow = true;
         module.add(trough);
+        trough.updateMatrixWorld(true);
+        const troughBox = new THREE.Box3().setFromObject(trough);
+        feedTroughs.push({
+            side,
+            tierIdx: tierIndex,
+            x,
+            mesh: trough,
+            topY: troughBox.max.y,
+            nearAbsZ: Math.max(Math.abs(troughBox.min.z), Math.abs(troughBox.max.z)),
+            farAbsZ: Math.min(Math.abs(troughBox.min.z), Math.abs(troughBox.max.z)),
+            halfLenX: (troughBox.max.x - troughBox.min.x) / 2
+        });
 
-        // Ayam: 3 per kompartemen, tersebar rapi agar tidak saling menembus
-        const slotXs = [-0.55, 0, 0.55];
-        for (let c = 0; c < CAGE_CONFIG.chickensPerCage; c++) {
+        const lane = eggLanes.find((l) => l.side === side && l.tierIdx === tierIndex) || null;
+
+        // 3 ekor ayam per modul: disejajarkan tepat dengan posisi X lubang makannya masing-masing (FEED_HOLE.slotXs)
+        for (let c = 0; c < CAGE_CONFIG.chickensPerCage; c += 1) {
             const chicken = createStylizedChicken(c);
-            chicken.position.set(
-                x + slotXs[c] + (Math.random() - 0.5) * 0.06,
-                floorY + 0.02,
-                side * (1.85 + (c % 2) * 0.35)
-            );
-            chicken.rotation.y = (side === -1 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.4;
+            const sideYaw = side === -1 ? 0 : Math.PI;
+            const yawJitter = (Math.random() - 0.5) * 0.35;
+            const holeX = x + FEED_HOLE.slotXs[c];
+            const homeX = holeX + (Math.random() - 0.5) * 0.022;
+            const homeAbsZ = 1.88 + (c % 2) * 0.30;
+            const homeY = cageFloorHeightAtAbsZ(floorY, homeAbsZ);
+
+            chicken.position.set(homeX, homeY, side * homeAbsZ);
+            chicken.rotation.y = sideYaw + yawJitter;
             module.add(chicken);
             chickensList.push(chicken);
             Object.assign(chicken.userData, {
                 side,
                 tierIdx: tierIndex,
-                homeX: chicken.position.x,
-                homeY: chicken.position.y,
-                homeZ: chicken.position.z
+                slotIdx: c,
+                floorY,
+                holeX,
+                homeX,
+                homeY,
+                homeZ: chicken.position.z,
+                sideYaw,
+                yawJitter,
+                sc: chicken.scale.x,
+                peckHzMul: 0.92 + Math.random() * 0.16,
+                peckPhaseOffset: Math.random() * Math.PI * 2,
+                lane,
+                eggPath: lane ? buildSlotEggWaypoints(side, floorY, holeX, lane) : null,
+                instIndex: chickensList.length - 1
             });
         }
         return module;
@@ -1341,23 +3400,9 @@ function buildKandang3DScene() {
                 scene3D.add(createCageModule(side, tierIndex, x));
             });
         });
-        for (let fx = -9; fx <= 9; fx += 2) {
-            scene3D.add(createAFrame(side, fx));
-        }
-        // Jalur nipple drinker & sabuk kotoran sepanjang deretan, per tingkat
-        CAGE_CONFIG.tierCenterYs.forEach((cy, tierIdx) => {
-            const floorY = cy - CAGE_CONFIG.cageSize.h / 2;
-            const drinker = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 18), drinkerMat);
-            drinker.rotation.z = Math.PI / 2;
-            drinker.position.set(0, floorY + 0.4, side * 2.55);
-            scene3D.add(drinker);
-
-            const manureBelt = new THREE.Mesh(new THREE.BoxGeometry(18, 0.012, 1.3), manureMat);
-            manureBelt.position.set(0, floorY - 0.03, side * CAGE_CONFIG.cageCenterZ);
-            scene3D.add(manureBelt);
-            createEggLane(side, tierIdx, floorY);
-        });
     });
+    cageWireInst.instanceMatrix.needsUpdate = true;
+    feedHoleFrameInst.instanceMatrix.needsUpdate = true;
 
     // Lampu LED plafon (visual) tiap 3m
     const bulbGeo = new THREE.SphereGeometry(0.055, 8, 6);
@@ -1853,7 +3898,8 @@ function setFeedParticlesVisible(vis) {
 
 // Loop Animasi 3D (60 FPS)
 function animateThreeJS() {
-    requestAnimationFrame(animateThreeJS);
+    if (isDisposed3D) return;
+    rafHandle3D = requestAnimationFrame(animateThreeJS);
 
     // 1. Animasi Gerak Kereta Pakan (Travelling Hopper Katrol 2 Tingkat - Auto Shuttle Loop)
     if (isFeederRunning3D && feederCart3D) {
@@ -2059,8 +4105,13 @@ function toggleSimulasiGerakPakan() {
     }
 }
 
-// Kompatibilitas jika dipanggil dari trigger lama
+// Kompatibilitas global untuk kontroler eksternal & konsol
+window.setKamera3D = setKamera3D;
+window.toggleAutoRotate3D = toggleAutoRotate3D;
+window.toggleLabelsIoT3D = toggleLabelsIoT3D;
+window.toggleSimulasiGerakPakan = toggleSimulasiGerakPakan;
 window.triggerSimulasiGerakPakan = toggleSimulasiGerakPakan;
+window.toggleSimulasiPakan3D = toggleSimulasiGerakPakan;
 
 function updateFeederButtonUI(isRunning) {
     const btn = document.getElementById('btn-trigger-pakan-3d');
@@ -2115,6 +4166,9 @@ function toggleUjiCuacaPanas3D() {
         }
     }
 }
+
+window.toggleUjiCuacaPanas3D = toggleUjiCuacaPanas3D;
+window.toggleSimulasiPanas3D = toggleUjiCuacaPanas3D;
 
 function updateCuacaButtonUI(isHot) {
     const btn = document.getElementById('btn-cuaca-3d');
@@ -2191,6 +4245,61 @@ window.syncKandang3DState = function(state) {
         }
     }
 };
+
+/** Bebaskan semua sumber daya WebGL, listener, dan loop animasi saat halaman ditinggalkan. */
+function disposeKandang3D() {
+    if (isDisposed3D) return;
+    isDisposed3D = true;
+    henLoadToken += 1;
+    window.clearTimeout(henHudTimer);
+    cancelAnimationFrame(rafHandle3D);
+    window.removeEventListener('resize', onWindowResize3D);
+    if (controls3D) {
+        controls3D.dispose();
+        controls3D = null;
+    }
+    disposeHenInstances();
+    if (scene3D) {
+        scene3D.traverse((o) => {
+            if (o.geometry) o.geometry.dispose();
+            const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+            mats.forEach((m) => {
+                Object.keys(m).forEach((k) => { if (m[k] && m[k].isTexture) m[k].dispose(); });
+                m.dispose();
+            });
+            if (o.isInstancedMesh && typeof o.dispose === 'function') {
+                o.dispose();
+            }
+        });
+    }
+    EGG_COLLECTOR.stations = [];
+    disposeProcHenAssets();
+    disposeEggAssets();
+    if (iotPinLayer) {
+        iotPinLayer.remove();
+        iotPinLayer = null;
+    }
+    if (renderer3D) {
+        const canvas = renderer3D.domElement;
+        renderer3D.dispose();
+        renderer3D.forceContextLoss();
+        if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+        renderer3D = null;
+    }
+    scene3D = null;
+    camera3D = null;
+    chickensList = [];
+    feedTroughs = [];
+    eggPool = [];
+    activeEggs = [];
+}
+
+window.disposeKandang3D = disposeKandang3D;
+window.addEventListener('pagehide', disposeKandang3D);
+window.addEventListener('beforeunload', disposeKandang3D);
+window.addEventListener('pageshow', (ev) => {
+    if (ev.persisted && isDisposed3D) setTimeout(initThreeJSKandang, 50);
+});
 
 // Inisialisasi saat DOM siap
 document.addEventListener('DOMContentLoaded', () => {
