@@ -90,15 +90,15 @@
         }
         .lg-skip:hover { background: #fff; border-color: var(--lg-emerald); }
         .lg-skip:focus-visible { outline: 3px solid rgba(8, 123, 80, .35); outline-offset: 2px; }
-        html.lg-intro:not(.lg-done) .lg-skip { display: inline-flex; animation: lg-skip-failsafe .01s 15s forwards; }
+        html.lg-intro:not(.lg-done) .lg-skip { display: inline-flex; animation: lg-skip-failsafe .01s 16s forwards; }
 
         html.lg-intro:not(.lg-done) #lg-stage {
-            animation: lg-stage-failsafe .01s 15s forwards;
+            animation: lg-stage-failsafe .01s 16s forwards;
         }
         html.lg-intro:not(.lg-done) .lg-shell {
             visibility: hidden;
             opacity: 0;
-            animation: lg-failsafe .01s 15s forwards;
+            animation: lg-failsafe .01s 16s forwards;
         }
         @keyframes lg-failsafe { to { visibility: visible; opacity: 1; } }
         @keyframes lg-failsafe-item { to { opacity: 1; transform: none; } }
@@ -107,7 +107,7 @@
 
         .lg-item { transition: opacity .8s cubic-bezier(.2, .7, .2, 1), transform .8s cubic-bezier(.2, .7, .2, 1); transition-delay: var(--d, 0s); }
         html.lg-intro .lg-item { opacity: 0; transform: translateY(24px); }
-        html.lg-intro:not(.lg-done) .lg-item { animation: lg-failsafe-item .01s 15s forwards; }
+        html.lg-intro:not(.lg-done) .lg-item { animation: lg-failsafe-item .01s 16s forwards; }
         html.lg-intro.lg-done .lg-item { opacity: 1; transform: none; }
         html.lg-intro .lg-logo-item { transform: translateY(12px) scale(.86); }
         html.lg-intro.lg-done .lg-logo-item { transform: none; }
