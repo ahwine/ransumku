@@ -8,11 +8,16 @@
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
     <script>
-        /* Putar intro hanya bila perlu: lewati jika reduced-motion, sudah pernah diputar di sesi ini, atau ada pesan galat. */
+        /* Putar intro kecuali jika baru saja mengirim form login (ada galat/input lama) atau reduced-motion aktif. */
         (function () {
             var skip = {{ $errors->any() || old('email') ? 'true' : 'false' }};
             try {
-                skip = skip || window.matchMedia('(prefers-reduced-motion: reduce)').matches || sessionStorage.getItem('rk_login_intro') === '1';
+                if (sessionStorage.getItem('rk_login_submitted') === '1') {
+                    skip = true;
+                    sessionStorage.removeItem('rk_login_submitted');
+                }
+                sessionStorage.removeItem('rk_login_intro');
+                skip = skip || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             } catch (e) {}
             if (!skip) {
                 document.documentElement.classList.add('lg-intro');
@@ -56,6 +61,13 @@
             transition: opacity .7s ease;
         }
         html:not(.lg-intro) #lg-stage { display: none; }
+        #lg-stage::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse at 50% 55%, transparent 55%, rgba(8, 47, 36, .08) 100%);
+        }
         html.lg-done #lg-stage { opacity: 0; }
         #lg-flash {
             --fx: 50%; --fy: 60%; --r: 0px;
@@ -236,7 +248,7 @@
 </head>
 <body class="lg-body">
     <div class="lg-decor" aria-hidden="true"></div>
-    <div id="lg-stage" aria-hidden="true"></div>
+    <div id="lg-stage" data-model-url="{{ asset('models/chicken.glb') }}" data-egg-url="{{ asset('models/egg.glb') }}" aria-hidden="true"></div>
     <div id="lg-flash" aria-hidden="true"></div>
     <button type="button" id="lg-skip" class="lg-skip">Lewati animasi</button>
 

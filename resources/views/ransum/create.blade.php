@@ -268,25 +268,38 @@
 
             {{-- 2. Acuan Gizi Target --}}
             <section class="card space-y-3.5 p-4 sm:p-5">
-                <h2 class="text-h-sm font-bold text-ink">Acuan Gizi Target</h2>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-h-sm font-bold text-ink">Acuan Gizi Target</h2>
+                    @if (isset($recommendedStandard))
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <span class="material-symbols-outlined text-[13px]">auto_awesome</span>
+                            <span>Auto-Match Fase</span>
+                        </span>
+                    @endif
+                </div>
 
-                @include('partials.dropdown-pilih-standar', ['standards' => $standards, 'value' => old('standard_id')])
+                @include('partials.dropdown-pilih-standar', [
+                    'standards' => $standards, 
+                    'value' => old('standard_id', $recommendedStandardId ?? null),
+                    'recommendedStandardId' => $recommendedStandardId ?? null
+                ])
 
                 <div class="space-y-1.5 pt-1">
                     @foreach ($standards as $s)
-                        <details class="text-xs text-muted rounded-xl bg-surface/50 border border-line/60 p-2.5 group">
+                        <details class="text-xs text-muted rounded-xl bg-surface/50 border border-line/60 p-2.5 group" @if(($recommendedStandardId ?? null) === $s->id) open @endif>
                             <summary class="cursor-pointer font-bold text-ink hover:text-brand flex items-center justify-between select-none py-0.5">
-                                <span>Lihat Rincian Target Nutrisi SNI</span>
-                                <span class="material-symbols-outlined text-[16px] text-muted group-open:rotate-180 transition-transform">expand_more</span>
+                                <span class="truncate pr-2">Rincian: {{ $s->nama }}</span>
+                                <span class="material-symbols-outlined text-[16px] text-muted group-open:rotate-180 transition-transform shrink-0">expand_more</span>
                             </summary>
                             <ul class="mt-2 space-y-1 border-t border-line/50 pt-2 text-[11px]">
-                                <li class="flex justify-between"><span>Protein kasar:</span> <strong class="text-ink">min {{ Fmt::num($s->protein_min, 2) }}%</strong></li>
-                                <li class="flex justify-between"><span>Kalsium (Ca):</span> <strong class="text-ink">{{ Fmt::num($s->kalsium_min, 2) }}–{{ Fmt::num($s->kalsium_max, 2) }}%</strong></li>
+                                <li class="flex justify-between"><span>Protein kasar (PK):</span> <strong class="text-ink">min {{ Fmt::num($s->protein_min, 1) }}%</strong></li>
+                                <li class="flex justify-between"><span>Kalsium (Ca):</span> <strong class="text-ink">{{ Fmt::num($s->kalsium_min, 1) }}–{{ Fmt::num($s->kalsium_max, 1) }}%</strong></li>
                                 <li class="flex justify-between"><span>Fosfor (P):</span> <strong class="text-ink">{{ Fmt::num($s->fosfor_min, 2) }}–{{ Fmt::num($s->fosfor_max, 2) }}%</strong></li>
-                                <li class="flex justify-between"><span>Energi Metabolis:</span> <strong class="text-ink">min {{ Fmt::num($s->energi_min, 0) }} kkal/kg</strong></li>
+                                <li class="flex justify-between"><span>Energi Metabolis (EM):</span> <strong class="text-ink">min {{ Fmt::num($s->energi_min, 0) }} kkal/kg</strong></li>
                                 @if ($s->serat_max !== null)
-                                    <li class="flex justify-between"><span>Serat kasar:</span> <strong class="text-ink">maks {{ Fmt::num($s->serat_max, 2) }}%</strong></li>
+                                    <li class="flex justify-between"><span>Serat kasar:</span> <strong class="text-ink">maks {{ Fmt::num($s->serat_max, 1) }}%</strong></li>
                                 @endif
+                                <li class="flex justify-between pt-1 border-t border-line/40 text-[10px] text-muted"><span>Otoritas Sumber:</span> <span>{{ $s->labelOtoritas() }}</span></li>
                             </ul>
                         </details>
                     @endforeach

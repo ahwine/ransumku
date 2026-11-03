@@ -179,9 +179,6 @@
                     
                     {{-- Welcome Screen (when session has no messages) --}}
                     <div id="welcome-card" class="{{ $chats->isEmpty() ? '' : 'hidden' }} my-auto py-6 text-center space-y-4 max-w-3xl mx-auto">
-                        <div class="w-14 h-14 rounded-2xl bg-brand/10 border border-brand/20 text-brand grid place-items-center mx-auto shadow-2xs">
-                            <span class="material-symbols-outlined text-[30px] icon-fill">auto_awesome</span>
-                        </div>
                         <div>
                             <h3 class="font-bold text-base sm:text-lg text-ink">Halo, Peternak Cerdas!</h3>
                             <p class="text-xs text-muted mt-1 max-w-xl mx-auto leading-relaxed">
@@ -275,99 +272,111 @@
             </main>
         </div>
 
-        {{-- Disclaimer AI Desktop --}}
-        <div class="hidden md:flex items-center justify-center py-2 shrink-0">
-            <p class="text-[11px] text-muted text-center flex items-center justify-center gap-1.5 leading-none">
-                <span class="material-symbols-outlined text-[13px] text-muted">info</span>
-                <span>{{ config('ransumku.disclaimer_ai') }}</span>
-            </p>
-        </div>
-
         {{-- ========================================================================= --}}
         {{-- MOBILE ASISTEN CERDAS (Sesuai Desain Gambar 1 & Gambar 3)                 --}}
         {{-- ========================================================================= --}}
         <div class="block md:hidden">
-            {{-- SUB-VIEW 1: TAMPILAN CHAT MOBILE (Gambar 1) --}}
-            <div id="mobile-chat-view" class="flex flex-col h-[calc(100dvh-13.5rem)] min-h-[480px]">
+            {{-- SUB-VIEW 1: TAMPILAN CHAT MOBILE (Persis Gambar Desain Mobile) --}}
+            <div id="mobile-chat-view" class="flex flex-col h-[calc(100dvh-13.5rem)] min-h-[500px]">
                 
-                {{-- Bagian Riwayat Chat (Horizontal Scrollable Cards) --}}
-                <div class="shrink-0 mb-2 space-y-2">
+                {{-- Bagian Riwayat Chat (Horizontal Capsule Pills) --}}
+                <div class="shrink-0 mb-3 space-y-2">
                     <div class="flex items-center justify-between px-0.5">
                         <h4 class="font-extrabold text-sm text-ink tracking-tight">Riwayat Chat</h4>
-                        <button type="button" onclick="bukaRiwayatMobile()" class="text-xs font-bold text-brand hover:underline flex items-center gap-0.5 cursor-pointer">
-                            <span>Lihat semua</span>
-                            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                        <button type="button" onclick="bukaRiwayatMobile()" class="text-xs font-bold text-brand hover:underline cursor-pointer">
+                            Lihat semua
                         </button>
                     </div>
 
-                    {{-- Horizontal Cards Row --}}
-                    <div id="mobile-recent-cards" class="flex items-center gap-2.5 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar select-none">
-                        {{-- Tombol + Obrolan Baru Card --}}
+                    {{-- Horizontal Capsule Pills Row --}}
+                    <div id="mobile-recent-cards" class="flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar select-none">
+                        {{-- Tombol + Baru --}}
                         <button type="button" 
                                 onclick="mulaiObrolanBaru()" 
-                                class="w-[82px] min-w-[82px] h-[78px] rounded-2xl border-2 border-dashed border-line hover:border-brand bg-white/60 hover:bg-white text-muted hover:text-brand flex flex-col items-center justify-center gap-1 shrink-0 transition-all cursor-pointer shadow-2xs group active:scale-95" 
+                                class="h-9 rounded-full border-2 border-dashed border-brand/50 hover:border-brand bg-white/40 hover:bg-white text-brand px-3.5 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer shadow-2xs group active:scale-95" 
                                 title="Mulai Obrolan Baru">
-                            <span class="material-symbols-outlined text-[20px] text-brand group-hover:scale-110 transition-transform">add</span>
-                            <span class="text-[11px] font-bold">Baru</span>
+                            <span class="material-symbols-outlined text-[16px] text-brand">add</span>
+                            <span class="text-xs font-bold">Baru</span>
                         </button>
 
                         @foreach ($chatSessions->take(10) as $s)
                             @php
                                 $isActive = ($activeSession && $activeSession->id === $s->id);
-                                $tglTeks = $s->updated_at->translatedFormat('d M');
                             @endphp
                             <button type="button" 
                                     data-session-card-id="{{ $s->id }}"
                                     onclick="pilihSession({{ $s->id }})" 
-                                    class="mobile-session-card w-[108px] min-w-[108px] h-[78px] rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-left transition-all cursor-pointer active:scale-95 {{ $isActive ? 'bg-brand text-white shadow-xs' : 'bg-white text-ink border border-line/80 shadow-2xs hover:border-brand/40' }}"
+                                    class="mobile-session-card h-9 rounded-full px-4 flex items-center justify-center shrink-0 text-left transition-all cursor-pointer active:scale-95 whitespace-nowrap {{ $isActive ? 'bg-brand text-white shadow-xs' : 'bg-white text-ink border border-line/80 shadow-2xs hover:border-brand/40' }}"
                                     style="{{ $isActive ? 'background-color: #116a3a; color: #ffffff;' : 'background-color: #ffffff; color: #053b26;' }}">
-                                <span class="font-bold text-xs truncate block leading-snug mobile-card-title">{{ $s->judul }}</span>
-                                <div class="flex items-center justify-between text-[11px]">
-                                    <span class="mobile-card-date {{ $isActive ? 'text-white/80' : 'text-muted' }} font-medium text-[10px]" style="{{ $isActive ? 'color: rgba(255,255,255,0.8);' : 'color: #5c7a6d;' }}">{{ $tglTeks }}</span>
-                                    <span class="mobile-card-dot w-2 h-2 rounded-full {{ $isActive ? 'bg-white' : ($s->pinned ? 'bg-amber-400' : 'bg-emerald-500') }}" style="{{ $isActive ? 'background-color: #ffffff;' : ($s->pinned ? 'background-color: #f59e0b;' : 'background-color: #10b981;') }}"></span>
-                                </div>
+                                <span class="font-semibold text-xs truncate max-w-[150px] mobile-card-title">{{ $s->judul }}</span>
                             </button>
                         @endforeach
                     </div>
                 </div>
 
-                {{-- Centered Date Divider --}}
-                <div class="shrink-0 flex items-center justify-center my-1 select-none">
-                    <span class="text-[11px] font-medium text-muted/70 bg-surface-2 px-3 py-0.5 rounded-full">Hari ini</span>
-                </div>
-
                 {{-- Messages Stream Container (Mobile) --}}
                 <div id="mobile-chat-box" class="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 py-1 custom-scrollbar">
-                    {{-- Welcome Screen Mobile (ketika sesi kosong) --}}
-                    <div id="mobile-welcome-card" class="{{ $chats->isEmpty() ? '' : 'hidden' }} my-auto py-3 text-center space-y-2.5 max-w-sm mx-auto">
-                        <div class="w-12 h-12 rounded-2xl bg-brand/10 border border-brand/20 text-brand grid place-items-center mx-auto shadow-2xs">
-                            <span class="material-symbols-outlined text-[24px] icon-fill">auto_awesome</span>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-sm text-ink">Halo, Peternak Cerdas!</h4>
-                            <p class="text-[11px] text-muted mt-1 leading-relaxed">
-                                Tanyakan kendala performa kandang, analisa pakan, atau konsultasi ayam petelur kepada Asisten AI.
-                            </p>
-                        </div>
-                        {{-- Suggestion Prompts Ringkas --}}
-                        <div class="space-y-2 text-left pt-1">
-                            <button type="button" onclick="isiDanKirim('apakah kamu bisa cek konsumsi pakan naik kenapa kok telurnya turun?')" class="w-full p-2.5 rounded-xl border border-line bg-surface/40 hover:bg-white text-xs text-ink flex items-center justify-between gap-2 shadow-2xs active:scale-98 transition">
-                                <span class="font-medium text-[11px] truncate">Pakan naik, kenapa telur turun?</span>
-                                <span class="material-symbols-outlined text-[14px] text-brand shrink-0">arrow_forward</span>
-                            </button>
-                            <button type="button" onclick="isiDanKirim('THI hari ini tinggi, apa yang harus saya lakukan untuk mengurangi heat stress pada ayam?')" class="w-full p-2.5 rounded-xl border border-line bg-surface/40 hover:bg-white text-xs text-ink flex items-center justify-between gap-2 shadow-2xs active:scale-98 transition">
-                                <span class="font-medium text-[11px] truncate">THI tinggi & penanganan heat stress?</span>
-                                <span class="material-symbols-outlined text-[14px] text-brand shrink-0">arrow_forward</span>
-                            </button>
-                            <button type="button" onclick="isiDanKirim('Apa bahan pakan pengganti jagung yang murah dan aman?')" class="w-full p-2.5 rounded-xl border border-line bg-surface/40 hover:bg-white text-xs text-ink flex items-center justify-between gap-2 shadow-2xs active:scale-98 transition">
-                                <span class="font-medium text-[11px] truncate">Bahan pakan alternatif murah & aman?</span>
-                                <span class="material-symbols-outlined text-[14px] text-brand shrink-0">arrow_forward</span>
-                            </button>
+                    {{-- Welcome Screen Mobile (ketika sesi kosong - Persis Desain) --}}
+                    <div id="mobile-welcome-card" class="{{ $chats->isEmpty() ? '' : 'hidden' }} my-auto py-2 text-center max-w-sm mx-auto">
+                        {{-- Judul & Deskripsi --}}
+                        <h3 class="font-extrabold text-xl text-ink tracking-tight">Halo, Peternak Cerdas!</h3>
+                        <p class="text-xs text-muted mt-1.5 max-w-[280px] mx-auto leading-relaxed">
+                            Tanyakan kendala performa kandang, analisa pakan, atau konsultasi ayam petelur kepada Asisten AI.
+                        </p>
+
+                        {{-- Bagian Coba Tanyakan --}}
+                        <div class="text-left pt-6">
+                            <h5 class="text-[11px] font-extrabold uppercase tracking-wider text-muted px-0.5 mb-2.5">
+                                COBA TANYAKAN
+                            </h5>
+                            <div class="space-y-2.5">
+                                {{-- Card 1: Pakan naik, kenapa telur turun? --}}
+                                <button type="button" 
+                                        onclick="isiDanKirim('apakah kamu bisa cek konsumsi pakan naik kenapa kok telurnya turun?')" 
+                                        class="w-full p-3 rounded-2xl bg-white border border-line/80 hover:border-brand/40 text-left flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs active:scale-98 transition group cursor-pointer">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl bg-[#e2f4ea] text-brand flex items-center justify-center shrink-0" style="background-color: #e2f4ea; color: #1b6b46;">
+                                            <span class="material-symbols-outlined text-[20px]">trending_down</span>
+                                        </div>
+                                        <span class="font-bold text-xs text-ink truncate">Pakan naik, kenapa telur turun?</span>
+                                    </div>
+                                    <span class="material-symbols-outlined text-[20px] text-muted shrink-0 group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+                                </button>
+
+                                {{-- Card 2: THI tinggi & penanganan heat stress? --}}
+                                <button type="button" 
+                                        onclick="isiDanKirim('THI hari ini tinggi, apa yang harus saya lakukan untuk mengurangi heat stress pada ayam?')" 
+                                        class="w-full p-3 rounded-2xl bg-white border border-line/80 hover:border-brand/40 text-left flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs active:scale-98 transition group cursor-pointer">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl bg-[#e2f4ea] text-brand flex items-center justify-center shrink-0" style="background-color: #e2f4ea; color: #1b6b46;">
+                                            <span class="material-symbols-outlined text-[20px]">device_thermostat</span>
+                                        </div>
+                                        <span class="font-bold text-xs text-ink truncate">THI tinggi & penanganan heat stress?</span>
+                                    </div>
+                                    <span class="material-symbols-outlined text-[20px] text-muted shrink-0 group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+                                </button>
+
+                                {{-- Card 3: Bahan pakan alternatif murah & aman? --}}
+                                <button type="button" 
+                                        onclick="isiDanKirim('Apa bahan pakan pengganti jagung yang murah dan aman?')" 
+                                        class="w-full p-3 rounded-2xl bg-white border border-line/80 hover:border-brand/40 text-left flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs active:scale-98 transition group cursor-pointer">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl bg-[#e2f4ea] text-brand flex items-center justify-center shrink-0" style="background-color: #e2f4ea; color: #1b6b46;">
+                                            <span class="material-symbols-outlined text-[20px]">eco</span>
+                                        </div>
+                                        <span class="font-bold text-xs text-ink truncate">Bahan pakan alternatif murah & aman?</span>
+                                    </div>
+                                    <span class="material-symbols-outlined text-[20px] text-muted shrink-0 group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     {{-- Message Feed Mobile --}}
-                    <div id="mobile-messages-container" class="space-y-3 flex flex-col">
+                    <div id="mobile-messages-container" class="space-y-3 flex flex-col {{ $chats->isEmpty() ? 'hidden' : '' }}">
+                        <div class="shrink-0 flex items-center justify-center my-1 select-none">
+                            <span class="text-[11px] font-medium text-muted/70 bg-surface-2 px-3 py-0.5 rounded-full">Hari ini</span>
+                        </div>
                         @foreach ($chats as $c)
                             @if ($c->role === 'user')
                                 <div class="flex flex-col items-end max-w-[85%] self-end">
@@ -396,24 +405,23 @@
                     </div>
                 </div>
 
-                {{-- Bottom Pinned Input Bar (Gambar 1 - Tanpa Upload File) --}}
-                <div class="shrink-0 pt-2 pb-1 bg-white border-t border-line/60">
-                    <form id="mobile-form-chat" action="javascript:void(0);" onsubmit="return handleMobileFormSubmit(event);" class="relative flex items-center w-full">
+                {{-- Bottom Pinned Input Bar & Disclaimer (Persis Gambar Desain Mobile) --}}
+                <div class="shrink-0 pt-2 pb-1 bg-canvas">
+                    <form id="mobile-form-chat" action="javascript:void(0);" onsubmit="return handleMobileFormSubmit(event);" class="relative flex items-center w-full bg-white border border-line/90 rounded-full p-1.5 pl-4 shadow-sm focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 transition-all">
                         <input id="mobile-input-pesan" 
                                type="text" 
-                               class="w-full bg-[#F8FAF9] hover:bg-white focus:bg-white text-ink placeholder:text-muted border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 rounded-full pl-4 pr-12 py-3 text-xs outline-none transition-all shadow-2xs" 
-                               style="background-color: #f8faf9;"
+                               class="w-full bg-transparent text-xs text-ink placeholder:text-[#94a89e] border-none outline-none pr-2" 
                                placeholder="Ketik pertanyaan..." 
                                required 
                                autocomplete="off">
                         <button id="mobile-btn-kirim" 
                                 type="button" 
                                 onclick="handleMobileFormSubmit(event)" 
-                                class="absolute right-1.5 w-9 h-9 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-40" 
-                                style="background-color: #116a3a; color: #ffffff;"
+                                class="w-10 h-10 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center shrink-0 shadow-xs active:scale-95 transition cursor-pointer disabled:opacity-40" 
+                                style="background-color: #1a6644; color: #ffffff;"
                                 aria-label="Kirim" 
                                 title="Kirim pesan">
-                            <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+                            <span class="material-symbols-outlined text-[20px]">arrow_upward</span>
                         </button>
                     </form>
                 </div>
@@ -571,14 +579,6 @@
                         <span>+ Obrolan Baru</span>
                     </button>
                 </div>
-            </div>
-
-            {{-- Disclaimer Mobile --}}
-            <div class="py-2 text-center">
-                <p class="text-[10px] text-muted inline-flex items-center justify-center gap-1 leading-none">
-                    <span class="material-symbols-outlined text-[12px] text-muted">info</span>
-                    <span>{{ config('ransumku.disclaimer_ai') }}</span>
-                </p>
             </div>
         </div>
     </section>
@@ -995,33 +995,15 @@ function updateMobileCardHighlight(activeId) {
     document.querySelectorAll('.mobile-session-card').forEach(card => {
         const cardId = parseInt(card.getAttribute('data-session-card-id'));
         const isThisActive = (activeId && cardId === activeId);
-        const dateEl = card.querySelector('.mobile-card-date');
-        const dotEl = card.querySelector('.mobile-card-dot');
 
         if (isThisActive) {
-            card.className = 'mobile-session-card w-[108px] min-w-[108px] h-[78px] rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-left transition-all cursor-pointer active:scale-95 bg-brand text-white shadow-xs';
+            card.className = 'mobile-session-card h-9 rounded-full px-4 flex items-center justify-center shrink-0 text-left transition-all cursor-pointer active:scale-95 whitespace-nowrap bg-brand text-white shadow-xs';
             card.style.backgroundColor = '#116a3a';
             card.style.color = '#ffffff';
-            if (dateEl) {
-                dateEl.className = 'mobile-card-date text-white/80 font-medium text-[10px]';
-                dateEl.style.color = 'rgba(255, 255, 255, 0.8)';
-            }
-            if (dotEl) {
-                dotEl.className = 'mobile-card-dot w-2 h-2 rounded-full bg-white';
-                dotEl.style.backgroundColor = '#ffffff';
-            }
         } else {
-            card.className = 'mobile-session-card w-[108px] min-w-[108px] h-[78px] rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-left transition-all cursor-pointer active:scale-95 bg-white text-ink border border-line/80 shadow-2xs hover:border-brand/40';
+            card.className = 'mobile-session-card h-9 rounded-full px-4 flex items-center justify-center shrink-0 text-left transition-all cursor-pointer active:scale-95 whitespace-nowrap bg-white text-ink border border-line/80 shadow-2xs hover:border-brand/40';
             card.style.backgroundColor = '#ffffff';
             card.style.color = '#053b26';
-            if (dateEl) {
-                dateEl.className = 'mobile-card-date text-muted font-medium text-[10px]';
-                dateEl.style.color = '#5c7a6d';
-            }
-            if (dotEl) {
-                dotEl.className = 'mobile-card-dot w-2 h-2 rounded-full bg-emerald-500';
-                dotEl.style.backgroundColor = '#10b981';
-            }
         }
     });
 }
@@ -1052,7 +1034,10 @@ function mulaiObrolanBaru() {
 
     // Reset mobile
     const mobContainer = document.getElementById('mobile-messages-container');
-    if (mobContainer) mobContainer.innerHTML = '';
+    if (mobContainer) {
+        mobContainer.innerHTML = '';
+        mobContainer.classList.add('hidden');
+    }
     const mobWelcome = document.getElementById('mobile-welcome-card');
     if (mobWelcome) mobWelcome.classList.remove('hidden');
     updateMobileCardHighlight(null);
@@ -1097,6 +1082,7 @@ async function pilihSession(id) {
 
     if (welcomeCard) welcomeCard.classList.add('hidden');
     if (mobWelcomeCard) mobWelcomeCard.classList.add('hidden');
+    if (mobContainer) mobContainer.classList.remove('hidden');
 
     const loaderHtml = `
         <div class="flex gap-2.5 items-start max-w-[85%] py-2 text-xs text-muted">
@@ -1278,6 +1264,7 @@ async function kirimPesanRealtime() {
 
     if (deskWelcome) deskWelcome.classList.add('hidden');
     if (mobWelcome) mobWelcome.classList.add('hidden');
+    if (mobContainer) mobContainer.classList.remove('hidden');
 
     // 1. Tampilkan bubble pesan user di Desktop & Mobile
     if (deskContainer) {
@@ -1492,15 +1479,11 @@ function tambahSesiKeSidebar(id, judul) {
         newCard.type = 'button';
         newCard.setAttribute('data-session-card-id', id);
         newCard.onclick = () => pilihSession(id);
-        newCard.className = 'mobile-session-card w-[108px] min-w-[108px] h-[78px] rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-left transition-all cursor-pointer active:scale-95 bg-brand text-white shadow-xs';
+        newCard.className = 'mobile-session-card h-9 rounded-full px-4 flex items-center justify-center shrink-0 text-left transition-all cursor-pointer active:scale-95 whitespace-nowrap bg-brand text-white shadow-xs';
         newCard.style.backgroundColor = '#116a3a';
         newCard.style.color = '#ffffff';
         newCard.innerHTML = `
-            <span class="font-bold text-xs truncate block leading-snug mobile-card-title">${escapeHtml(judul)}</span>
-            <div class="flex items-center justify-between text-[11px]">
-                <span class="mobile-card-date text-white/80 font-medium text-[10px]" style="color: rgba(255, 255, 255, 0.8);">Hari ini</span>
-                <span class="mobile-card-dot w-2 h-2 rounded-full bg-white" style="background-color: #ffffff;"></span>
-            </div>
+            <span class="font-semibold text-xs truncate max-w-[150px] mobile-card-title">${escapeHtml(judul)}</span>
         `;
         const btnBaru = mobileCardsContainer.firstElementChild;
         if (btnBaru && btnBaru.nextSibling) {
