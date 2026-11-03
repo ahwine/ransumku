@@ -46,26 +46,26 @@ function mulberry32(seed) {
 /** Garis waktu tunggal (detik). */
 const TL = {
     walkIn0: 0.0,
-    walkIn1: 1.5,
-    spot0: 1.5,
-    spot1: 2.1,
-    sprint0: 2.1,
-    sprint1: 3.2,
-    peck0: 3.2,
-    peck1: 4.8,
-    layStart: 4.8,
-    eggStart: 5.3,
-    eggLanded: 5.8,
-    layEnd: 6.2,
-    runExit0: 6.2,
-    runExit1: 7.3,
-    shake0: 6.8,
-    crack0: 7.2,
-    crack1: 8.2,
-    burst0: 8.25,
-    flash0: 8.35,
-    reveal: 9.0,
-    end: 10.2,
+    walkIn1: 1.4,
+    spot0: 1.4,
+    spot1: 2.3,
+    sprint0: 2.3,
+    sprint1: 3.3,
+    peck0: 3.3,
+    peck1: 4.7,
+    layStart: 4.7,
+    eggStart: 5.0,
+    eggLanded: 5.5,
+    layEnd: 5.8,
+    runExit0: 5.9,
+    runExit1: 7.0,
+    shake0: 6.6,
+    crack0: 7.0,
+    crack1: 8.0,
+    burst0: 8.05,
+    flash0: 8.15,
+    reveal: 8.8,
+    end: 10.0,
 };
 
 /* ----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ function setupForm() {
 const EGG_H = 0.3;
 const EGG_R = 0.235;
 const EGG_SPLIT_Y = 0.06;
-const EGG_X = -0.9;
+const EGG_X = -0.8;
 
 function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
     const isMobile = window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches;
@@ -1271,7 +1271,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         });
     }
 
-    const peckTimes = [3.40, 3.70, 4.00, 4.30, 4.60];
+    const peckTimes = [3.45, 3.80, 4.15, 4.45];
 
     function updateFeed(t) {
         const fadeOut = 1 - smooth((t - TL.runExit0) / 0.85);
@@ -1288,17 +1288,18 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         feedAo.material.opacity = 0.85 * fadeOut;
 
         const eatProgress = clamp01((t - TL.peck0) / (TL.peck1 - TL.peck0));
-        const moundH = lerp(1.0, 0.42, smooth(eatProgress));
+        const moundH = lerp(1.0, 0.38, smooth(eatProgress));
         feedMound.scale.y = 0.26 * moundH;
         feedMound.position.y = 0.024 * (0.6 + 0.4 * moundH);
 
         peckTimes.forEach((pt, peckIdx) => {
             const dt = t - pt;
-            if (dt >= 0 && dt < 0.24) {
-                const hop = Math.sin((dt / 0.24) * Math.PI) * 0.028;
+            if (dt >= 0 && dt < 0.22) {
+                const hop = Math.sin((dt / 0.22) * Math.PI) * 0.038;
                 cornGrains.forEach((g, gi) => {
                     if ((gi + peckIdx) % 3 === 0) {
-                        g.mesh.position.y = g.baseY * moundH + hop * (0.5 + g.scatterSeed * 0.8);
+                        g.mesh.position.y = g.baseY * moundH + hop * (0.6 + g.scatterSeed * 0.8);
+                        g.mesh.rotation.x += 0.08;
                     }
                 });
             }
@@ -1316,9 +1317,9 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
 
     function poseChicken(t) {
         const offLeft = startX - 1.4;
-        const spotX = -2.15;
+        const spotX = -2.35;
         const feedPanX = FEED_X;
-        const eatX = feedPanX - 0.44;
+        const eatX = feedPanX - 0.26;
         const offRight = Math.max(3.8, -startX + 1.2);
 
         let x;
@@ -1331,8 +1332,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
             const u = clamp01((t - TL.sprint0) / (TL.sprint1 - TL.sprint0));
             x = lerp(spotX, eatX, smooth(u));
         } else if (t < TL.runExit0) {
-            const layRecoil = 0.02 * smooth((t - TL.layStart) / 0.4);
-            x = eatX - layRecoil;
+            x = eatX;
         } else {
             const u = clamp01((t - TL.runExit0) / (TL.runExit1 - TL.runExit0));
             x = lerp(eatX, offRight, smooth(u));
@@ -1350,18 +1350,15 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         const runW = Math.max(sprintW, runExitW);
         const movingW = Math.max(walkW, runW);
 
-        const spotEnv =
-            t >= TL.spot0 && t <= TL.spot1
-                ? Math.sin(clamp01((t - TL.spot0) / (TL.spot1 - TL.spot0)) * Math.PI)
-                : 0;
+        const spotU = clamp01((t - TL.spot0) / (TL.spot1 - TL.spot0));
+        const spotEnv = t >= TL.spot0 && t <= TL.spot1 ? Math.sin(spotU * Math.PI) : 0;
 
-        const layW = smooth((t - TL.layStart) / 0.45) * (1 - smooth((t - TL.layEnd) / 0.35));
-        const effort = smooth((t - 5.0) / 0.25) * (1 - smooth((t - 5.7) / 0.3));
+        const layW = smooth((t - TL.layStart) / 0.35) * (1 - smooth((t - TL.layEnd) / 0.35));
 
         const pulse = (center, spread) => Math.exp(-Math.pow((t - center) / spread, 2));
         const peck =
             t >= TL.peck0 && t <= TL.peck1
-                ? peckTimes.reduce((acc, pt) => Math.max(acc, pulse(pt, 0.075)), 0) * (1 - movingW) * (1 - layW)
+                ? peckTimes.reduce((acc, pt) => Math.max(acc, pulse(pt, 0.065)), 0) * (1 - movingW) * (1 - layW)
                 : 0;
 
         const idle = (1 - movingW) * (1 - layW);
@@ -1395,55 +1392,57 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
 
                 const bounce = Math.cos(phase * 2) * lerp(0.045, 0.075, runW) * movingW;
                 const breathY = Math.sin(t * 2.3) * 0.014 * idle;
-                const squatY = 0.38 * layW + 0.08 * effort;
+
+                const peckDropY = 0.25 * peck;
+                const peckForwardZ = 0.20 * peck;
 
                 rigBones.root.position.set(
                     Math.sin(phase) * 0.025 * movingW,
-                    1.05 + bounce + breathY - squatY,
-                    0.06 * peck - 0.05 * layW,
+                    1.05 + bounce + breathY - peckDropY,
+                    peckForwardZ,
                 );
 
                 rigBones.spine.rotation.set(
-                    0.16 * runW + 0.18 * peck + 0.04 * walkW - 0.14 * layW - 0.06 * effort,
+                    0.16 * runW + 0.46 * peck + 0.04 * walkW + 0.14 * spotEnv - 0.06 * layW,
                     Math.sin(phase) * (0.03 * walkW + 0.06 * runW),
-                    Math.sin(phase) * 0.04 * movingW + Math.sin(t * 22) * 0.015 * effort,
+                    Math.sin(phase) * 0.04 * movingW,
                 );
                 rigBones.spine.scale.set(
-                    1 + 0.035 * layW + Math.sin(t * 22) * 0.018 * effort,
-                    1 + Math.sin(t * 2.4) * 0.012 + 0.02 * layW,
-                    1 + 0.025 * layW,
+                    1,
+                    1 + Math.sin(t * 2.4) * 0.012,
+                    1,
                 );
 
                 const bob = Math.sin(phase * 2 - 0.45) * lerp(0.12, 0.18, runW) * movingW;
                 rigBones.neck.position.set(
                     0,
-                    0.70 + 0.07 * spotEnv,
-                    0.95 + Math.sin(phase * 2 - 0.45) * 0.06 * movingW + 0.05 * runW,
+                    0.70 - 0.18 * peck + 0.06 * spotEnv,
+                    0.95 + 0.22 * peck + 0.18 * spotEnv + 0.05 * runW,
                 );
                 rigBones.neck.rotation.set(
-                    bob + 0.52 * peck - 0.08 * layW + Math.sin(t * 1.8) * 0.03 * idle,
-                    -0.22 * spotEnv + Math.sin(t * 1.4) * 0.06 * idle * (1 - peck),
+                    bob + 0.95 * peck + 0.24 * spotEnv,
+                    -0.22 * spotEnv,
                     0,
                 );
 
                 rigBones.head.rotation.set(
-                    -bob * 0.85 + 0.38 * peck + 0.12 * layW - 0.15 * spotEnv + Math.sin(t * 2.1) * 0.035 * idle,
-                    -0.25 * spotEnv + Math.sin(t * 1.5) * 0.18 * idle * (1 - peck) + Math.sin(t * 2.2) * 0.28 * layW * (1 - effort),
-                    0.20 * spotEnv + Math.sin(t * 1.9) * 0.05 * idle * (1 - peck),
+                    -bob * 0.85 + 0.88 * peck + 0.16 * spotEnv + 0.04 * layW,
+                    -0.25 * spotEnv,
+                    0.18 * spotEnv,
                 );
 
                 rigBones.tail.rotation.set(
-                    0.42 * layW + 0.14 * effort + 0.16 * runW + Math.sin(phase * 2) * 0.06 * movingW + Math.sin(t * 2.8) * 0.03,
-                    Math.sin(phase) * 0.04 * movingW + Math.sin(t * 16) * 0.12 * spotEnv,
+                    0.38 * layW + 0.24 * peck + 0.16 * runW + Math.sin(phase * 2) * 0.06 * movingW + Math.sin(t * 16) * 0.12 * spotEnv,
+                    Math.sin(phase) * 0.04 * movingW,
                     0,
                 );
 
                 gltfChicken.position.set(x, 0, 0);
-                gltfChicken.rotation.set(0, -0.22 * layW, 0);
+                gltfChicken.rotation.set(0, 0, 0);
             }
 
             chickenAo.position.x = x - 0.05;
-            chickenAo.scale.set(1.9 + 0.25 * layW, 1.15, 1);
+            chickenAo.scale.set(1.9, 1.15, 1);
             chickenAo.material.opacity = 0.85 * chickenFade;
             chickenAo.visible = chickenFade > 0.005;
             return;
@@ -1456,39 +1455,35 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         shadowMat.opacity = 0.2 * chickenFade;
 
         chicken.position.set(x, 0, 0);
-        chicken.rotation.y = -0.3 * layW;
+        chicken.rotation.y = 0;
 
         const A = lerp(0.55, 0.75, runW);
         legs.forEach((leg) => {
             const ph = phase + (leg.side > 0 ? 0 : Math.PI);
             const swing = Math.sin(ph) * A * movingW;
             const lift = Math.max(0, Math.cos(ph)) * lerp(0.75, 1.05, runW) * movingW;
-            leg.upper.rotation.z = swing + layW * 0.95;
-            leg.lower.rotation.z = -lift - layW * 1.8;
+            leg.upper.rotation.z = swing;
+            leg.lower.rotation.z = -lift;
             leg.foot.rotation.z = -(leg.upper.rotation.z + leg.lower.rotation.z);
         });
 
-        torso.position.y = Math.cos(phase * 2) * 0.02 * movingW + Math.sin(t * 2.2) * 0.006;
-        torso.rotation.z = -0.14 * layW - 0.03 * movingW - 0.12 * runW;
-        torso.rotation.x = Math.sin(t * 26) * 0.022 * effort + Math.sin(phase) * 0.04 * movingW;
-        torso.scale.set(
-            1 + 0.03 * layW,
-            1 + Math.sin(t * 2.4) * 0.012 + 0.03 * layW,
-            1 + 0.04 * layW + Math.sin(t * 20) * 0.02 * effort,
-        );
-        tail.rotation.z = 0.55 + 0.4 * layW + Math.sin(t * 3.2) * 0.05 + Math.sin(t * 24) * 0.05 * effort;
+        torso.position.y = Math.cos(phase * 2) * 0.02 * movingW + Math.sin(t * 2.2) * 0.006 - 0.16 * peck;
+        torso.rotation.z = -0.12 * runW;
+        torso.rotation.x = 0.42 * peck + 0.14 * spotEnv + Math.sin(phase) * 0.04 * movingW;
+        torso.scale.set(1, 1, 1);
+        tail.rotation.z = 0.55 + 0.38 * layW + 0.22 * peck + Math.sin(t * 3.2) * 0.05;
 
         wings.forEach((w, i) => {
             const side = i === 0 ? 1 : -1;
-            w.rotation.z = 0.12 + 0.05 * effort * Math.sin(t * 22);
+            w.rotation.z = 0.12;
             w.rotation.x = side * (0.15 + 0.55 * runW * Math.abs(Math.sin(t * 24)));
         });
 
-        neck.position.x = 0.4 + 0.05 * Math.sin(phase + 0.6) * movingW + 0.04 * peck;
-        neck.rotation.z = -0.1 * layW + 0.04 * Math.sin(t * 1.7) - 0.82 * peck - 0.15 * spotEnv;
-        head.rotation.y =
-            -0.28 * spotEnv + Math.sin(t * 1.4) * 0.32 * idle * (1 - peck) + Math.sin(t * 2.3) * 0.4 * layW * (1 - effort);
-        head.rotation.z = 0.22 * spotEnv + Math.sin(t * 2.1) * 0.05 * idle + 0.18 * layW - 0.62 * peck;
+        neck.position.x = 0.4 + 0.05 * Math.sin(phase + 0.6) * movingW + 0.14 * peck + 0.08 * spotEnv;
+        neck.position.y = 0.2 - 0.14 * peck;
+        neck.rotation.z = 0.04 * Math.sin(t * 1.7) - 0.92 * peck - 0.24 * spotEnv;
+        head.rotation.y = -0.28 * spotEnv;
+        head.rotation.z = 0.22 * spotEnv + Math.sin(t * 2.1) * 0.05 * idle - 0.85 * peck + 0.04 * layW;
 
         const blink = t % 2.6 < 0.12;
         lids.forEach((lid) => {
@@ -1505,7 +1500,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         chicken.position.y = -minY;
 
         chickenAo.position.x = x - 0.05;
-        chickenAo.scale.set(1.9 + 0.2 * layW, 1.1, 1);
+        chickenAo.scale.set(1.9, 1.1, 1);
         chickenAo.material.opacity = 0.8 * chickenFade;
     }
 
@@ -1526,7 +1521,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         const shakeAmp = 0.045 * smooth((t - TL.shake0) / 0.5) * (t < TL.burst0 ? 1 : 0) * (0.65 + 0.35 * Math.sin(t * 8));
         const rx = Math.sin(t * 47 + 1) * shakeAmp * 0.6;
         rz += Math.sin(t * 52) * shakeAmp;
-        egg.position.set(lerp(-0.85, EGG_X, smooth(u)) + Math.sin(t * 61) * shakeAmp * 0.12, y, 0);
+        egg.position.set(EGG_X + Math.sin(t * 61) * shakeAmp * 0.12, y, 0);
         egg.scale.setScalar(s);
         egg.rotation.set(rx, 0, rz);
 
@@ -1617,31 +1612,31 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         let tx, camY, targetY, dist, fov;
 
         if (t < TL.spot1) {
-            tx = -1.25;
+            tx = lerp(startX * 0.5, -1.35, smooth(t / TL.walkIn1));
             camY = 1.35;
             targetY = 0.65;
             dist = 7.1 * fit;
             fov = 32;
         } else if (t < TL.sprint1) {
             const u = smooth((t - TL.sprint0) / (TL.sprint1 - TL.sprint0));
-            tx = lerp(-1.25, -0.65, u);
+            tx = lerp(-1.35, -0.48, u);
             camY = lerp(1.35, 1.25, u);
             targetY = lerp(0.65, 0.58, u);
             dist = lerp(7.1, 6.7, u) * fit;
             fov = 32;
         } else if (t < TL.runExit0) {
-            tx = -0.65;
-            camY = 1.25;
-            targetY = 0.55;
-            dist = 6.7 * fit;
+            tx = -0.48;
+            camY = 1.22;
+            targetY = 0.52;
+            dist = 6.6 * fit;
             fov = 31;
         } else {
             const u = smooth((t - TL.runExit0) / 1.1);
-            tx = lerp(-0.65, EGG_X, u);
-            camY = lerp(1.25, 0.78, u);
-            targetY = lerp(0.55, EGG_H + 0.08, u);
-            const dolly = lerp(1.0, 0.60, u) * lerp(1, 0.9, smooth((t - 7.6) / 0.6));
-            dist = 6.7 * fit * dolly;
+            tx = lerp(-0.48, EGG_X, u);
+            camY = lerp(1.22, 0.78, u);
+            targetY = lerp(0.52, EGG_H + 0.08, u);
+            const dolly = lerp(1.0, 0.60, u) * lerp(1, 0.9, smooth((t - 7.5) / 0.6));
+            dist = 6.6 * fit * dolly;
             fov = lerp(31, 26, u);
         }
 
@@ -1662,7 +1657,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
             flashEl.style.opacity = '0';
             return;
         }
-        const a = smooth((t - TL.flash0) / 0.7) * 0.95 * (1 - smooth((t - 9.1) / 0.95));
+        const a = smooth((t - TL.flash0) / 0.7) * 0.95 * (1 - smooth((t - 8.9) / 0.95));
         const maxDim = Math.max(width, height);
         const r = easeOut((t - TL.flash0) / 1.0) * maxDim * 1.25 + 40;
         projV.set(egg.position.x, EGG_H + 0.1, 0).project(camera);
