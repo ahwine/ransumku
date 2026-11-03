@@ -143,7 +143,7 @@
                                     <label class="block text-xs font-bold text-[#0f3d26]" for="telur_butir">Jumlah Telur</label>
                                     <button type="button" id="btn-toggle-rak-calc" class="inline-flex items-center gap-1 text-xs font-bold cursor-pointer" style="color: #1f7a4a;">
                                         <span class="material-symbols-outlined text-[16px]">grid_view</span>
-                                        <span>Hitung per rak (30)</span>
+                                        <span>Hitung per Rak (30)</span>
                                     </button>
                                 </div>
                                 <div class="relative">
