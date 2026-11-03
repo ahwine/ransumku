@@ -70,7 +70,13 @@ class RationCalculator
             'pesan' => $hasil['pesan'],
         ];
 
-        $detail = ['belanja' => $belanja, 'ideal_layak' => $ideal['feasible']];
+        $detail = [
+            'belanja' => $belanja,
+            'ideal_layak' => $ideal['feasible'],
+            'standar_nama' => $std->nama,
+            'standar_kode' => $std->kode,
+            'parameter_tidak_dibatasi' => $std->unconstrainedParameters(),
+        ];
         $asFed = null;
 
         if ($hasil['feasible']) {
@@ -119,18 +125,52 @@ class RationCalculator
         });
     }
 
-    /** Bandingkan gizi aktual dengan target; tanda ✔/✘ ditentukan di sini. */
+    /** Bandingkan gizi aktual dengan target; parameter null ditampilkan sesuai ketersediaan sumber. */
     private function cekGizi(array $g, array $t): array
     {
         $tol = 0.005;
-        $baris = [
-            ['Protein', $g['protein'], '%', fn ($v) => $v + $tol >= $t['protein_min'], 'min '.$this->f($t['protein_min']).'%'],
-            ['Kalsium', $g['kalsium'], '%', fn ($v) => $v + $tol >= $t['kalsium_min'] && $v - $tol <= $t['kalsium_max'], $this->f($t['kalsium_min']).'–'.$this->f($t['kalsium_max']).'%'],
-            ['Fosfor', $g['fosfor'], '%', fn ($v) => $v + $tol >= $t['fosfor_min'] && $v - $tol <= $t['fosfor_max'], $this->f($t['fosfor_min']).'–'.$this->f($t['fosfor_max']).'%'],
-            ['Energi metabolis', $g['energi'], ' kkal/kg', fn ($v) => $v + 1 >= $t['energi_min'], 'min '.number_format($t['energi_min'], 0, ',', '.').' kkal/kg'],
-        ];
+        $baris = [];
+
+        if (($t['protein_min'] ?? null) !== null) {
+            $baris[] = ['Protein kasar', $g['protein'], '%', fn ($v) => $v + $tol >= $t['protein_min'], 'min ' . $this->f((float) $t['protein_min']) . '%'];
+        } else {
+            $baris[] = ['Protein kasar', $g['protein'], '%', fn () => true, 'tidak dibatasi oleh standar ini'];
+        }
+
+        $caMin = $t['kalsium_min'] ?? null;
+        $caMax = $t['kalsium_max'] ?? null;
+        if ($caMin !== null && $caMax !== null) {
+            $baris[] = ['Kalsium', $g['kalsium'], '%', fn ($v) => $v + $tol >= $caMin && $v - $tol <= $caMax, $this->f((float) $caMin) . '–' . $this->f((float) $caMax) . '%'];
+        } elseif ($caMin !== null) {
+            $baris[] = ['Kalsium', $g['kalsium'], '%', fn ($v) => $v + $tol >= $caMin, 'min ' . $this->f((float) $caMin) . '%'];
+        } elseif ($caMax !== null) {
+            $baris[] = ['Kalsium', $g['kalsium'], '%', fn ($v) => $v - $tol <= $caMax, 'maks ' . $this->f((float) $caMax) . '%'];
+        } else {
+            $baris[] = ['Kalsium', $g['kalsium'], '%', fn () => true, 'tidak dibatasi oleh standar ini'];
+        }
+
+        $pMin = $t['fosfor_min'] ?? null;
+        $pMax = $t['fosfor_max'] ?? null;
+        if ($pMin !== null && $pMax !== null) {
+            $baris[] = ['Fosfor', $g['fosfor'], '%', fn ($v) => $v + $tol >= $pMin && $v - $tol <= $pMax, $this->f((float) $pMin) . '–' . $this->f((float) $pMax) . '%'];
+        } elseif ($pMin !== null) {
+            $baris[] = ['Fosfor', $g['fosfor'], '%', fn ($v) => $v + $tol >= $pMin, 'min ' . $this->f((float) $pMin) . '%'];
+        } elseif ($pMax !== null) {
+            $baris[] = ['Fosfor', $g['fosfor'], '%', fn ($v) => $v - $tol <= $pMax, 'maks ' . $this->f((float) $pMax) . '%'];
+        } else {
+            $baris[] = ['Fosfor', $g['fosfor'], '%', fn () => true, 'tidak dibatasi oleh standar ini'];
+        }
+
+        if (($t['energi_min'] ?? null) !== null) {
+            $baris[] = ['Energi metabolis', $g['energi'], ' kkal/kg', fn ($v) => $v + 1 >= $t['energi_min'], 'min ' . number_format((float) $t['energi_min'], 0, ',', '.') . ' kkal/kg'];
+        } else {
+            $baris[] = ['Energi metabolis', $g['energi'], ' kkal/kg', fn () => true, 'tidak dibatasi oleh standar ini'];
+        }
+
         if (($t['serat_max'] ?? null) !== null) {
-            $baris[] = ['Serat kasar', $g['serat'], '%', fn ($v) => $v - $tol <= $t['serat_max'], 'maks '.$this->f($t['serat_max']).'%'];
+            $baris[] = ['Serat kasar', $g['serat'], '%', fn ($v) => $v - $tol <= $t['serat_max'], 'maks ' . $this->f((float) $t['serat_max']) . '%'];
+        } else {
+            $baris[] = ['Serat kasar', $g['serat'], '%', fn () => true, 'tidak dibatasi oleh standar ini'];
         }
 
         return array_map(fn ($b) => [

@@ -61,7 +61,6 @@ class FarmBootstrap
                 'sumber' => self::SUMBER, 'catatan' => self::CATATAN,
             ]);
         }
-        NutrientStandard::create(['farm_id' => null] + self::standardDefault());
     }
 
     /** Salin bahan & acuan ke kandang baru. */
@@ -89,8 +88,9 @@ class FarmBootstrap
             );
         }
 
-        if ($farm->standards()->where('is_resmi', true)->count() < 4) {
-            app(NutrientStandardService::class)->syncOfficialStandards($farm);
+        $standardService = app(NutrientStandardService::class);
+        if ($standardService->needsSync($farm)) {
+            $standardService->syncOfficialStandards($farm);
         }
     }
 
@@ -137,7 +137,9 @@ class FarmBootstrap
         }
 
         // satu ransum contoh agar beranda langsung terisi
-        $std = $farm->standards()->first();
+        $std = app(NutrientStandardService::class)->getRecommendedStandard($farm)
+            ?? $farm->standards()->where('verified', true)->first()
+            ?? $farm->standards()->first();
         app(RationCalculator::class)->hitung($farm, 40, null, $std);
 
         app(AnomalyDetector::class)->evaluate($farm);

@@ -15,9 +15,32 @@
     </a>
     <div class="space-y-0.5 min-w-0">
         <h1 class="text-h-lg font-black tracking-tight text-ink truncate">Hasil Formulasi Ransum</h1>
-        <p class="text-xs text-muted">{{ $ration->created_at->translatedFormat('d F Y, H:i') }} WIB · Acuan: <span class="font-semibold text-ink">{{ $ration->standard?->nama ?? 'Standar SNI' }}</span></p>
+        <p class="text-xs text-muted">{{ $ration->created_at->translatedFormat('d F Y, H:i') }} WIB · Acuan: <span class="font-semibold text-ink">{{ $ration->namaStandar() }}</span></p>
     </div>
 </div>
+
+@if (! $ration->standard)
+    <div class="mt-4 p-3.5 rounded-2xl bg-surface border border-line text-ink flex items-start gap-2.5 text-xs">
+        <span class="material-symbols-outlined text-[20px] text-muted shrink-0 mt-0.5">inventory_2</span>
+        <div class="leading-relaxed">
+            <span>Acuan asal resep ini (<strong>{{ $ration->namaStandar() }}</strong>) sudah dihapus dari katalog aktif. Takaran bahan dan hasil gizi tersimpan tetap utuh; jika menekan <strong>Hitung Ulang</strong>, sistem akan memakai acuan aktif yang tersedia.</span>
+        </div>
+    </div>
+@endif
+
+@if (!empty($unconstrainedParams))
+    <div class="mt-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-2.5 text-xs">
+        <span class="material-symbols-outlined text-[20px] text-amber-700 shrink-0 mt-0.5">warning</span>
+        <div class="space-y-1 leading-relaxed">
+            <strong class="font-bold block">Peringatan Batasan Acuan Gizi</strong>
+            <ul class="list-disc list-inside space-y-0.5">
+                @foreach ($unconstrainedParams as $paramName)
+                    <li>Parameter {{ $paramName }} tidak dibatasi oleh standar ini.</li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+@endif
 
 @if ($hargaUsang)
     <div class="mt-4 p-3.5 rounded-2xl bg-amber-soft/60 border border-amber/30 text-amber-ink flex items-start gap-2.5 text-xs">
@@ -73,10 +96,10 @@
             <span class="text-xs uppercase tracking-wider font-semibold text-muted block">Kelayakan Nutrisi</span>
             <div class="flex items-baseline gap-2">
                 <span class="text-2xl sm:text-3xl font-bold text-ink tabular-nums tracking-tight">100%</span>
-                <span class="text-base sm:text-lg font-bold text-brand">Sesuai SNI</span>
+                <span class="text-base sm:text-lg font-bold text-brand">{{ empty($unconstrainedParams) ? 'Sesuai Target' : 'Sesuai Batasan Aktif' }}</span>
             </div>
             <p class="text-xs text-muted pt-0.5 truncate">
-                Acuan: <span class="font-medium text-ink">{{ $ration->standard?->nama ?? 'Standar SNI' }}</span>
+                Acuan: <span class="font-medium text-ink">{{ $ration->namaStandar() }}</span>
             </p>
         </div>
     </div>
@@ -267,10 +290,10 @@
             <section class="card p-4 sm:p-5 space-y-5 border border-line shadow-2xs">
                 {{-- Bagian 1: Spesifikasi Nutrisi --}}
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between pb-1.5 border-b border-line/60">
-                        <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Spesifikasi Nutrisi</h2>
-                        <span class="text-xs font-medium text-muted">
-                            Standar SNI
+                    <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-line/60">
+                        <h2 class="text-xs font-bold text-ink uppercase tracking-wider shrink-0">Spesifikasi Nutrisi</h2>
+                        <span class="text-xs font-medium text-muted truncate">
+                            {{ $ration->standard?->labelOtoritas() ?? 'Acuan Tersimpan' }}
                         </span>
                     </div>
 

@@ -280,26 +280,36 @@
 
                 @include('partials.dropdown-pilih-standar', [
                     'standards' => $standards, 
-                    'value' => old('standard_id', $recommendedStandardId ?? null),
+                    'value' => old('standard_id', $defaultStandardId ?? $recommendedStandardId ?? null),
                     'recommendedStandardId' => $recommendedStandardId ?? null
                 ])
 
-                <div class="space-y-1.5 pt-1">
+                @php
+                    $selectedStandardId = (int) old('standard_id', $defaultStandardId ?? $recommendedStandardId ?? ($standards->first()?->id ?? 0));
+                @endphp
+
+                <div class="space-y-1.5 pt-1" id="panel-rincian-standar">
                     @foreach ($standards as $s)
-                        <details class="text-xs text-muted rounded-xl bg-surface/50 border border-line/60 p-2.5 group" @if(($recommendedStandardId ?? null) === $s->id) open @endif>
-                            <summary class="cursor-pointer font-bold text-ink hover:text-brand flex items-center justify-between select-none py-0.5">
-                                <span class="truncate pr-2">Rincian: {{ $s->nama }}</span>
+                        <details data-standard-detail="{{ $s->id }}"
+                                 class="text-xs text-muted rounded-xl bg-surface/50 border {{ $s->verified ? 'border-line/60' : 'border-amber-300' }} p-2.5 group {{ $selectedStandardId === (int) $s->id ? '' : 'hidden' }}"
+                                 open>
+                            <summary class="cursor-pointer font-bold text-ink hover:text-brand flex items-center justify-between select-none py-0.5 gap-2">
+                                <span class="truncate pr-1">Rincian: {{ $s->nama }}</span>
                                 <span class="material-symbols-outlined text-[16px] text-muted group-open:rotate-180 transition-transform shrink-0">expand_more</span>
                             </summary>
                             <ul class="mt-2 space-y-1 border-t border-line/50 pt-2 text-[11px]">
-                                <li class="flex justify-between"><span>Protein kasar (PK):</span> <strong class="text-ink">min {{ Fmt::num($s->protein_min, 1) }}%</strong></li>
-                                <li class="flex justify-between"><span>Kalsium (Ca):</span> <strong class="text-ink">{{ Fmt::num($s->kalsium_min, 1) }}–{{ Fmt::num($s->kalsium_max, 1) }}%</strong></li>
-                                <li class="flex justify-between"><span>Fosfor (P):</span> <strong class="text-ink">{{ Fmt::num($s->fosfor_min, 2) }}–{{ Fmt::num($s->fosfor_max, 2) }}%</strong></li>
-                                <li class="flex justify-between"><span>Energi Metabolis (EM):</span> <strong class="text-ink">min {{ Fmt::num($s->energi_min, 0) }} kkal/kg</strong></li>
-                                @if ($s->serat_max !== null)
-                                    <li class="flex justify-between"><span>Serat kasar:</span> <strong class="text-ink">maks {{ Fmt::num($s->serat_max, 1) }}%</strong></li>
+                                @if (! $s->verified)
+                                    <li class="mb-1.5 px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-300 font-bold text-[10px]">
+                                        {{ $s->isSumberSekunder() ? 'Sumber sekunder (belum terverifikasi) — cek dokumen primer sebelum dipakai' : 'Belum terverifikasi — periksa atau lengkapi angka acuan sebelum dipakai' }}
+                                    </li>
                                 @endif
-                                <li class="flex justify-between pt-1 border-t border-line/40 text-[10px] text-muted"><span>Otoritas Sumber:</span> <span>{{ $s->labelOtoritas() }}</span></li>
+                                <li class="flex justify-between gap-2"><span>Protein kasar (PK):</span> <strong class="text-ink">{{ $s->formatProtein() }}</strong></li>
+                                <li class="flex justify-between gap-2"><span>Kalsium (Ca):</span> <strong class="text-ink">{{ $s->formatKalsium() }}</strong></li>
+                                <li class="flex justify-between gap-2"><span>Fosfor (P):</span> <strong class="text-ink">{{ $s->formatFosfor() }}</strong></li>
+                                <li class="flex justify-between gap-2"><span>Energi Metabolis (EM):</span> <strong class="text-ink">{{ $s->formatEnergi() }}</strong></li>
+                                <li class="flex justify-between gap-2"><span>Serat kasar:</span> <strong class="text-ink">{{ $s->formatSerat() }}</strong></li>
+                                <li class="flex justify-between gap-2 pt-1 border-t border-line/40 text-[10px] text-muted"><span>Edisi:</span> <span>{{ $s->edition_year ?? '—' }}</span></li>
+                                <li class="pt-0.5 text-[10px] text-muted leading-snug"><span class="font-semibold text-ink">Sumber:</span> {{ $s->source ?? $s->sumber ?? '—' }}</li>
                             </ul>
                         </details>
                     @endforeach
@@ -347,6 +357,20 @@
                 updateCardState(cb);
             });
         });
+
+        const standardInput = document.getElementById('standard_id');
+        if (standardInput) {
+            standardInput.addEventListener('change', () => {
+                const chosen = String(standardInput.value);
+                document.querySelectorAll('[data-standard-detail]').forEach((el) => {
+                    const isMatch = el.getAttribute('data-standard-detail') === chosen;
+                    el.classList.toggle('hidden', !isMatch);
+                    if (isMatch) {
+                        el.setAttribute('open', 'open');
+                    }
+                });
+            });
+        }
     });
 </script>
 @endsection

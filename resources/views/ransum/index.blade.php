@@ -49,10 +49,10 @@
             </div>
         </div>
 
-        {{-- Kartu 3: Tingkat Kelayakan Nutrisi SNI --}}
+        {{-- Kartu 3: Tingkat Kelayakan Nutrisi --}}
         <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
             <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-bold text-muted uppercase tracking-wider">Tingkat Kelayakan SNI</span>
+                <span class="text-xs font-bold text-muted uppercase tracking-wider">Tingkat Kelayakan Nutrisi</span>
                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold {{ $persenLayak >= 100 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
                     {{ $persenLayak }}% Memenuhi
                 </span>
@@ -77,12 +77,12 @@
                             Formulasi {{ $r->created_at->translatedFormat('d F Y, H:i') }} WIB
                         </h3>
                         <span class="text-muted/40">•</span>
-                        <span class="text-xs text-muted font-medium">Acuan: {{ $r->standard?->nama ?? 'Standar SNI' }}</span>
+                        <span class="text-xs text-muted font-medium">Acuan: {{ $r->namaStandar() }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         @if ($r->layak())
                             <span class="inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
-                                Layak & Sesuai SNI
+                                Layak & Memenuhi Target
                             </span>
                         @else
                             <span class="inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs">

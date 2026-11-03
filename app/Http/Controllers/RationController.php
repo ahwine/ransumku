@@ -14,7 +14,7 @@ class RationController extends Controller
 {
     public function index()
     {
-        $rations = $this->farm()->rations()->with('items')->latest('id')->get();
+        $rations = $this->farm()->rations()->with(['items', 'standard'])->latest('id')->get();
 
         return view('ransum.index', compact('rations'));
     }
@@ -26,11 +26,12 @@ class RationController extends Controller
         
         $stdService = app(NutrientStandardService::class);
         $recommendedStandard = $stdService->getRecommendedStandard($farm);
-        $standards = $farm->standards()->orderByDesc('is_resmi')->orderBy('id')->get();
-        $recommendedStandardId = $recommendedStandard?->id ?? ($standards->first()?->id ?? 0);
+        $standards = $farm->standards()->orderByDesc('verified')->orderBy('id')->get();
+        $recommendedStandardId = $recommendedStandard?->id;
+        $defaultStandardId = $recommendedStandard?->id ?? ($standards->where('verified', true)->first()?->id ?? ($standards->first()?->id ?? 0));
         $konsumsi = $farm->konsumsi_per_ekor;
 
-        return view('ransum.create', compact('farm', 'fis', 'standards', 'konsumsi', 'recommendedStandardId', 'recommendedStandard'));
+        return view('ransum.create', compact('farm', 'fis', 'standards', 'konsumsi', 'recommendedStandardId', 'defaultStandardId', 'recommendedStandard'));
     }
 
     public function store(Request $r, RationCalculator $calc)
@@ -135,18 +136,36 @@ class RationController extends Controller
         $keamanan = $ration->hasil['keamanan'] ?? $safetyValidator->validate($baris->all(), $giziMap);
 
         $hargaUsang = $this->farm()->farmIngredients()->where('aktif', true)->get()->contains(fn ($fi) => $fi->hargaUsang());
+        $unconstrainedParams = $ration->parameterTidakDibatasi();
 
-        return view('ransum.show', compact('ration', 'baris', 'skala', 'hargaUsang', 'asFed', 'mixerKg', 'mixingSheet', 'keamanan'));
+        return view('ransum.show', compact('ration', 'baris', 'skala', 'hargaUsang', 'asFed', 'mixerKg', 'mixingSheet', 'keamanan', 'unconstrainedParams'));
     }
 
     /** Hitung ulang memakai harga & stok TERBARU, jumlah dan acuan yang sama. */
     public function hitungUlang(Ration $ration, RationCalculator $calc)
     {
         $this->own($ration);
-        $std = $ration->standard ?? $this->farm()->standards()->first();
-        $baru = $calc->hitung($this->farm(), (float) $ration->total_kg, $ration->jumlah_hari, $std);
+        $farm = $this->farm();
+        $std = $ration->standard;
+        $pesan = 'Dihitung ulang dengan harga dan stok terbaru.';
 
-        return redirect()->route('ransum.show', $baru)->with('ok', 'Dihitung ulang dengan harga dan stok terbaru.');
+        if (! $std) {
+            $std = app(NutrientStandardService::class)->getRecommendedStandard($farm)
+                ?? $farm->standards()->where('verified', true)->first()
+                ?? $farm->standards()->first();
+
+            if (! $std) {
+                return redirect()->route('ransum.show', $ration)->withErrors([
+                    'standard_id' => 'Tidak ada acuan gizi aktif untuk menghitung ulang ransum ini.',
+                ]);
+            }
+
+            $pesan = "Acuan lama sudah tidak ada di katalog aktif; dihitung ulang memakai acuan \"{$std->nama}\" dengan harga dan stok terbaru.";
+        }
+
+        $baru = $calc->hitung($farm, (float) $ration->total_kg, $ration->jumlah_hari, $std);
+
+        return redirect()->route('ransum.show', $baru)->with('ok', $pesan);
     }
 
     public function jelaskan(Ration $ration, AiAssistant $ai)

@@ -30,6 +30,19 @@ class RationOptimizer
             return $this->gagal(['Tambahkan minimal satu bahan dan isi jumlah campuran lebih dari 0 kg.']);
         }
 
+        $adaTarget = false;
+        foreach (['protein_min', 'kalsium_min', 'kalsium_max', 'fosfor_min', 'fosfor_max', 'energi_min', 'serat_max'] as $kTarget) {
+            if (($target[$kTarget] ?? null) !== null) {
+                $adaTarget = true;
+                break;
+            }
+        }
+        if (! $adaTarget) {
+            return $this->gagal([
+                'Standar acuan yang dipilih belum memiliki angka batas nutrisi. Lengkapi data acuan terlebih dahulu atau pilih standar yang sudah terverifikasi.',
+            ]);
+        }
+
         // Pengecekan awal yang ramah: stok total & gizi per nutrisi
         $pesan = $this->diagnosa($ingredients, $target, $totalKg);
         if ($pesan !== []) {
@@ -69,12 +82,24 @@ class RationOptimizer
 
         $coef = fn (string $key) => array_map(fn ($i) => (float) $i[$key], $ingredients);
 
-        $rows[] = [$coef('protein'), '>=', $target['protein_min'] * $totalKg];
-        $rows[] = [$coef('kalsium'), '>=', $target['kalsium_min'] * $totalKg];
-        $rows[] = [$coef('kalsium'), '<=', $target['kalsium_max'] * $totalKg];
-        $rows[] = [$coef('fosfor'), '>=', $target['fosfor_min'] * $totalKg];
-        $rows[] = [$coef('fosfor'), '<=', $target['fosfor_max'] * $totalKg];
-        $rows[] = [$coef('energi'), '>=', $target['energi_min'] * $totalKg];
+        if (($target['protein_min'] ?? null) !== null) {
+            $rows[] = [$coef('protein'), '>=', $target['protein_min'] * $totalKg];
+        }
+        if (($target['kalsium_min'] ?? null) !== null) {
+            $rows[] = [$coef('kalsium'), '>=', $target['kalsium_min'] * $totalKg];
+        }
+        if (($target['kalsium_max'] ?? null) !== null) {
+            $rows[] = [$coef('kalsium'), '<=', $target['kalsium_max'] * $totalKg];
+        }
+        if (($target['fosfor_min'] ?? null) !== null) {
+            $rows[] = [$coef('fosfor'), '>=', $target['fosfor_min'] * $totalKg];
+        }
+        if (($target['fosfor_max'] ?? null) !== null) {
+            $rows[] = [$coef('fosfor'), '<=', $target['fosfor_max'] * $totalKg];
+        }
+        if (($target['energi_min'] ?? null) !== null) {
+            $rows[] = [$coef('energi'), '>=', $target['energi_min'] * $totalKg];
+        }
         if (($target['serat_max'] ?? null) !== null) {
             $rows[] = [$coef('serat'), '<=', $target['serat_max'] * $totalKg];
         }
@@ -216,16 +241,19 @@ class RationOptimizer
         }
 
         $cek = [
-            ['protein', 'Protein', '%', $target['protein_min'], null, 'min'],
-            ['kalsium', 'Kalsium', '%', $target['kalsium_min'], $target['kalsium_max'], 'rentang'],
-            ['fosfor', 'Fosfor', '%', $target['fosfor_min'], $target['fosfor_max'], 'rentang'],
-            ['energi', 'Energi', ' kkal/kg', $target['energi_min'], null, 'min'],
+            ['protein', 'Protein', '%', $target['protein_min'] ?? null, null, 'min'],
+            ['kalsium', 'Kalsium', '%', $target['kalsium_min'] ?? null, $target['kalsium_max'] ?? null, 'rentang'],
+            ['fosfor', 'Fosfor', '%', $target['fosfor_min'] ?? null, $target['fosfor_max'] ?? null, 'rentang'],
+            ['energi', 'Energi', ' kkal/kg', $target['energi_min'] ?? null, null, 'min'],
         ];
 
         foreach ($cek as [$key, $label, $sat, $min, $max]) {
+            if ($min === null && $max === null) {
+                continue;
+            }
             $hi = $this->rentangMaks($ingredients, $key, $totalKg, true);
             $lo = $this->rentangMaks($ingredients, $key, $totalKg, false);
-            if ($hi + 1e-9 < $min) {
+            if ($min !== null && $hi + 1e-9 < $min) {
                 $pesan[] = sprintf(
                     '%s tidak terpenuhi: target minimal %s%s, paling tinggi yang bisa dicapai %s%s dengan bahan dan stok ini. Tambah bahan sumber %s atau tambah stoknya.',
                     $label, $this->fmt($min), $sat, $this->fmt($hi), $sat, strtolower($label)

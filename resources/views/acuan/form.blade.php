@@ -1,68 +1,41 @@
 @extends('layouts.app')
-@section('judul', $acuan->exists ? 'Ubah Acuan Gizi' : 'Tambah Acuan Gizi')
+@section('judul', 'Ubah Acuan Gizi')
 @section('isi')
 
 <div class="space-y-5">
-    {{-- Header Halaman Bersih & Lebar Penuh (W-Full) --}}
-    <div class="flex items-center gap-3">
-        <a href="{{ route('acuan.index') }}" class="w-8 h-8 rounded-full bg-white hover:bg-surface border border-line text-muted hover:text-ink grid place-items-center transition shadow-2xs shrink-0" aria-label="Kembali ke Daftar Acuan Gizi">
-            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-        </a>
-        <div>
-            <h1 class="text-lg sm:text-xl font-bold text-ink tracking-tight">
-                {{ $acuan->exists ? 'Ubah Data Acuan Gizi' : 'Tambah Acuan Gizi Baru' }}
-            </h1>
-            <p class="text-xs text-muted mt-0.5">
-                Konfigurasi standar batas minimal dan maksimal nutrisi kebutuhan ayam petelur.
-            </p>
-        </div>
-    </div>
-
-    {{-- Kotak Preset Standar Resmi (Bantuan Isi Otomatis) --}}
-    <div class="bg-gradient-to-r from-emerald-50/70 via-white to-blue-50/40 rounded-2xl border border-emerald-200 p-4 sm:p-5 shadow-2xs">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex items-start gap-3">
-                <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 grid place-items-center shrink-0">
-                    <span class="material-symbols-outlined text-[20px]">flash_on</span>
-                </div>
-                <div>
-                    <h3 class="text-xs sm:text-sm font-bold text-ink">Isi Cepat dari Template Resmi (SNI & Breeder Guide)</h3>
-                    <p class="text-[11px] text-muted">Pilih standar resmi untuk mengisi seluruh formulir di bawah secara otomatis tanpa menghitung manual.</p>
-                </div>
-            </div>
-
-            <div class="w-full sm:w-72 shrink-0">
-                <select id="select-preset-standar" onchange="muatPresetStandar(this.value)" class="w-full px-3 py-2 bg-white border border-line rounded-xl text-xs font-semibold text-ink shadow-2xs focus:border-brand focus:ring-1 focus:ring-brand/20 transition cursor-pointer">
-                    <option value="">-- Pilih Template Standar Resmi --</option>
-                    @foreach ($katalogResmi ?? [] as $k)
-                        <option value="{{ $k['kode'] }}">{{ $k['nama'] }}</option>
-                    @endforeach
-                </select>
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('acuan.index') }}" class="w-8 h-8 rounded-full bg-white hover:bg-surface border border-line text-muted hover:text-ink grid place-items-center transition shadow-2xs shrink-0" aria-label="Kembali ke Daftar Acuan Gizi">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            </a>
+            <div>
+                <h1 class="text-lg sm:text-xl font-bold text-ink tracking-tight">
+                    Lengkapi / Ubah Acuan Gizi
+                </h1>
+                <p class="text-xs text-muted mt-0.5">
+                    Hanya masukkan angka yang memiliki sumber dokumen jelas. Kosongkan kolom apabila angkanya belum tersedia di sumber.
+                </p>
             </div>
         </div>
+
+        <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-amber-50 text-amber-800 border-amber-300">
+            Belum terverifikasi
+        </span>
     </div>
 
-    {{-- Form Card Lebar Penuh (Two-Column Split Sectional Layout) --}}
-    <form id="form-acuan" method="POST" action="{{ $acuan->exists ? route('acuan.update', $acuan) : route('acuan.store') }}" class="w-full bg-white rounded-2xl border border-line shadow-2xs divide-y divide-line overflow-hidden">
+    <form id="form-acuan" method="POST" action="{{ route('acuan.update', $acuan) }}" class="w-full bg-white rounded-2xl border border-line shadow-2xs divide-y divide-line overflow-hidden">
         @csrf
-        @if ($acuan->exists) 
-            @method('PUT') 
-        @endif
+        @method('PUT')
 
-        {{-- Hidden Fields untuk Metadata Standar Resmi --}}
-        <input type="hidden" name="kode" id="input_kode" value="{{ old('kode', $acuan->kode) }}">
-        <input type="hidden" name="kategori_fase" id="input_kategori_fase" value="{{ old('kategori_fase', $acuan->kategori_fase) }}">
-        <input type="hidden" name="organisasi_sumber" id="input_organisasi_sumber" value="{{ old('organisasi_sumber', $acuan->organisasi_sumber) }}">
-
-        {{-- SEKSI 1: IDENTITAS ACUAN & RUJUKAN --}}
+        {{-- SEKSI 1: IDENTITAS, TAHUN EDISI & SUMBER --}}
         <div class="p-5 md:p-7 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <div class="lg:col-span-4 space-y-1">
                 <div class="flex items-center gap-2.5">
                     <span class="w-6 h-6 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">1</span>
-                    <h2 class="text-sm font-bold text-ink">Identitas & Rujukan</h2>
+                    <h2 class="text-sm font-bold text-ink">Identitas & Sumber Rujukan</h2>
                 </div>
                 <p class="text-xs text-muted leading-relaxed pl-8.5">
-                    Nama pedoman standar, tahun publikasi resmi, dan dokumen rujukan atau jurnal ilmiah yang digunakan.
+                    Cantumkan nama acuan, tahun/edisi dokumen, dan rincian sumber primer atau catatan sumber sekunder.
                 </p>
             </div>
 
@@ -70,101 +43,106 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="sm:col-span-2">
                         <label class="lbl" for="nama">Nama Acuan <span class="text-danger">*</span></label>
-                        <input id="nama" name="nama" type="text" class="field !min-h-10 text-xs font-medium" value="{{ old('nama', $acuan->nama) }}" placeholder="Contoh: SNI 2016 (Ayam Petelur Fase Produksi)" required autocomplete="off">
+                        <input id="nama" name="nama" type="text" class="field !min-h-10 text-xs font-medium" value="{{ old('nama', $acuan->nama) }}" required autocomplete="off">
                     </div>
 
                     <div>
-                        <label class="lbl" for="tahun">Tahun Rujukan</label>
-                        <input id="tahun" name="tahun" type="number" min="1980" max="2050" class="field !min-h-10 text-xs font-medium" value="{{ old('tahun', $acuan->exists ? $acuan->tahun : 2006) }}" placeholder="Contoh: 2006">
+                        <label class="lbl" for="edition_year">Tahun / Edisi <span class="text-danger">*</span></label>
+                        <input id="edition_year" name="edition_year" type="text" class="field !min-h-10 text-xs font-medium" value="{{ old('edition_year', $acuan->edition_year) }}" placeholder="Contoh: 2024" required>
                     </div>
                 </div>
 
                 <div>
-                    <label class="lbl" for="sumber">Keterangan Sumber / Jurnal / Rujukan</label>
-                    <input id="sumber" name="sumber" type="text" class="field !min-h-10 text-xs font-medium" value="{{ old('sumber', $acuan->sumber) }}" placeholder="Contoh: Standar Nasional Indonesia (SNI 01-3929-2006) - BSN & Kementan RI">
+                    <label class="lbl" for="source">Sumber Dokumen <span class="text-danger">*</span></label>
+                    <input id="source" name="source" type="text" class="field !min-h-10 text-xs font-medium" value="{{ old('source', $acuan->source ?? $acuan->sumber) }}" required>
                 </div>
             </div>
         </div>
 
-        {{-- SEKSI 2: KEBUTUHAN MAKRONUTRISI UTAMA --}}
+        {{-- SEKSI 2: MAKRONUTRISI & ENERGI --}}
         <div class="p-5 md:p-7 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <div class="lg:col-span-4 space-y-1">
                 <div class="flex items-center gap-2.5">
                     <span class="w-6 h-6 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">2</span>
-                    <h2 class="text-sm font-bold text-ink">Makronutrisi & Energi</h2>
+                    <h2 class="text-sm font-bold text-ink">Protein & Energi Metabolis</h2>
                 </div>
                 <p class="text-xs text-muted leading-relaxed pl-8.5">
-                    Target minimal protein kasar dan energi metabolis untuk menjaga stamina serta kestabilan produksi telur harian.
+                    Biarkan kosong bila nilai energi metabolis atau protein belum tercantum di dokumen sumber.
                 </p>
             </div>
 
             <div class="lg:col-span-8 space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="lbl" for="protein_min">Protein Kasar Minimal (%) <span class="text-danger">*</span></label>
-                        <input id="protein_min" name="protein_min" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('protein_min', $acuan->exists ? $acuan->protein_min : '16.5') }}" placeholder="Misal: 16.5" required>
+                        <label class="lbl" for="protein_min">Protein Kasar Minimal (%)</label>
+                        <input id="protein_min" name="protein_min" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('protein_min', $acuan->protein_min) }}" placeholder="Kosongkan jika belum ada sumber">
                     </div>
 
                     <div>
-                        <label class="lbl" for="energi_min">Energi Metabolis Minimal (kkal/kg) <span class="text-danger">*</span></label>
-                        <input id="energi_min" name="energi_min" type="number" min="0" max="10000" class="field !min-h-10 text-xs font-medium" value="{{ old('energi_min', $acuan->exists ? $acuan->energi_min : '2700') }}" placeholder="Misal: 2700" required>
+                        <label class="lbl" for="energi_min">Energi Metabolis Minimal (kkal/kg)</label>
+                        <input id="energi_min" name="energi_min" type="number" min="0" max="10000" class="field !min-h-10 text-xs font-medium" value="{{ old('energi_min', $acuan->energi_min) }}" placeholder="Kosongkan jika belum ada sumber">
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- SEKSI 3: MINERAL & AMBANG SERAT KASAR --}}
+        {{-- SEKSI 3: MINERAL & SERAT KASAR --}}
         <div class="p-5 md:p-7 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <div class="lg:col-span-4 space-y-1">
                 <div class="flex items-center gap-2.5">
                     <span class="w-6 h-6 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">3</span>
-                    <h2 class="text-sm font-bold text-ink">Mineral & Ambang Serat</h2>
+                    <h2 class="text-sm font-bold text-ink">Kalsium, Fosfor & Serat</h2>
                 </div>
                 <p class="text-xs text-muted leading-relaxed pl-8.5">
-                    Rentang kebutuhan kalsium untuk kerabang telur, fosfor tersedia untuk metabolisme tulang, dan batas toleransi serat kasar.
+                    Isi hanya batas yang tertulis di sumber (misalnya hanya batas minimal tanpa batas maksimal).
                 </p>
             </div>
 
             <div class="lg:col-span-8 space-y-4">
-                {{-- Rentang Kalsium --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="lbl" for="kalsium_min">Kalsium Minimal (%) <span class="text-danger">*</span></label>
-                        <input id="kalsium_min" name="kalsium_min" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('kalsium_min', $acuan->exists ? $acuan->kalsium_min : '3.25') }}" placeholder="Misal: 3.25" required>
+                        <label class="lbl" for="kalsium_min">Kalsium Minimal (%)</label>
+                        <input id="kalsium_min" name="kalsium_min" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('kalsium_min', $acuan->kalsium_min) }}" placeholder="Kosongkan jika belum ada sumber">
                     </div>
 
                     <div>
-                        <label class="lbl" for="kalsium_max">Kalsium Maksimal (%) <span class="text-danger">*</span></label>
-                        <input id="kalsium_max" name="kalsium_max" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('kalsium_max', $acuan->exists ? $acuan->kalsium_max : '4.25') }}" placeholder="Misal: 4.25" required>
+                        <label class="lbl" for="kalsium_max">Kalsium Maksimal (%)</label>
+                        <input id="kalsium_max" name="kalsium_max" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('kalsium_max', $acuan->kalsium_max) }}" placeholder="Kosongkan jika tidak ada batas atas">
                     </div>
                 </div>
 
-                {{-- Rentang Fosfor --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="lbl" for="fosfor_min">Fosfor Minimal (%) <span class="text-danger">*</span></label>
-                        <input id="fosfor_min" name="fosfor_min" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('fosfor_min', $acuan->exists ? $acuan->fosfor_min : '0.60') }}" placeholder="Misal: 0.60" required>
+                        <label class="lbl" for="fosfor_min">Fosfor Total Minimal (%)</label>
+                        <input id="fosfor_min" name="fosfor_min" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('fosfor_min', $acuan->fosfor_min) }}" placeholder="Kosongkan jika belum terverifikasi">
                     </div>
 
                     <div>
-                        <label class="lbl" for="fosfor_max">Fosfor Maksimal (%) <span class="text-danger">*</span></label>
-                        <input id="fosfor_max" name="fosfor_max" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('fosfor_max', $acuan->exists ? $acuan->fosfor_max : '0.90') }}" placeholder="Misal: 0.90" required>
+                        <label class="lbl" for="fosfor_max">Fosfor Total Maksimal (%)</label>
+                        <input id="fosfor_max" name="fosfor_max" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('fosfor_max', $acuan->fosfor_max) }}" placeholder="Kosongkan jika tidak ada batas atas">
                     </div>
                 </div>
 
-                {{-- Batas Serat Kasar --}}
                 <div class="pt-1">
-                    <label class="lbl" for="serat_max">Serat Kasar Maksimal (%) (Opsional)</label>
-                    <input id="serat_max" name="serat_max" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('serat_max', $acuan->serat_max) }}" placeholder="Kosongkan jika tidak dibatasi (contoh: 7.0)">
-                    <span class="text-[10px] text-muted block mt-1">Kosongkan jika formula ransum tidak membatasi serat kasar secara ketat</span>
+                    <label class="lbl" for="serat_max">Serat Kasar Maksimal (%)</label>
+                    <input id="serat_max" name="serat_max" type="number" step="0.01" min="0" max="100" class="field !min-h-10 text-xs font-medium" value="{{ old('serat_max', $acuan->serat_max) }}" placeholder="Kosongkan jika tidak dibatasi di sumber">
+                </div>
+
+                <div class="pt-2 border-t border-line/60">
+                    <label class="inline-flex items-start gap-2.5 cursor-pointer">
+                        <input type="checkbox" name="verified" value="1" class="mt-0.5 w-4 h-4 rounded text-brand accent-brand" @checked(old('verified', $acuan->verified))>
+                        <span class="text-xs text-ink">
+                            <strong class="font-bold">Tandai sudah terverifikasi ke dokumen primer</strong>
+                            <span class="block text-[11px] text-muted mt-0.5">Jika dicentang dan disimpan, acuan ini akan terkunci dan dapat dipakai oleh fitur Auto-Match.</span>
+                        </span>
+                    </label>
                 </div>
             </div>
         </div>
 
-        {{-- CARD FOOTER: AKSI FORMULIR --}}
-        <div class="px-5 md:px-7 py-4 bg-surface/40 flex items-center justify-between">
+        <div class="px-5 md:px-7 py-4 bg-surface/40 flex items-center justify-between flex-wrap gap-2">
             <span class="text-xs text-muted">
-                Tanda <span class="text-danger font-bold">*</span> wajib diisi dengan nilai yang valid
+                Pastikan seluruh angka yang diisi sesuai dokumen rujukan.
             </span>
 
             <div class="flex items-center gap-2">
@@ -172,36 +150,10 @@
                     Batal
                 </a>
                 <button type="submit" class="inline-flex items-center justify-center px-5 py-2 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-xs hover:shadow-sm cursor-pointer">
-                    {{ $acuan->exists ? 'Simpan Perubahan' : 'Tambahkan Acuan' }}
+                    Simpan Perubahan
                 </button>
             </div>
         </div>
     </form>
 </div>
-
-<script>
-const KATALOG_RESMI = @json($katalogResmi ?? []);
-
-function muatPresetStandar(kode) {
-    if (!kode) return;
-    const item = KATALOG_RESMI.find(x => x.kode === kode);
-    if (!item) return;
-
-    document.getElementById('nama').value = item.nama;
-    document.getElementById('tahun').value = item.tahun || '';
-    document.getElementById('sumber').value = item.sumber || '';
-    document.getElementById('protein_min').value = item.protein_min;
-    document.getElementById('energi_min').value = item.energi_min;
-    document.getElementById('kalsium_min').value = item.kalsium_min;
-    document.getElementById('kalsium_max').value = item.kalsium_max;
-    document.getElementById('fosfor_min').value = item.fosfor_min;
-    document.getElementById('fosfor_max').value = item.fosfor_max;
-    document.getElementById('serat_max').value = item.serat_max || '';
-
-    // Metadata
-    document.getElementById('input_kode').value = item.kode;
-    document.getElementById('input_kategori_fase').value = item.kategori_fase || '';
-    document.getElementById('input_organisasi_sumber').value = item.organisasi_sumber || '';
-}
-</script>
 @endsection

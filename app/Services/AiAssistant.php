@@ -274,7 +274,7 @@ SYS;
     {
         $items = $r->items->map(fn ($i) => "{$i->nama} {$i->persen}% ({$i->kg} kg)")->implode(', ');
         $gizi = collect($r->hasil['gizi'] ?? [])->map(fn ($g) => "{$g['label']} {$g['nilai']}{$g['satuan']} (target {$g['target']}, ".($g['ok'] ? 'terpenuhi' : 'belum').')')->implode('; ');
-        $standar = $r->standard->nama ?? 'Standar Kebutuhan';
+        $standar = $r->namaStandar();
 
         return "Total {$r->total_kg} kg, Biaya Rp ".number_format($r->total_biaya, 0, ',', '.')." (Rp ".number_format($r->biaya_per_kg, 0, ',', '.')."/kg). Komposisi: {$items}. Gizi: {$gizi}. Acuan: {$standar}.";
     }
