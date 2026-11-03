@@ -92,9 +92,7 @@ function revealForm(fast) {
         }
     }, fast ? 60 : 900);
 
-    if (fast) {
-        window.setTimeout(disposeScene, 450);
-    }
+    window.setTimeout(disposeScene, fast ? 450 : 1200);
 }
 
 function disposeScene() {
@@ -1175,9 +1173,11 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
 
     function poseChicken(t) {
         const fade = smooth(t / 0.9);
+        const exitFade = 1 - smooth((t - 4.6) / 0.9);
+        const chickenFade = fade * exitFade;
         const walkU = clamp01((t - TL.walk0) / (TL.walk1 - TL.walk0));
         const stepU = clamp01((t - TL.step0) / (TL.step1 - TL.step0));
-        let x = startX * (1 - smooth(walkU)) + 1.6 * smooth(stepU);
+        let x = startX * (1 - smooth(walkU)) + 3.2 * smooth(stepU);
 
         const env = (t0, t1) => {
             if (t < t0 || t > t1) {
@@ -1189,11 +1189,12 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         const layW = smooth((t - TL.layStart) / 0.4) * (1 - smooth((t - 4.1) / 0.3));
 
         if (gltfChicken) {
+            gltfChicken.visible = chickenFade > 0.005;
             gltfMats.forEach((m) => {
-                m.opacity = fade;
-                m.transparent = fade < 0.99;
+                m.opacity = chickenFade;
+                m.transparent = chickenFade < 0.99;
             });
-            shadowMat.opacity = 0.22 * fade;
+            shadowMat.opacity = 0.22 * chickenFade;
 
             const effort = smooth((t - 3.4) / 0.2) * (1 - smooth((t - 4.1) / 0.25));
             const idle = (1 - walkW) * (1 - layW);
@@ -1301,14 +1302,16 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
 
             chickenAo.position.x = x - 0.05;
             chickenAo.scale.set(1.9 + 0.25 * layW, 1.15, 1);
-            chickenAo.material.opacity = 0.85 * fade;
+            chickenAo.material.opacity = 0.85 * chickenFade;
+            chickenAo.visible = chickenFade > 0.005;
             return;
         }
 
+        chicken.visible = chickenFade > 0.005;
         fadeMats.forEach((m) => {
-            m.opacity = fade;
+            m.opacity = chickenFade;
         });
-        shadowMat.opacity = 0.2 * fade;
+        shadowMat.opacity = 0.2 * chickenFade;
 
         const phase = (x - startX) * ((Math.PI * 2) / 0.9);
 
@@ -1527,6 +1530,17 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
     let running = true;
     let revealCalled = false;
 
+    const animWatchdog = window.setTimeout(() => {
+        if (!revealCalled) {
+            revealCalled = true;
+            hooks.onReveal();
+        }
+        if (running) {
+            running = false;
+            hooks.onEnd();
+        }
+    }, (TL.end + 3.0) * 1000);
+
     function frame(now) {
         if (!running) {
             return;
@@ -1541,6 +1555,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
         }
         if (t >= TL.end) {
             running = false;
+            window.clearTimeout(animWatchdog);
             hooks.onEnd();
             return;
         }
@@ -1569,6 +1584,7 @@ function buildIntro(THREE, host, hooks, gltfData, eggGltf) {
 
     function dispose() {
         running = false;
+        window.clearTimeout(animWatchdog);
         cancelAnimationFrame(rafId);
         window.removeEventListener('resize', onResize);
         renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
@@ -1681,14 +1697,30 @@ function loadGLTFModel(THREE, url, timeoutMs = 10000) {
 }
 
 function startIntro() {
+    let loadWatchdog = null;
     if (skipBtn) {
-        skipBtn.addEventListener('click', () => revealForm(true));
+        skipBtn.addEventListener('click', () => {
+            if (loadWatchdog) {
+                window.clearTimeout(loadWatchdog);
+            }
+            revealForm(true);
+        });
     }
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && !revealed) {
+            if (loadWatchdog) {
+                window.clearTimeout(loadWatchdog);
+            }
             revealForm(true);
         }
     });
+
+    /* Fallback jika CDN Three.js atau unduhan model tertahan lebih dari 5.5s */
+    loadWatchdog = window.setTimeout(() => {
+        if (!activeScene && !revealed) {
+            revealForm(true);
+        }
+    }, 5500);
 
     loadThreeAndLoader()
         .then((THREE) => {
@@ -1696,9 +1728,12 @@ function startIntro() {
                 return;
             }
             return Promise.all([
-                loadGLTFModel(THREE, MODEL_URL, 10000),
-                loadGLTFModel(THREE, EGG_MODEL_URL, 12000),
+                loadGLTFModel(THREE, MODEL_URL, 3500),
+                loadGLTFModel(THREE, EGG_MODEL_URL, 3500),
             ]).then(([chickenGltf, eggGltf]) => {
+                if (loadWatchdog) {
+                    window.clearTimeout(loadWatchdog);
+                }
                 if (revealed) {
                     return;
                 }
@@ -1708,9 +1743,7 @@ function startIntro() {
                     {
                         onReveal: () => revealForm(false),
                         onEnd: () => disposeScene(),
-                        onFail: () => {
-                            revealForm(true);
-                        },
+                        onFail: () => revealForm(true),
                     },
                     chickenGltf,
                     eggGltf,
@@ -1718,6 +1751,9 @@ function startIntro() {
             });
         })
         .catch(() => {
+            if (loadWatchdog) {
+                window.clearTimeout(loadWatchdog);
+            }
             revealForm(true);
         });
 }
