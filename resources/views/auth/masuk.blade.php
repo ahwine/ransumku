@@ -116,126 +116,6 @@
         html.lg-fast .lg-item { transition-duration: .25s; transition-delay: 0s; }
         /* ====== AKHIR BLOK INTRO ====== */
 
-        /* ====== ORNAMEN 3D AMBIENT & MASKOT INTERAKTIF FORM ====== */
-        .lg-ambient {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 1.2s ease;
-        }
-        html.lg-done .lg-ambient,
-        html:not(.lg-intro) .lg-ambient {
-            opacity: 1;
-        }
-
-        .lg-card-wrap {
-            position: relative;
-            width: 100%;
-            max-width: 480px;
-            perspective: 1200px;
-        }
-
-        .lg-mascot-box {
-            position: absolute;
-            top: -76px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 140px;
-            height: 95px;
-            z-index: 5;
-            pointer-events: none;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            opacity: 0;
-            transform-origin: bottom center;
-            transition: opacity .8s ease, transform .8s cubic-bezier(.2, .7, .2, 1);
-        }
-        html.lg-done .lg-mascot-box,
-        html:not(.lg-intro) .lg-mascot-box {
-            opacity: 1;
-        }
-
-        #lg-mascot-canvas {
-            width: 140px;
-            height: 95px;
-            display: block;
-            filter: drop-shadow(0 8px 18px rgba(8, 47, 36, .18));
-        }
-
-        .lg-mascot-bubble {
-            position: absolute;
-            top: -12px;
-            left: calc(50% + 50px);
-            white-space: nowrap;
-            padding: 5px 12px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, .95);
-            border: 1px solid var(--lg-gray);
-            box-shadow: 0 6px 18px -4px rgba(8, 47, 36, .2);
-            backdrop-filter: blur(8px);
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--lg-forest);
-            pointer-events: none;
-            opacity: 0;
-            transform: translateY(6px) scale(.92);
-            transition: opacity .25s ease, transform .25s cubic-bezier(.2, .7, .2, 1);
-            z-index: 6;
-        }
-        .lg-mascot-bubble.is-visible {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-        .lg-mascot-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: 6px;
-            left: -5px;
-            width: 8px;
-            height: 8px;
-            background: rgba(255, 255, 255, .95);
-            border-left: 1px solid var(--lg-gray);
-            border-bottom: 1px solid var(--lg-gray);
-            transform: rotate(45deg);
-        }
-
-        @media (max-width: 640px) {
-            .lg-mascot-box {
-                top: -68px;
-                width: 120px;
-                height: 85px;
-            }
-            #lg-mascot-canvas {
-                width: 120px;
-                height: 85px;
-            }
-            .lg-mascot-bubble {
-                left: 50%;
-                top: -24px;
-                transform: translateX(-50%) translateY(4px) scale(.92);
-            }
-            .lg-mascot-bubble.is-visible {
-                transform: translateX(-50%) translateY(0) scale(1);
-            }
-            .lg-mascot-bubble::after {
-                display: none;
-            }
-        }
-
-        .au-card {
-            transform-style: preserve-3d;
-            transition: transform .25s ease-out, box-shadow .25s ease-out;
-            will-change: transform;
-        }
-        .au-card.is-tilting {
-            transition: transform .06s ease-out, box-shadow .06s ease-out;
-        }
-
         /* Tanpa intro: elemen masuk dengan fade-rise halus (konsisten dengan halaman daftar) */
         html:not(.lg-intro) .lg-item { animation: au-rise .5s cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--d, 0s); }
         @media (prefers-reduced-motion: reduce) {
@@ -247,7 +127,6 @@
 </head>
 <body class="au-body">
     <div class="au-decor" aria-hidden="true"></div>
-    <canvas id="lg-ambient" class="lg-ambient" aria-hidden="true"></canvas>
     <div id="lg-stage" data-model-url="{{ asset('models/chicken.glb') }}" data-egg-url="{{ asset('models/egg.glb') }}" aria-hidden="true"></div>
     <div id="lg-flash" aria-hidden="true"></div>
     <button type="button" id="lg-skip" class="lg-skip">Lewati animasi</button>
@@ -266,56 +145,48 @@
         </section>
 
         <div class="au-card-col">
-            <div class="lg-card-wrap">
-                <div id="lg-mascot-box" class="lg-mascot-box" aria-hidden="true">
-                    <canvas id="lg-mascot-canvas" width="280" height="190"></canvas>
-                    <div id="lg-mascot-bubble" class="lg-mascot-bubble">
-                        <span id="lg-mascot-text">Hai Peternak! 🌾</span>
+            <section class="au-card lg-item lg-card-item" style="--d: .3s" aria-labelledby="lg-title">
+                <h2 id="lg-title">Masuk ke akun</h2>
+                <p class="au-sub">Lanjutkan mengelola kandang Anda.</p>
+
+                <form id="form-masuk" method="POST" action="{{ url('/masuk') }}" data-auth-form novalidate>
+                    @csrf
+                    <x-auth.input
+                        id="email"
+                        name="email"
+                        type="email"
+                        label="Email"
+                        :value="old('email')"
+                        placeholder="nama@email.com"
+                        autocomplete="email"
+                        inputmode="email"
+                        autofocus
+                    />
+                    <x-auth.password-input
+                        id="password"
+                        name="password"
+                        label="Kata sandi"
+                        placeholder="Masukkan kata sandi"
+                        autocomplete="current-password"
+                        toggle-id="toggle-password"
+                    />
+
+                    <div class="au-row">
+                        <x-auth.checkbox id="ingat" name="ingat" value="1">Ingat saya</x-auth.checkbox>
+                        {{-- Titik integrasi: ganti dengan tautan rute reset kata sandi bila fitur tersedia. --}}
+                        <button type="button" class="au-link" data-toggle-target="#lupa-sandi-info" aria-expanded="false" aria-controls="lupa-sandi-info">Lupa kata sandi?</button>
                     </div>
-                </div>
-                <section class="au-card lg-item lg-card-item" style="--d: .3s" aria-labelledby="lg-title">
-                    <h2 id="lg-title">Masuk ke akun</h2>
-                    <p class="au-sub">Lanjutkan mengelola kandang Anda.</p>
+                    <p class="au-note" id="lupa-sandi-info" hidden>Reset kata sandi mandiri belum tersedia. Silakan hubungi admin RansumKu untuk dibantu mengatur ulang kata sandi Anda.</p>
 
-                    <form id="form-masuk" method="POST" action="{{ url('/masuk') }}" data-auth-form novalidate>
-                        @csrf
-                        <x-auth.input
-                            id="email"
-                            name="email"
-                            type="email"
-                            label="Email"
-                            :value="old('email')"
-                            placeholder="nama@email.com"
-                            autocomplete="email"
-                            inputmode="email"
-                            autofocus
-                        />
-                        <x-auth.password-input
-                            id="password"
-                            name="password"
-                            label="Kata sandi"
-                            placeholder="Masukkan kata sandi"
-                            autocomplete="current-password"
-                            toggle-id="toggle-password"
-                        />
+                    <div class="au-banner is-error" role="alert" aria-live="polite" @unless ($errors->any()) hidden @endunless>
+                        <span class="material-symbols-outlined icon-fill" style="font-size:20px" aria-hidden="true">error</span>
+                        <ul>@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                    </div>
 
-                        <div class="au-row">
-                            <x-auth.checkbox id="ingat" name="ingat" value="1">Ingat saya</x-auth.checkbox>
-                            {{-- Titik integrasi: ganti dengan tautan rute reset kata sandi bila fitur tersedia. --}}
-                            <button type="button" class="au-link" data-toggle-target="#lupa-sandi-info" aria-expanded="false" aria-controls="lupa-sandi-info">Lupa kata sandi?</button>
-                        </div>
-                        <p class="au-note" id="lupa-sandi-info" hidden>Reset kata sandi mandiri belum tersedia. Silakan hubungi admin RansumKu untuk dibantu mengatur ulang kata sandi Anda.</p>
-
-                        <div class="au-banner is-error" role="alert" aria-live="polite" @unless ($errors->any()) hidden @endunless>
-                            <span class="material-symbols-outlined icon-fill" style="font-size:20px" aria-hidden="true">error</span>
-                            <ul>@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-                        </div>
-
-                        <x-auth.button id="btn-masuk" label="Masuk" />
-                        <p class="au-foot">Belum punya akun? <a href="{{ route('daftar') }}" data-auth-switch>Daftar</a></p>
-                    </form>
-                </section>
-            </div>
+                    <x-auth.button id="btn-masuk" label="Masuk" />
+                    <p class="au-foot">Belum punya akun? <a href="{{ route('daftar') }}" data-auth-switch>Daftar</a></p>
+                </form>
+            </section>
         </div>
     </main>
     @include('partials.auth-scripts')
