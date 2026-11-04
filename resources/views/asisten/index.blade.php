@@ -27,9 +27,9 @@
 
 <div data-tabs class="lg:flex-1 lg:min-h-0 lg:flex lg:flex-col space-y-2">
     <div class="flex items-center justify-start shrink-0">
-        <div data-tab-nav class="tab-segmented-track relative inline-flex items-center gap-1 p-1 rounded-2xl text-center text-xs sm:text-sm font-bold select-none bg-[#e6eeea] border border-line/60 shadow-2xs">
-            <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
-            <button type="button" data-tab="tanya" class="relative z-10 py-2 px-3 sm:px-4 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }}">
+        <div data-tab-nav class="tab-segmented-track relative inline-flex items-center gap-1 p-1 rounded-2xl md:rounded-full text-center text-xs sm:text-sm font-bold select-none bg-[#e6eeea] md:bg-surface-2 border border-line/60 shadow-2xs">
+            <div data-tab-slider class="tab-slider !rounded-xl md:!rounded-full" aria-hidden="true"></div>
+            <button type="button" data-tab="tanya" class="relative z-10 py-2 px-3 sm:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-[#0f3d26] md:text-ink font-black md:font-bold' : 'text-ink/75 md:text-muted hover:text-ink font-bold md:font-semibold' }}">
                 <span class="sm:hidden">Tanya AI</span>
                 <span class="hidden sm:inline">Tanya Asisten AI</span>
             </button>
@@ -37,7 +37,7 @@
                 $isPeringatanActive = ($tabAktif === 'peringatan');
                 $unreadCountTab = $isPeringatanActive ? 0 : $alerts->where('dibaca', false)->count();
             @endphp
-            <button type="button" data-tab="peringatan" onclick="bukaTabPeringatan()" class="relative z-10 py-2 px-3 sm:px-4 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }} flex items-center gap-1.5">
+            <button type="button" data-tab="peringatan" onclick="bukaTabPeringatan()" class="relative z-10 py-2 px-3 sm:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-[#0f3d26] md:text-ink font-black md:font-bold' : 'text-ink/75 md:text-muted hover:text-ink font-bold md:font-semibold' }} flex items-center gap-1.5">
                 <span class="sm:hidden">Peringatan</span>
                 <span class="hidden sm:inline">Peringatan Dini</span>
                 @if ($unreadCountTab > 0)
@@ -618,8 +618,12 @@
         </div>
     </section>
 
-    {{-- Tab 2: Peringatan Dini Kandang (Sesuai Gambar 2, Berlaku Desktop & Mobile) --}}
+    {{-- Tab 2: Peringatan Dini Kandang --}}
     <section data-panel="peringatan" class="{{ $tabAktif === 'peringatan' ? '' : 'hidden' }} space-y-5 pr-1 custom-scrollbar">
+        {{-- ======================================================== --}}
+        {{-- A. TAMPILAN MOBILE PERINGATAN (block md:hidden)          --}}
+        {{-- ======================================================== --}}
+        <div class="block md:hidden space-y-3">
         @php
             $groupedAlerts = $alerts->groupBy(function($alert) {
                 $tgl = $alert->tanggal_data ?? $alert->created_at;
@@ -748,6 +752,26 @@
                 @endif
             @endforeach
         @endif
+        </div>
+
+        {{-- ======================================================== --}}
+        {{-- B. TAMPILAN DESKTOP PERINGATAN (hidden md:block - ASLI)   --}}
+        {{-- ======================================================== --}}
+        <div class="hidden md:block space-y-4">
+            @forelse ($alerts as $alert)
+                @include('partials.alert-card', ['alert' => $alert])
+            @empty
+                <div class="card text-center py-12 px-6 space-y-3 rounded-2xl border border-line shadow-2xs bg-white">
+                    <div class="w-14 h-14 rounded-full bg-brand-soft text-brand flex items-center justify-center mx-auto shadow-2xs">
+                        <span class="material-symbols-outlined text-[32px] icon-fill">verified</span>
+                    </div>
+                    <h2 class="text-base sm:text-lg font-bold text-ink">Semua Pola Terlihat Normal</h2>
+                    <p class="text-xs text-muted max-w-sm mx-auto leading-relaxed">
+                        Tidak ditemukan anomali pada konsumsi pakan, produksi telur, maupun mortalitas ayam berdasarkan data harian yang tercatat.
+                    </p>
+                </div>
+            @endforelse
+        </div>
 
         {{-- Panduan Aturan Deteksi Anomali --}}
         <div class="pt-2 px-1 space-y-2">

@@ -41,19 +41,19 @@
 {{-- Tabs --}}
 <div data-tabs class="space-y-4">
     <div class="flex justify-start">
-        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-3 gap-1 p-1 rounded-2xl text-center select-none w-full max-w-lg bg-[#e6eeea] border border-line/60 shadow-2xs overflow-hidden">
-            <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
-            <button type="button" data-tab="form" class="relative z-10 py-2.5 px-1.5 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm font-bold {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }}">
-                <span class="sm:hidden">Catat</span>
-                <span class="hidden sm:inline">Catat Harian</span>
+        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-3 md:inline-flex md:items-center gap-1 p-1 rounded-2xl md:rounded-full text-center select-none w-full max-w-lg bg-[#e6eeea] md:bg-[#e4eee7] border border-line/60 shadow-2xs overflow-hidden">
+            <div data-tab-slider class="tab-slider !rounded-xl md:!rounded-full" aria-hidden="true"></div>
+            <button type="button" data-tab="form" class="relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }}">
+                <span class="md:hidden">Catat</span>
+                <span class="hidden md:inline">Catat Harian</span>
             </button>
-            <button type="button" data-tab="dashboard" class="relative z-10 py-2.5 px-1.5 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm font-bold {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }}">
-                <span class="sm:hidden">Laporan</span>
-                <span class="hidden sm:inline">Laporan Performa</span>
+            <button type="button" data-tab="dashboard" class="relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }}">
+                <span class="md:hidden">Laporan</span>
+                <span class="hidden md:inline">Laporan Performa</span>
             </button>
-            <button type="button" data-tab="beli" class="relative z-10 py-2.5 px-1.5 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm font-bold {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }}">
-                <span class="sm:hidden">Belanja</span>
-                <span class="hidden sm:inline">Belanja Pakan</span>
+            <button type="button" data-tab="beli" class="relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }}">
+                <span class="md:hidden">Belanja</span>
+                <span class="hidden md:inline">Belanja Pakan</span>
             </button>
         </div>
     </div>
@@ -84,10 +84,9 @@
                                 <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs" style="background-color: #fef3c7; color: #92400e;">
                                     <span class="material-symbols-outlined text-[24px] sm:text-[26px]">edit_calendar</span>
                                 </div>
-                                <div class="min-w-0 space-y-0.5">
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <span class="text-xs font-bold text-[#0f3d26] leading-tight">Sedang mengedit</span>
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0" style="background-color: #fef3c7; color: #92400e;">Mode edit</span>
+                                <div class="min-w-0 space-y-1">
+                                    <div>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold inline-block" style="background-color: #fef3c7; color: #92400e;">Mode edit</span>
                                     </div>
                                     <span id="mode-status-date" class="text-sm sm:text-base font-black text-ink block leading-tight tracking-tight">
                                         {{ $form->tanggal ? $form->tanggal->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}
@@ -599,14 +598,18 @@
 
     {{-- Panel 2: Dashboard & Laporan --}}
     <section data-panel="dashboard" class="{{ $tabAktif === 'dashboard' ? '' : 'hidden' }} space-y-4">
-        {{-- Filter Rentang Data (Pill Capsule) --}}
-        <div class="flex items-center justify-between gap-3 pt-1">
-            <span class="text-sm font-bold text-ink">Rentang data</span>
-            <div class="inline-flex p-1 bg-[#e6eeea] rounded-2xl border border-line/60 text-xs font-bold select-none shadow-2xs">
-                <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'minggu']) }}" class="px-4 py-1.5 rounded-xl transition-all {{ $rentang === 7 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">7 Hari</a>
-                <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'bulan']) }}" class="px-4 py-1.5 rounded-xl transition-all {{ $rentang === 30 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">30 Hari</a>
+        {{-- ======================================================== --}}
+        {{-- A. TAMPILAN MOBILE DASHBOARD & LAPORAN (lg:hidden)        --}}
+        {{-- ======================================================== --}}
+        <div class="lg:hidden space-y-4">
+            {{-- Filter Rentang Data (Pill Capsule) --}}
+            <div class="flex items-center justify-between gap-3 pt-1">
+                <span class="text-sm font-bold text-ink">Rentang data</span>
+                <div class="inline-flex p-1 bg-[#e6eeea] rounded-2xl border border-line/60 text-xs font-bold select-none shadow-2xs">
+                    <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'minggu']) }}" class="px-4 py-1.5 rounded-xl transition-all {{ $rentang === 7 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">7 Hari</a>
+                    <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'bulan']) }}" class="px-4 py-1.5 rounded-xl transition-all {{ $rentang === 30 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">30 Hari</a>
+                </div>
             </div>
-        </div>
 
         {{-- Laporan Ringkas Card --}}
         @php
@@ -926,6 +929,174 @@
                 </div>
             </div>
         </div>
+        </div>
+
+        {{-- ======================================================== --}}
+        {{-- B. TAMPILAN DESKTOP DASHBOARD & LAPORAN (hidden lg:block) --}}
+        {{-- ======================================================== --}}
+        <div class="hidden lg:block space-y-4">
+            {{-- Filter Rentang & Aksi Ekspor --}}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-muted">Rentang data:</span>
+                    <div class="inline-flex p-1 bg-surface rounded-full border border-line text-xs font-bold select-none shadow-2xs">
+                        <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'minggu']) }}" class="px-3.5 py-1 rounded-full transition-all {{ $rentang === 7 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink font-semibold' }}">7 Hari</a>
+                        <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'bulan']) }}" class="px-3.5 py-1 rounded-full transition-all {{ $rentang === 30 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink font-semibold' }}">30 Hari</a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" data-buka-laporan-modal class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark shadow-2xs hover:shadow-xs transition active:scale-95 cursor-pointer" title="Pratinjau & Unduh Dokumen Laporan (PDF)">
+                        <span class="material-symbols-outlined text-[17px]">download</span>
+                        <span>Unduh Laporan</span>
+                    </button>
+                    <button type="button" data-copy-wa class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-line bg-white hover:bg-surface text-ink hover:text-brand text-xs font-bold shadow-2xs hover:shadow-xs transition active:scale-95 cursor-pointer" title="Salin Ringkasan Laporan ke Clipboard">
+                        <span class="material-symbols-outlined text-[16px] text-emerald-600">content_copy</span>
+                        <span>Salin Laporan</span>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Laporan Mingguan Ringkas --}}
+            <div class="card space-y-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-line">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Laporan Ringkas {{ $rentang }} Hari</h2>
+                        @php
+                            $faseDetailDesk = $farm->faseUmurDetail();
+                        @endphp
+                        <span class="text-muted/40">•</span>
+                        <span class="text-xs font-semibold text-muted">Minggu ke-{{ $farm->umurMinggu() }} ({{ $faseDetailDesk['nama'] }})</span>
+                        <span class="text-muted/40 hidden md:inline">•</span>
+                        <span class="hidden md:inline text-xs text-muted">Target: <strong class="text-ink font-semibold">HDP {{ $faseDetailDesk['standar_hdp'] }}</strong></span>
+                    </div>
+                    <span class="text-tiny font-medium text-muted">vs {{ $rentang }} hari sebelumnya</span>
+                </div>
+
+                {{-- 5 Kartu KPI Bersih Tanpa Ikon Berlebih --}}
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
+                    {{-- KPI 1: Total Telur --}}
+                    @php
+                        $telurDiffDesk = $laporan['lalu']['telur'] ? round(($laporan['ini']['telur'] - $laporan['lalu']['telur']) / $laporan['lalu']['telur'] * 100) : null;
+                    @endphp
+                    <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between">
+                        <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Total Telur</span>
+                        <strong class="text-base sm:text-lg text-ink font-black block">
+                            {{ Fmt::num($laporan['ini']['telur'], 0) }} <span class="text-xs font-normal text-muted">btr</span>
+                        </strong>
+                        <div class="text-[11px] mt-1 font-semibold">
+                            @if ($telurDiffDesk !== null)
+                                <span class="{{ $telurDiffDesk >= 0 ? 'text-emerald-700' : 'text-rose-600' }}">
+                                    {{ $telurDiffDesk >= 0 ? '+' : '' }}{{ $telurDiffDesk }}%
+                                </span>
+                                <span class="text-muted font-normal">vs lalu</span>
+                            @else
+                                <span class="text-muted font-normal">-</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- KPI 2: Konsumsi Pakan --}}
+                    <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between">
+                        <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Konsumsi Pakan</span>
+                        <strong class="text-base sm:text-lg text-ink font-black block">
+                            {{ Fmt::num($laporan['ini']['pakan'], 1) }} <span class="text-xs font-normal text-muted">kg</span>
+                        </strong>
+                        <span class="text-[11px] mt-1 text-muted font-normal">
+                            {{ $laporan['ini']['hari'] ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 1) : 0 }} kg/hari
+                        </span>
+                    </div>
+
+                    {{-- KPI 3: Biaya Pakan --}}
+                    <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between">
+                        <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Biaya Pakan <span class="tag-est">est</span></span>
+                        <strong class="text-base sm:text-lg text-ink font-black block">
+                            {{ Fmt::rp($laporan['ini']['biaya_pakan']) }}
+                        </strong>
+                        <span class="text-[11px] mt-1 text-muted font-normal">
+                            @ {{ Fmt::rp($harga) }}/kg
+                        </span>
+                    </div>
+
+                    {{-- KPI 4: Biaya / Kg Telur --}}
+                    <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between">
+                        <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Biaya / Kg Telur <span class="tag-est">est</span></span>
+                        <strong class="text-base sm:text-lg text-ink font-black block">
+                            {{ Fmt::rp($laporan['ini']['biaya_kg_telur']) }}
+                        </strong>
+                        <span class="text-[11px] mt-1 text-muted font-normal">
+                            Rasio {{ Fmt::num($laporan['ini']['rasio'], 0) }} g/btr
+                        </span>
+                    </div>
+
+                    {{-- KPI 5: Est. Margin Kotor --}}
+                    @php $marginKotorDesk = $laporan['ini']['margin_kotor'] ?? 0; @endphp
+                    <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between col-span-2 sm:col-span-1">
+                        <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Est. Margin Kotor</span>
+                        <strong class="text-base sm:text-lg font-black block {{ $marginKotorDesk >= 0 ? 'text-emerald-700' : 'text-rose-600' }}">
+                            {{ $marginKotorDesk >= 0 ? '+' : '' }}{{ Fmt::rp($marginKotorDesk) }}
+                        </strong>
+                        <span class="text-[11px] mt-1 text-muted font-normal truncate" title="Omzet: {{ Fmt::rp($laporan['ini']['pendapatan_telur'] ?? 0) }}">
+                            Omzet: {{ Fmt::rp($laporan['ini']['pendapatan_telur'] ?? 0) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 4 Grafik Chart.js Bersih dengan Info Rata-rata Minimalis (Opsi B) --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-buku-grafik-container>
+                {{-- Grafik 1: Pakan --}}
+                <div class="card space-y-2 buku-card-fadein">
+                    <div class="flex items-center justify-between pb-2 border-b border-line">
+                        <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Konsumsi Pakan (kg)</h3>
+                        <span class="text-[11px] text-muted font-normal">
+                            Rata-rata: <strong class="text-ink font-semibold">{{ $laporan['ini']['hari'] ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 1) : 0 }} kg/hari</strong>
+                        </span>
+                    </div>
+                    <div class="h-48 pt-2">
+                        <canvas data-buku-chart='@json($grafik['pakan'])' data-chart-name="pakan" aria-label="Grafik pakan"></canvas>
+                    </div>
+                </div>
+
+                {{-- Grafik 2: Telur --}}
+                <div class="card space-y-2 buku-card-fadein">
+                    <div class="flex items-center justify-between pb-2 border-b border-line">
+                        <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Produksi Telur (butir)</h3>
+                        <span class="text-[11px] text-muted font-normal">
+                            Rata-rata: <strong class="text-ink font-semibold">{{ round($laporan['ini']['rata_telur'], 0) }} btr/hari</strong>
+                        </span>
+                    </div>
+                    <div class="h-48 pt-2">
+                        <canvas data-buku-chart='@json($grafik['telur'])' data-chart-name="telur" aria-label="Grafik telur"></canvas>
+                    </div>
+                </div>
+
+                {{-- Grafik 3: Biaya Pakan Harian --}}
+                <div class="card space-y-2 buku-card-fadein">
+                    <div class="flex items-center justify-between pb-2 border-b border-line">
+                        <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Biaya Pakan Harian <span class="tag-est font-normal lowercase">est</span></h3>
+                        <span class="text-[11px] text-muted font-normal">
+                            Rata-rata: <strong class="text-ink font-semibold">{{ Fmt::rp($laporan['ini']['hari'] ? round($laporan['ini']['biaya_pakan'] / $laporan['ini']['hari']) : 0) }}/hari</strong>
+                        </span>
+                    </div>
+                    <div class="h-48 pt-2">
+                        <canvas data-buku-chart='@json($grafik['biaya'])' data-chart-name="biaya" aria-label="Grafik biaya pakan"></canvas>
+                    </div>
+                </div>
+
+                {{-- Grafik 4: Efisiensi --}}
+                <div class="card space-y-2 buku-card-fadein">
+                    <div class="flex items-center justify-between pb-2 border-b border-line">
+                        <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Efisiensi: Biaya / Kg Telur <span class="tag-est font-normal lowercase">est</span></h3>
+                        <span class="text-[11px] text-muted font-normal">
+                            Rata-rata: <strong class="text-ink font-semibold">{{ Fmt::rp($laporan['ini']['biaya_kg_telur']) }}/kg</strong>
+                        </span>
+                    </div>
+                    <div class="h-48 pt-2">
+                        <canvas data-buku-chart='@json($grafik['efisiensi'])' data-chart-name="efisiensi" aria-label="Grafik efisiensi"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
     {{-- Panel 3: Pembelian & Selisih Estimasi vs Kenyataan --}}
@@ -939,7 +1110,11 @@
         });
     @endphp
     <section data-panel="beli" class="{{ $tabAktif === 'beli' ? '' : 'hidden' }} space-y-4">
-        {{-- 1. Kartu Ringkasan Belanja (Image 2 style) --}}
+        {{-- ======================================================== --}}
+        {{-- A. TAMPILAN MOBILE BELANJA PAKAN (lg:hidden)              --}}
+        {{-- ======================================================== --}}
+        <div class="lg:hidden space-y-4">
+            {{-- 1. Kartu Ringkasan Belanja (Image 2 style) --}}
         <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3">
             <h2 class="text-xs font-black text-ink uppercase tracking-wider">RINGKASAN BELANJA</h2>
 
@@ -1150,6 +1325,239 @@
                     </p>
                 </div>
             @endif
+        </div>
+        </div>
+
+        {{-- ======================================================== --}}
+        {{-- B. TAMPILAN DESKTOP BELANJA PAKAN (hidden lg:block)      --}}
+        {{-- ======================================================== --}}
+        <div class="hidden lg:block space-y-5" id="beli-desktop-container">
+            {{-- 1. Baris Ringkasan KPI Eksekutif --}}
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                {{-- Kartu 1: Selisih Biaya (Deviasi Ransum) --}}
+                <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-bold text-muted uppercase tracking-wider">Deviasi Biaya Ransum</span>
+                        @if ($selisihTotal > 0)
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                                Biaya Riil Lebih Tinggi
+                            </span>
+                        @elseif ($selisihTotal < 0)
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Biaya Riil Lebih Hemat
+                            </span>
+                        @else
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                Sesuai Estimasi
+                            </span>
+                        @endif
+                    </div>
+                    <div>
+                        <div class="text-2xl font-black {{ $selisihTotal > 0 ? 'text-rose-700' : ($selisihTotal < 0 ? 'text-emerald-700' : 'text-ink') }}">
+                            {{ $selisihTotal > 0 ? '+' : '' }}{{ Fmt::rp($selisihTotal) }}
+                        </div>
+                        <p class="text-[11px] text-muted mt-0.5">Akumulasi selisih harga toko vs acuan formulasi</p>
+                    </div>
+                </div>
+
+                {{-- Kartu 2: Total Belanja Riil --}}
+                <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-bold text-muted uppercase tracking-wider">Total Pengeluaran</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            {{ $jumlahTransaksiBeli }} Transaksi
+                        </span>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-black text-ink">
+                            {{ Fmt::rp($totalBelanjaRiil) }}
+                        </div>
+                        <p class="text-[11px] text-muted mt-0.5">Total nominal rupiah pembelian bahan pakan</p>
+                    </div>
+                </div>
+
+                {{-- Kartu 3: Total Volume Bahan Masuk --}}
+                <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-bold text-muted uppercase tracking-wider">Total Volume Pakan</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Log Gudang
+                        </span>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-black text-ink">
+                            {{ Fmt::num($totalKgBeli, 1) }} <span class="text-sm font-semibold text-muted">kg</span>
+                        </div>
+                        <p class="text-[11px] text-muted mt-0.5">Total bahan pakan masuk ke peternakan</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 2. Layout 2 Kolom Seimbang (Formulir di Kiri & Riwayat di Kanan) --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+                {{-- KOLOM KIRI (1/2): Formulir Input Pembelian Bahan --}}
+                <div class="flex flex-col">
+                    <form method="POST" action="{{ route('pembelian.store') }}" class="card space-y-4 flex-1 flex flex-col justify-between" id="form-beli-desktop">
+                        @csrf
+                        <div class="space-y-4">
+                            {{-- Header Form Bersih & Humanis (Title Case) --}}
+                            <div class="flex items-center justify-between pb-2.5 border-b border-line">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[20px] text-brand">shopping_cart</span>
+                                    <h2 class="text-xs font-bold text-ink">Catat Pembelian Bahan</h2>
+                                </div>
+                                <span class="text-tiny font-medium text-muted">Kandang: <strong class="text-ink">{{ $farm->nama }}</strong></span>
+                            </div>
+
+                            {{-- Grid Input: Bahan Pakan & Tanggal Beli --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                <div>
+                                    <label class="lbl text-xs font-bold text-ink">Pilih Bahan Pakan</label>
+                                    @include('partials.dropdown-pilih-bahan', ['bahan' => $bahan, 'id' => 'pilih-bahan-desk', 'name' => 'ingredient_id'])
+                                </div>
+                                <div>
+                                    <label class="lbl text-xs font-bold text-ink" for="beli_tanggal_desk">Tanggal Pembelian</label>
+                                    <input id="beli_tanggal_desk" name="tanggal" type="date" value="{{ today()->toDateString() }}" max="{{ today()->toDateString() }}" class="field font-semibold" required>
+                                </div>
+                            </div>
+
+                            {{-- Grid Input: Jumlah Beli (kg) & Harga Nyata Toko (Rp/kg) dengan Unit Visual --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                <div>
+                                    <label class="lbl text-xs font-bold text-ink" for="kg_desk">Jumlah Beli</label>
+                                    <div class="relative">
+                                        <input id="kg_desk" name="kg" type="number" step="0.5" min="0.5" class="field pr-10 text-base font-bold text-ink" placeholder="50" required>
+                                        <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none select-none">kg</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="lbl text-xs font-bold text-ink" for="harga_nyata_desk">Harga Nyata Toko</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none select-none">Rp</span>
+                                        <input id="harga_nyata_desk" name="harga_nyata" type="number" step="50" min="0" class="field pl-9 pr-12 text-base font-bold text-ink" placeholder="6700" required>
+                                        <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-muted pointer-events-none select-none">/kg</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Live Estimasi Box (Kalkulator Otomatis) --}}
+                            <div id="beli-live-calc-box-desk" class="p-3 rounded-xl bg-surface/70 border border-line/80 space-y-1.5 transition">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-muted font-medium">Estimasi Subtotal Belanja:</span>
+                                    <strong id="beli-subtotal-val-desk" class="font-black text-ink text-sm">Rp 0</strong>
+                                </div>
+                                <div class="flex items-center justify-between text-xs pt-1 border-t border-line/50">
+                                    <span class="text-muted font-medium">Status Selisih vs Formulasi:</span>
+                                    <span id="beli-deviasi-badge-desk" class="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-muted">
+                                        Menunggu input kg & harga
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Input Tersembunyi: Sinkronisasi Stok Otomatis --}}
+                        <input type="hidden" name="tambah_stok" value="1">
+
+                        {{-- Tombol Submit Berbentuk Pill Badge Elegan --}}
+                        <div class="pt-2 space-y-2">
+                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-md hover:shadow-brand/20 transition active:scale-95 cursor-pointer">
+                                <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                                <span>Catat Belanja Bahan</span>
+                            </button>
+                            <p class="text-[11px] text-muted text-center flex items-center justify-center gap-1.5">
+                                <span class="material-symbols-outlined text-[15px] text-brand">sync</span>
+                                <span>Otomatis menambah stok gudang & memperbarui harga bahan</span>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+
+                {{-- KOLOM KANAN (1/2): Riwayat Pembelian Bahan --}}
+                <div class="card space-y-3.5 flex-1 flex flex-col justify-between">
+                    <div class="space-y-3.5">
+                        <div class="flex items-center justify-between pb-2.5 border-b border-line">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px] text-brand">history</span>
+                                <h3 class="text-xs font-bold text-ink">Riwayat Pembelian Bahan Pakan Terkini</h3>
+                            </div>
+                            <span class="text-tiny font-medium text-muted">{{ count($beli) }} entri tercatat</span>
+                        </div>
+
+                        <div class="overflow-x-auto -mx-4 sm:-mx-5 px-4 sm:px-5">
+                            <table class="w-full text-xs text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-line text-[11px] font-bold text-muted uppercase tracking-wider">
+                                        <th class="py-2 pr-3">Bahan</th>
+                                        <th class="py-2 px-3">Tanggal</th>
+                                        <th class="py-2 px-3 text-right">Volume</th>
+                                        <th class="py-2 px-3 text-right">Harga Toko</th>
+                                        <th class="py-2 px-3 text-right">Subtotal</th>
+                                        <th class="py-2 pl-3 text-right">Selisih Acuan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-line/60">
+                                    @forelse ($beli as $p)
+                                        @php
+                                            $selDesk = $p->selisih();
+                                            $subtotalDesk = $p->harga_nyata * $p->kg;
+                                        @endphp
+                                        <tr class="hover:bg-surface/50 transition-colors group">
+                                            <td class="py-2.5 pr-3 font-bold text-ink">
+                                                {{ $p->ingredient->nama }}
+                                            </td>
+                                            <td class="py-2.5 px-3 text-muted whitespace-nowrap">
+                                                {{ $p->tanggal->translatedFormat('d M Y') }}
+                                            </td>
+                                            <td class="py-2.5 px-3 text-right whitespace-nowrap font-medium text-ink">
+                                                {{ Fmt::num($p->kg, 1) }} kg
+                                            </td>
+                                            <td class="py-2.5 px-3 text-right whitespace-nowrap font-mono text-muted">
+                                                {{ Fmt::rp($p->harga_nyata) }}
+                                            </td>
+                                            <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold text-ink">
+                                                {{ Fmt::rp($subtotalDesk) }}
+                                            </td>
+                                            <td class="py-2.5 pl-3 text-right whitespace-nowrap">
+                                                @if ($selDesk > 0)
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                                                        +{{ Fmt::rp($selDesk) }}
+                                                    </span>
+                                                @elseif ($selDesk < 0)
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                        {{ Fmt::rp($selDesk) }}
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                        Cocok
+                                                    </span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="py-8 text-center text-muted">
+                                                <div class="flex flex-col items-center justify-center gap-1.5">
+                                                    <span class="material-symbols-outlined text-[24px] text-muted/40">shopping_bag</span>
+                                                    <p class="text-xs font-semibold text-ink">Belum ada riwayat pembelian</p>
+                                                    <p class="text-[11px] text-muted">Input nota belanja bahan baku pakan di formulir sebelah kiri.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-line/60 flex items-center justify-between text-[11px] text-muted">
+                        <span>Pembaruan otomatis stok dan acuan formulasi</span>
+                        <a href="{{ route('ransum.index') }}" class="font-bold text-brand hover:underline inline-flex items-center gap-1">
+                            <span>Buka Peracik Ransum</span>
+                            <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 </div>
@@ -1749,10 +2157,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Salin Laporan Periodik ke WhatsApp
-    const btnCopyWa = document.getElementById('btn-copy-wa');
-    if (btnCopyWa) {
-        btnCopyWa.addEventListener('click', function () {
+    // Salin Laporan Periodik ke WhatsApp (Mendukung Desktop & Mobile)
+    const btnsCopyWa = document.querySelectorAll('#btn-copy-wa, [data-copy-wa]');
+    btnsCopyWa.forEach(btn => {
+        btn.addEventListener('click', function () {
             const text = `📊 *LAPORAN PERFORMA KANDANG - RANSUMKU*\n`
                 + `🏠 Kandang: {{ $farm->nama }}\n`
                 + `🗓️ Periode: {{ $rentang }} Hari Terakhir\n`
@@ -1775,7 +2183,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 copyViaTextarea(text);
             }
         });
-    }
+    });
 
     function copyViaTextarea(text) {
         const ta = document.createElement('textarea');
@@ -1825,8 +2233,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Modal Pratinjau & Cetak Laporan Resmi A4/PDF
     const modalLaporan = document.getElementById('modal-laporan-resmi');
-    const btnBukaLaporan = document.getElementById('btn-buka-laporan-modal');
-    const btnBukaLaporanForm = document.getElementById('btn-buka-laporan-modal-form');
+    const btnsBukaLaporan = document.querySelectorAll('#btn-buka-laporan-modal, #btn-buka-laporan-modal-form, [data-buka-laporan-modal]');
     const btnTutupLaporan = document.getElementById('btn-tutup-laporan-modal');
     const btnCetakDokumen = document.getElementById('btn-cetak-dokumen');
 
@@ -1844,8 +2251,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    if (btnBukaLaporan) btnBukaLaporan.addEventListener('click', bukaModalLaporan);
-    if (btnBukaLaporanForm) btnBukaLaporanForm.addEventListener('click', bukaModalLaporan);
+    btnsBukaLaporan.forEach(btn => btn.addEventListener('click', bukaModalLaporan));
     if (btnTutupLaporan) btnTutupLaporan.addEventListener('click', tutupModalLaporan);
 
     if (btnCetakDokumen) {
@@ -1869,13 +2275,61 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Live Kalkulator Belanja Pakan (Subtotal & Deviasi)
+    // Live Kalkulator Belanja Pakan (Mobile & Desktop)
+    const bahanPrices = @json($bahanPrices);
+
+    // Desktop
+    const inputBeliKgDesk = document.getElementById('kg_desk');
+    const inputBeliHargaDesk = document.getElementById('harga_nyata_desk');
+    const inputIngredientIdDesk = document.querySelector('#form-beli-desktop input[name="ingredient_id"]');
+    const beliSubtotalValDesk = document.getElementById('beli-subtotal-val-desk');
+    const beliDeviasiBadgeDesk = document.getElementById('beli-deviasi-badge-desk');
+
+    function updateBeliPreviewDesk() {
+        if (!inputBeliKgDesk || !inputBeliHargaDesk || !beliSubtotalValDesk || !beliDeviasiBadgeDesk) return;
+        const kg = parseFloat(inputBeliKgDesk.value) || 0;
+        const harga = parseFloat(inputBeliHargaDesk.value) || 0;
+        const ingId = inputIngredientIdDesk ? inputIngredientIdDesk.value : null;
+        const hargaAcuan = (ingId && bahanPrices[ingId]) ? bahanPrices[ingId] : null;
+
+        const subtotal = kg * harga;
+        beliSubtotalValDesk.textContent = 'Rp ' + Math.round(subtotal).toLocaleString('id-ID');
+
+        if (kg <= 0 || harga <= 0) {
+            beliDeviasiBadgeDesk.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-muted';
+            beliDeviasiBadgeDesk.textContent = 'Menunggu input kg & harga';
+            return;
+        }
+
+        if (hargaAcuan) {
+            const deviasiPerKg = harga - hargaAcuan;
+            const totalDeviasi = deviasiPerKg * kg;
+            if (deviasiPerKg > 0) {
+                beliDeviasiBadgeDesk.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200';
+                beliDeviasiBadgeDesk.textContent = `+Rp ${Math.round(totalDeviasi).toLocaleString('id-ID')} (Lebih Tinggi dari Acuan Rp ${hargaAcuan.toLocaleString('id-ID')}/kg)`;
+            } else if (deviasiPerKg < 0) {
+                beliDeviasiBadgeDesk.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200';
+                beliDeviasiBadgeDesk.textContent = `Hemat Rp ${Math.abs(Math.round(totalDeviasi)).toLocaleString('id-ID')} (Lebih Murah dari Acuan Rp ${hargaAcuan.toLocaleString('id-ID')}/kg)`;
+            } else {
+                beliDeviasiBadgeDesk.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-teal-50 text-teal-700 border border-teal-200';
+                beliDeviasiBadgeDesk.textContent = `Sesuai Harga Acuan Formulasi (Rp ${hargaAcuan.toLocaleString('id-ID')}/kg)`;
+            }
+        } else {
+            beliDeviasiBadgeDesk.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200';
+            beliDeviasiBadgeDesk.textContent = 'Harga Belanja Normal';
+        }
+    }
+
+    if (inputBeliKgDesk) inputBeliKgDesk.addEventListener('input', updateBeliPreviewDesk);
+    if (inputBeliHargaDesk) inputBeliHargaDesk.addEventListener('input', updateBeliPreviewDesk);
+    if (inputIngredientIdDesk) inputIngredientIdDesk.addEventListener('change', updateBeliPreviewDesk);
+
+    // Mobile
     const inputBeliKg = document.getElementById('kg');
     const inputBeliHarga = document.getElementById('harga_nyata');
-    const inputIngredientId = document.getElementById('beli_ingredient_id') || document.querySelector('input[name="ingredient_id"]');
+    const inputIngredientId = document.getElementById('beli_ingredient_id');
     const beliSubtotalVal = document.getElementById('beli-subtotal-val');
     const beliDeviasiBadge = document.getElementById('beli-deviasi-badge');
-    const bahanPrices = @json($bahanPrices);
 
     // Chip Bahan Pakan Selector (Image 2 style)
     const chipsBahan = document.querySelectorAll('.chip-bahan');
@@ -1956,6 +2410,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Jalankan kalkulasi awal saat halaman dimuat
     updateLivePreview();
     updateBeliPreview();
+    updateBeliPreviewDesk();
 });
 </script>
 @endsection
