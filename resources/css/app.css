@@ -535,3 +535,31 @@ body.keyboard-open #mobile-chat-view {
     min-height: 0 !important;
 }
 
+/* =========================================================================
+   Mobile Rendering & Touch Performance Optimizations
+   - Hardware acceleration for fixed UI layers
+   - Smooth inertia scrolling on mobile WebKit
+   - Prevents scroll chain & layout thrashing on nested containers
+   ========================================================================= */
+@media (max-width: 1023px) {
+    #mobile-bottom-nav,
+    header.fixed {
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+    }
+
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .custom-scrollbar,
+    .overflow-y-auto,
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+}
+
+

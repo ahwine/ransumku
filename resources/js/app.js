@@ -425,41 +425,65 @@ function createStandardChart(el, cfg) {
 const bukuChartsMap = {};
 const berandaChartsMap = {};
 
-// 1. Inisialisasi Canvas Buku Kandang
-document.querySelectorAll('canvas[data-buku-chart]').forEach((el) => {
-    const cfg = JSON.parse(el.dataset.bukuChart);
-    const chartName = el.dataset.chartName;
-    const chart = createStandardChart(el, cfg);
-    if (chartName) {
-        bukuChartsMap[chartName] = chart;
+// Helper: Cek apakah canvas relevan dengan breakpoint layar aktif (mencegah inisialisasi ganda mobile vs desktop)
+function shouldInitCanvas(canvas) {
+    if (!canvas) return false;
+    const isMobile = window.innerWidth < 1024;
+    // Jika mobile, lewati canvas yang ada di kontainer desktop-only
+    if (isMobile && canvas.closest('.hidden.lg\\:block, .hidden.lg\\:flex')) {
+        return false;
     }
-    el._bukuChartInstance = chart;
-});
+    // Jika desktop, lewati canvas yang ada di kontainer mobile-only
+    if (!isMobile && canvas.closest('.lg\\:hidden')) {
+        return false;
+    }
+    return true;
+}
 
-// 2. Inisialisasi Canvas Beranda & Standalone
-document.querySelectorAll('canvas[data-chart]').forEach((el) => {
-    const cfg = JSON.parse(el.dataset.chart);
-    const chartName = el.dataset.chartName;
-    const chart = createStandardChart(el, cfg);
+// Inisialisasi satu chart secara on-demand / lazy
+function initSingleChart(canvas) {
+    if (!canvas) return null;
+    if (canvas._bukuChartInstance) return canvas._bukuChartInstance;
+    if (canvas._chartInstance) return canvas._chartInstance;
+    if (!shouldInitCanvas(canvas)) return null;
 
-    const isBerandaGrid = el.closest('[data-beranda-grafik-container]');
-    if (isBerandaGrid && chartName) {
-        berandaChartsMap[chartName] = chart;
-    } else if (!isBerandaGrid) {
-        // Standalone chart di luar beranda: picu animasi langsung
-        if (cfg.type === 'line') {
-            animateBukuLine(chart, 80, 1200);
-        } else if (cfg.type === 'bar') {
-            animateBukuBar(chart, 80);
+    if (canvas.dataset.bukuChart) {
+        try {
+            const cfg = JSON.parse(canvas.dataset.bukuChart);
+            const chartName = canvas.dataset.chartName;
+            const chart = createStandardChart(canvas, cfg);
+            if (chartName) bukuChartsMap[chartName] = chart;
+            canvas._bukuChartInstance = chart;
+            return chart;
+        } catch (e) {
+            return null;
+        }
+    } else if (canvas.dataset.chart) {
+        try {
+            const cfg = JSON.parse(canvas.dataset.chart);
+            const chartName = canvas.dataset.chartName;
+            const chart = createStandardChart(canvas, cfg);
+            const isBerandaGrid = canvas.closest('[data-beranda-grafik-container]');
+            if (isBerandaGrid && chartName) {
+                berandaChartsMap[chartName] = chart;
+            }
+            canvas._chartInstance = chart;
+            return chart;
+        } catch (e) {
+            return null;
         }
     }
-    el._chartInstance = chart;
-});
+    return null;
+}
 
-// Orkestrasi urutan animasi 4 grafik Buku Kandang (Mendukung Tampilan Mobile & Desktop)
+// Orkestrasi urutan animasi 4 grafik Buku Kandang (Mendukung Tampilan Mobile & Desktop dengan Lazy Init)
 function triggerBukuKandangOrchestration() {
     const containers = document.querySelectorAll('[data-buku-grafik-container]');
     if (!containers || containers.length === 0) return;
+
+    const isMobile = window.innerWidth < 1024;
+    const durasiLine = isMobile ? 700 : 1200;
+    const durasiBar = isMobile ? 450 : 650;
 
     containers.forEach((container) => {
         // Periksa apakah tab dashboard sedang aktif
@@ -480,62 +504,67 @@ function triggerBukuKandangOrchestration() {
             c.style.animation = '';
         });
 
-        // 2. Animasi setiap grafik di dalam kontainer yang aktif
+        // 2. Inisialisasi lazy & animasi setiap grafik di dalam kontainer yang aktif
         const canvases = container.querySelectorAll('canvas[data-buku-chart]');
         canvases.forEach((canvas) => {
-            const chart = canvas._bukuChartInstance;
+            const chart = initSingleChart(canvas);
             if (!chart) return;
             chart.resize();
 
             const chartName = canvas.dataset.chartName;
             if (chartName === 'pakan') {
-                animateBukuBar(chart, 80);
+                animateBukuBar(chart, 60, durasiBar);
             } else if (chartName === 'telur') {
-                animateBukuLine(chart, 280, 1200);
+                animateBukuLine(chart, 180, durasiLine);
             } else if (chartName === 'biaya') {
-                animateBukuLine(chart, 480, 1200);
+                animateBukuLine(chart, 320, durasiLine);
             } else if (chartName === 'efisiensi') {
-                animateBukuLine(chart, 680, 1200);
+                animateBukuLine(chart, 460, durasiLine);
             }
         });
     });
 }
 
-// Orkestrasi urutan animasi 4 kuadran grafik Beranda Dashboard
+// Orkestrasi urutan animasi 4 kuadran grafik Beranda Dashboard (Mendukung Mobile & Desktop dengan Lazy Init)
 function triggerBerandaOrchestration() {
-    const container = document.querySelector('[data-beranda-grafik-container]');
-    if (!container) return;
+    const containers = document.querySelectorAll('[data-beranda-grafik-container]');
+    if (!containers || containers.length === 0) return;
 
-    // Resize instans grafik jika diperlukan
-    Object.values(berandaChartsMap).forEach((ci) => {
-        if (ci) ci.resize();
+    const isMobile = window.innerWidth < 1024;
+    const durasiLine = isMobile ? 650 : 1000;
+    const durasiBar = isMobile ? 450 : 600;
+
+    containers.forEach((container) => {
+        if (container.closest('.hidden')) return;
+        const style = window.getComputedStyle(container);
+        if (style.display === 'none' || style.visibility === 'hidden') return;
+        if (container.parentElement && window.getComputedStyle(container.parentElement).display === 'none') return;
+
+        // Inisialisasi lazy & animasi setiap grafik di dalam kontainer yang aktif
+        const canvases = container.querySelectorAll('canvas[data-chart]');
+        canvases.forEach((canvas) => {
+            const chart = initSingleChart(canvas);
+            if (!chart) return;
+            chart.resize();
+
+            const chartName = canvas.dataset.chartName;
+            if (chartName === 'telur') {
+                animateBukuBar(chart, 50, durasiBar);
+            } else if (chartName === 'populasi') {
+                animateBukuLine(chart, 150, durasiLine);
+            } else if (chartName === 'pakan') {
+                animateBukuLine(chart, 260, durasiLine);
+            } else if (chartName === 'fcr') {
+                animateBukuLine(chart, 380, durasiLine);
+            }
+        });
     });
-
-    // 2. Kuadran 1: Produksi Telur (batang berurutan kiri ke kanan, delay: 60ms)
-    if (berandaChartsMap.telur) {
-        animateBukuBar(berandaChartsMap.telur, 60);
-    }
-
-    // 3. Kuadran 2: Populasi Ayam (garis menyapu kiri ke kanan, delay: 180ms, durasi: 1000ms)
-    if (berandaChartsMap.populasi) {
-        animateBukuLine(berandaChartsMap.populasi, 180, 1000);
-    }
-
-    // 4. Kuadran 3: Konsumsi Pakan vs SNI (garis menyapu kiri ke kanan, delay: 320ms, durasi: 1000ms)
-    if (berandaChartsMap.pakan) {
-        animateBukuLine(berandaChartsMap.pakan, 320, 1000);
-    }
-
-    // 5. Kuadran 4: Efisiensi & FCR vs SNI (garis menyapu kiri ke kanan, delay: 460ms, durasi: 1000ms)
-    if (berandaChartsMap.fcr) {
-        animateBukuLine(berandaChartsMap.fcr, 460, 1000);
-    }
 }
 
 window.__triggerBukuKandangAnimation = triggerBukuKandangOrchestration;
 window.__triggerBerandaAnimation = triggerBerandaOrchestration;
 
-// IntersectionObserver untuk Buku Kandang (Mendukung Container Mobile & Desktop)
+// IntersectionObserver untuk Buku Kandang (Lazy Load & Stagger Animation)
 const bukuContainers = document.querySelectorAll('[data-buku-grafik-container]');
 if (bukuContainers && bukuContainers.length > 0) {
     if ('IntersectionObserver' in window) {
@@ -548,7 +577,7 @@ if (bukuContainers && bukuContainers.length > 0) {
                     }
                 }
             });
-        }, { threshold: 0.1 });
+        }, { threshold: 0.05, rootMargin: '100px 0px' });
 
         bukuContainers.forEach((el) => observer.observe(el));
     } else {
@@ -556,32 +585,21 @@ if (bukuContainers && bukuContainers.length > 0) {
     }
 }
 
-// IntersectionObserver & Auto-trigger untuk Beranda Dashboard
-let hasAnimatedBerandaOnView = false;
-const berandaContainerEl = document.querySelector('[data-beranda-grafik-container]');
-if (berandaContainerEl) {
-    // Pemicu langsung jika container sudah ada di dalam viewport layar saat boot
-    const rect = berandaContainerEl.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-        hasAnimatedBerandaOnView = true;
-        setTimeout(triggerBerandaOrchestration, 50);
-    }
-
+// IntersectionObserver untuk Beranda Dashboard (Lazy Load & Stagger Animation)
+const berandaContainers = document.querySelectorAll('[data-beranda-grafik-container]');
+if (berandaContainers && berandaContainers.length > 0) {
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
-                    if (!hasAnimatedBerandaOnView) {
-                        hasAnimatedBerandaOnView = true;
-                        triggerBerandaOrchestration();
-                    }
+                    triggerBerandaOrchestration();
                 }
             });
-        }, { threshold: 0.15 });
+        }, { threshold: 0.05, rootMargin: '100px 0px' });
 
-        observer.observe(berandaContainerEl);
-    } else if (!hasAnimatedBerandaOnView) {
-        setTimeout(triggerBerandaOrchestration, 150);
+        berandaContainers.forEach((el) => observer.observe(el));
+    } else {
+        setTimeout(triggerBerandaOrchestration, 200);
     }
 }
 
@@ -1985,12 +2003,13 @@ function initLiveSensorPoller() {
 
     window.__refreshLiveSensor = pollSensor;
 
-    // Polling setiap 3 detik secara background saat tab aktif
+    // Polling cerdas: 8 detik di mobile untuk menghemat baterai & CPU, 3.5 detik di desktop
+    const pollInterval = window.innerWidth < 1024 ? 8000 : 3500;
     setInterval(() => {
         if (!document.hidden) {
             pollSensor();
         }
-    }, 3000);
+    }, pollInterval);
 
     // Langsung cek ketika peternak kembali ke tab browser
     document.addEventListener('visibilitychange', () => {
@@ -2099,11 +2118,17 @@ function initMobileKeyboardHandler() {
             }
         });
 
+        let scrollRaf = null;
         window.visualViewport.addEventListener('scroll', () => {
             if (document.body.classList.contains('keyboard-open') && window.innerWidth < 768) {
-                updateMobileChatLayout(true);
+                if (!scrollRaf) {
+                    scrollRaf = requestAnimationFrame(() => {
+                        updateMobileChatLayout(true);
+                        scrollRaf = null;
+                    });
+                }
             }
-        });
+        }, { passive: true });
     }
 }
 

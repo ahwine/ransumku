@@ -188,7 +188,7 @@
         @endif
 
         {{-- 5. Section STATISTIK 7 HARI TERAKHIR (4 Kartu Stacked Sesuai Gambar 1) --}}
-        <div class="pt-3 space-y-3">
+        <div class="pt-3 space-y-3" data-beranda-grafik-container>
             <h2 class="text-xs font-bold text-muted uppercase tracking-wider px-1">STATISTIK 7 HARI TERAKHIR</h2>
 
             {{-- Kartu 1: PRODUKSI TELUR --}}
