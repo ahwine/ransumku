@@ -298,7 +298,7 @@
         {{-- ========================================================================= --}}
         <div class="block md:hidden">
             {{-- SUB-VIEW 1: TAMPILAN CHAT MOBILE (Persis Gambar Desain Mobile) --}}
-            <div id="mobile-chat-view" class="flex flex-col h-[calc(100dvh-13.5rem)] min-h-[500px]">
+            <div id="mobile-chat-view" class="flex flex-col h-[calc(100dvh-13.5rem)] min-h-0">
                 
                 {{-- Bagian Riwayat Chat (Horizontal Capsule Pills) --}}
                 <div class="shrink-0 mb-3 space-y-2">
@@ -1936,6 +1936,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 handleMobileFormSubmit(e);
             }
+        });
+
+        inputPesanMob.addEventListener('focus', () => {
+            const bottomNav = document.getElementById('mobile-bottom-nav');
+            if (bottomNav) bottomNav.classList.add('keyboard-hidden');
+            document.body.classList.add('keyboard-open');
+            setTimeout(() => {
+                inputPesanMob.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 80);
         });
     }
 

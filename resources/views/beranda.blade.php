@@ -105,6 +105,8 @@
                                 <span class="w-2.5 h-2.5 rotate-45 bg-slate-800 shadow-xs"></span>
                             </div>
                         </div>
+
+                        {{-- Bar Warna THI: 40% Nyaman, 20% Waspada, 20% Kritis, 20% Bahaya --}}
                         <div class="relative w-full h-2 rounded-full bg-slate-100 overflow-hidden shadow-inner flex">
                             <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Nyaman: THI < 72"></div>
                             <div class="h-full bg-amber-400" style="width: 20%;" title="Zona Waspada: THI 72 - 78"></div>
@@ -202,7 +204,7 @@
         @endif
 
         {{-- 5. Section STATISTIK 7 HARI TERAKHIR (4 Kartu Stacked Sesuai Gambar 1) --}}
-        <div class="pt-3 space-y-3">
+        <div class="pt-3 space-y-3" data-beranda-grafik-container>
             <h2 class="text-xs font-bold text-muted uppercase tracking-wider px-1">STATISTIK 7 HARI TERAKHIR</h2>
 
             {{-- Kartu 1: PRODUKSI TELUR --}}

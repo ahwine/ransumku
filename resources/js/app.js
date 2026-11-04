@@ -433,167 +433,233 @@ function createStandardChart(el, cfg) {
 const bukuChartsMap = {};
 const berandaChartsMap = {};
 
-// 1. Inisialisasi Canvas Buku Kandang
-document.querySelectorAll('canvas[data-buku-chart]').forEach((el) => {
-    const cfg = JSON.parse(el.dataset.bukuChart);
-    const chartName = el.dataset.chartName;
-    const chart = createStandardChart(el, cfg);
-    if (chartName) {
-        bukuChartsMap[chartName] = chart;
+// Helper: Memeriksa apakah suatu elemen atau kontainer sedang aktif dan terlihat
+// Mendukung tab-panel dan breakpoint responsif Tailwind (seperti hidden lg:block atau lg:hidden)
+function isElementVisible(el) {
+    if (!el) return false;
+
+    // 1. Jika elemen berada dalam tab panel ([data-panel]), pastikan panel tidak berkelas 'hidden'
+    const panel = el.closest('[data-panel]');
+    if (panel && panel.classList.contains('hidden')) {
+        return false;
     }
-    el._bukuChartInstance = chart;
-});
 
-// 2. Inisialisasi Canvas Beranda & Standalone
-document.querySelectorAll('canvas[data-chart]').forEach((el) => {
-    const cfg = JSON.parse(el.dataset.chart);
-    const chartName = el.dataset.chartName;
-    const chart = createStandardChart(el, cfg);
-
-    const isBerandaGrid = el.closest('[data-beranda-grafik-container]');
-    if (isBerandaGrid && chartName) {
-        berandaChartsMap[chartName] = chart;
-    } else if (!isBerandaGrid) {
-        // Standalone chart di luar beranda: picu animasi langsung
-        if (cfg.type === 'line') {
-            animateBukuLine(chart, 80, 1200);
-        } else if (cfg.type === 'bar') {
-            animateBukuBar(chart, 80);
+    // 2. Cek apakah elemen atau parent-nya memiliki computed display: 'none'
+    let curr = el;
+    while (curr && curr !== document.body && curr !== document.documentElement) {
+        const style = window.getComputedStyle(curr);
+        if (style.display === 'none' || style.visibility === 'hidden') {
+            return false;
         }
+        curr = curr.parentElement;
     }
-    el._chartInstance = chart;
-});
-
-// Orkestrasi urutan animasi 4 grafik Buku Kandang
-function triggerBukuKandangOrchestration() {
-    const container = document.querySelector('[data-buku-grafik-container]');
-    if (!container) return;
-
-    // Periksa apakah tab dashboard sedang aktif
-    const panel = container.closest('[data-panel]');
-    if (panel && panel.classList.contains('hidden')) return;
-
-    // 1. Fade-in halus pada kartu grafik
-    const cards = container.querySelectorAll('.buku-card-fadein, .stat-card-fadein');
-    cards.forEach((c) => {
-        c.style.animation = 'none';
-        void c.offsetHeight; // trigger reflow
-        c.style.animation = '';
-    });
-
-    // Resize instans grafik jika diperlukan
-    Object.values(bukuChartsMap).forEach((ci) => {
-        if (ci) ci.resize();
-    });
-
-    // 2. Grafik Konsumsi Pakan (batang, delay: 80ms)
-    if (bukuChartsMap.pakan) {
-        animateBukuBar(bukuChartsMap.pakan, 80);
-    }
-
-    // 3. Grafik Produksi Telur (garis menyapu kiri ke kanan, delay: 280ms, durasi: 1200ms)
-    if (bukuChartsMap.telur) {
-        animateBukuLine(bukuChartsMap.telur, 280, 1200);
-    }
-
-    // 4. Grafik Biaya Pakan Harian (delay: 480ms, durasi: 1200ms)
-    if (bukuChartsMap.biaya) {
-        animateBukuLine(bukuChartsMap.biaya, 480, 1200);
-    }
-
-    // 5. Grafik Efisiensi: Biaya per Kg Telur (delay: 680ms, durasi: 1200ms)
-    if (bukuChartsMap.efisiensi) {
-        animateBukuLine(bukuChartsMap.efisiensi, 680, 1200);
-    }
+    return true;
 }
 
-// Orkestrasi urutan animasi 4 kuadran grafik Beranda Dashboard
-function triggerBerandaOrchestration() {
-    const container = document.querySelector('[data-beranda-grafik-container]');
-    if (!container) return;
+// Helper: Cek apakah canvas relevan dengan breakpoint layar aktif (mencegah inisialisasi ganda mobile vs desktop)
+function shouldInitCanvas(canvas) {
+    if (!canvas) return false;
+    const isMobile = window.innerWidth < 1024;
 
-    // Resize instans grafik jika diperlukan
-    Object.values(berandaChartsMap).forEach((ci) => {
-        if (ci) ci.resize();
+    // Jika desktop (>= 1024px), jangan inisialisasi canvas yang berada di kontainer khusus mobile
+    if (!isMobile) {
+        const mobParent = canvas.closest('.lg\\:hidden, [class*="lg:hidden"]');
+        if (mobParent && window.getComputedStyle(mobParent).display === 'none') {
+            return false;
+        }
+    }
+
+    // Jika mobile (< 1024px), jangan inisialisasi canvas yang berada di kontainer khusus desktop
+    if (isMobile) {
+        const deskParent = canvas.closest('.hidden.lg\\:block, .hidden.lg\\:flex, [class*="lg:block"]');
+        if (deskParent && window.getComputedStyle(deskParent).display === 'none') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Inisialisasi satu chart secara on-demand / lazy
+function initSingleChart(canvas) {
+    if (!canvas) return null;
+    if (canvas._bukuChartInstance) return canvas._bukuChartInstance;
+    if (canvas._chartInstance) return canvas._chartInstance;
+    if (!shouldInitCanvas(canvas)) return null;
+
+    if (canvas.dataset.bukuChart) {
+        try {
+            const cfg = JSON.parse(canvas.dataset.bukuChart);
+            const chartName = canvas.dataset.chartName;
+            const chart = createStandardChart(canvas, cfg);
+            if (chartName) bukuChartsMap[chartName] = chart;
+            canvas._bukuChartInstance = chart;
+            return chart;
+        } catch (e) {
+            return null;
+        }
+    } else if (canvas.dataset.chart) {
+        try {
+            const cfg = JSON.parse(canvas.dataset.chart);
+            const chartName = canvas.dataset.chartName;
+            const chart = createStandardChart(canvas, cfg);
+            const isBerandaGrid = canvas.closest('[data-beranda-grafik-container]');
+            if (isBerandaGrid && chartName) {
+                berandaChartsMap[chartName] = chart;
+            }
+            canvas._chartInstance = chart;
+            return chart;
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
+}
+
+// Orkestrasi urutan animasi 4 grafik Buku Kandang (Mendukung Tampilan Mobile & Desktop dengan Lazy Init)
+function triggerBukuKandangOrchestration() {
+    const containers = document.querySelectorAll('[data-buku-grafik-container]');
+    if (!containers || containers.length === 0) return;
+
+    const isMobile = window.innerWidth < 1024;
+    const durasiLine = isMobile ? 700 : 1200;
+    const durasiBar = isMobile ? 450 : 650;
+
+    containers.forEach((container) => {
+        // Cek apakah kontainer sedang aktif & terlihat untuk breakpoint saat ini
+        if (!isElementVisible(container)) return;
+
+        // 1. Fade-in halus pada kartu grafik
+        const cards = container.querySelectorAll('.buku-card-fadein, .stat-card-fadein');
+        cards.forEach((c) => {
+            c.style.animation = 'none';
+            void c.offsetHeight; // trigger reflow
+            c.style.animation = '';
+        });
+
+        // 2. Inisialisasi lazy & animasi setiap grafik di dalam kontainer yang aktif
+        const canvases = container.querySelectorAll('canvas[data-buku-chart]');
+        canvases.forEach((canvas) => {
+            const chart = initSingleChart(canvas);
+            if (!chart) return;
+            chart.resize();
+
+            const chartName = canvas.dataset.chartName;
+            if (chartName === 'pakan') {
+                animateBukuBar(chart, 60, durasiBar);
+            } else if (chartName === 'telur') {
+                animateBukuLine(chart, 180, durasiLine);
+            } else if (chartName === 'biaya') {
+                animateBukuLine(chart, 320, durasiLine);
+            } else if (chartName === 'efisiensi') {
+                animateBukuLine(chart, 460, durasiLine);
+            }
+        });
     });
+}
 
-    // 2. Kuadran 1: Produksi Telur (batang berurutan kiri ke kanan, delay: 60ms)
-    if (berandaChartsMap.telur) {
-        animateBukuBar(berandaChartsMap.telur, 60);
-    }
+// Orkestrasi urutan animasi 4 kuadran grafik Beranda Dashboard (Mendukung Mobile & Desktop dengan Lazy Init)
+function triggerBerandaOrchestration() {
+    const containers = document.querySelectorAll('[data-beranda-grafik-container]');
+    if (!containers || containers.length === 0) return;
 
-    // 3. Kuadran 2: Populasi Ayam (garis menyapu kiri ke kanan, delay: 180ms, durasi: 1000ms)
-    if (berandaChartsMap.populasi) {
-        animateBukuLine(berandaChartsMap.populasi, 180, 1000);
-    }
+    const isMobile = window.innerWidth < 1024;
+    const durasiLine = isMobile ? 650 : 1000;
+    const durasiBar = isMobile ? 450 : 600;
 
-    // 4. Kuadran 3: Konsumsi Pakan vs SNI (garis menyapu kiri ke kanan, delay: 320ms, durasi: 1000ms)
-    if (berandaChartsMap.pakan) {
-        animateBukuLine(berandaChartsMap.pakan, 320, 1000);
-    }
+    containers.forEach((container) => {
+        // Cek apakah kontainer sedang aktif & terlihat untuk breakpoint saat ini
+        if (!isElementVisible(container)) return;
 
-    // 5. Kuadran 4: Efisiensi & FCR vs SNI (garis menyapu kiri ke kanan, delay: 460ms, durasi: 1000ms)
-    if (berandaChartsMap.fcr) {
-        animateBukuLine(berandaChartsMap.fcr, 460, 1000);
-    }
+        // Inisialisasi lazy & animasi setiap grafik di dalam kontainer yang aktif
+        const canvases = container.querySelectorAll('canvas[data-chart]');
+        canvases.forEach((canvas) => {
+            const chart = initSingleChart(canvas);
+            if (!chart) return;
+            chart.resize();
+
+            const chartName = canvas.dataset.chartName;
+            if (chartName === 'telur') {
+                animateBukuBar(chart, 50, durasiBar);
+            } else if (chartName === 'populasi') {
+                animateBukuLine(chart, 150, durasiLine);
+            } else if (chartName === 'pakan') {
+                animateBukuLine(chart, 260, durasiLine);
+            } else if (chartName === 'fcr') {
+                animateBukuLine(chart, 380, durasiLine);
+            }
+        });
+    });
 }
 
 window.__triggerBukuKandangAnimation = triggerBukuKandangOrchestration;
 window.__triggerBerandaAnimation = triggerBerandaOrchestration;
 
-// IntersectionObserver untuk Buku Kandang
-let hasAnimatedBukuOnView = false;
-const bukuContainerEl = document.querySelector('[data-buku-grafik-container]');
-if (bukuContainerEl) {
+// IntersectionObserver untuk Buku Kandang (Lazy Load & Stagger Animation)
+const bukuContainers = document.querySelectorAll('[data-buku-grafik-container]');
+if (bukuContainers && bukuContainers.length > 0) {
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    const panel = bukuContainerEl.closest('[data-panel]');
-                    if (!panel || !panel.classList.contains('hidden')) {
-                        if (!hasAnimatedBukuOnView) {
-                            hasAnimatedBukuOnView = true;
-                            triggerBukuKandangOrchestration();
-                        }
-                    }
+                if (entry.isIntersecting && isElementVisible(entry.target)) {
+                    triggerBukuKandangOrchestration();
                 }
             });
-        }, { threshold: 0.15 });
+        }, { threshold: 0.05, rootMargin: '100px 0px' });
 
-        observer.observe(bukuContainerEl);
-    } else {
-        setTimeout(triggerBukuKandangOrchestration, 200);
+        bukuContainers.forEach((el) => observer.observe(el));
     }
+
+    // Trigger otomatis jika kontainer sudah terlihat di viewport saat boot (Desktop & Mobile)
+    setTimeout(() => {
+        bukuContainers.forEach((el) => {
+            if (isElementVisible(el)) {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    triggerBukuKandangOrchestration();
+                }
+            }
+        });
+    }, 80);
 }
 
-// IntersectionObserver & Auto-trigger untuk Beranda Dashboard
-let hasAnimatedBerandaOnView = false;
-const berandaContainerEl = document.querySelector('[data-beranda-grafik-container]');
-if (berandaContainerEl) {
-    // Pemicu langsung jika container sudah ada di dalam viewport layar saat boot
-    const rect = berandaContainerEl.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-        hasAnimatedBerandaOnView = true;
-        setTimeout(triggerBerandaOrchestration, 50);
-    }
-
+// IntersectionObserver untuk Beranda Dashboard (Lazy Load & Stagger Animation)
+const berandaContainers = document.querySelectorAll('[data-beranda-grafik-container]');
+if (berandaContainers && berandaContainers.length > 0) {
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    if (!hasAnimatedBerandaOnView) {
-                        hasAnimatedBerandaOnView = true;
-                        triggerBerandaOrchestration();
-                    }
+                if (entry.isIntersecting && isElementVisible(entry.target)) {
+                    triggerBerandaOrchestration();
                 }
             });
-        }, { threshold: 0.15 });
+        }, { threshold: 0.05, rootMargin: '100px 0px' });
 
-        observer.observe(berandaContainerEl);
-    } else if (!hasAnimatedBerandaOnView) {
-        setTimeout(triggerBerandaOrchestration, 150);
+        berandaContainers.forEach((el) => observer.observe(el));
     }
+
+    // Trigger otomatis jika kontainer sudah terlihat di viewport saat boot (Desktop & Mobile)
+    setTimeout(() => {
+        berandaContainers.forEach((el) => {
+            if (isElementVisible(el)) {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    triggerBerandaOrchestration();
+                }
+            }
+        });
+    }, 80);
 }
+
+// Resize listener yang responsif terhadap perubahan ukuran layar / orientasi
+let chartResizeDebounce = null;
+window.addEventListener('resize', () => {
+    clearTimeout(chartResizeDebounce);
+    chartResizeDebounce = setTimeout(() => {
+        triggerBerandaOrchestration();
+        triggerBukuKandangOrchestration();
+    }, 200);
+});
 
 // Apple-style Sliding Segmented Tabs ([data-tabs])
 function initSlidingTabs() {
@@ -691,11 +757,7 @@ function initSlidingTabs() {
 
             const mobileHeader = document.querySelector('[data-mobile-catatan-header]');
             if (mobileHeader) {
-                if (tabId === 'dashboard') {
-                    mobileHeader.classList.add('hidden');
-                } else {
-                    mobileHeader.classList.remove('hidden');
-                }
+                mobileHeader.classList.remove('hidden');
             }
 
             try {
@@ -718,7 +780,7 @@ function initSlidingTabs() {
             if (tabId === 'dashboard' && typeof window.__triggerBukuKandangAnimation === 'function') {
                 setTimeout(() => {
                     window.__triggerBukuKandangAnimation();
-                }, 75);
+                }, 100);
             }
 
             if (typeof window.__triggerBerandaAnimation === 'function') {
@@ -1999,12 +2061,13 @@ function initLiveSensorPoller() {
 
     window.__refreshLiveSensor = pollSensor;
 
-    // Polling setiap 3 detik secara background saat tab aktif
+    // Polling cerdas: 8 detik di mobile untuk menghemat baterai & CPU, 3.5 detik di desktop
+    const pollInterval = window.innerWidth < 1024 ? 8000 : 3500;
     setInterval(() => {
         if (!document.hidden) {
             pollSensor();
         }
-    }, 3000);
+    }, pollInterval);
 
     // Langsung cek ketika peternak kembali ke tab browser
     document.addEventListener('visibilitychange', () => {
@@ -2014,9 +2077,126 @@ function initLiveSensorPoller() {
     });
 }
 
+/**
+ * Penanganan Virtual Keyboard & Bottom Navigation pada Layar Mobile
+ * Saat keyboard virtual muncul (misal ketika fokus input chat / form):
+ * 1. Sembunyikan bottom navigation bar agar tidak menutupi tampilan/input.
+ * 2. Sesuaikan tinggi dan scroll pada tampilan chat mobile (#mobile-chat-view)
+ *    agar kolom chat dan pesan tetap berada tepat di atas keyboard.
+ * 3. Kembalikan posisi bottom nav ketika keyboard ditutup / input blur.
+ */
+function initMobileKeyboardHandler() {
+    if (typeof window === 'undefined') return;
+
+    let keyboardTimeout = null;
+
+    const updateMobileChatLayout = (isOpen) => {
+        const chatView = document.getElementById('mobile-chat-view');
+        if (!chatView || window.innerWidth >= 768) return;
+
+        if (isOpen && window.visualViewport) {
+            const viewRect = chatView.getBoundingClientRect();
+            const topPos = Math.max(56, viewRect.top);
+            // Sisa tinggi vertikal di dalam visual viewport
+            const availableHeight = Math.floor(window.visualViewport.height - topPos - 8);
+            if (availableHeight > 160) {
+                chatView.style.height = `${availableHeight}px`;
+                chatView.style.minHeight = '0px';
+            }
+
+            // Scroll pesan ke bagian paling bawah agar pesan terbaru tetap terlihat
+            setTimeout(() => {
+                const chatBox = document.getElementById('mobile-chat-box');
+                if (chatBox) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+                const activeInput = document.getElementById('mobile-input-pesan');
+                if (activeInput && document.activeElement === activeInput) {
+                    activeInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 60);
+        } else {
+            chatView.style.height = '';
+            chatView.style.minHeight = '';
+        }
+    };
+
+    const setKeyboardState = (isOpen) => {
+        const bottomNav = document.getElementById('mobile-bottom-nav');
+        if (isOpen) {
+            document.body.classList.add('keyboard-open');
+            if (bottomNav) {
+                bottomNav.classList.add('keyboard-hidden');
+            }
+        } else {
+            document.body.classList.remove('keyboard-open');
+            if (bottomNav) {
+                bottomNav.classList.remove('keyboard-hidden');
+            }
+        }
+        updateMobileChatLayout(isOpen);
+    };
+
+    // Event listener focusin: segera deteksi jika input/textarea diakses di mobile
+    document.addEventListener('focusin', (e) => {
+        if (window.innerWidth >= 1024) return;
+        const target = e.target;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+            if (keyboardTimeout) clearTimeout(keyboardTimeout);
+            setKeyboardState(true);
+        }
+    });
+
+    // Event listener focusout: kembalikan state setelah jeda kecil
+    document.addEventListener('focusout', (e) => {
+        if (window.innerWidth >= 1024) return;
+        if (keyboardTimeout) clearTimeout(keyboardTimeout);
+        keyboardTimeout = setTimeout(() => {
+            const active = document.activeElement;
+            const isStillInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+            if (!isStillInput) {
+                setKeyboardState(false);
+            }
+        }, 150);
+    });
+
+    // Event listener visualViewport: memastikan sinkron jika keyboard ditutup lewat gesture / tombol back
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) return;
+            const heightDiff = window.innerHeight - window.visualViewport.height;
+            if (heightDiff > 140) {
+                setKeyboardState(true);
+            } else if (heightDiff < 60) {
+                const active = document.activeElement;
+                const isStillInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+                if (!isStillInput) {
+                    setKeyboardState(false);
+                }
+            }
+        });
+
+        let scrollRaf = null;
+        window.visualViewport.addEventListener('scroll', () => {
+            if (document.body.classList.contains('keyboard-open') && window.innerWidth < 768) {
+                if (!scrollRaf) {
+                    scrollRaf = requestAnimationFrame(() => {
+                        updateMobileChatLayout(true);
+                        scrollRaf = null;
+                    });
+                }
+            }
+        }, { passive: true });
+    }
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLiveSensorPoller);
+    document.addEventListener('DOMContentLoaded', () => {
+        initLiveSensorPoller();
+        initMobileKeyboardHandler();
+    });
 } else {
     initLiveSensorPoller();
+    initMobileKeyboardHandler();
 }
 
