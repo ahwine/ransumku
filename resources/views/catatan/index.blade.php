@@ -9,7 +9,7 @@
 @endphp
 
 {{-- Mobile Header (Image 1 style) --}}
-<div data-mobile-catatan-header class="{{ $tabAktif === 'dashboard' ? 'hidden' : 'block md:hidden' }} space-y-1.5 mb-2">
+<div data-mobile-catatan-header class="block md:hidden space-y-1.5 mb-2">
     <div class="flex items-center justify-between gap-3">
         <h1 class="text-2xl font-black text-[#0f3d26] tracking-tight">Produksi</h1>
         <a href="{{ route('kandang.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold text-[#0f3d26] bg-white border border-[#d9e6dd] shadow-2xs hover:bg-[#f4f8f5] transition shrink-0" title="Kelola Multi-Kandang">

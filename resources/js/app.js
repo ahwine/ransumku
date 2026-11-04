@@ -456,47 +456,49 @@ document.querySelectorAll('canvas[data-chart]').forEach((el) => {
     el._chartInstance = chart;
 });
 
-// Orkestrasi urutan animasi 4 grafik Buku Kandang
+// Orkestrasi urutan animasi 4 grafik Buku Kandang (Mendukung Tampilan Mobile & Desktop)
 function triggerBukuKandangOrchestration() {
-    const container = document.querySelector('[data-buku-grafik-container]');
-    if (!container) return;
+    const containers = document.querySelectorAll('[data-buku-grafik-container]');
+    if (!containers || containers.length === 0) return;
 
-    // Periksa apakah tab dashboard sedang aktif
-    const panel = container.closest('[data-panel]');
-    if (panel && panel.classList.contains('hidden')) return;
+    containers.forEach((container) => {
+        // Periksa apakah tab dashboard sedang aktif
+        const panel = container.closest('[data-panel]');
+        if (panel && panel.classList.contains('hidden')) return;
 
-    // 1. Fade-in halus pada kartu grafik
-    const cards = container.querySelectorAll('.buku-card-fadein, .stat-card-fadein');
-    cards.forEach((c) => {
-        c.style.animation = 'none';
-        void c.offsetHeight; // trigger reflow
-        c.style.animation = '';
+        // Periksa apakah kontainer ini sedang tersembunyi (misal mobile vs desktop)
+        if (container.closest('.hidden')) return;
+        const style = window.getComputedStyle(container);
+        if (style.display === 'none' || style.visibility === 'hidden') return;
+        if (container.parentElement && window.getComputedStyle(container.parentElement).display === 'none') return;
+
+        // 1. Fade-in halus pada kartu grafik
+        const cards = container.querySelectorAll('.buku-card-fadein, .stat-card-fadein');
+        cards.forEach((c) => {
+            c.style.animation = 'none';
+            void c.offsetHeight; // trigger reflow
+            c.style.animation = '';
+        });
+
+        // 2. Animasi setiap grafik di dalam kontainer yang aktif
+        const canvases = container.querySelectorAll('canvas[data-buku-chart]');
+        canvases.forEach((canvas) => {
+            const chart = canvas._bukuChartInstance;
+            if (!chart) return;
+            chart.resize();
+
+            const chartName = canvas.dataset.chartName;
+            if (chartName === 'pakan') {
+                animateBukuBar(chart, 80);
+            } else if (chartName === 'telur') {
+                animateBukuLine(chart, 280, 1200);
+            } else if (chartName === 'biaya') {
+                animateBukuLine(chart, 480, 1200);
+            } else if (chartName === 'efisiensi') {
+                animateBukuLine(chart, 680, 1200);
+            }
+        });
     });
-
-    // Resize instans grafik jika diperlukan
-    Object.values(bukuChartsMap).forEach((ci) => {
-        if (ci) ci.resize();
-    });
-
-    // 2. Grafik Konsumsi Pakan (batang, delay: 80ms)
-    if (bukuChartsMap.pakan) {
-        animateBukuBar(bukuChartsMap.pakan, 80);
-    }
-
-    // 3. Grafik Produksi Telur (garis menyapu kiri ke kanan, delay: 280ms, durasi: 1200ms)
-    if (bukuChartsMap.telur) {
-        animateBukuLine(bukuChartsMap.telur, 280, 1200);
-    }
-
-    // 4. Grafik Biaya Pakan Harian (delay: 480ms, durasi: 1200ms)
-    if (bukuChartsMap.biaya) {
-        animateBukuLine(bukuChartsMap.biaya, 480, 1200);
-    }
-
-    // 5. Grafik Efisiensi: Biaya per Kg Telur (delay: 680ms, durasi: 1200ms)
-    if (bukuChartsMap.efisiensi) {
-        animateBukuLine(bukuChartsMap.efisiensi, 680, 1200);
-    }
 }
 
 // Orkestrasi urutan animasi 4 kuadran grafik Beranda Dashboard
@@ -533,26 +535,22 @@ function triggerBerandaOrchestration() {
 window.__triggerBukuKandangAnimation = triggerBukuKandangOrchestration;
 window.__triggerBerandaAnimation = triggerBerandaOrchestration;
 
-// IntersectionObserver untuk Buku Kandang
-let hasAnimatedBukuOnView = false;
-const bukuContainerEl = document.querySelector('[data-buku-grafik-container]');
-if (bukuContainerEl) {
+// IntersectionObserver untuk Buku Kandang (Mendukung Container Mobile & Desktop)
+const bukuContainers = document.querySelectorAll('[data-buku-grafik-container]');
+if (bukuContainers && bukuContainers.length > 0) {
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
-                    const panel = bukuContainerEl.closest('[data-panel]');
+                    const panel = entry.target.closest('[data-panel]');
                     if (!panel || !panel.classList.contains('hidden')) {
-                        if (!hasAnimatedBukuOnView) {
-                            hasAnimatedBukuOnView = true;
-                            triggerBukuKandangOrchestration();
-                        }
+                        triggerBukuKandangOrchestration();
                     }
                 }
             });
-        }, { threshold: 0.15 });
+        }, { threshold: 0.1 });
 
-        observer.observe(bukuContainerEl);
+        bukuContainers.forEach((el) => observer.observe(el));
     } else {
         setTimeout(triggerBukuKandangOrchestration, 200);
     }
@@ -683,11 +681,7 @@ function initSlidingTabs() {
 
             const mobileHeader = document.querySelector('[data-mobile-catatan-header]');
             if (mobileHeader) {
-                if (tabId === 'dashboard') {
-                    mobileHeader.classList.add('hidden');
-                } else {
-                    mobileHeader.classList.remove('hidden');
-                }
+                mobileHeader.classList.remove('hidden');
             }
 
             try {
@@ -710,7 +704,7 @@ function initSlidingTabs() {
             if (tabId === 'dashboard' && typeof window.__triggerBukuKandangAnimation === 'function') {
                 setTimeout(() => {
                     window.__triggerBukuKandangAnimation();
-                }, 75);
+                }, 100);
             }
 
             if (typeof window.__triggerBerandaAnimation === 'function') {
