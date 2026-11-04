@@ -79,47 +79,53 @@
                         </div>
 
                         {{-- Banner Mode Edit (Muncul jika tanggal yang dipilih sudah ada catatan) --}}
-                        <div id="mode-status-banner" class="{{ $isEdit ? '' : 'hidden' }} p-3.5 sm:p-4 rounded-2xl flex items-center justify-between gap-3.5 transition-all" style="background-color: #fffdf5; border: 1.5px solid #fde68a;">
+                        <div id="mode-status-banner" class="{{ $isEdit ? '' : 'hidden' }} p-3.5 sm:p-4 rounded-2xl flex items-center justify-between gap-3 transition-all" style="background-color: #fffdf5; border: 1.5px solid #fde68a;">
                             <div class="flex items-center gap-3 sm:gap-3.5 min-w-0">
                                 <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs" style="background-color: #fef3c7; color: #92400e;">
                                     <span class="material-symbols-outlined text-[24px] sm:text-[26px]">edit_calendar</span>
                                 </div>
                                 <div class="min-w-0 space-y-0.5">
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <span class="text-xs sm:text-sm font-bold text-ink">Sedang mengedit</span>
-                                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style="background-color: #fef3c7; color: #92400e;">Mode edit</span>
+                                    <span class="text-xs font-bold text-[#0f3d26] block leading-tight">Sedang mengedit</span>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background-color: #fef3c7; color: #92400e;">Mode edit</span>
                                     </div>
                                     <span id="mode-status-date" class="text-sm sm:text-base font-black text-ink block leading-tight tracking-tight">
                                         {{ $form->tanggal ? $form->tanggal->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}
                                     </span>
-                                    <p class="text-xs text-[#567263] font-normal leading-tight">Mengubah catatan yang sudah tersimpan.</p>
+                                    <p class="text-[11px] sm:text-xs text-[#567263] font-normal leading-tight">Mengubah catatan yang sudah tersimpan.</p>
                                 </div>
                             </div>
-                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" id="btn-batal-edit" class="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-white text-[#92400e] hover:bg-amber-50/70 active:scale-95 transition shadow-2xs shrink-0" style="border: 1.5px solid #fde68a;" title="Batalkan edit dan kembali ke formulir hari ini">
-                                <span class="material-symbols-outlined text-[16px] font-bold" style="color: #92400e;">close</span>
-                                <span>Batal</span>
+                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" id="btn-batal-edit" class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold bg-white text-[#92400e] hover:bg-amber-50/70 active:scale-95 transition shadow-2xs shrink-0" style="border: 1.5px solid #fde68a;" title="Reset formulir ke hari ini">
+                                <span class="material-symbols-outlined text-[16px] text-[#b45309]">restart_alt</span>
+                                <span>Reset</span>
                             </a>
                         </div>
 
-                        {{-- Quick Fill dari Catatan Kemarin (Sesuai Mockup) --}}
+                        {{-- Quick Fill dari Catatan Kemarin (Sesuai Mockup Foto 1) --}}
                         @if ($yesterdayLog)
-                        <div class="p-3.5 rounded-2xl bg-[#f2f7f3] border border-[#d3e3d9] space-y-2.5 transition-all">
-                            <div class="flex items-center justify-between text-xs">
-                                <div class="flex items-center gap-1.5 font-bold text-[#0f3d26]">
-                                    <span class="material-symbols-outlined text-[16px] text-[#1f7a4a]">history</span>
-                                    <span>Catatan Kemarin</span>
+                        <div class="p-4 sm:p-5 rounded-[24px] bg-[#f2f7f4] border border-[#d7e6dc] space-y-3.5 transition-all">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-[#e3eee6] border border-[#d2e3d7]">
+                                        <span class="material-symbols-outlined text-[24px] text-[#0f3d26]">calendar_today</span>
+                                    </div>
+                                    <div class="min-w-0 space-y-0.5">
+                                        <h3 class="text-base font-extrabold text-[#0f3d26] leading-tight">Catatan Kemarin</h3>
+                                        <p class="text-xs sm:text-sm font-semibold text-[#0f3d26] leading-tight">
+                                            {{ Fmt::num($yesterdayLog->pakan_kg, 1) }} kg pakan &nbsp;·&nbsp; {{ Fmt::num($yesterdayLog->telur_butir, 0) }} butir telur
+                                        </p>
+                                    </div>
                                 </div>
-                                <span class="text-[11px] font-semibold text-[#567263]">{{ $yesterdayLog->tanggal->translatedFormat('d M') }}</span>
-                            </div>
-                            <div class="text-xs font-semibold text-[#0f3d26]">
-                                {{ Fmt::num($yesterdayLog->pakan_kg, 1) }} kg pakan &nbsp;—&nbsp; {{ Fmt::num($yesterdayLog->telur_butir, 0) }} butir telur
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-[#e3eee6] text-[#0f3d26] shrink-0 border border-[#d2e3d7]/60">
+                                    {{ $yesterdayLog->tanggal->translatedFormat('d M') }}
+                                </span>
                             </div>
                             <button type="button" id="btn-quick-fill"
                                     data-pakan="{{ (float) $yesterdayLog->pakan_kg }}"
                                     data-telur="{{ (int) $yesterdayLog->telur_butir }}"
                                     data-berat="{{ $yesterdayLog->telur_kg !== null ? (float) $yesterdayLog->telur_kg : '' }}"
-                                    class="w-full py-2 px-3 rounded-xl text-xs font-bold text-white bg-[#135933] hover:bg-[#0e4427] active:scale-[0.99] transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer">
-                                <span class="material-symbols-outlined text-[15px] text-amber-300 icon-fill">bolt</span>
+                                    class="w-full py-3.5 px-4 rounded-2xl text-sm font-bold text-white bg-[#115e37] hover:bg-[#0d4a2b] active:scale-[0.99] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer">
+                                <span class="material-symbols-outlined text-[20px] text-white icon-fill">bolt</span>
                                 <span>Salin Angka Kemarin</span>
                             </button>
                         </div>
