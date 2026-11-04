@@ -91,9 +91,9 @@
 
                 {{-- Bagian Bawah: Indeks Stres Panas (THI) --}}
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-black text-ink">Indeks Stres Panas (THI)</span>
-                        <span data-live-thi-badge class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-black text-ink whitespace-nowrap">Indeks Stres Panas (THI)</span>
+                        <span data-live-thi-badge data-thi-compact="true" class="px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 {{ $weather['badge_class'] ?? 'bg-amber-100 text-amber-900 border border-amber-300' }}">
                             THI {{ $weather['thi'] }}
                         </span>
                     </div>

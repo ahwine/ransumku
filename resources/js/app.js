@@ -1926,9 +1926,17 @@ function initLiveSensorPoller() {
 
                 // Update THI Badge & Kategori
                 if (thiBadge && data.thi !== undefined) {
-                    thiBadge.textContent = 'THI ' + data.thi + (data.thi_kategori_singkat ? ' · ' + data.thi_kategori_singkat : '');
+                    const isCompact = thiBadge.dataset.thiCompact === 'true';
+                    if (isCompact) {
+                        thiBadge.textContent = 'THI ' + data.thi;
+                    } else {
+                        thiBadge.textContent = 'THI ' + data.thi + (data.thi_kategori_singkat ? ' · ' + data.thi_kategori_singkat : '');
+                    }
                     if (data.badge_class) {
-                        thiBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs transition-all duration-300 ' + data.badge_class;
+                        const baseClasses = isCompact
+                            ? 'px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 transition-all duration-300 '
+                            : 'px-3.5 py-1 rounded-full text-xs font-bold shadow-2xs whitespace-nowrap shrink-0 transition-all duration-300 ';
+                        thiBadge.className = baseClasses + data.badge_class;
                     }
                 }
 
