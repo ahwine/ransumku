@@ -81,13 +81,20 @@
             </button>
         </div>
 
-        <div class="relative w-full sm:w-60 shrink-0">
-            <span class="material-symbols-outlined absolute left-3 top-2 text-[16px] text-muted pointer-events-none">search</span>
+        <div class="relative flex items-center w-full sm:w-64 shrink-0">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-muted pointer-events-none select-none">search</span>
             <input type="text"
                    id="input-cari-standar"
                    oninput="cariKatalogStandar()"
                    placeholder="Cari SNI, strain, atau sumber..."
-                   class="w-full pl-8 pr-3 py-1.5 bg-white border border-line rounded-full text-xs text-ink placeholder:text-muted focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 transition shadow-2xs">
+                   class="w-full h-8.5 pl-8.5 pr-7 bg-white border border-line rounded-full text-xs font-medium text-ink placeholder:text-muted focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 transition shadow-2xs">
+            <button type="button" 
+                    id="btn-clear-cari-standar"
+                    onclick="resetCariStandar()" 
+                    class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink cursor-pointer p-0.5 rounded-full hover:bg-surface transition" 
+                    title="Hapus pencarian">
+                <span class="material-symbols-outlined text-[15px]">close</span>
+            </button>
         </div>
     </div>
 
@@ -241,7 +248,21 @@ function filterTabStandar(fase, el) {
 }
 
 function cariKatalogStandar() {
+    const input = document.getElementById('input-cari-standar');
+    const btnClear = document.getElementById('btn-clear-cari-standar');
+    if (btnClear) {
+        btnClear.classList.toggle('hidden', !input || !input.value.trim());
+    }
     terapkanFilterDanPencarian();
+}
+
+function resetCariStandar() {
+    const input = document.getElementById('input-cari-standar');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    cariKatalogStandar();
 }
 
 function terapkanFilterDanPencarian() {

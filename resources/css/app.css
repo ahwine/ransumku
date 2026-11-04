@@ -499,3 +499,16 @@
     opacity: 1;
     pointer-events: auto;
 }
+
+/* Memastikan seluruh area input tanggal transparan di mobile dapat diklik memicu popup kalender asli browser */
+.mobile-date-picker-input::-webkit-calendar-picker-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}

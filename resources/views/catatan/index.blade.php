@@ -139,8 +139,10 @@
                             {{-- Field 1: Tanggal Pencatatan --}}
                             <div>
                                 <label class="block text-xs font-bold text-[#0f3d26] mb-1.5" for="tanggal">Tanggal Pencatatan</label>
-                                <div class="relative cursor-pointer">
-                                    <input id="tanggal" name="tanggal" type="date" value="{{ old('tanggal', $form->tanggal->toDateString()) }}" max="{{ today()->toDateString() }}" class="w-full h-11 rounded-xl bg-white px-3.5 pr-10 text-sm font-semibold text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" style="border: 1px solid #d9e6dd;" required>
+                                <div class="relative cursor-pointer" onclick="const inp = document.getElementById('tanggal'); if (inp) { try { inp.showPicker(); } catch(e) { inp.focus(); } }">
+                                    <input id="tanggal" name="tanggal" type="date" value="{{ old('tanggal', $form->tanggal->toDateString()) }}" max="{{ today()->toDateString() }}"
+                                           onclick="try { this.showPicker(); } catch(e) {}"
+                                           class="mobile-date-picker-input w-full h-11 rounded-xl bg-white px-3.5 pr-10 text-sm font-semibold text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" style="border: 1px solid #d9e6dd;" required>
                                     <div id="tanggal-display" class="w-full h-11 rounded-xl bg-white px-3.5 pr-10 text-sm font-semibold text-[#0f3d26] flex items-center pointer-events-none" style="border: 1px solid #d9e6dd;">
                                         {{ $form->tanggal->translatedFormat('j F Y') }}
                                     </div>
@@ -382,18 +384,19 @@
             {{-- Date Picker Filter Input (Image 2 style) --}}
             <form method="GET" action="{{ route('catatan.index') }}" class="relative">
                 <input type="hidden" name="tab" value="form">
-                <div class="relative flex items-center cursor-pointer">
+                <div class="relative flex items-center cursor-pointer" onclick="const inp = document.getElementById('cari_tanggal'); if (inp) { try { inp.showPicker(); } catch(e) { inp.focus(); } }">
                     <span class="absolute left-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-[18px] pointer-events-none z-20" style="color: #1f7a4a;">calendar_today</span>
                     <input type="date" name="cari_tanggal" id="cari_tanggal" value="{{ $cariTanggal }}" max="{{ today()->toDateString() }}"
                            onchange="this.form.submit()"
-                           class="w-full h-11 pl-10 pr-10 rounded-2xl text-xs font-semibold focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10"
+                           onclick="try { this.showPicker(); } catch(e) {}"
+                           class="mobile-date-picker-input w-full h-11 pl-10 pr-10 rounded-2xl text-xs font-semibold focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10"
                            style="border: 1px solid #e4eee7; background-color: #f8fbf9; color: #0f3d26;">
                     <div class="w-full h-11 pl-10 pr-10 rounded-2xl text-xs font-semibold {{ $cariTanggal ? 'text-[#0f3d26]' : 'text-[#567263]' }} flex items-center pointer-events-none"
                          style="border: 1px solid #e4eee7; background-color: #f8fbf9;">
                         {{ $cariTanggal ? \Carbon\Carbon::parse($cariTanggal)->translatedFormat('d M Y') : 'Pilih tanggal' }}
                     </div>
                     @if ($cariTanggal)
-                        <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#567263] hover:text-rose-600 z-20" title="Reset tanggal">
+                        <a href="{{ route('catatan.index', ['tab' => 'form']) }}" onclick="event.stopPropagation()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#567263] hover:text-rose-600 z-30" title="Reset tanggal">
                             <span class="material-symbols-outlined text-[16px]">close</span>
                         </a>
                     @endif
@@ -772,6 +775,24 @@
                 <form method="GET" action="{{ route('catatan.index') }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="tab" value="form">
 
+                    {{-- Cari Tanggal Spesifik (Diletakkan di sisi kiri filter agar popup kalender terbuka ke arah dalam layar dan tidak terpotong di tepi kanan) --}}
+                    <div class="flex items-center gap-1">
+                        <div class="relative flex items-center cursor-pointer" onclick="const inp = document.getElementById('desk_cari_tanggal'); if (inp) { try { inp.showPicker(); } catch(e) { inp.focus(); } }">
+                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-[15px] text-muted pointer-events-none">calendar_today</span>
+                            <input type="date" name="cari_tanggal" id="desk_cari_tanggal" value="{{ $cariTanggal }}" max="{{ today()->toDateString() }}"
+                                   onchange="this.form.submit()"
+                                   onclick="try { this.showPicker(); } catch(e) {}"
+                                   class="h-7 pl-7 pr-2 rounded-lg bg-white border border-line text-xs font-semibold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 shadow-2xs cursor-pointer"
+                                   title="Pilih tanggal spesifik untuk memfilter">
+                        </div>
+
+                        @if ($cariTanggal || $filterPeriode !== 'semua')
+                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="h-7 px-2 rounded-lg bg-surface hover:bg-surface-2 border border-line text-muted hover:text-rose-600 flex items-center justify-center transition shadow-2xs" title="Reset filter (Tampilkan semua)">
+                                <span class="material-symbols-outlined text-[15px]">close</span>
+                            </a>
+                        @endif
+                    </div>
+
                     {{-- Quick Pill Filter: Semua, Bulan Ini, Bulan Lalu, 30 Hari --}}
                     <div class="inline-flex p-0.5 bg-surface rounded-lg border border-line text-[11px] font-bold select-none shadow-2xs">
                         <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'semua']) }}"
@@ -790,20 +811,6 @@
                            class="px-2.5 py-1 rounded-md transition-all {{ $filterPeriode === '30_hari' ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
                             30 Hari
                         </a>
-                    </div>
-
-                    {{-- Cari Tanggal Spesifik --}}
-                    <div class="flex items-center gap-1">
-                        <input type="date" name="cari_tanggal" value="{{ $cariTanggal }}" max="{{ today()->toDateString() }}"
-                               onchange="this.form.submit()"
-                               class="h-7 px-2 rounded-lg bg-white border border-line text-xs font-semibold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 shadow-2xs"
-                               title="Pilih tanggal spesifik untuk memfilter">
-
-                        @if ($cariTanggal || $filterPeriode !== 'semua')
-                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="h-7 px-2 rounded-lg bg-surface hover:bg-surface-2 border border-line text-muted hover:text-rose-600 flex items-center justify-center transition shadow-2xs" title="Reset filter (Tampilkan semua)">
-                                <span class="material-symbols-outlined text-[15px]">close</span>
-                            </a>
-                        @endif
                     </div>
                 </form>
             </div>
@@ -1564,8 +1571,10 @@
                 {{-- Tanggal Pembelian --}}
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold text-ink block" for="beli_tanggal">Tanggal pembelian</label>
-                    <div class="relative cursor-pointer">
-                        <input id="beli_tanggal" name="tanggal" type="date" value="{{ today()->toDateString() }}" max="{{ today()->toDateString() }}" class="w-full h-11 rounded-2xl bg-white px-4 pr-11 text-sm font-semibold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" required>
+                    <div class="relative cursor-pointer" onclick="const inp = document.getElementById('beli_tanggal'); if (inp) { try { inp.showPicker(); } catch(e) { inp.focus(); } }">
+                        <input id="beli_tanggal" name="tanggal" type="date" value="{{ today()->toDateString() }}" max="{{ today()->toDateString() }}"
+                               onclick="try { this.showPicker(); } catch(e) {}"
+                               class="mobile-date-picker-input w-full h-11 rounded-2xl bg-white px-4 pr-11 text-sm font-semibold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" required>
                         <div id="beli-tanggal-display" class="w-full h-11 rounded-2xl bg-white px-4 pr-11 text-sm font-semibold text-ink flex items-center pointer-events-none border border-line">
                             {{ today()->translatedFormat('j F Y') }}
                         </div>
