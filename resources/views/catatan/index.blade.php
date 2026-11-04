@@ -79,22 +79,25 @@
                         </div>
 
                         {{-- Banner Mode Edit (Muncul jika tanggal yang dipilih sudah ada catatan) --}}
-                        <div id="mode-status-banner" class="{{ $isEdit ? '' : 'hidden' }} p-3 rounded-2xl flex items-center justify-between gap-3 shadow-2xs transition-all" style="background-color: #fffbeb; border: 1px solid #fef3c7;">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs" style="background-color: #fef3c7; color: #b45309;">
-                                    <span class="material-symbols-outlined text-[20px]">edit_calendar</span>
+                        <div id="mode-status-banner" class="{{ $isEdit ? '' : 'hidden' }} p-3.5 sm:p-4 rounded-2xl flex items-center justify-between gap-3.5 transition-all" style="background-color: #fffdf5; border: 1.5px solid #fde68a;">
+                            <div class="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs" style="background-color: #fef3c7; color: #92400e;">
+                                    <span class="material-symbols-outlined text-[24px] sm:text-[26px]">edit_calendar</span>
                                 </div>
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-1.5 flex-wrap">
-                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide" style="background-color: #fde68a; color: #78350f;">Mode Edit</span>
-                                        <span class="text-xs font-bold text-[#0f3d26]">Catatan <span id="mode-status-date">{{ $form->tanggal->translatedFormat('d M Y') }}</span></span>
+                                <div class="min-w-0 space-y-0.5">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-xs sm:text-sm font-bold text-ink">Sedang mengedit</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style="background-color: #fef3c7; color: #92400e;">Mode edit</span>
                                     </div>
-                                    <p class="text-[11px] text-[#567263] mt-0.5 truncate">Form ini akan memperbarui data yang tersimpan.</p>
+                                    <span id="mode-status-date" class="text-sm sm:text-base font-black text-ink block leading-tight tracking-tight">
+                                        {{ $form->tanggal ? $form->tanggal->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}
+                                    </span>
+                                    <p class="text-xs text-[#567263] font-normal leading-tight">Mengubah catatan yang sudah tersimpan.</p>
                                 </div>
                             </div>
-                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs hover:shadow-xs active:scale-95 shrink-0" style="background-color: #ffffff; color: #92400e; border: 1px solid #fde68a;" title="Kembali ke formulir hari ini">
-                                <span class="material-symbols-outlined text-[15px]" style="color: #b45309;">restart_alt</span>
-                                <span>Reset</span>
+                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" id="btn-batal-edit" class="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-white text-[#92400e] hover:bg-amber-50/70 active:scale-95 transition shadow-2xs shrink-0" style="border: 1.5px solid #fde68a;" title="Batalkan edit dan kembali ke formulir hari ini">
+                                <span class="material-symbols-outlined text-[16px] font-bold" style="color: #92400e;">close</span>
+                                <span>Batal</span>
                             </a>
                         </div>
 
@@ -1677,8 +1680,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (modeStatusDate) {
                         const parts = tgl.split('-');
                         if (parts.length === 3) {
-                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-                            const day = parseInt(parts[2], 10);
+                            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                            const day = String(parseInt(parts[2], 10)).padStart(2, '0');
                             const month = months[parseInt(parts[1], 10) - 1];
                             const year = parts[0];
                             modeStatusDate.textContent = `${day} ${month} ${year}`;
@@ -1699,6 +1702,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (btnSubmitText) btnSubmitText.textContent = 'Simpan Catatan';
             }
             updateLivePreview();
+        });
+    }
+
+    // Tombol Batal Mode Edit
+    const btnBatalEdit = document.getElementById('btn-batal-edit');
+    if (btnBatalEdit) {
+        btnBatalEdit.addEventListener('click', function (e) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (!urlParams.has('tanggal') && inputTanggal) {
+                e.preventDefault();
+                const todayStr = '{{ today()->toDateString() }}';
+                inputTanggal.value = todayStr;
+                updateTanggalDisplay(todayStr);
+                if (modeStatusBanner) modeStatusBanner.classList.add('hidden');
+                if (btnSubmitText) btnSubmitText.textContent = 'Simpan Catatan';
+                if (existingLogs && existingLogs[todayStr]) {
+                    const log = existingLogs[todayStr];
+                    inputPakan.value = log.pakan_kg;
+                    inputTelur.value = log.telur_butir;
+                    inputBerat.value = log.telur_kg !== null ? log.telur_kg : '';
+                    if (inputMati) inputMati.value = log.ayam_mati;
+                    if (inputBiayaLain) inputBiayaLain.value = log.biaya_lain;
+                    if (inputCatatan) inputCatatan.value = log.catatan;
+                } else {
+                    inputPakan.value = '';
+                    inputTelur.value = '';
+                    inputBerat.value = '';
+                    if (inputMati) inputMati.value = 0;
+                    if (inputBiayaLain) inputBiayaLain.value = '';
+                    if (inputCatatan) inputCatatan.value = '';
+                }
+                updateLivePreview();
+            }
         });
     }
 
