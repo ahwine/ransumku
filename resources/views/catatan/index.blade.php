@@ -85,9 +85,9 @@
                                     <span class="material-symbols-outlined text-[24px] sm:text-[26px]">edit_calendar</span>
                                 </div>
                                 <div class="min-w-0 space-y-0.5">
-                                    <span class="text-xs font-bold text-[#0f3d26] block leading-tight">Sedang mengedit</span>
-                                    <div class="flex items-center gap-1.5 flex-wrap">
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background-color: #fef3c7; color: #92400e;">Mode edit</span>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-xs font-bold text-[#0f3d26] leading-tight">Sedang mengedit</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0" style="background-color: #fef3c7; color: #92400e;">Mode edit</span>
                                     </div>
                                     <span id="mode-status-date" class="text-sm sm:text-base font-black text-ink block leading-tight tracking-tight">
                                         {{ $form->tanggal ? $form->tanggal->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}
