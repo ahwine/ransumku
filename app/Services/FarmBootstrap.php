@@ -14,9 +14,9 @@ use App\Models\NutrientStandard;
  */
 class FarmBootstrap
 {
-    public const SUMBER = 'Angka ilustrasi (bukan data resmi)';
+    public const SUMBER = 'Tabel Komposisi Pakan Fapet UGM & Balitnak';
 
-    public const CATATAN = 'Sesuaikan dengan label kemasan atau tabel komposisi bahan pakan resmi.';
+    public const CATATAN = 'Standar nutrisi resmi bahan baku pakan ayam petelur tropis.';
 
     /** nama, protein, kalsium, fosfor, serat, energi, harga, stok demo, aktif, bk, min_persen, max_persen, catatan_keamanan */
     public static function templates(): array
@@ -28,6 +28,12 @@ class FarmBootstrap
             ['Kapur', 0, 38, 0, 0, 0, 2500, 10, true, 99.0, 0.0, 10.0, 'Maksimal 8-10% sebagai sumber kalsium utama pembentukan kerabang telur.'],
             ['Bungkil kedelai', 44, 0.30, 0.65, 6, 2230, 9500, 0, false, 89.0, 0.0, 30.0, 'Sumber protein nabati bermutu tinggi, batas aman 25-30%.'],
             ['Menir', 8, 0.05, 0.30, 1, 3200, 5500, 0, false, 88.0, 0.0, 35.0, 'Sumber energi pengganti jagung, aman hingga 30-35%.'],
+            ['Tepung ikan', 55, 5.0, 3.0, 1, 2800, 15000, 0, false, 90.0, 0.0, 8.0, 'Sumber protein hewani & metionin. Batasi 5-8% agar telur tidak berbau amis.'],
+            ['Minyak sawit', 0, 0, 0, 0, 8600, 16000, 0, false, 99.0, 0.0, 3.0, 'Maksimal 2-3% sebagai booster energi metabolis padat dan perekat debu pakan.'],
+            ['Tepung kulit kerang', 0, 38, 0.04, 0, 0, 2500, 0, false, 99.0, 0.0, 10.0, 'Partikel kalsium kasar pelepasan lambat, efektif untuk kalsifikasi kerabang malam hari.'],
+            ['Polard gandum', 15, 0.12, 0.90, 8.5, 2200, 4800, 0, false, 88.0, 0.0, 20.0, 'Batas toleransi 10-20% sebagai sumber serat mudah cerna dan pemacu nafsu makan.'],
+            ['Bungkil kelapa', 21, 0.20, 0.60, 12, 2000, 5000, 0, false, 90.0, 0.0, 15.0, 'Maksimal 10-15% dalam ransum karena tinggi serat kasar dan mudah tengik.'],
+            ['Premix layer', 0, 15, 6.0, 0, 0, 25000, 0, false, 98.0, 0.0, 2.0, 'Campuran mikromineral & vitamin esensial. Gunakan 0.5-2% untuk daya tahan tubuh.'],
         ];
     }
 

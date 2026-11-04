@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FarmIngredient;
 use App\Models\Ingredient;
+use App\Services\FarmBootstrap;
 use Illuminate\Http\Request;
 
 class IngredientController extends Controller
@@ -29,8 +30,11 @@ class IngredientController extends Controller
 
     public function index(Request $r)
     {
+        $farm = $this->farm();
+        (new FarmBootstrap)->setupFarm($farm, false);
+
         $q = trim((string) $r->query('q'));
-        $bahan = $this->farm()->ingredients()
+        $bahan = $farm->ingredients()
             ->when($q !== '', fn ($x) => $x->where('nama', 'like', "%{$q}%"))
             ->orderBy('nama')->get();
 
@@ -39,7 +43,7 @@ class IngredientController extends Controller
 
     public function create()
     {
-        return view('bahan.form', ['bahan' => new Ingredient]);
+        return redirect()->route('bahan.index')->with('info', 'Seluruh bahan baku standar pakan ayam petelur telah terdaftar lengkap pada katalog.');
     }
 
     public function store(Request $r)
@@ -65,7 +69,7 @@ class IngredientController extends Controller
 
     public function edit(Ingredient $ingredient)
     {
-        return view('bahan.form', ['bahan' => $this->own($ingredient)]);
+        return redirect()->route('bahan.index')->with('info', 'Nutrisi bahan baku pakan terstandarisasi dan dikunci sesuai acuan ilmiah resmi.');
     }
 
     public function update(Request $r, Ingredient $ingredient)

@@ -5,20 +5,13 @@
      Fitur: Kereta Hopper Katrol L298N, Sirkulasi Blower, Misting Atap, Ayam 3D
      ========================================================================= --}}
 
-<div class="bg-white rounded-lg md:rounded-2xl border border-line p-4 sm:p-5 md:p-6 shadow-2xs space-y-3.5 sm:space-y-4" id="section-digital-twin-3d">
+<div class="bg-white rounded-xl border border-line p-4 sm:p-5 md:p-6 shadow-2xs space-y-3.5 sm:space-y-4" id="section-digital-twin-3d">
     {{-- Header Digital Twin 3D (Rapi & Bebas Tombol Menumpuk) --}}
     <div class="flex items-center justify-between gap-3 pb-3 border-b border-line">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 grid place-items-center shrink-0 shadow-2xs">
-                <span class="material-symbols-outlined text-[22px]">view_in_ar</span>
-            </div>
+        <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-[24px] text-purple-600 shrink-0">view_in_ar</span>
             <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                    <h3 class="text-sm font-black uppercase tracking-wider text-ink">Digital Twin 3D Kandang Pintar</h3>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200 uppercase">
-                        WebGL 3D Engine · Live Interactive
-                    </span>
-                </div>
+                <h3 class="text-sm font-black uppercase tracking-wider text-ink">Digital Twin 3D Kandang Pintar</h3>
                 <p class="text-[11px] text-muted hidden sm:block">Simulasi fisik interaktif 3D: Kereta pakan katrol tali sling meluncur di rel, corong pakan 2 tingkat, ayam baterai, blower, dan sprinkler atap</p>
             </div>
         </div>
@@ -104,7 +97,7 @@
     {{-- BARIS PUSAT KONTROL UTAMA SIMULASI 3D (ERGONOMIC CONTROL CENTER)  --}}
     {{-- Tertata rapi di bawah canvas: Ramah sentuhan mobile, tidak numpuk --}}
     {{-- ================================================================= --}}
-    <div class="p-3 sm:p-4 rounded-2xl bg-surface/70 border border-line flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
         
         {{-- Sektor 1: Tombol Aksi Simulasi Fisik (Primary Action Buttons) --}}
         <div class="grid grid-cols-2 gap-2.5 w-full md:w-auto md:flex md:items-center">
@@ -127,21 +120,21 @@
             </button>
         </div>
 
-        {{-- Sektor 2: Presets Sudut Pandang Kamera (Camera Perspective Deck) --}}
+        {{-- Sektor 2: Presets Sudut Pandang Kamera (Camera Perspective Deck - Abu-abu Slider) --}}
         <div class="flex items-center gap-1.5 justify-between sm:justify-end border-t md:border-t-0 pt-2.5 md:pt-0 border-line/60">
             <span class="text-[11px] font-bold text-muted mr-1 hidden lg:inline">Sudut Pandang:</span>
             
-            <div class="inline-flex p-1 rounded-xl bg-white border border-line shadow-2xs gap-1 w-full sm:w-auto justify-center">
-                <button type="button" onclick="setKamera3D('perspektif')" id="btn-cam-perspektif" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-surface text-ink shadow-2xs border border-line flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Isometrik Luar">
-                    <span class="material-symbols-outlined text-[15px] text-purple-600">videocam</span>
+            <div class="inline-flex p-1 rounded-lg bg-slate-100 border border-slate-200/80 gap-1 w-full sm:w-auto justify-center">
+                <button type="button" onclick="setKamera3D('perspektif')" id="btn-cam-perspektif" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] font-bold bg-white text-slate-800 shadow-xs border border-slate-200/80 flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Isometrik Luar">
+                    <span class="material-symbols-outlined text-[15px] text-slate-500">videocam</span>
                     <span>Perspektif</span>
                 </button>
-                <button type="button" onclick="setKamera3D('lorong')" id="btn-cam-lorong" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-muted hover:text-ink hover:bg-surface flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Lorong Tengah Antar Baterai">
-                    <span class="material-symbols-outlined text-[15px] text-emerald-600">straighten</span>
+                <button type="button" onclick="setKamera3D('lorong')" id="btn-cam-lorong" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] font-medium text-slate-500 hover:text-slate-800 hover:bg-white/60 flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Lorong Tengah Antar Baterai">
+                    <span class="material-symbols-outlined text-[15px] text-slate-500">straighten</span>
                     <span>Lorong Pakan</span>
                 </button>
-                <button type="button" onclick="setKamera3D('atas')" id="btn-cam-atas" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-muted hover:text-ink hover:bg-surface flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Atas Denah Kandang">
-                    <span class="material-symbols-outlined text-[15px] text-blue-600">vertical_align_top</span>
+                <button type="button" onclick="setKamera3D('atas')" id="btn-cam-atas" class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] font-medium text-slate-500 hover:text-slate-800 hover:bg-white/60 flex items-center justify-center gap-1 cursor-pointer transition" title="Tampak Atas Denah Kandang">
+                    <span class="material-symbols-outlined text-[15px] text-slate-500">vertical_align_top</span>
                     <span>Tampak Atas</span>
                 </button>
             </div>
@@ -5762,9 +5755,9 @@ function setCameraPresetUI(tipe) {
         const b = document.getElementById(`btn-cam-${p}`);
         if (!b) return;
         if (p === tipe) {
-            b.className = 'flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-surface text-ink shadow-2xs border border-line flex items-center justify-center gap-1 cursor-pointer transition';
+            b.className = 'flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] font-bold bg-white text-slate-800 shadow-xs border border-slate-200/80 flex items-center justify-center gap-1 cursor-pointer transition';
         } else {
-            b.className = 'flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-muted hover:text-ink hover:bg-surface flex items-center justify-center gap-1 cursor-pointer transition';
+            b.className = 'flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] font-medium text-slate-500 hover:text-slate-800 hover:bg-white/60 flex items-center justify-center gap-1 cursor-pointer transition';
         }
     });
 }

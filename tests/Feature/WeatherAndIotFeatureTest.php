@@ -299,7 +299,7 @@ class WeatherAndIotFeatureTest extends TestCase
         $res->assertSee('Kipas Sirkulasi');
         $res->assertSee('Pompa Misting');
         $res->assertSee('Lampu Fotoperiode');
-        $res->assertSee('Smart Closed-Loop Hub');
+        $res->assertSee('Kereta Pakan Rel');
     }
 
     public function test_halaman_kontroler_mengarahkan_guest_ke_halaman_login(): void
