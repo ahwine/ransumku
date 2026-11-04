@@ -32,7 +32,7 @@
     </div>
 
     {{-- Area Canvas 3D Viewport (Leluasa 360° Bebas Hambatan Sentuh) --}}
-    <div class="relative w-full h-[380px] sm:h-[440px] md:h-[490px] rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-inner group">
+    <div class="relative w-full h-[380px] sm:h-[440px] md:h-[490px] rounded-2xl overflow-hidden bg-sky-100 border border-slate-300 shadow-inner group">
         {{-- Canvas Container --}}
         <div id="canvas-container-3d" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
 
@@ -271,10 +271,17 @@ let isManualSimulationHot = false;
 let isManualFeederActive = false;
 let feederPauseUntil = 0;
 
-// Siklus hidup scene (disposal) & registri talang pakan
+// Siklus hidup scene (disposal), lingkungan peternakan, & registri talang pakan
 let rafHandle3D = 0;
 let isDisposed3D = true;
 let feedTroughs = [];
+let farmSkyUniforms = null;
+let farmEnvRT = null;
+let coopBulbMat = null;
+let neighborHenSlots = [];
+let neighborFanBlades = [];
+let neighborCarts = [];
+let neighborAnimCursor = 0;
 
 function initThreeJSKandang() {
     const container = document.getElementById('canvas-container-3d');
@@ -289,6 +296,10 @@ function initThreeJSKandang() {
     isDisposed3D = false;
     henModel = PROC_HEN_MODEL;
     henInst = null;
+    neighborHenSlots = [];
+    neighborFanBlades = [];
+    neighborCarts = [];
+    neighborAnimCursor = 0;
     nextLayAt = 0;
     decisionCursor = 0;
     lastFrameTimeMs = 0;
@@ -300,56 +311,104 @@ function initThreeJSKandang() {
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    // 1. Scene
+    // 1. Scene (Atmosfer Pagi Tropis Realistis Kawasan Peternakan Indonesia)
     scene3D = new THREE.Scene();
-    scene3D.background = new THREE.Color(0x1a1f2e);
-    scene3D.fog = new THREE.FogExp2(0x1a1f2e, 0.018);
+    scene3D.background = new THREE.Color(0xc4dcf2);
+    scene3D.fog = new THREE.FogExp2(0xcde2f3, 0.0034);
 
-    // 2. Camera
-    camera3D = new THREE.PerspectiveCamera(50, width / height, 0.1, 80);
+    // 2. Camera (jarak pandang luas hingga lembah & pegunungan horizon)
+    camera3D = new THREE.PerspectiveCamera(50, width / height, 0.1, 320);
     camera3D.position.set(13, 6.5, 10);
 
-    // 3. Renderer
-    renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // 3. Renderer (ACES Filmic Tone Mapping untuk rentang dinamis sinematik alami)
+    renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer3D.setSize(width, height);
     renderer3D.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer3D.shadowMap.enabled = true;
     renderer3D.shadowMap.type = THREE.PCFSoftShadowMap;
+    if (typeof THREE.ACESFilmicToneMapping !== 'undefined') {
+        renderer3D.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer3D.toneMappingExposure = 0.88;
+    }
     container.innerHTML = ''; // Pastikan bersih
     container.appendChild(renderer3D.domElement);
+
+    // Environment refleksi IBL multi-zona (langit zenit, pita horizon hangat, kubah matahari, & pantulan lembah rumput)
+    if (farmEnvRT) {
+        farmEnvRT.dispose();
+        farmEnvRT = null;
+    }
+    if (typeof THREE.PMREMGenerator === 'function') {
+        try {
+            const pmrem = new THREE.PMREMGenerator(renderer3D);
+            const envScene = new THREE.Scene();
+            envScene.background = new THREE.Color(0x4a6b8c);
+            const envHorizon = new THREE.Mesh(
+                new THREE.CylinderGeometry(9.6, 9.6, 3.2, 16, 1, true),
+                new THREE.MeshBasicMaterial({ color: 0x8ea9be, side: THREE.BackSide })
+            );
+            envHorizon.position.y = 0.8;
+            envScene.add(envHorizon);
+            const envGround = new THREE.Mesh(
+                new THREE.SphereGeometry(10, 12, 8, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5),
+                new THREE.MeshBasicMaterial({ color: 0x26381b, side: THREE.BackSide })
+            );
+            envScene.add(envGround);
+            const envSun = new THREE.Mesh(
+                new THREE.SphereGeometry(1.15, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xfff0cc })
+            );
+            envSun.position.set(5.5, 6.8, 4.2);
+            envScene.add(envSun);
+            farmEnvRT = pmrem.fromScene(envScene, 0.035);
+            scene3D.environment = farmEnvRT.texture;
+            envHorizon.geometry.dispose();
+            envHorizon.material.dispose();
+            envGround.geometry.dispose();
+            envGround.material.dispose();
+            envSun.geometry.dispose();
+            envSun.material.dispose();
+            pmrem.dispose();
+        } catch (_) {
+            farmEnvRT = null;
+        }
+    }
 
     // 4. OrbitControls
     if (typeof THREE.OrbitControls !== 'undefined') {
         controls3D = new THREE.OrbitControls(camera3D, renderer3D.domElement);
         controls3D.enableDamping = true;
         controls3D.dampingFactor = 0.05;
-        controls3D.maxPolarAngle = Math.PI / 2 + 0.05; // Tidak tembus tanah
+        controls3D.maxPolarAngle = Math.PI / 2 - 0.025; // Menjaga kamera tetap di atas hamparan rumput
         controls3D.minDistance = 4;
-        controls3D.maxDistance = 35;
+        controls3D.maxDistance = 58;
         controls3D.autoRotate = false;
         controls3D.autoRotateSpeed = 1.0;
         controls3D.target.set(0, 1.8, 0);
     }
 
-    // 5. Lighting
-    scene3D.add(new THREE.AmbientLight(0xc8d8e8, 0.4));
-    scene3D.add(new THREE.HemisphereLight(0xfff4e0, 0x334155, 0.3));
+    // 5. Pencahayaan Matahari Pagi Tropis + Bounce Light Rumput (bayangan dedaunan & rangka tajam alami)
+    scene3D.add(new THREE.AmbientLight(0xdcebff, 0.19));
+    scene3D.add(new THREE.HemisphereLight(0xd9efff, 0x395021, 0.34));
 
-    const dirLight = new THREE.DirectionalLight(0xfff8e7, 0.7);
-    dirLight.position.set(8, 12, 6);
+    const dirLight = new THREE.DirectionalLight(0xfff2cf, 1.06);
+    dirLight.position.set(16, 18.5, 11.5);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.left = -14;
-    dirLight.shadow.camera.right = 14;
-    dirLight.shadow.camera.top = 8;
-    dirLight.shadow.camera.bottom = -8;
+    dirLight.shadow.bias = -0.00035;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 72;
+    dirLight.shadow.camera.left = -26;
+    dirLight.shadow.camera.right = 22;
+    dirLight.shadow.camera.top = 20;
+    dirLight.shadow.camera.bottom = -22;
     scene3D.add(dirLight);
 
     // Lampu plafon hangat (fotoperiode ayam); coopLight1/2 tetap dipakai syncKandang3DState
     ceilingLights = [];
     [-6, -2, 2, 6].forEach((lx) => {
-        const pl = new THREE.PointLight(0xffe8b0, 1.2, 10, 2);
+        const pl = new THREE.PointLight(0xffe8b0, 0.58, 9.5, 2);
         pl.position.set(lx, 3.2, 0);
         scene3D.add(pl);
         ceilingLights.push(pl);
@@ -1187,8 +1246,10 @@ function applyHenGlb(gltf) {
     const trisAfter = geometry.index.count / 3;
 
     const count = chickensList.length;
-    const pose = new Float32Array(count * 4);
-    const reach = new Float32Array(count * 2);
+    const bgCount = neighborHenSlots.length;
+    const totalCount = count + bgCount;
+    const pose = new Float32Array(totalCount * 4);
+    const reach = new Float32Array(totalCount * 2);
     const poseAttr = new THREE.InstancedBufferAttribute(pose, 4);
     const reachAttr = new THREE.InstancedBufferAttribute(reach, 2);
     poseAttr.setUsage(THREE.DynamicDrawUsage);
@@ -1200,7 +1261,7 @@ function applyHenGlb(gltf) {
     const built = createHenMaterial(source, maxAniso);
     attachHenShader(built.material, scale);
 
-    const mesh = new THREE.InstancedMesh(geometry, built.material, count);
+    const mesh = new THREE.InstancedMesh(geometry, built.material, totalCount);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     mesh.frustumCulled = false;
     mesh.castShadow = false;
@@ -1236,8 +1297,21 @@ function applyHenGlb(gltf) {
         chicken.updateMatrixWorld(true);
         mesh.setMatrixAt(chicken.userData.instIndex, chicken.matrixWorld);
     });
+    neighborHenSlots.forEach((slot, j) => {
+        const idx = count + j;
+        mesh.setMatrixAt(idx, slot.matrix);
+        const o = idx * 4;
+        pose[o] = slot.pitchBase;
+        pose[o + 1] = Math.sin(slot.phase) * 0.34;
+        pose[o + 2] = 0;
+        pose[o + 3] = 0.04 * Math.cos(slot.phase * 0.7);
+        reach[idx * 2] = slot.reachBase;
+        reach[idx * 2 + 1] = 0;
+    });
     mesh.instanceMatrix.needsUpdate = true;
-    console.info('[Digital Twin] Ayam GLB aktif: ' + count + ' instance, ' + Math.round(trisBefore) + ' -> ' + Math.round(trisAfter) + ' segitiga/ayam.');
+    poseAttr.needsUpdate = true;
+    reachAttr.needsUpdate = true;
+    console.info('[Digital Twin] Ayam GLB aktif: ' + count + ' utama + ' + bgCount + ' kandang tetangga (' + totalCount + ' instance, 1 draw call), ' + Math.round(trisBefore) + ' -> ' + Math.round(trisAfter) + ' segitiga/ayam.');
 }
 
 function disposeHenInstances() {
@@ -2534,6 +2608,21 @@ function updateChickenStates(dt, now) {
     }
 
     if (henInst) {
+        if (neighborHenSlots.length > 0) {
+            const baseIdx = chickensList.length;
+            const stepCount = Math.min(24, neighborHenSlots.length);
+            for (let s = 0; s < stepCount; s += 1) {
+                neighborAnimCursor = (neighborAnimCursor + 1) % neighborHenSlots.length;
+                const slot = neighborHenSlots[neighborAnimCursor];
+                const idx = baseIdx + neighborAnimCursor;
+                const o = idx * 4;
+                const t = now * 0.85 + slot.phase;
+                const peckWave = slot.isFeederNear ? Math.max(0, Math.sin(now * 6.5 + slot.phase)) : 0;
+                henInst.pose[o] = slot.pitchBase + peckWave * 0.65;
+                henInst.pose[o + 1] = slot.isFeederNear ? 0 : Math.sin(t) * 0.38;
+                henInst.reach[idx * 2] = slot.isFeederNear ? 0.06 : slot.reachBase;
+            }
+        }
         henInst.mesh.instanceMatrix.needsUpdate = true;
         henInst.poseAttr.needsUpdate = true;
         henInst.reachAttr.needsUpdate = true;
@@ -2554,9 +2643,12 @@ function fixFanRendering() {
     const fanSet = new Set();
     fanGroups.forEach((g) => g.traverse((o) => fanSet.add(o)));
 
+    const envRoot = scene3D.getObjectByName('FarmEnvironment3D');
+    const envSet = new Set();
+    if (envRoot) envRoot.traverse((o) => envSet.add(o));
     const obstacles = [];
     scene3D.traverse((o) => {
-        if (!o.isMesh || fanSet.has(o) || o === feederCart3D) return;
+        if (!o.isMesh || fanSet.has(o) || envSet.has(o) || o === feederCart3D) return;
         if (feederCart3D && feederCart3D.children.includes(o)) return;
         const box = new THREE.Box3().setFromObject(o);
         const size = box.getSize(new THREE.Vector3());
@@ -2628,18 +2720,12 @@ const IOT_PIN_INFO = {
     },
     'Sensor DHT22 Suhu': {
         short: 'DHT22',
-        name: 'Sensor DHT22',
-        fungsi: 'Mengukur suhu & kelembaban udara di zona ayam untuk menghitung THI.',
+        name: 'Sensor DHT22 (Suhu & RH)',
+        fungsi: 'Mengukur suhu & kelembaban udara setinggi ayam untuk menghitung THI & menjaga kotoran tetap kering.',
         nilai: () => {
             const t = window.kandangTelemetry;
             return t ? `${t.suhu}°C · RH ${t.kelembaban}%` : 'Menunggu data sensor...';
         }
-    },
-    'Sensor Amonia MQ-137': {
-        short: 'MQ-137',
-        name: 'Sensor Amonia MQ-137',
-        fungsi: 'Mendeteksi gas amonia dari kotoran agar ventilasi bisa dinaikkan.',
-        nilai: () => 'Normal (simulasi)'
     },
     'Blower Sirkulasi 12V': {
         short: 'Blower',
@@ -2845,7 +2931,1261 @@ function updatePinLayout() {
         refreshIoTPinDetail();
     }
 }
+/** Buat tekstur prosedural ringan berbasis Canvas 2D (0 MB unduhan eksternal). */
+function createFarmCanvasTexture(size, drawFn, repeatX = 1, repeatY = 1, clampEdge = false) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    let seed = 1337 + size;
+    const rnd = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 4294967296;
+    };
+    drawFn(ctx, size, rnd);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = clampEdge ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
+    tex.wrapT = clampEdge ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
+    tex.repeat.set(repeatX, repeatY);
+    if (renderer3D && renderer3D.capabilities) {
+        tex.anisotropy = Math.min(8, renderer3D.capabilities.getMaxAnisotropy());
+    }
+    return tex;
+}
+
+/** Fungsi topografi kontinu lembah peternakan: rata di dalam kompleks kandang, bergelombang mulus ke perbukitan & gunung. */
+function farmTerrainHeightAt(x, z) {
+    const dx = Math.max(0, Math.max(-48.0 - x, x - 26.5));
+    const dz = Math.max(0, Math.max(-42.5 - z, z - 22.5));
+    const distOut = Math.hypot(dx, dz);
+    if (distOut <= 0.001) {
+        return -0.09;
+    }
+    const tBlend = Math.min(1, distOut / 38.0);
+    const smooth = tBlend * tBlend * (3 - 2 * tBlend);
+    const ang = Math.atan2(z, x);
+    const r = Math.hypot(x, z);
+
+    // Lembah pertanian landai alami (tidak curam menutup langit)
+    const roll =
+        1.8 * Math.sin(x * 0.035 + 0.6) * Math.cos(z * 0.032 - 0.4) +
+        1.4 * Math.sin((x - z) * 0.022 + 1.1) +
+        2.1 * Math.max(0, Math.sin(ang * 2.0 + 2.15)) * Math.min(1, distOut / 65.0);
+
+    // Siluet perbukitan & Gunung tropis jauh di cakrawala (R = 105..175m)
+    const farT = Math.max(0, Math.min(1, (r - 96.0) / 78.0));
+    const farSmooth = farT * farT * (3 - 2 * farT);
+    const mountainBell = Math.exp(-Math.pow(((ang + 1.92) / 0.42), 2)) * 16.5
+        + Math.exp(-Math.pow(((ang + 0.95) / 0.55), 2)) * 8.2;
+    const ridge = (5.8 + 3.1 * Math.sin(ang * 3.0 - 0.5) + 1.9 * Math.cos(ang * 5.0 + 0.9) + mountainBell) * farSmooth;
+
+    return -0.09 + smooth * (Math.max(0.08, roll + 1.5 * Math.min(1, distOut / 50.0)) + ridge);
+}
+
+/** Buat menara Silo Pakan Galvanis realistis (pelat bergelombang, tangga inspeksi bersangkar, corong kerucut, & pipa ulir auger). */
+function createRealisticFeedSilo(sx, sz, mats, withAuger = true) {
+    const g = new THREE.Group();
+    g.position.set(sx, -0.02, sz);
+
+    // Skirt bayangan tanah (AO) + pondasi beton bertulang
+    if (mats.aoSkirtMat) {
+        const ao = new THREE.Mesh(new THREE.PlaneGeometry(4.1, 4.1), mats.aoSkirtMat);
+        ao.rotation.x = -Math.PI / 2;
+        ao.position.y = -0.058;
+        ao.renderOrder = -1;
+        g.add(ao);
+    }
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(2.85, 0.16, 2.85), mats.kerbMat);
+    pad.position.y = 0.04;
+    pad.receiveShadow = true;
+    g.add(pad);
+
+    const r = 1.08;
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 2.95, 24), mats.siloSheetMat);
+    body.position.y = 3.28;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    g.add(body);
+
+    [1.85, 2.55, 3.25, 3.95, 4.65].forEach((ry, idx) => {
+        const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(r + 0.016, 0.020, 6, 28),
+            idx === 2 ? mats.siloAccentMat : mats.siloDarkMat
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = ry;
+        g.add(ring);
+    });
+
+    const roofCone = new THREE.Mesh(new THREE.ConeGeometry(r + 0.07, 0.96, 24), mats.siloGalvMat);
+    roofCone.position.y = 5.23;
+    roofCone.castShadow = true;
+    g.add(roofCone);
+
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.23, 0.24, 14), mats.siloAccentMat);
+    cap.position.y = 5.78;
+    g.add(cap);
+
+    // Pipa pengisian tiup (fill pipe) & tangga inspeksi samping
+    const fillPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 5.1, 8), mats.siloGalvMat);
+    fillPipe.position.set(-r - 0.09, 2.95, 0);
+    g.add(fillPipe);
+
+    [-0.14, 0.14].forEach((lz) => {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.025, 4.25, 0.025), mats.siloDarkMat);
+        rail.position.set(0, 2.65, -r - 0.11 + lz * 0.02);
+        rail.position.x = lz;
+        g.add(rail);
+    });
+    for (let ry = 0.85; ry <= 4.65; ry += 0.34) {
+        const rung = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.02, 0.02), mats.siloDarkMat);
+        rung.position.set(0, ry, -r - 0.11);
+        g.add(rung);
+    }
+    for (let cy = 2.2; cy <= 4.6; cy += 0.8) {
+        const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.015, 5, 14, Math.PI * 1.15), mats.siloDarkMat);
+        hoop.rotation.x = Math.PI / 2;
+        hoop.rotation.z = -Math.PI * 0.075;
+        hoop.position.set(0, cy, -r - 0.12);
+        g.add(hoop);
+    }
+
+    const hopperCone = new THREE.Mesh(new THREE.CylinderGeometry(r, 0.22, 1.18, 24), mats.siloGalvMat);
+    hopperCone.position.y = 1.22;
+    hopperCone.castShadow = true;
+    g.add(hopperCone);
+
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.36, 0.44), mats.siloDarkMat);
+    boot.position.y = 0.52;
+    g.add(boot);
+
+    for (let i = 0; i < 4; i += 1) {
+        const ang = (Math.PI / 4) + (i * Math.PI) / 2;
+        const lx = Math.cos(ang) * (r * 0.88);
+        const lz = Math.sin(ang) * (r * 0.88);
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.11, 2.08, 0.11), mats.siloDarkMat);
+        leg.position.set(lx, 1.08, lz);
+        leg.castShadow = true;
+        g.add(leg);
+        const brace = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, r * 1.22), mats.siloDarkMat);
+        brace.position.set(lx * 0.5, 0.72, lz * 0.5);
+        brace.rotation.y = -ang;
+        g.add(brace);
+    }
+
+    if (withAuger) {
+        // Pipa ulir konveyor (auger) dari sepatu silo ke ujung pangkal rel pakan (-9.75, 2.68, -0.42 relatif kandang)
+        const p1 = new THREE.Vector3(0, 0.56, 0);
+        const p2 = new THREE.Vector3(2.60, 2.68, 1.63);
+        const dir = p2.clone().sub(p1);
+        const auger = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, dir.length(), 10), mats.siloGalvMat);
+        auger.position.copy(p1).addScaledVector(dir, 0.5);
+        auger.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+        auger.castShadow = true;
+        g.add(auger);
+    }
+    return g;
+}
+
+/**
+ * Bangun lingkungan fotorealistis kawasan peternakan ayam petelur asli Indonesia (0 MB aset eksternal):
+ * - Kubah langit pagi tropis dengan awan cumulus berlapis volumetrik (GLSL)
+ * - Topografi lembah 3D kontinu menyatu tanpa sambungan (rumput detail + petak sawah/ladang + perbukitan hutan & gunung)
+ * - Transisi bayangan tanah (Contact AO decals), jalan makadam beraspal, selokan drainase, & tiang listrik PLN berkabel
+ * - Pohon peneduh botani bercabang asli (alpha-cutout daun majemuk + bayangan daun tembus cahaya), rumpun pohon pisang, & rumput liar 3D.
+ */
+function buildFarmEnvironment3D() {
+    const envGroup = new THREE.Group();
+    envGroup.name = 'FarmEnvironment3D';
+
+    // 1. Kubah Langit Pagi Tropis + Awan Cumulus Volumetrik Berlapis
+    farmSkyUniforms = {
+        uTime: { value: 0 },
+        uSunDir: { value: new THREE.Vector3(16, 18.5, 11.5).normalize() }
+    };
+    const skyMat = new THREE.ShaderMaterial({
+        uniforms: farmSkyUniforms,
+        side: THREE.BackSide,
+        depthWrite: false,
+        fog: false,
+        vertexShader: `
+            varying vec3 vWorldDir;
+            void main() {
+                vec4 wp = modelMatrix * vec4(position, 1.0);
+                vWorldDir = wp.xyz;
+                gl_Position = projectionMatrix * viewMatrix * wp;
+            }
+        `,
+        fragmentShader: `
+            uniform float uTime;
+            uniform vec3 uSunDir;
+            varying vec3 vWorldDir;
+            float rkHash(vec2 p) {
+                return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+            }
+            float rkNoise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                vec2 u = f * f * (3.0 - 2.0 * f);
+                return mix(
+                    mix(rkHash(i), rkHash(i + vec2(1.0, 0.0)), u.x),
+                    mix(rkHash(i + vec2(0.0, 1.0)), rkHash(i + vec2(1.0, 1.0)), u.x),
+                    u.y
+                );
+            }
+            float rkFbm(vec2 p) {
+                float v = 0.0;
+                v += 0.50 * rkNoise(p);
+                v += 0.25 * rkNoise(p * 2.03 + vec2(4.2, 1.9));
+                v += 0.13 * rkNoise(p * 4.11 - vec2(2.7, 5.1));
+                v += 0.07 * rkNoise(p * 8.23 + vec2(1.3, 3.4));
+                v += 0.05 * rkNoise(p * 16.1);
+                return v;
+            }
+            void main() {
+                vec3 d = normalize(vWorldDir);
+                float h = clamp(d.y, 0.0, 1.0);
+                vec3 zenith = vec3(0.11, 0.35, 0.72);
+                vec3 midSky = vec3(0.35, 0.62, 0.88);
+                vec3 horizon = vec3(0.80, 0.89, 0.95);
+                vec3 col = mix(horizon, midSky, smoothstep(0.0, 0.26, h));
+                col = mix(col, zenith, smoothstep(0.22, 0.86, h));
+
+                vec3 sunN = normalize(uSunDir);
+                float sunDot = max(dot(d, sunN), 0.0);
+                col += vec3(1.0, 0.91, 0.68) * pow(sunDot, 7.0) * 0.20;
+                col += vec3(1.0, 0.97, 0.88) * smoothstep(0.9960, 0.9995, sunDot) * 0.75;
+
+                if (d.y > 0.015) {
+                    vec2 uv = d.xz / (d.y + 0.15) * 1.18 + vec2(uTime * 0.0055, uTime * 0.0022);
+                    float base = rkFbm(uv);
+                    float detail = rkFbm(uv * 2.7 + vec2(1.7, -2.3));
+                    float density = base * 0.78 + detail * 0.22;
+                    float cloudMask = smoothstep(0.47, 0.70, density)
+                        * smoothstep(0.015, 0.14, d.y)
+                        * (1.0 - smoothstep(0.76, 0.98, d.y));
+                    float sunSample = rkFbm(uv + normalize(sunN.xz) * 0.11);
+                    float selfShadow = clamp((density - sunSample) * 3.1 + 0.36, 0.0, 1.0);
+                    vec3 cloudShadow = vec3(0.57, 0.67, 0.79);
+                    vec3 cloudMid = vec3(0.86, 0.90, 0.95);
+                    vec3 cloudSun = vec3(1.03, 1.01, 0.97);
+                    vec3 cCol = mix(cloudSun, cloudMid, selfShadow);
+                    cCol = mix(cCol, cloudShadow, smoothstep(0.56, 0.82, density) * 0.55);
+                    cCol += vec3(1.0, 0.92, 0.74) * pow(sunDot, 5.0) * (1.0 - selfShadow) * 0.28;
+                    col = mix(col, cCol, cloudMask * 0.88);
+                }
+                // Kabut atmosferik tipis di kaki cakrawala
+                float haze = exp(-abs(d.y) * 14.0);
+                col = mix(col, vec3(0.82, 0.90, 0.94), haze * 0.38);
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `
+    });
+    const skyDome = new THREE.Mesh(new THREE.SphereGeometry(255, 36, 22), skyMat);
+    skyDome.renderOrder = -10;
+    envGroup.add(skyDome);
+
+    // 2. Medan Lembah & Padang Rumput 3D Kontinu (350m x 350m, 144x144 grid, vertex color AO + petak ladang + hutan bukit)
+    const grassTex = createFarmCanvasTexture(1024, (ctx, S, rnd) => {
+        ctx.fillStyle = '#4a6b2c';
+        ctx.fillRect(0, 0, S, S);
+        for (let i = 0; i < 680; i += 1) {
+            const kind = rnd();
+            ctx.fillStyle = kind < 0.42
+                ? 'rgba(54, 84, 30, 0.34)'
+                : (kind < 0.78 ? 'rgba(92, 118, 46, 0.28)' : 'rgba(98, 80, 48, 0.22)');
+            ctx.beginPath();
+            ctx.arc(rnd() * S, rnd() * S, 10 + rnd() * 38, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        const bladeCols = ['#2f4d1b', '#3a5d22', '#466c2a', '#537a32', '#35541e', '#628439', '#4d672b'];
+        for (let i = 0; i < 26000; i += 1) {
+            ctx.fillStyle = bladeCols[Math.floor(rnd() * bladeCols.length)];
+            const bx = rnd() * S;
+            const by = rnd() * S;
+            ctx.fillRect(bx, by, 1.2 + rnd() * 2.2, 2.5 + rnd() * 5.5);
+        }
+        // Bintik cengkeh/bunga rumput kecil alami
+        for (let i = 0; i < 480; i += 1) {
+            ctx.fillStyle = rnd() < 0.65 ? 'rgba(214, 220, 175, 0.35)' : 'rgba(232, 204, 120, 0.32)';
+            ctx.fillRect(rnd() * S, rnd() * S, 2, 2);
+        }
+    }, 34, 34);
+
+    const grassBumpTex = createFarmCanvasTexture(512, (ctx, S, rnd) => {
+        ctx.fillStyle = '#808080';
+        ctx.fillRect(0, 0, S, S);
+        for (let i = 0; i < 14000; i += 1) {
+            const v = 90 + Math.floor(rnd() * 85);
+            ctx.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')';
+            ctx.fillRect(rnd() * S, rnd() * S, 2, 3 + rnd() * 4);
+        }
+    }, 34, 34);
+
+    // Daftar posisi pusat keempat unit kandang kembar: Unit 1 (Utama), Unit 2, Unit 3, dan Unit 4 (Seberang Jalan)
+    const coopCenters = [
+        [0, 0],
+        [0, -13.6],
+        [0, -27.2],
+        [-32.8, -13.6]
+    ];
+
+    const terrainGeo = new THREE.PlaneGeometry(350, 350, 144, 144);
+    terrainGeo.rotateX(-Math.PI / 2);
+    const tPos = terrainGeo.attributes.position;
+    const tCols = new Float32Array(tPos.count * 3);
+    const tmpCol = new THREE.Color();
+
+    for (let i = 0; i < tPos.count; i += 1) {
+        const vx = tPos.getX(i);
+        const vz = tPos.getZ(i);
+        const vy = farmTerrainHeightAt(vx, vz);
+        tPos.setY(i, vy);
+
+        // Variasi warna makro alami: rumput lembap, pematang sawah/ladang di lembah, hutan bukit, & kabut gunung
+        const macro = 0.5 + 0.5 * Math.sin(vx * 0.075 + 0.4) * Math.cos(vz * 0.068 - 0.8);
+        let rC = 0.72 + 0.14 * macro;
+        let gC = 0.78 + 0.12 * macro;
+        let bC = 0.66 + 0.08 * macro;
+
+        const rDist = Math.hypot(vx, vz);
+        if (vy > 0.25) {
+            // Efek petak sawah / kebun bertingkat di lereng tengah
+            const paddyBand = Math.sin(vx * 0.16 + Math.sin(vz * 0.05) * 1.5) * Math.cos(vz * 0.14);
+            if (vy < 9.5) {
+                const fMix = Math.min(1, (vy - 0.25) / 4.0) * 0.45;
+                if (paddyBand > 0.15) {
+                    rC = rC * (1 - fMix) + 0.82 * fMix;
+                    gC = gC * (1 - fMix) + 0.90 * fMix;
+                    bC = bC * (1 - fMix) + 0.58 * fMix;
+                } else if (Math.abs(paddyBand) < 0.06) {
+                    rC *= 0.72; gC *= 0.70; bC *= 0.64; // Pematang tanah/semak
+                }
+            }
+            // Hutan lereng bukit lebih teduh & gunung jauh kebiruan alami
+            const forestMix = Math.max(0, Math.min(1, (vy - 5.5) / 11.0));
+            rC = rC * (1 - forestMix) + 0.46 * forestMix;
+            gC = gC * (1 - forestMix) + 0.58 * forestMix;
+            bC = bC * (1 - forestMix) + 0.44 * forestMix;
+
+            const mistMix = Math.max(0, Math.min(1, (rDist - 88.0) / 68.0));
+            rC = rC * (1 - mistMix) + 0.58 * mistMix;
+            gC = gC * (1 - mistMix) + 0.69 * mistMix;
+            bC = bC * (1 - mistMix) + 0.74 * mistMix;
+        } else {
+            // Contact AO tanah lembap di sekeliling fondasi keempat kandang & tepi jalan
+            for (let c = 0; c < coopCenters.length; c += 1) {
+                const cdx = Math.max(0, Math.abs(vx - coopCenters[c][0]) - 11.3);
+                const cdz = Math.max(0, Math.abs(vz - coopCenters[c][1]) - 5.0);
+                const cDist = Math.hypot(cdx, cdz);
+                if (cDist < 2.2) {
+                    const ao = 0.66 + 0.34 * (cDist / 2.2);
+                    rC *= ao; gC *= ao * 0.97; bC *= ao * 0.90;
+                }
+            }
+        }
+        tmpCol.setRGB(rC, gC, bC);
+        tCols[i * 3] = tmpCol.r;
+        tCols[i * 3 + 1] = tmpCol.g;
+        tCols[i * 3 + 2] = tmpCol.b;
+    }
+    terrainGeo.setAttribute('color', new THREE.BufferAttribute(tCols, 3));
+    terrainGeo.computeVertexNormals();
+
+    const terrainMesh = new THREE.Mesh(
+        terrainGeo,
+        new THREE.MeshStandardMaterial({
+            map: grassTex,
+            bumpMap: grassBumpTex,
+            bumpScale: 0.028,
+            vertexColors: true,
+            roughness: 0.96,
+            metalness: 0.0
+        })
+    );
+    terrainMesh.receiveShadow = true;
+    envGroup.add(terrainMesh);
+
+    // Tekstur Skirt Gradasi Tanah/Kerikil & Contact AO (menghilangkan batas kaku beton-ke-rumput)
+    const aoSkirtFrameTex = createFarmCanvasTexture(256, (ctx, S, rnd) => {
+        ctx.clearRect(0, 0, S, S);
+        const pad = 28;
+        for (let p = 0; p < pad; p += 1) {
+            const t = p / pad;
+            const alpha = (t * t) * 0.62;
+            ctx.strokeStyle = 'rgba(42, 36, 25, ' + alpha.toFixed(3) + ')';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(p, p, S - p * 2, S - p * 2);
+        }
+        ctx.fillStyle = 'rgba(40, 35, 25, 0.62)';
+        ctx.fillRect(pad, pad, S - pad * 2, S - pad * 2);
+        for (let i = 0; i < 900; i += 1) {
+            const m = 6 + rnd() * (S - 12);
+            const n = 6 + rnd() * (S - 12);
+            const edgeD = Math.min(m, n, S - m, S - n);
+            if (edgeD < pad + 4) {
+                ctx.fillStyle = 'rgba(72, 62, 44, ' + (0.35 * (edgeD / (pad + 4))).toFixed(2) + ')';
+                ctx.fillRect(m, n, 2, 2);
+            }
+        }
+    }, 1, 1, true);
+    const aoSkirtMat = new THREE.MeshBasicMaterial({
+        map: aoSkirtFrameTex,
+        transparent: true,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
+    });
+
+    // 3. Jalan Operasional Aspal/Makadam Aus + Bahu Kerikil + Jalur Penghubung Antar Kandang
+    const roadTex = createFarmCanvasTexture(512, (ctx, S, rnd) => {
+        ctx.fillStyle = '#535652';
+        ctx.fillRect(0, 0, S, S);
+        for (let i = 0; i < 12000; i += 1) {
+            const v = 62 + Math.floor(rnd() * 48);
+            ctx.fillStyle = 'rgb(' + v + ',' + (v - 1) + ',' + (v - 4) + ')';
+            ctx.fillRect(rnd() * S, rnd() * S, 1.5 + rnd() * 2.8, 1.5 + rnd() * 2.8);
+        }
+        // Jejak ban truk pakan & gradasi debu bahu jalan
+        const gradL = ctx.createLinearGradient(0, 0, S, 0);
+        gradL.addColorStop(0.0, 'rgba(78, 66, 46, 0.55)');
+        gradL.addColorStop(0.10, 'rgba(52, 54, 50, 0.0)');
+        gradL.addColorStop(0.26, 'rgba(30, 32, 30, 0.24)');
+        gradL.addColorStop(0.42, 'rgba(60, 62, 58, 0.05)');
+        gradL.addColorStop(0.58, 'rgba(60, 62, 58, 0.05)');
+        gradL.addColorStop(0.74, 'rgba(30, 32, 30, 0.24)');
+        gradL.addColorStop(0.90, 'rgba(52, 54, 50, 0.0)');
+        gradL.addColorStop(1.0, 'rgba(78, 66, 46, 0.55)');
+        ctx.fillStyle = gradL;
+        ctx.fillRect(0, 0, S, S);
+    }, 1, 24);
+    const roadMat = new THREE.MeshStandardMaterial({
+        map: roadTex,
+        bumpMap: roadTex,
+        bumpScale: 0.022,
+        roughness: 0.92,
+        metalness: 0.02
+    });
+
+    const concreteWeatheredTex = createFarmCanvasTexture(512, (ctx, S, rnd) => {
+        ctx.fillStyle = '#9b9486';
+        ctx.fillRect(0, 0, S, S);
+        for (let i = 0; i < 9000; i += 1) {
+            const d = 128 + Math.floor(rnd() * 42);
+            ctx.fillStyle = 'rgb(' + d + ',' + (d - 4) + ',' + (d - 12) + ')';
+            ctx.fillRect(rnd() * S, rnd() * S, 2 + rnd() * 2, 2 + rnd() * 2);
+        }
+        for (let i = 0; i < 85; i += 1) {
+            ctx.fillStyle = rnd() < 0.5 ? 'rgba(68, 64, 54, 0.10)' : 'rgba(175, 170, 156, 0.08)';
+            ctx.beginPath();
+            ctx.arc(rnd() * S, rnd() * S, 10 + rnd() * 28, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.strokeStyle = 'rgba(58, 53, 45, 0.36)';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(1.5, 1.5, S - 3, S - 3);
+    }, 6, 3);
+
+    const apronMat = new THREE.MeshStandardMaterial({
+        map: concreteWeatheredTex,
+        bumpMap: concreteWeatheredTex,
+        bumpScale: 0.015,
+        roughness: 0.91,
+        metalness: 0.02
+    });
+    const kerbMat = new THREE.MeshStandardMaterial({ color: 0x918b7e, roughness: 0.89, metalness: 0.02 });
+
+    // Jalan utama truk pakan di sisi barat (X = -16.2)
+    const roadSkirt = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 128), aoSkirtMat);
+    roadSkirt.rotation.x = -Math.PI / 2;
+    roadSkirt.position.set(-16.2, -0.084, -8);
+    envGroup.add(roadSkirt);
+
+    const mainRoad = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 126), roadMat);
+    mainRoad.rotation.x = -Math.PI / 2;
+    mainRoad.position.set(-16.2, -0.072, -8);
+    mainRoad.receiveShadow = true;
+    envGroup.add(mainRoad);
+
+    [-18.68, -13.72].forEach((kx) => {
+        const kerb = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 126), kerbMat);
+        kerb.position.set(kx, -0.056, -8);
+        kerb.receiveShadow = true;
+        envGroup.add(kerb);
+    });
+
+    // Jalur servis beton penghubung antar pintu barat silo (X = -11.9) & koridor panen telur timur (X = +12.5)
+    const westServiceWalk = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.08, 36.8), apronMat);
+    westServiceWalk.position.set(-11.9, -0.070, -13.6);
+    westServiceWalk.receiveShadow = true;
+    envGroup.add(westServiceWalk);
+
+    const eastHarvestWalk = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.08, 35.8), apronMat);
+    eastHarvestWalk.position.set(12.6, -0.070, -13.2);
+    eastHarvestWalk.receiveShadow = true;
+    envGroup.add(eastHarvestWalk);
+
+    // Akses beton penghubung jalan utama ke Kandang Unit 4 di seberang barat (Z = -13.6)
+    const westCoopApron = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.08, 8.6), apronMat);
+    westCoopApron.position.set(-20.4, -0.070, -13.6);
+    westCoopApron.receiveShadow = true;
+    envGroup.add(westCoopApron);
+
+    // Skirt AO + Fondasi plint beton + Parit Drainase Kandang 1 (Utama)
+    const mainAoSkirt = new THREE.Mesh(new THREE.PlaneGeometry(24.4, 11.6), aoSkirtMat);
+    mainAoSkirt.rotation.x = -Math.PI / 2;
+    mainAoSkirt.position.set(0, -0.083, 0);
+    envGroup.add(mainAoSkirt);
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(22.6, 0.11, 9.9), kerbMat);
+    plinth.position.set(0, -0.058, 0);
+    plinth.receiveShadow = true;
+    envGroup.add(plinth);
+
+    const ditchWallMat = new THREE.MeshStandardMaterial({ color: 0x8d9298, roughness: 0.88 });
+    const ditchWaterMat = new THREE.MeshStandardMaterial({ color: 0x465e5d, roughness: 0.26, metalness: 0.22 });
+    [-4.52, 4.52].forEach((dz) => {
+        const ditchBottom = new THREE.Mesh(new THREE.BoxGeometry(22.4, 0.04, 0.42), ditchWaterMat);
+        ditchBottom.position.set(0, -0.082, dz);
+        envGroup.add(ditchBottom);
+        [-0.22, 0.22].forEach((off) => {
+            const lip = new THREE.Mesh(new THREE.BoxGeometry(22.4, 0.09, 0.07), ditchWallMat);
+            lip.position.set(0, -0.055, dz + off);
+            envGroup.add(lip);
+        });
+    });
+
+    // 4. Material & Silo Pakan Galvanis Kandang Utama + Palet Karung Pakan + Troli Panen Telur
+    const siloSheetTex = createFarmCanvasTexture(256, (ctx, S) => {
+        ctx.fillStyle = '#cfd6de';
+        ctx.fillRect(0, 0, S, S);
+        for (let y = 0; y < S; y += 8) {
+            ctx.fillStyle = (y % 16 === 0) ? 'rgba(255,255,255,0.16)' : 'rgba(30,41,59,0.14)';
+            ctx.fillRect(0, y, S, 4);
+        }
+        ctx.strokeStyle = 'rgba(71,85,105,0.22)';
+        ctx.lineWidth = 1.5;
+        for (let x = 0; x < S; x += 64) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, S); ctx.stroke();
+        }
+    }, 3, 4);
+    const siloSharedMats = {
+        siloSheetMat: new THREE.MeshStandardMaterial({
+            map: siloSheetTex,
+            bumpMap: siloSheetTex,
+            bumpScale: 0.015,
+            metalness: 0.66,
+            roughness: 0.30
+        }),
+        siloGalvMat: new THREE.MeshStandardMaterial({ color: 0xd4dbe3, metalness: 0.68, roughness: 0.28 }),
+        siloDarkMat: new THREE.MeshStandardMaterial({ color: 0x3f4c5c, metalness: 0.56, roughness: 0.38 }),
+        siloAccentMat: new THREE.MeshStandardMaterial({ color: 0xe5940a, roughness: 0.42, metalness: 0.14 }),
+        kerbMat,
+        aoSkirtMat
+    };
+    envGroup.userData.sharedMats = {
+        apronMat,
+        kerbMat,
+        aoSkirtMat,
+        ditchWallMat,
+        ditchWaterMat,
+        siloSharedMats
+    };
+
+    envGroup.add(createRealisticFeedSilo(-12.35, -2.05, siloSharedMats, true));
+
+    // Palet Kayu & Tumpukan Karung Pakan Konsentrat di Pelataran Barat Kandang 1
+    const palletGroup = new THREE.Group();
+    palletGroup.position.set(-12.25, -0.02, 2.35);
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x7c5836, roughness: 0.88 });
+    const sackMatA = new THREE.MeshStandardMaterial({ color: 0xd8cdb8, roughness: 0.85 });
+    const sackMatB = new THREE.MeshStandardMaterial({ color: 0xcbbba0, roughness: 0.87 });
+    const palletBase = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.10, 1.02), woodMat);
+    palletBase.position.y = 0.05;
+    palletBase.castShadow = true;
+    palletGroup.add(palletBase);
+    for (let layer = 0; layer < 4; layer += 1) {
+        for (let s = 0; s < 2; s += 1) {
+            const sack = new THREE.Mesh(
+                new THREE.BoxGeometry(layer % 2 === 0 ? 0.50 : 0.42, 0.15, layer % 2 === 0 ? 0.42 : 0.50),
+                (layer + s) % 2 === 0 ? sackMatA : sackMatB
+            );
+            sack.scale.set(1, 0.88, 1);
+            const off = (s === 0 ? -0.24 : 0.24);
+            sack.position.set(
+                layer % 2 === 0 ? off : 0,
+                0.16 + layer * 0.135,
+                layer % 2 === 0 ? 0 : off
+            );
+            sack.rotation.y = (layer * 0.06) - 0.05;
+            sack.castShadow = true;
+            palletGroup.add(sack);
+        }
+    }
+    envGroup.add(palletGroup);
+
+    // Troli Panen & Rak Krat Telur di Pelataran Timur (+X = +12.45)
+    const harvestCart = new THREE.Group();
+    harvestCart.position.set(12.45, -0.02, 1.35);
+    const cartDeck = new THREE.Mesh(
+        new THREE.BoxGeometry(1.15, 0.08, 0.78),
+        new THREE.MeshStandardMaterial({ color: 0x115e59, roughness: 0.48, metalness: 0.32 })
+    );
+    cartDeck.position.y = 0.28;
+    cartDeck.castShadow = true;
+    harvestCart.add(cartDeck);
+    const handleBar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.68, 0.72), siloSharedMats.siloDarkMat);
+    handleBar.position.set(0.55, 0.62, 0);
+    harvestCart.add(handleBar);
+    [[-0.42, -0.32], [-0.42, 0.32], [0.42, -0.32], [0.42, 0.32]].forEach(([wx, wz]) => {
+        const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, 12), siloSharedMats.siloDarkMat);
+        wh.rotation.x = Math.PI / 2;
+        wh.position.set(wx, 0.11, wz);
+        harvestCart.add(wh);
+    });
+    const trayStackMat = new THREE.MeshStandardMaterial({ color: 0xc26a1b, roughness: 0.78 });
+    const eggCrateBrown = new THREE.MeshStandardMaterial({ color: 0xbc7c4e, roughness: 0.58 });
+    [[-0.24, -0.16], [-0.24, 0.18], [0.18, -0.16], [0.18, 0.18]].forEach(([tx, tz], idx) => {
+        const stackH = 0.26 + (idx % 2) * 0.12;
+        const stack = new THREE.Mesh(new THREE.BoxGeometry(0.34, stackH, 0.30), trayStackMat);
+        stack.position.set(tx, 0.32 + stackH / 2, tz);
+        stack.castShadow = true;
+        harvestCart.add(stack);
+        const topEggs = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.04, 0.24), eggCrateBrown);
+        topEggs.position.set(tx, 0.33 + stackH, tz);
+        harvestCart.add(topEggs);
+    });
+    envGroup.add(harvestCart);
+
+    // 5. Tiang Listrik Beton PLN + Kabel Udara Melengkung (Catenary) Sepanjang Jalan Barat
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x8d8d88, roughness: 0.90 });
+    const wireLineMat = new THREE.LineBasicMaterial({ color: 0x262f38, transparent: true, opacity: 0.72 });
+    const poleZs = [16.5, 0.5, -15.5, -31.5];
+    const poleX = -19.25;
+    poleZs.forEach((pz) => {
+        const pg = new THREE.Group();
+        pg.position.set(poleX, -0.09, pz);
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.16, 7.6, 10), poleMat);
+        pole.position.y = 3.8;
+        pole.castShadow = true;
+        pg.add(pole);
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.08, 0.08), siloSharedMats.siloDarkMat);
+        arm.position.y = 7.25;
+        pg.add(arm);
+        [-0.55, 0, 0.55].forEach((ix) => {
+            const ins = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.14, 8), siloSharedMats.siloGalvMat);
+            ins.position.set(ix, 7.35, 0);
+            pg.add(ins);
+        });
+        envGroup.add(pg);
+    });
+    [-0.55, 0, 0.55].forEach((ix) => {
+        const pts = [];
+        for (let seg = 0; seg < poleZs.length - 1; seg += 1) {
+            const zA = poleZs[seg];
+            const zB = poleZs[seg + 1];
+            for (let s = 0; s <= 12; s += 1) {
+                const u = s / 12;
+                const sag = Math.sin(u * Math.PI) * 0.42;
+                pts.push(new THREE.Vector3(poleX + ix, 7.32 - sag, zA + (zB - zA) * u));
+            }
+        }
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+        envGroup.add(new THREE.Line(lineGeo, wireLineMat));
+    });
+    // Kabel tarikan listrik dari tiang PLN ke pangkal Kandang 1
+    const dropPts = [];
+    for (let s = 0; s <= 12; s += 1) {
+        const u = s / 12;
+        const sag = Math.sin(u * Math.PI) * 0.28;
+        dropPts.push(new THREE.Vector3(
+            poleX + 0.55 + (-9.0 - (poleX + 0.55)) * u,
+            7.22 + (3.62 - 7.22) * u - sag,
+            0.5 + (-3.5 - 0.5) * u
+        ));
+    }
+    envGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(dropPts), wireLineMat));
+
+    // 6. Pagar Keliling Kawasan Biosekuriti (mencakup seluruh 4 unit kandang kembar)
+    const fenceCoords = [];
+    for (let x = -45; x <= 21; x += 3) {
+        if (x >= -19.0 && x <= -13.2) {
+            continue; // Bukaan gerbang jalan masuk utama
+        }
+        fenceCoords.push([x, 18.5, 0]);
+    }
+    for (let x = -45; x <= 21; x += 3) {
+        if (x >= -19.0 && x <= -13.2) {
+            continue;
+        }
+        fenceCoords.push([x, -38.5, 0]);
+    }
+    for (let z = -38.5; z <= 18.5; z += 3) {
+        fenceCoords.push([21.5, z, Math.PI / 2]);
+        fenceCoords.push([-45.5, z, Math.PI / 2]);
+    }
+    const postInst = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.11, 1.48, 0.11),
+        new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.35, roughness: 0.62 }),
+        fenceCoords.length
+    );
+    const railInst = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(3.02, 0.055, 0.04),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.48, roughness: 0.42 }),
+        fenceCoords.length * 2
+    );
+    const fDummy = new THREE.Object3D();
+    fenceCoords.forEach(([fx, fz, rot], idx) => {
+        fDummy.position.set(fx, 0.65, fz);
+        fDummy.rotation.set(0, rot, 0);
+        fDummy.scale.set(1, 1, 1);
+        fDummy.updateMatrix();
+        postInst.setMatrixAt(idx, fDummy.matrix);
+
+        const dx = Math.cos(rot) * 1.5;
+        const dz = -Math.sin(rot) * 1.5;
+        fDummy.position.set(fx + dx, 1.15, fz + dz);
+        fDummy.updateMatrix();
+        railInst.setMatrixAt(idx * 2, fDummy.matrix);
+        fDummy.position.set(fx + dx, 0.58, fz + dz);
+        fDummy.updateMatrix();
+        railInst.setMatrixAt(idx * 2 + 1, fDummy.matrix);
+    });
+    postInst.instanceMatrix.needsUpdate = true;
+    railInst.instanceMatrix.needsUpdate = true;
+    envGroup.add(postInst);
+    envGroup.add(railInst);
+
+    // 7. Pohon Peneduh Botani Realistis (Batang Bercabang + Daun Majemuk Alpha-Cutout + Bayangan Dedaunan Asli)
+    const barkTex = createFarmCanvasTexture(256, (ctx, S, rnd) => {
+        ctx.fillStyle = '#4c3b2b';
+        ctx.fillRect(0, 0, S, S);
+        for (let i = 0; i < 2400; i += 1) {
+            const v = 42 + Math.floor(rnd() * 48);
+            ctx.fillStyle = 'rgb(' + (v + 16) + ',' + (v + 4) + ',' + (v - 6) + ')';
+            ctx.fillRect(rnd() * S, rnd() * S, 2 + rnd() * 3, 10 + rnd() * 24);
+        }
+        for (let i = 0; i < 120; i += 1) {
+            ctx.fillStyle = 'rgba(78, 92, 58, 0.22)'; // Lumut tipis alami pada kulit kayu tropis
+            ctx.beginPath();
+            ctx.arc(rnd() * S, rnd() * S, 4 + rnd() * 10, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }, 2, 4);
+
+    /** Bangun geometri batang pohon bercabang organik (akar melebar + batang utama + 6 dahan penyangga tajuk). */
+    function buildRealisticTreeTrunkGeo() {
+        const pos = [], nor = [], uv = [], idx = [];
+        function addLimbTube(pts, rStart, rEnd, radSegs) {
+            const rings = pts.length;
+            const baseV = pos.length / 3;
+            for (let i = 0; i < rings; i += 1) {
+                const t = i / (rings - 1);
+                const p = pts[i];
+                const tangent = (i < rings - 1 ? pts[i + 1].clone().sub(p) : p.clone().sub(pts[i - 1])).normalize();
+                const upRef = Math.abs(tangent.y) > 0.92 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+                const sideA = new THREE.Vector3().crossVectors(tangent, upRef).normalize();
+                const sideB = new THREE.Vector3().crossVectors(tangent, sideA).normalize();
+                const flare = i === 0 ? 1.28 : 1.0;
+                const rad = (rStart + (rEnd - rStart) * t) * flare;
+                for (let j = 0; j <= radSegs; j += 1) {
+                    const a = (j / radSegs) * Math.PI * 2;
+                    const ca = Math.cos(a), sa = Math.sin(a);
+                    const nx = sideA.x * ca + sideB.x * sa;
+                    const ny = sideA.y * ca + sideB.y * sa;
+                    const nz = sideA.z * ca + sideB.z * sa;
+                    pos.push(p.x + nx * rad, p.y + ny * rad, p.z + nz * rad);
+                    nor.push(nx, ny, nz);
+                    uv.push(j / radSegs, t * 2.5);
+                }
+            }
+            for (let i = 0; i < rings - 1; i += 1) {
+                for (let j = 0; j < radSegs; j += 1) {
+                    const a = baseV + i * (radSegs + 1) + j;
+                    const b = a + radSegs + 1;
+                    idx.push(a, b, a + 1, a + 1, b, b + 1);
+                }
+            }
+        }
+
+        // Batang utama sedikit meliuk alami
+        addLimbTube([
+            new THREE.Vector3(0, 0.0, 0),
+            new THREE.Vector3(0.03, 0.65, -0.02),
+            new THREE.Vector3(-0.02, 1.35, 0.03),
+            new THREE.Vector3(0.02, 1.98, 0.0),
+            new THREE.Vector3(0.0, 2.55, -0.02)
+        ], 0.25, 0.11, 8);
+
+        // 6 dahan utama menyebar menopang sub-tajuk daun
+        const branches = [
+            [[0.01, 1.62, 0.01], [0.42, 2.12, 0.28], [0.88, 2.58, 0.52]],
+            [[-0.02, 1.58, 0.02], [-0.46, 2.08, 0.34], [-0.92, 2.52, 0.62]],
+            [[0.02, 1.72, -0.02], [0.36, 2.22, -0.44], [0.76, 2.66, -0.82]],
+            [[-0.01, 1.68, -0.02], [-0.40, 2.18, -0.40], [-0.82, 2.62, -0.76]],
+            [[0.02, 1.95, 0.02], [0.22, 2.58, 0.26], [0.38, 3.12, 0.42]],
+            [[-0.01, 2.02, -0.01], [-0.20, 2.65, -0.22], [-0.34, 3.18, -0.36]]
+        ];
+        branches.forEach((b) => {
+            addLimbTube(b.map((p) => new THREE.Vector3(p[0], p[1], p[2])), 0.105, 0.038, 6);
+        });
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+        geo.setIndex(idx);
+        return geo;
+    }
+
+    // Atlas Ranting & Gugus Daun Tropis 512x512 RGBA (Alpha-Cutout Tajam, Bukan Bola Polos)
+    const foliageClusterTex = createFarmCanvasTexture(512, (ctx, S, rnd) => {
+        ctx.clearRect(0, 0, S, S);
+        // Ranting kayu halus di tengah gugus daun
+        ctx.strokeStyle = '#3d2e1e';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(S * 0.5, S * 0.88);
+        ctx.quadraticCurveTo(S * 0.48, S * 0.55, S * 0.50, S * 0.20);
+        ctx.stroke();
+
+        const drawLeaf = (cx, cy, len, wid, ang, colMain, colVein) => {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(ang);
+            ctx.fillStyle = colMain;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(wid, -len * 0.42, 0, -len);
+            ctx.quadraticCurveTo(-wid, -len * 0.42, 0, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = colVein;
+            ctx.lineWidth = 1.3;
+            ctx.beginPath();
+            ctx.moveTo(0, -2);
+            ctx.lineTo(0, -len * 0.86);
+            ctx.stroke();
+            ctx.restore();
+        };
+
+        // Lapis 1: Daun dalam teduh (hijau zaitun tua untuk kedalaman tajuk)
+        const deepCols = ['#1e3614', '#243f18', '#2a481c'];
+        for (let i = 0; i < 62; i += 1) {
+            const a = rnd() * Math.PI * 2;
+            const rad = 18 + rnd() * (S * 0.30);
+            const lx = S * 0.5 + Math.cos(a) * rad;
+            const ly = S * 0.52 + Math.sin(a) * rad * 0.88;
+            drawLeaf(lx, ly, 46 + rnd() * 34, 18 + rnd() * 10, a + Math.PI * 0.5 + (rnd() - 0.5) * 0.8,
+                deepCols[Math.floor(rnd() * deepCols.length)], 'rgba(68,102,44,0.35)');
+        }
+        // Lapis 2: Daun tengah rimbun
+        const midCols = ['#2f541f', '#386225', '#426e2b', '#345b22'];
+        for (let i = 0; i < 74; i += 1) {
+            const a = rnd() * Math.PI * 2;
+            const rad = 12 + rnd() * (S * 0.35);
+            const lx = S * 0.5 + Math.cos(a) * rad;
+            const ly = S * 0.50 + Math.sin(a) * rad * 0.88;
+            drawLeaf(lx, ly, 42 + rnd() * 32, 16 + rnd() * 9, a + Math.PI * 0.5 + (rnd() - 0.5) * 0.9,
+                midCols[Math.floor(rnd() * midCols.length)], 'rgba(116,158,72,0.42)');
+        }
+        // Lapis 3: Pucuk daun muda terkena sinar matahari pagi
+        const sunCols = ['#528232', '#60913a', '#6ea043', '#4b792d'];
+        for (let i = 0; i < 48; i += 1) {
+            const a = rnd() * Math.PI * 2;
+            const rad = 24 + rnd() * (S * 0.36);
+            const lx = S * 0.5 + Math.cos(a) * rad;
+            const ly = S * 0.48 + Math.sin(a) * rad * 0.86;
+            drawLeaf(lx, ly, 36 + rnd() * 28, 14 + rnd() * 8, a + Math.PI * 0.5 + (rnd() - 0.5) * 0.7,
+                sunCols[Math.floor(rnd() * sunCols.length)], 'rgba(168,206,104,0.52)');
+        }
+    }, 1, 1, true);
+
+    /**
+     * Geometri tajuk pohon botani 3D: 126 kartu ranting daun melengkung pada 7 kubah dahan
+     * dengan Bent Spherical Normals + Vertex Color Ambient Occlusion agar pencahayaan selembut pohon asli.
+     */
+    function buildBotanicalCrownGeo() {
+        const pos = [], nor = [], uv = [], col = [], idx = [];
+        let seed = 9241;
+        const rnd = () => {
+            seed = (seed * 1664525 + 1013904223) >>> 0;
+            return seed / 4294967296;
+        };
+
+        const domes = [
+            { cx: 0.0,   cy: 3.35, cz: 0.0,   rx: 1.18, ry: 0.92, rz: 1.18, count: 26 },
+            { cx: 0.92,  cy: 2.78, cz: 0.56,  rx: 1.02, ry: 0.80, rz: 0.98, count: 18 },
+            { cx: -0.96, cy: 2.72, cz: 0.62,  rx: 1.04, ry: 0.80, rz: 0.98, count: 18 },
+            { cx: 0.82,  cy: 2.86, cz: -0.84, rx: 1.00, ry: 0.82, rz: 1.00, count: 18 },
+            { cx: -0.86, cy: 2.80, cz: -0.78, rx: 1.02, ry: 0.80, rz: 1.00, count: 18 },
+            { cx: 0.18,  cy: 2.55, cz: 1.02,  rx: 0.92, ry: 0.72, rz: 0.88, count: 14 },
+            { cx: -0.14, cy: 2.60, cz: -1.04, rx: 0.92, ry: 0.72, rz: 0.88, count: 14 }
+        ];
+        const treeCenter = new THREE.Vector3(0, 2.82, 0);
+        const qRot = new THREE.Quaternion();
+        const euler = new THREE.Euler();
+        const vLocal = new THREE.Vector3();
+        const vWorld = new THREE.Vector3();
+        const nOut = new THREE.Vector3();
+        const nFace = new THREE.Vector3();
+
+        domes.forEach((dm) => {
+            const dCenter = new THREE.Vector3(dm.cx, dm.cy, dm.cz);
+            for (let k = 0; k < dm.count; k += 1) {
+                const isCore = k < 5;
+                const u = rnd();
+                const v = rnd();
+                const theta = u * Math.PI * 2;
+                const phi = Math.acos(1 - 2 * v) * 0.82;
+                const shell = isCore ? (0.28 + rnd() * 0.35) : (0.68 + rnd() * 0.34);
+
+                const px = dm.cx + Math.sin(phi) * Math.cos(theta) * dm.rx * shell;
+                const py = dm.cy + Math.cos(phi) * dm.ry * shell;
+                const pz = dm.cz + Math.sin(phi) * Math.sin(theta) * dm.rz * shell;
+
+                const cardSize = (isCore ? 1.18 : 0.92) + rnd() * 0.32;
+                const yaw = Math.atan2(px - dm.cx, pz - dm.cz) + (rnd() - 0.5) * 1.25;
+                const pitch = -0.35 + (py - dm.cy) * 0.38 + (rnd() - 0.5) * 0.65;
+                const roll = (rnd() - 0.5) * 0.95;
+                euler.set(pitch, yaw, roll, 'YXZ');
+                qRot.setFromEuler(euler);
+
+                nFace.set(0, 0, 1).applyQuaternion(qRot).normalize();
+                const baseV = pos.length / 3;
+
+                // Grid 2x2 melengkung ringan (9 verteks per gugus daun agar tampak bervolume dari segala sudut)
+                for (let gy = 0; gy <= 2; gy += 1) {
+                    for (let gx = 0; gx <= 2; gx += 1) {
+                        const su = (gx / 2) - 0.5;
+                        const sv = (gy / 2) - 0.5;
+                        const archZ = (0.16 - 0.34 * (su * su + sv * sv)) * cardSize;
+                        vLocal.set(su * cardSize, sv * cardSize, archZ).applyQuaternion(qRot);
+                        vWorld.set(px + vLocal.x, py + vLocal.y, pz + vLocal.z);
+
+                        nOut.copy(vWorld).sub(dCenter).normalize();
+                        nOut.lerp(nFace, 0.20).normalize();
+
+                        // Ambient occlusion alami: bagian bawah/dalam tajuk lebih teduh, pucuk atas cerah
+                        const hNorm = Math.max(0, Math.min(1, (vWorld.y - 1.85) / 2.25));
+                        const radialNorm = Math.min(1, vWorld.distanceTo(treeCenter) / 2.35);
+                        const ao = (isCore ? 0.52 : 0.66) + 0.24 * hNorm + 0.16 * radialNorm;
+
+                        pos.push(vWorld.x, vWorld.y, vWorld.z);
+                        nor.push(nOut.x, nOut.y, nOut.z);
+                        uv.push(gx / 2, gy / 2);
+                        col.push(ao * 0.96, ao * 1.01, ao * 0.90);
+                    }
+                }
+                for (let gy = 0; gy < 2; gy += 1) {
+                    for (let gx = 0; gx < 2; gx += 1) {
+                        const a = baseV + gy * 3 + gx;
+                        const b = a + 3;
+                        idx.push(a, a + 1, b, a + 1, b + 1, b);
+                    }
+                }
+            }
+        });
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+        geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+        geo.setIndex(idx);
+        return geo;
+    }
+
+    // Penempatan pohon: sekitar jalan, sela kandang, luar pagar, dan lereng bukit (mengikuti farmTerrainHeightAt!)
+    // Zona pandang depan Kandang 1 (Z: 0..17, X: -13..+16) dijaga 100% bebas pohon tinggi!
+    const treePlacements = [
+        // Tepi barat jalan & sekitar Kandang 4
+        [-20.4, 14.2, 1.18], [-20.2, 6.8, 1.04], [-20.5, -4.5, 1.12], [-20.4, -23.5, 1.15], [-20.6, -33.8, 1.24],
+        [-46.8, -6.0, 1.25], [-47.2, -16.5, 1.16], [-46.5, -26.5, 1.30], [-36.0, -2.5, 1.08], [-28.5, -26.0, 1.14],
+        // Peneduh timur & belakang deretan kandang
+        [16.8, -6.8, 1.06], [17.4, -19.8, 1.15], [17.0, -32.2, 1.22],
+        [-8.2, -35.8, 1.18], [1.5, -36.2, 1.10], [10.8, -35.6, 1.24], [-24.0, -36.0, 1.20], [-35.5, -36.2, 1.15],
+        // Sisi timur & selatan luar pagar
+        [23.2, 12.5, 1.26], [23.8, 2.5, 1.14], [24.2, -8.5, 1.28], [23.6, -21.5, 1.18], [24.0, -32.0, 1.22],
+        [-26.5, 14.5, 1.22], [-35.0, 11.0, 1.30], [-42.5, 5.5, 1.18],
+        // Sabuk hutan lereng perbukitan lembah (duduk presisi di kontur bukit 3D!)
+        [-58, -48, 1.75], [-42, -55, 1.92], [-24, -58, 1.80], [-6, -60, 1.95], [12, -57, 1.85], [30, -52, 1.78],
+        [46, -40, 1.88], [54, -20, 1.82], [52, 2, 1.72], [48, 22, 1.85], [34, 36, 1.76], [14, 44, 1.82],
+        [-10, 44, 1.74], [-30, 38, 1.86], [-52, 26, 1.90], [-62, 6, 1.80], [-64, -18, 1.88], [-60, -36, 1.78],
+        [-16, -78, 2.25], [6, -82, 2.35], [26, -76, 2.15], [-38, -74, 2.20], [44, -66, 2.10], [-54, -64, 2.18]
+    ];
+
+    const trunkGeo = buildRealisticTreeTrunkGeo();
+    const crownGeo = buildBotanicalCrownGeo();
+    const trunkMat = new THREE.MeshStandardMaterial({
+        map: barkTex,
+        bumpMap: barkTex,
+        bumpScale: 0.035,
+        roughness: 0.94,
+        metalness: 0.0
+    });
+    const foliageMat = new THREE.MeshStandardMaterial({
+        map: foliageClusterTex,
+        alphaTest: 0.42,
+        side: THREE.DoubleSide,
+        vertexColors: true,
+        roughness: 0.86,
+        metalness: 0.0
+    });
+    const foliageDepthMat = new THREE.MeshDepthMaterial({
+        depthPacking: THREE.RGBADepthPacking,
+        map: foliageClusterTex,
+        alphaTest: 0.42
+    });
+
+    const trunkInst = new THREE.InstancedMesh(trunkGeo, trunkMat, treePlacements.length);
+    const canopyInst = new THREE.InstancedMesh(crownGeo, foliageMat, treePlacements.length);
+    canopyInst.customDepthMaterial = foliageDepthMat;
+    trunkInst.castShadow = true;
+    trunkInst.receiveShadow = true;
+    canopyInst.castShadow = true;
+    canopyInst.receiveShadow = true;
+
+    const treeTints = [0xf2f7ea, 0xe4f0d8, 0xf8f6e3, 0xdcead2, 0xebf3dc];
+    const tintColor = new THREE.Color();
+    treePlacements.forEach(([tx, tz, sc], idx) => {
+        const groundY = farmTerrainHeightAt(tx, tz) - 0.04;
+        fDummy.position.set(tx, groundY, tz);
+        fDummy.rotation.set((idx % 3 - 1) * 0.025, idx * 1.37, ((idx + 1) % 3 - 1) * 0.025);
+        fDummy.scale.set(sc, sc * (0.94 + (idx % 4) * 0.04), sc);
+        fDummy.updateMatrix();
+        trunkInst.setMatrixAt(idx, fDummy.matrix);
+        canopyInst.setMatrixAt(idx, fDummy.matrix);
+        tintColor.setHex(treeTints[idx % treeTints.length]);
+        canopyInst.setColorAt(idx, tintColor);
+    });
+    trunkInst.instanceMatrix.needsUpdate = true;
+    canopyInst.instanceMatrix.needsUpdate = true;
+    if (canopyInst.instanceColor) {
+        canopyInst.instanceColor.needsUpdate = true;
+    }
+    envGroup.add(trunkInst);
+    envGroup.add(canopyInst);
+
+    // 8. Rumpun Pohon Pisang Tropis Khas Pedesaan Indonesia (Pelepah Melengkung Sobek Alami)
+    const bananaLeafTex = createFarmCanvasTexture(256, (ctx, S) => {
+        ctx.clearRect(0, 0, S, S);
+        const cx = S * 0.5;
+        // Pelepah daun pisang lebar dengan sobekan angin alami di tepi
+        for (let y = 14; y < S - 10; y += 1) {
+            const v = y / S;
+            const halfW = Math.sin(Math.pow(v, 0.72) * Math.PI) * (S * 0.40);
+            const tearGap = ((y > 72 && y < 80) || (y > 138 && y < 145) || (y > 196 && y < 202));
+            if (tearGap) {
+                ctx.fillStyle = '#4e7f29';
+                ctx.fillRect(cx - 5, y, 10, 1.5);
+                continue;
+            }
+            const grad = ctx.createLinearGradient(cx - halfW, y, cx + halfW, y);
+            grad.addColorStop(0.0, '#3e6b20');
+            grad.addColorStop(0.45, '#598d31');
+            grad.addColorStop(0.50, '#89b449');
+            grad.addColorStop(0.55, '#598d31');
+            grad.addColorStop(1.0, '#3a651d');
+            ctx.fillStyle = grad;
+            ctx.fillRect(cx - halfW, y, halfW * 2, 1.5);
+        }
+        ctx.fillStyle = '#7da640';
+        ctx.fillRect(cx - 2.5, 16, 5, S - 20);
+    }, 1, 1, true);
+
+    function buildBananaPlantGeo() {
+        const pos = [], nor = [], uv = [], idx = [];
+        // Batang semu pohon pisang (pseudostem)
+        const radSeg = 7;
+        for (let i = 0; i <= 3; i += 1) {
+            const t = i / 3;
+            const r = 0.11 * (1 - t * 0.38);
+            const y = t * 1.52;
+            for (let j = 0; j <= radSeg; j += 1) {
+                const a = (j / radSeg) * Math.PI * 2;
+                pos.push(Math.cos(a) * r, y, Math.sin(a) * r);
+                nor.push(Math.cos(a), 0.15, Math.sin(a));
+                uv.push(0.5, 0.5);
+            }
+        }
+        for (let i = 0; i < 3; i += 1) {
+            for (let j = 0; j < radSeg; j += 1) {
+                const a = i * (radSeg + 1) + j;
+                const b = a + radSeg + 1;
+                idx.push(a, b, a + 1, a + 1, b, b + 1);
+            }
+        }
+        // 8 pelepah daun pisang melengkung parabolik dengan lipatan V di tulang daun
+        const frondCount = 8;
+        for (let f = 0; f < frondCount; f += 1) {
+            const az = (f / frondCount) * Math.PI * 2 + (f % 2) * 0.22;
+            const len = 1.42 + (f % 3) * 0.18;
+            const rise = 0.72 + (f % 2) * 0.26;
+            const droop = 0.62 + ((f + 1) % 3) * 0.16;
+            const wid = 0.24;
+            const baseV = pos.length / 3;
+            const segs = 5;
+            const ca = Math.cos(az), sa = Math.sin(az);
+            const px = -sa, pz = ca;
+            for (let s = 0; s <= segs; s += 1) {
+                const u = s / segs;
+                const rDist = 0.06 + u * len;
+                const fy = 1.44 + u * rise - (u * u) * droop;
+                const cx = ca * rDist;
+                const cz = sa * rDist;
+                for (let w = 0; w <= 2; w += 1) {
+                    const side = w - 1; // -1, 0, +1
+                    const vFold = Math.abs(side) * 0.055;
+                    pos.push(cx + px * side * wid, fy - vFold, cz + pz * side * wid);
+                    nor.push(px * side * 0.25, 0.94, pz * side * 0.25);
+                    uv.push(w / 2, 1 - u);
+                }
+            }
+            for (let s = 0; s < segs; s += 1) {
+                for (let w = 0; w < 2; w += 1) {
+                    const a = baseV + s * 3 + w;
+                    const b = a + 3;
+                    idx.push(a, a + 1, b, a + 1, b + 1, b);
+                }
+            }
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+        geo.setIndex(idx);
+        return geo;
+    }
+
+    const bananaCoords = [
+        // Rumpun pisang tepi parit & sudut pagar (2-3 batang berdekatan seperti tunas anakan asli)
+        [-14.3, 6.2, 1.08], [-13.6, 6.9, 0.78], [-14.9, 7.1, 0.64],
+        [15.2, 5.6, 1.12], [15.9, 6.3, 0.82], [14.6, 6.5, 0.68],
+        [15.6, -6.6, 1.05], [16.3, -7.2, 0.76],
+        [15.8, -20.2, 1.10], [16.5, -20.9, 0.80],
+        [-21.2, 10.6, 1.15], [-21.9, 11.3, 0.84], [-20.6, 11.5, 0.65],
+        [-21.4, -18.5, 1.08], [-22.1, -19.2, 0.78],
+        [-12.2, 17.6, 1.04], [-11.5, 17.9, 0.74],
+        [6.5, 17.6, 1.10], [7.3, 17.9, 0.80],
+        [-4.2, -37.2, 1.14], [-3.4, -37.6, 0.82],
+        [-21.5, -36.8, 1.08], [-20.8, -37.3, 0.76]
+    ];
+    const bananaMat = new THREE.MeshStandardMaterial({
+        map: bananaLeafTex,
+        alphaTest: 0.38,
+        side: THREE.DoubleSide,
+        roughness: 0.74,
+        metalness: 0.02
+    });
+    const bananaInst = new THREE.InstancedMesh(buildBananaPlantGeo(), bananaMat, bananaCoords.length);
+    bananaInst.customDepthMaterial = new THREE.MeshDepthMaterial({
+        depthPacking: THREE.RGBADepthPacking,
+        map: bananaLeafTex,
+        alphaTest: 0.38
+    });
+    bananaInst.castShadow = true;
+    bananaInst.receiveShadow = true;
+    bananaCoords.forEach(([bx, bz, sc], idx) => {
+        fDummy.position.set(bx, farmTerrainHeightAt(bx, bz) - 0.02, bz);
+        fDummy.rotation.set(0, idx * 1.9, 0);
+        fDummy.scale.set(sc, sc, sc);
+        fDummy.updateMatrix();
+        bananaInst.setMatrixAt(idx, fDummy.matrix);
+    });
+    bananaInst.instanceMatrix.needsUpdate = true;
+    envGroup.add(bananaInst);
+
+    // 9. Rumpun Rumput Liar 3D (320 rumpun di sepanjang bahu jalan, parit, tiang pagar, & bawah pohon)
+    const grassBladeTex = createFarmCanvasTexture(128, (ctx, S, rnd) => {
+        ctx.clearRect(0, 0, S, S);
+        const cols = ['#2f521c', '#3d6624', '#4d782d', '#5c8936', '#69943e'];
+        for (let i = 0; i < 34; i += 1) {
+            const x0 = 10 + (i / 34) * (S - 20) + (rnd() - 0.5) * 4;
+            const lean = (rnd() - 0.5) * 26;
+            const h = S * (0.48 + rnd() * 0.46);
+            ctx.strokeStyle = cols[Math.floor(rnd() * cols.length)];
+            ctx.lineWidth = 2.6 + rnd() * 1.8;
+            ctx.beginPath();
+            ctx.moveTo(x0, S);
+            ctx.quadraticCurveTo(x0 + lean * 0.45, S - h * 0.55, x0 + lean, S - h);
+            ctx.stroke();
+        }
+    }, 1, 1, true);
+
+    const tuftGeo = new THREE.BufferGeometry();
+    {
+        const p = [], n = [], u = [], ix = [];
+        for (let plane = 0; plane < 3; plane += 1) {
+            const ang = (plane * Math.PI) / 3;
+            const dx = Math.cos(ang) * 0.26;
+            const dz = Math.sin(ang) * 0.26;
+            const b = p.length / 3;
+            p.push(-dx * 0.85, 0, -dz * 0.85, dx * 0.85, 0, dz * 0.85, dx * 0.95, 0.22, dz * 0.95 + 0.03, -dx * 0.95, 0.22, -dz * 0.95 + 0.03);
+            // Normal menghadap atas (0,1,0) agar iluminasi rumpun rumput menyatu 100% mulus dengan tanah
+            for (let k = 0; k < 4; k += 1) n.push(0, 1, 0);
+            u.push(0, 0, 1, 0, 1, 1, 0, 1);
+            ix.push(b, b + 1, b + 2, b, b + 2, b + 3);
+        }
+        tuftGeo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+        tuftGeo.setAttribute('normal', new THREE.Float32BufferAttribute(n, 3));
+        tuftGeo.setAttribute('uv', new THREE.Float32BufferAttribute(u, 2));
+        tuftGeo.setIndex(ix);
+    }
+    const tuftCoords = [];
+    let tSeed = 7719;
+    const tRnd = () => { tSeed = (tSeed * 1664525 + 1013904223) >>> 0; return tSeed / 4294967296; };
+    // Sepanjang bahu jalan utama
+    for (let z = -37; z <= 18; z += 1.6) {
+        tuftCoords.push([-19.0 - tRnd() * 0.8, z + tRnd() * 0.6, 0.8 + tRnd() * 0.5]);
+        if (Math.abs(z + 13.6) > 5.0) {
+            tuftCoords.push([-13.4 + tRnd() * 0.5, z + tRnd() * 0.6, 0.75 + tRnd() * 0.45]);
+        }
+    }
+    // Tepi luar parit keempat kandang & sekitar pagar
+    coopCenters.forEach(([ccx, ccz]) => {
+        for (let x = ccx - 10.5; x <= ccx + 10.5; x += 2.2) {
+            tuftCoords.push([x + (tRnd() - 0.5) * 0.7, ccz + 5.05 + tRnd() * 0.45, 0.7 + tRnd() * 0.45]);
+            tuftCoords.push([x + (tRnd() - 0.5) * 0.7, ccz - 5.05 - tRnd() * 0.45, 0.7 + tRnd() * 0.45]);
+        }
+    });
+    for (let i = 0; i < 26; i += 1) {
+        const tp = treePlacements[i];
+        tuftCoords.push([tp[0] + 0.45, tp[1] - 0.35, 0.95]);
+        tuftCoords.push([tp[0] - 0.42, tp[1] + 0.40, 0.88]);
+    }
+
+    const tuftInst = new THREE.InstancedMesh(
+        tuftGeo,
+        new THREE.MeshStandardMaterial({
+            map: grassBladeTex,
+            color: 0x93a87b,
+            alphaTest: 0.40,
+            side: THREE.DoubleSide,
+            roughness: 0.95,
+            metalness: 0.0
+        }),
+        tuftCoords.length
+    );
+    tuftCoords.forEach(([gx, gz, sc], idx) => {
+        fDummy.position.set(gx, farmTerrainHeightAt(gx, gz) - 0.02, gz);
+        fDummy.rotation.set(0, idx * 2.1, 0);
+        fDummy.scale.set(sc, sc * (0.85 + (idx % 3) * 0.14), sc);
+        fDummy.updateMatrix();
+        tuftInst.setMatrixAt(idx, fDummy.matrix);
+    });
+    tuftInst.instanceMatrix.needsUpdate = true;
+    envGroup.add(tuftInst);
+
+    scene3D.add(envGroup);
+}
+
 function buildKandang3DScene() {
+    // Bangun lanskap peternakan asli terlebih dahulu di sekeliling kandang utama
+    buildFarmEnvironment3D();
+
     // =====================================================================
     // KOORDINAT ARSITEKTUR KANDANG:
     // Y=0: Lantai, Y=3.60: Tepi Atap/Kolom, Y=4.85: Nok Bubungan Puncak Atap
@@ -2855,98 +4195,163 @@ function buildKandang3DScene() {
     // Dinding Ujung (X = ±9.9): Portal rangka baja terbuka (lorong bebas pandang)
     // Atap: Pelana galvalum simetris rapi (kemiringan ~18.6°)
     // Sprinkler: Pipa nok luar Y=5.02, partikel 100% meluncur di permukaan seng luar
-    // Kipas Blower: Gantung dari plafon di Y=3.0, berputar di atas lorong
+    // Kipas Blower: Gantung dari plafon di Y=3.2, berputar di atas lorong
     // =====================================================================
 
-    // A. Lantai beton krem kasar + garis drainase tengah
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0xd4c9a8, roughness: 0.95, metalness: 0.02 });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(22, 9.5), floorMat);
+    // A. Lantai beton abu-krem bertekstur agregat & bump halus + sambungan dilatasi tiap 3m + garis drainase tengah
+    const slabTex = createFarmCanvasTexture(512, (ctx, S, rnd) => {
+        ctx.fillStyle = '#a29a8a';
+        ctx.fillRect(0, 0, S, S);
+        for (let i = 0; i < 8500; i += 1) {
+            const d = 136 + Math.floor(rnd() * 38);
+            ctx.fillStyle = 'rgb(' + d + ',' + (d - 5) + ',' + (d - 13) + ')';
+            ctx.fillRect(rnd() * S, rnd() * S, 2, 2);
+        }
+        for (let i = 0; i < 55; i += 1) {
+            ctx.fillStyle = 'rgba(78, 72, 62, 0.08)';
+            ctx.beginPath();
+            ctx.arc(rnd() * S, rnd() * S, 12 + rnd() * 26, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.strokeStyle = 'rgba(62, 57, 48, 0.36)';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(1.5, 1.5, S - 3, S - 3);
+    }, 7, 3);
+    const floorMat = new THREE.MeshStandardMaterial({
+        map: slabTex,
+        bumpMap: slabTex,
+        bumpScale: 0.012,
+        roughness: 0.92,
+        metalness: 0.02
+    });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(22.2, 9.6), floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene3D.add(floor);
 
-    const drainLine = new THREE.Mesh(
-        new THREE.BoxGeometry(22, 0.02, 0.12),
-        new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.9 })
-    );
+    const drainMat = new THREE.MeshStandardMaterial({ color: 0x646c76, roughness: 0.9 });
+    const drainLine = new THREE.Mesh(new THREE.BoxGeometry(22.2, 0.02, 0.12), drainMat);
     drainLine.position.y = 0.011;
     scene3D.add(drainLine);
 
     // B. Dinding Kandang:
-    // Sisi Belakang (Z = -3.6): Tembok batako rendah (0.45m)
-    // Sisi Depan (Z = +3.6): 100% TERBUKA TANPA TEMBOK (sesuai instruksi agar dalam kandang terlihat jelas)
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+    // Sisi Belakang (Z = -3.6): Tembok batako plester abu-tua rendah (0.45m)
+    // Sisi Depan (Z = +3.6): 100% TERBUKA TANPA TEMBOK (agar dalam kandang terlihat jelas)
+    const wallMat = new THREE.MeshStandardMaterial({
+        map: slabTex,
+        color: 0x68737e,
+        bumpMap: slabTex,
+        bumpScale: 0.018,
+        roughness: 0.88
+    });
     const wallBack = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.45, 0.15), wallMat);
     wallBack.position.set(0, 0.225, -3.6);
+    wallBack.castShadow = true;
+    wallBack.receiveShadow = true;
     scene3D.add(wallBack);
 
-    // C. Kolom Tiang Baja Ringan (Tinggi 3.6m per interval 3m sepanjang lorong)
-    const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.75, roughness: 0.25 });
+    // C. Kolom Tiang Baja Galvanis + Plat Tapak Angkur (Baseplate) per interval 3m sepanjang lorong
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0x9aa6b5, metalness: 0.74, roughness: 0.27 });
+    const basePlateGeo = new THREE.BoxGeometry(0.22, 0.024, 0.22);
     const colPositions = [-9, -6, -3, 0, 3, 6, 9];
     for (const cx of colPositions) {
-        // Kolom Kiri (Belakang)
-        const cL = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 3.6), steelMat);
+        const cL = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 3.6, 12), steelMat);
         cL.position.set(cx, 1.8, -3.5);
         cL.castShadow = true;
         scene3D.add(cL);
+        const bpL = new THREE.Mesh(basePlateGeo, steelMat);
+        bpL.position.set(cx, 0.012, -3.5);
+        scene3D.add(bpL);
 
-        // Kolom Kanan (Depan - tetap ada tiang rangka penopang atap, tapi tanpa tembok)
-        const cR = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 3.6), steelMat);
+        const cR = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 3.6, 12), steelMat);
         cR.position.set(cx, 1.8, 3.5);
         cR.castShadow = true;
         scene3D.add(cR);
+        const bpR = new THREE.Mesh(basePlateGeo, steelMat);
+        bpR.position.set(cx, 0.012, 3.5);
+        scene3D.add(bpR);
     }
 
-    // D. ATAP PELANA GALVALUM RAPI & SIMETRIS (Kemiringan ~18.6°)
-    // Puncak Nok (Ridge): Y = 4.85, Z = 0
-    // Tepi Luar (Eave):   Y = 3.60, Z = ±3.7 (overhang 20cm dari kolom)
-    // Panjang Atap:      X = -10.2 s/d +10.2
+    // D. ATAP PELANA SENG GALVALUM BERGELOMBANG RAPI & SIMETRIS (Kemiringan ~18.6°)
+    const galvalumTex = createFarmCanvasTexture(256, (ctx, S, rnd) => {
+        ctx.fillStyle = '#aeb8c2';
+        ctx.fillRect(0, 0, S, S);
+        for (let x = 0; x < S; x += 8) {
+            const g = ctx.createLinearGradient(x, 0, x + 8, 0);
+            g.addColorStop(0.0, 'rgba(30, 41, 59, 0.22)');
+            g.addColorStop(0.45, 'rgba(255, 255, 255, 0.20)');
+            g.addColorStop(1.0, 'rgba(30, 41, 59, 0.22)');
+            ctx.fillStyle = g;
+            ctx.fillRect(x, 0, 8, S);
+        }
+        // Garis sambungan lembaran seng & sedikit patina cuaca alami
+        ctx.strokeStyle = 'rgba(51, 65, 85, 0.26)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, S * 0.5); ctx.lineTo(S, S * 0.5); ctx.stroke();
+        for (let i = 0; i < 400; i += 1) {
+            ctx.fillStyle = 'rgba(90, 96, 102, 0.07)';
+            ctx.fillRect(rnd() * S, rnd() * S, 4, 6);
+        }
+    }, 22, 3);
+
     const roofMat = new THREE.MeshStandardMaterial({
-        color: 0x8d9ea8, // Abu metalik seng galvalum
-        metalness: 0.88,
-        roughness: 0.28,
+        map: galvalumTex,
+        bumpMap: galvalumTex,
+        bumpScale: 0.018,
+        color: 0xb6c2cf,
+        metalness: 0.56,
+        roughness: 0.33,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.38,
+        opacity: 0.44,
         depthWrite: false
     });
 
-    // Helper untuk membuat bidang atap miring presisi matematis via BufferGeometry
+    // Helper untuk membuat bidang atap miring presisi matematis lengkap dengan UV tekstur gelombang seng
     function createSlopedRoofMesh(xMin, xMax, yRidge, zRidge, yEave, zEave, mat) {
         const geo = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            // Segitiga 1
             xMin, yRidge, zRidge,
             xMax, yEave,  zEave,
             xMax, yRidge, zRidge,
-            // Segitiga 2
             xMin, yRidge, zRidge,
             xMin, yEave,  zEave,
             xMax, yEave,  zEave
         ]);
+        const uvs = new Float32Array([
+            0, 1,
+            1, 0,
+            1, 1,
+            0, 1,
+            0, 0,
+            1, 0
+        ]);
         geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
         geo.computeVertexNormals();
         return new THREE.Mesh(geo, mat);
     }
 
-    // Bidang Atap Kiri (Belakang)
     const roofL = createSlopedRoofMesh(-10.2, 10.2, 4.85, 0, 3.60, -3.7, roofMat);
     scene3D.add(roofL);
 
-    // Bidang Atap Kanan (Depan)
     const roofR = createSlopedRoofMesh(-10.2, 10.2, 4.85, 0, 3.60, 3.7, roofMat);
     scene3D.add(roofR);
 
-    // Nok Penutup Bubungan (Ridge Cap) di puncak Y = 4.88
-    const ridgeCap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.12, 20.4, 8),
-        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85, roughness: 0.25 })
-    );
+    // Gording Baja Memanjang (C-Purlins) di Bawah Seng Atap
+    [-2.75, -1.55, 1.55, 2.75].forEach((pz) => {
+        const py = 4.85 - (1.25 / 3.7) * Math.abs(pz) - 0.035;
+        const purlin = new THREE.Mesh(new THREE.BoxGeometry(20.3, 0.04, 0.04), steelMat);
+        purlin.position.set(0, py, pz);
+        scene3D.add(purlin);
+    });
+
+    const ridgeCapMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.82, roughness: 0.26 });
+    const ridgeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 20.4, 10), ridgeCapMat);
     ridgeCap.rotation.z = Math.PI / 2;
     ridgeCap.position.set(0, 4.88, 0);
     scene3D.add(ridgeCap);
 
-    // Lisplang / Fascia Trim di tepi seng bawah
     const fasciaL = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.08, 0.04), steelMat);
     fasciaL.position.set(0, 3.60, -3.7);
     scene3D.add(fasciaL);
@@ -3407,6 +4812,7 @@ function buildKandang3DScene() {
     // Lampu LED plafon (visual) tiap 3m
     const bulbGeo = new THREE.SphereGeometry(0.055, 8, 6);
     const bulbMat = new THREE.MeshStandardMaterial({ color: 0xfff9e0, emissive: 0xffe066, emissiveIntensity: 1.2 });
+    coopBulbMat = bulbMat;
     for (let bx = -9; bx <= 9; bx += 3) {
         const bulb = new THREE.Mesh(bulbGeo, bulbMat);
         bulb.position.set(bx, 3.45, 0);
@@ -3622,22 +5028,6 @@ function buildKandang3DScene() {
     lblDHT.position.set(0, 1.72, -1.33);
     iotLabelsGroup.add(lblDHT);
 
-    // Sensor MQ-137 (Gas Amonia di Zona Kotoran Bawah)
-    const mq137Group = new THREE.Group();
-    mq137Group.position.set(0, 0.28, -1.33);
-    const mqPcb = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.015, 0.08),
-        new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
-    mq137Group.add(mqPcb);
-    const mqMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.045, 12),
-        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 }));
-    mqMesh.position.y = 0.03;
-    mq137Group.add(mqMesh);
-    scene3D.add(mq137Group);
-
-    const lblMQ = createBadgeSprite('Sensor Amonia MQ-137', '#8b5cf6', '');
-    lblMQ.position.set(0, 0.62, -1.33);
-    iotLabelsGroup.add(lblMQ);
-
     // 6. Label Kipas Blower Sirkulasi
     const lblFan = createBadgeSprite('Blower Sirkulasi 12V', '#38bdf8', '');
     lblFan.position.set(0, 3.65, 0);
@@ -3815,6 +5205,324 @@ function buildKandang3DScene() {
     createCeilingFanUnit( 9.6, 3.2, 0, true); // Exhaust ujung portal
     fixFanRendering();
 
+    // I2. Bangun Deretan Kandang Tetangga Kembar Identik (Unit 2, Unit 3, & Unit 4)
+    // Seluruh arsitektur, rangka kuda-kuda, sangkar baterai 2 tingkat, talang kuning, rel kereta pakan,
+    // kipas sirkulasi, tandon sprinkler, silo auger, dan ayam GLB di dalamnya SAMA PERSIS dengan Kandang 1!
+    (function buildIdenticalNeighborCoops() {
+        const envRoot = scene3D.getObjectByName('FarmEnvironment3D');
+        if (!envRoot) return;
+        const sm = envRoot.userData.sharedMats;
+        const twinUnits = [
+            { x: 0,     z: -13.6, cartX:  2.6, cartDir:  1, henStride: 2 }, // Kandang Unit 2 (sebelah persis Kandang 1)
+            { x: 0,     z: -27.2, cartX: -3.8, cartDir: -1, henStride: 2 }, // Kandang Unit 3 (baris ketiga paralel)
+            { x: -32.8, z: -13.6, cartX:  0.4, cartDir:  1, henStride: 3 }  // Kandang Unit 4 (seberang jalan barat)
+        ];
+
+        // Atap galvalum bergelombang kembar (sedikit lebih solid dari cutaway aktif namun tetap memperlihatkan rangka & sangkar)
+        const twinRoofMat = new THREE.MeshStandardMaterial({
+            map: galvalumTex,
+            bumpMap: galvalumTex,
+            bumpScale: 0.022,
+            color: 0xb2becb,
+            metalness: 0.58,
+            roughness: 0.34,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.72,
+            depthWrite: false
+        });
+
+        // InstancedMesh gabungan untuk 3 kandang kembar (3 x 36 = 108 modul sangkar kawat + 324 bingkai keyhole + 108 talang kuning)
+        const modulesPerCoop = CAGE_CONFIG.sides.length * CAGE_CONFIG.columnXs.length * CAGE_CONFIG.tierCenterYs.length;
+        const totalTwinModules = twinUnits.length * modulesPerCoop;
+        const totalTwinHoles = totalTwinModules * CAGE_CONFIG.chickensPerCage;
+
+        const twinCageWireInst = new THREE.InstancedMesh(cageWireInst.geometry.clone(), cageWireSolidMat, totalTwinModules);
+        const twinHoleFrameInst = new THREE.InstancedMesh(feedHoleFrameInst.geometry.clone(), keyholeFrameMat, totalTwinHoles);
+        const twinTroughInst = new THREE.InstancedMesh(new THREE.BoxGeometry(1.9, 0.1, 0.25), troughMat, totalTwinModules);
+        twinCageWireInst.receiveShadow = true;
+        twinTroughInst.receiveShadow = true;
+        envRoot.add(twinCageWireInst);
+        envRoot.add(twinHoleFrameInst);
+        envRoot.add(twinTroughInst);
+
+        const EA = getEggAssets();
+        const fanRingMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.25 });
+        const fanBladeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.2, roughness: 0.4 });
+        const stAMat = new THREE.MeshStandardMaterial({ color: 0x10b981 });
+        const stBMat = new THREE.MeshStandardMaterial({ color: 0xef4444 });
+        const motorMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.3 });
+        const torenBlueMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 });
+
+        let mCur = 0;
+        let hCur = 0;
+        let tCur = 0;
+        const dm = new THREE.Object3D();
+        const henDummy = new THREE.Object3D();
+
+        // InstancedMesh baja struktural gabungan (kolom, kuda-kuda, gording, rangka A) agar draw call super hemat
+        const steelBoxMatrices = [];
+        const steelCylMatrices = [];
+        const addBoxM = (px, py, pz, sx, sy, sz, rx = 0) => {
+            dm.position.set(px, py, pz);
+            dm.rotation.set(rx, 0, 0);
+            dm.scale.set(sx, sy, sz);
+            dm.updateMatrix();
+            steelBoxMatrices.push(dm.matrix.clone());
+        };
+        const addCylM = (px, py, pz, r, len, rx = 0, rz = 0) => {
+            dm.position.set(px, py, pz);
+            dm.rotation.set(rx, 0, rz);
+            dm.scale.set(r, len, r);
+            dm.updateMatrix();
+            steelCylMatrices.push(dm.matrix.clone());
+        };
+
+        twinUnits.forEach((unit, uIdx) => {
+            const ug = new THREE.Group();
+            ug.position.set(unit.x, 0, unit.z);
+
+            // 1. Skirt AO tanah, plint beton, parit drainase cucuran atap, lantai beton, & garis drainase tengah
+            const aoSkirt = new THREE.Mesh(new THREE.PlaneGeometry(24.4, 11.6), sm.aoSkirtMat);
+            aoSkirt.rotation.x = -Math.PI / 2;
+            aoSkirt.position.y = -0.083;
+            ug.add(aoSkirt);
+
+            const uPlinth = new THREE.Mesh(new THREE.BoxGeometry(22.6, 0.11, 9.9), sm.kerbMat);
+            uPlinth.position.y = -0.058;
+            uPlinth.receiveShadow = true;
+            ug.add(uPlinth);
+
+            [-4.52, 4.52].forEach((dz) => {
+                const db = new THREE.Mesh(new THREE.BoxGeometry(22.4, 0.04, 0.42), sm.ditchWaterMat);
+                db.position.set(0, -0.082, dz);
+                ug.add(db);
+                [-0.22, 0.22].forEach((off) => {
+                    const lip = new THREE.Mesh(new THREE.BoxGeometry(22.4, 0.09, 0.07), sm.ditchWallMat);
+                    lip.position.set(0, -0.055, dz + off);
+                    ug.add(lip);
+                });
+            });
+
+            const uFloor = new THREE.Mesh(new THREE.PlaneGeometry(22.2, 9.6), floorMat);
+            uFloor.rotation.x = -Math.PI / 2;
+            uFloor.receiveShadow = true;
+            ug.add(uFloor);
+
+            const uDrain = new THREE.Mesh(new THREE.BoxGeometry(22.2, 0.02, 0.12), drainMat);
+            uDrain.position.y = 0.011;
+            ug.add(uDrain);
+
+            // 2. Curb wall belakang rendah (0.45m), kolom baja + baseplate, kuda-kuda, gording, atap galvalum, nok, & pipa sprinkler
+            const uWallBack = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.45, 0.15), wallMat);
+            uWallBack.position.set(0, 0.225, -3.6);
+            uWallBack.castShadow = true;
+            uWallBack.receiveShadow = true;
+            ug.add(uWallBack);
+
+            const rafLen = Math.hypot(1.25, 3.5);
+            const rafAng = Math.atan2(3.5, -1.25);
+            for (const cx of colPositions) {
+                const wx = unit.x + cx;
+                [-3.5, 3.5].forEach((cz) => {
+                    addCylM(wx, 1.8, unit.z + cz, 0.065, 3.6, 0, 0);
+                    addBoxM(wx, 0.012, unit.z + cz, 0.22, 0.024, 0.22);
+                });
+                addBoxM(wx, 3.60, unit.z, 0.05, 0.05, 7.0);
+                addBoxM(wx, 4.225, unit.z, 0.04, 1.25, 0.04);
+                addCylM(wx, 4.225, unit.z - 1.75, 0.035, rafLen, -rafAng, 0);
+                addCylM(wx, 4.225, unit.z + 1.75, 0.035, rafLen,  rafAng, 0);
+                addBoxM(wx, 2.9, unit.z, 0.03, 0.6, 0.84);
+            }
+
+            [-2.75, -1.55, 1.55, 2.75].forEach((pz) => {
+                const py = 4.85 - (1.25 / 3.7) * Math.abs(pz) - 0.035;
+                addBoxM(unit.x, py, unit.z + pz, 20.3, 0.04, 0.04);
+            });
+
+            ug.add(createSlopedRoofMesh(-10.2, 10.2, 4.85, 0, 3.60, -3.7, twinRoofMat));
+            ug.add(createSlopedRoofMesh(-10.2, 10.2, 4.85, 0, 3.60,  3.7, twinRoofMat));
+
+            const uRidge = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 20.4, 8), ridgeCapMat);
+            uRidge.rotation.z = Math.PI / 2;
+            uRidge.position.set(0, 4.88, 0);
+            ug.add(uRidge);
+
+            [-3.7, 3.7].forEach((fz) => {
+                addBoxM(unit.x, 3.60, unit.z + fz, 20.4, 0.08, 0.04);
+            });
+            addCylM(unit.x, 5.02, unit.z, 0.03, 20.4, 0, Math.PI / 2);
+
+            // Tandon air biru & pipa riser sprinkler identik di belakang pangkal (-8.8, -4.0)
+            const uToren = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.96, 14), torenBlueMat);
+            uToren.position.set(-8.8, 0.48, -4.0);
+            uToren.castShadow = true;
+            ug.add(uToren);
+            addCylM(unit.x - 8.8, 2.58, unit.z - 3.48, 0.025, 4.88, 0, 0);
+
+            // 3. Rangka A, sangkar baterai 2 tingkat, talang pakan kuning, sabuk kotoran, sabuk telur, & bak pengumpul telur
+            const cageFront = CAGE_CONFIG.cageCenterZ - CAGE_CONFIG.cageSize.d / 2;
+            const bs = EGG_COLLECTOR.basketSize;
+            CAGE_CONFIG.sides.forEach((side) => {
+                const zNear = side * 1.3;
+                const zFar = side * 2.85;
+                const braceLen = Math.hypot(zFar - zNear, 1.9);
+                const braceAng = -Math.atan2(1.9, zFar - zNear);
+                for (let fx = -9; fx <= 9; fx += 2) {
+                    const wfx = unit.x + fx;
+                    addBoxM(wfx, 1.05, unit.z + zNear, 0.05, 2.1, 0.05);
+                    addBoxM(wfx, 1.05, unit.z + zFar,  0.05, 2.1, 0.05);
+                    addBoxM(wfx, 2.05, unit.z + (zNear + zFar) / 2, 0.04, 0.04, Math.abs(zFar - zNear));
+                    addBoxM(wfx, 1.05, unit.z + (zNear + zFar) / 2, 0.03, 0.03, braceLen, braceAng);
+                }
+                CAGE_CONFIG.tierCenterYs.forEach((cy) => {
+                    const floorY = cy - CAGE_CONFIG.cageSize.h / 2;
+                    const drk = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 17.6, 6), drinkerMat);
+                    drk.rotation.z = Math.PI / 2;
+                    drk.position.set(0, floorY + 0.52, side * 2.58);
+                    ug.add(drk);
+
+                    const mBelt = new THREE.Mesh(new THREE.BoxGeometry(17.7, 0.012, 1.18), manureMat);
+                    mBelt.position.set(0, floorY - 0.035, side * 2.18);
+                    ug.add(mBelt);
+
+                    const beltZ = side * EGG_PATH.beltZ;
+                    const beltY = cageBeltTopY(floorY);
+                    const beltLen = EGG_PATH.beltEndX - EGG_PATH.beltStartX;
+                    const eBelt = new THREE.Mesh(new THREE.BoxGeometry(beltLen, 0.014, 0.12), EA.beltMat);
+                    eBelt.position.set((EGG_PATH.beltStartX + EGG_PATH.beltEndX) / 2, beltY - 0.007, beltZ);
+                    ug.add(eBelt);
+
+                    const colTray = new THREE.Mesh(new THREE.BoxGeometry(bs.w, bs.h, bs.d), EA.trayMat);
+                    colTray.position.set(EGG_COLLECTOR.x, beltY - EGG_COLLECTOR.dropDepth + bs.h / 2 - 0.008, beltZ);
+                    ug.add(colTray);
+                });
+
+                CAGE_CONFIG.columnXs.forEach((cx, colIdx) => {
+                    CAGE_CONFIG.tierCenterYs.forEach((cy) => {
+                        const floorY = cy - CAGE_CONFIG.cageSize.h / 2;
+                        const rotY = side === -1 ? 0 : Math.PI;
+
+                        dm.position.set(unit.x + cx, cy, unit.z + side * CAGE_CONFIG.cageCenterZ);
+                        dm.rotation.set(0, rotY, 0);
+                        dm.scale.set(1, 1, 1);
+                        dm.updateMatrix();
+                        twinCageWireInst.setMatrixAt(mCur++, dm.matrix);
+
+                        for (let k = 0; k < FEED_HOLE.slotXs.length; k += 1) {
+                            dm.position.set(unit.x + cx + FEED_HOLE.slotXs[k], floorY + FEED_HOLE.bottomOffset, unit.z + side * cageFront);
+                            dm.rotation.set(0, rotY, 0);
+                            dm.updateMatrix();
+                            twinHoleFrameInst.setMatrixAt(hCur++, dm.matrix);
+
+                            // Isi sangkar kandang tetangga dengan ayam GLB asli (hemat poligon via stride merata)
+                            if (((colIdx + k + uIdx) % unit.henStride) === 0) {
+                                const isFeedingPose = Math.abs(cx - unit.cartX) < 2.2;
+                                const absZ = isFeedingPose ? (cageFront + 0.14) : (1.88 + (k % 2) * 0.28);
+                                const hy = cageFloorHeightAtAbsZ(floorY, absZ);
+                                henDummy.position.set(unit.x + cx + FEED_HOLE.slotXs[k], hy, unit.z + side * absZ);
+                                henDummy.rotation.set(0, rotY + (isFeedingPose ? 0 : ((colIdx - 4) * 0.06)), 0);
+                                henDummy.scale.set(1, 1, 1);
+                                henDummy.updateMatrix();
+                                neighborHenSlots.push({
+                                    matrix: henDummy.matrix.clone(),
+                                    phase: (uIdx * 2.1) + colIdx * 0.85 + k * 1.4 + (side > 0 ? 0.9 : 0),
+                                    pitchBase: isFeedingPose ? 0.22 : (0.04 * (k - 1)),
+                                    reachBase: isFeedingPose ? 0.05 : 0.0,
+                                    isFeederNear: isFeedingPose
+                                });
+                            }
+                        }
+
+                        dm.position.set(unit.x + cx, floorY, unit.z + side * CAGE_CONFIG.troughZ);
+                        dm.rotation.set(0, 0, 0);
+                        dm.updateMatrix();
+                        twinTroughInst.setMatrixAt(tCur++, dm.matrix);
+                    });
+                });
+            });
+
+            // 4. Rel Kereta Pakan, Stasiun Motor Hijau/Pulley Merah, Kereta Hopper Biru, & 5 Kipas Blower Sirkulasi
+            [-0.42, 0.42].forEach((rz) => {
+                const rMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 19, 8), railMat);
+                rMesh.rotation.z = Math.PI / 2;
+                rMesh.position.set(0, 2.6, rz);
+                ug.add(rMesh);
+            });
+            const uStA = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.6, 10), stAMat);
+            uStA.position.set(-8.5, 1.3, 0);
+            ug.add(uStA);
+            const uMtr = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.38), motorMat);
+            uMtr.position.set(-8.5, 2.6, 0);
+            ug.add(uMtr);
+            const uStB = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.6, 10), stBMat);
+            uStB.position.set(8.5, 1.3, 0);
+            ug.add(uStB);
+
+            const twinCart = new THREE.Group();
+            [-1.32, 1.32].forEach((cz) => {
+                [-0.22, 0.22].forEach((lx) => {
+                    const post = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 0.04), ladderMat);
+                    post.position.set(lx, 1.1, cz);
+                    twinCart.add(post);
+                });
+                const hTop = createBlueHopperUnit();
+                hTop.position.set(0, 1.58, cz);
+                twinCart.add(hTop);
+                const hBot = createBlueHopperUnit();
+                hBot.position.set(0, 0.70, cz);
+                twinCart.add(hBot);
+            });
+            const cBridge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 2.64), ladderMat);
+            cBridge.position.set(0, 2.25, 0);
+            twinCart.add(cBridge);
+            const cHanger = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.32, 0.84), ladderMat);
+            cHanger.position.set(0, 2.55, 0);
+            twinCart.add(cHanger);
+            twinCart.position.x = unit.cartX;
+            ug.add(twinCart);
+            neighborCarts.push({ mesh: twinCart, dir: unit.cartDir });
+
+            [-6.75, -2.25, 2.25, 6.75, 9.6].forEach((fx, fIdx) => {
+                const R = fIdx === 4 ? 0.42 : 0.38;
+                const fg = new THREE.Group();
+                fg.position.set(fx, 3.2, 0);
+                fg.rotation.y = Math.PI / 2;
+                fg.add(new THREE.Mesh(new THREE.TorusGeometry(R, 0.045, 8, 20), fanRingMat));
+                const blades = new THREE.Group();
+                for (let bi = 0; bi < 4; bi += 1) {
+                    const bl = new THREE.Mesh(new THREE.BoxGeometry(0.10, R * 0.85, 0.016), fanBladeMat);
+                    const ang = (Math.PI / 2) * bi;
+                    bl.rotation.z = ang;
+                    bl.position.set(Math.cos(ang + Math.PI / 4) * R * 0.4, Math.sin(ang + Math.PI / 4) * R * 0.4, 0);
+                    blades.add(bl);
+                }
+                fg.add(blades);
+                ug.add(fg);
+                neighborFanBlades.push(blades);
+            });
+
+            // 5. Menara Silo Pakan Galvanis + Pipa Ulir Auger tersendiri untuk masing-masing unit kandang kembar
+            envRoot.add(createRealisticFeedSilo(unit.x - 12.35, unit.z - 2.05, sm.siloSharedMats, true));
+            envRoot.add(ug);
+        });
+
+        const twinSteelBoxInst = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), steelMat, steelBoxMatrices.length);
+        const twinSteelCylInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 10), steelMat, steelCylMatrices.length);
+        twinSteelBoxInst.castShadow = true;
+        twinSteelCylInst.castShadow = true;
+        steelBoxMatrices.forEach((m, i) => twinSteelBoxInst.setMatrixAt(i, m));
+        steelCylMatrices.forEach((m, i) => twinSteelCylInst.setMatrixAt(i, m));
+        twinSteelBoxInst.instanceMatrix.needsUpdate = true;
+        twinSteelCylInst.instanceMatrix.needsUpdate = true;
+        envRoot.add(twinSteelBoxInst);
+        envRoot.add(twinSteelCylInst);
+
+        twinCageWireInst.instanceMatrix.needsUpdate = true;
+        twinHoleFrameInst.instanceMatrix.needsUpdate = true;
+        twinTroughInst.instanceMatrix.needsUpdate = true;
+    })();
+
     // J. Partikel Air Sprinkler MURNI DI LUAR ATAP (Puncak Y=4.88 meluncur ke Eaves Y=3.60)
     const particleCount = 300;
     const waterGeo = new THREE.BufferGeometry();
@@ -3832,7 +5540,7 @@ function buildKandang3DScene() {
         waterPos[i + 2] = z;
     }
     waterGeo.setAttribute('position', new THREE.BufferAttribute(waterPos, 3));
-    const waterMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.14, transparent: true, opacity: 0.9 });
+    const waterMat = new THREE.PointsMaterial({ color: 0x0284c7, size: 0.16, transparent: true, opacity: 0.94 });
     roofWaterParticles3D = new THREE.Points(waterGeo, waterMat);
     roofWaterParticles3D.visible = false;
     scene3D.add(roofWaterParticles3D);
@@ -3946,13 +5654,30 @@ function animateThreeJS() {
     const frameNowMs = performance.now();
     const frameDt = lastFrameTimeMs ? Math.min((frameNowMs - lastFrameTimeMs) / 1000, 0.05) : 0.016;
     lastFrameTimeMs = frameNowMs;
+    if (farmSkyUniforms) {
+        farmSkyUniforms.uTime.value += frameDt;
+    }
     updateChickenStates(frameDt, frameNowMs);
     updateEggRoll(frameDt);
 
-    // 3. Animasi Seluruh Kipas Blower Atas Berputar Bersama
+    // 3. Animasi Seluruh Kipas Blower Atas & Kandang Tetangga
     if (isFanSpinning3D && fanBladesList.length > 0) {
         for (let i = 0; i < fanBladesList.length; i++) {
             fanBladesList[i].rotation.z += 0.35; // Putaran kencang serempak
+        }
+    }
+    if (neighborFanBlades.length > 0) {
+        const nbSpin = isFanSpinning3D ? 0.32 : 0.09;
+        for (let i = 0; i < neighborFanBlades.length; i++) {
+            neighborFanBlades[i].rotation.z += nbSpin;
+        }
+    }
+    if (isFeederRunning3D && neighborCarts.length > 0) {
+        for (let i = 0; i < neighborCarts.length; i++) {
+            const nc = neighborCarts[i];
+            nc.mesh.position.x += 0.032 * nc.dir;
+            if (nc.mesh.position.x >= FEEDER_LIMIT_B) { nc.mesh.position.x = FEEDER_LIMIT_B; nc.dir = -1; }
+            if (nc.mesh.position.x <= FEEDER_LIMIT_A) { nc.mesh.position.x = FEEDER_LIMIT_A; nc.dir = 1; }
         }
     }
 
@@ -4227,7 +5952,10 @@ window.syncKandang3DState = function(state) {
     }
 
     if (state.lampu !== undefined) {
-                ceilingLights.forEach((pl) => { pl.intensity = state.lampu ? 1.2 : 0.25; });
+        ceilingLights.forEach((pl) => { pl.intensity = state.lampu ? 0.62 : 0.14; });
+        if (coopBulbMat) {
+            coopBulbMat.emissiveIntensity = state.lampu ? 1.2 : 0.12;
+        }
     }
 
     // Hanya override kereta pakan jika pengguna TIDAK sedang mengaktifkan gerak simulasi manual
@@ -4267,11 +5995,20 @@ function disposeKandang3D() {
                 Object.keys(m).forEach((k) => { if (m[k] && m[k].isTexture) m[k].dispose(); });
                 m.dispose();
             });
+            if (o.customDepthMaterial) {
+                o.customDepthMaterial.dispose();
+            }
             if (o.isInstancedMesh && typeof o.dispose === 'function') {
                 o.dispose();
             }
         });
     }
+    if (farmEnvRT) {
+        farmEnvRT.dispose();
+        farmEnvRT = null;
+    }
+    farmSkyUniforms = null;
+    coopBulbMat = null;
     EGG_COLLECTOR.stations = [];
     disposeProcHenAssets();
     disposeEggAssets();
@@ -4289,6 +6026,9 @@ function disposeKandang3D() {
     scene3D = null;
     camera3D = null;
     chickensList = [];
+    neighborHenSlots = [];
+    neighborFanBlades = [];
+    neighborCarts = [];
     feedTroughs = [];
     eggPool = [];
     activeEggs = [];

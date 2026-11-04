@@ -1,83 +1,44 @@
-# 🌐 PANDUAN SIMULASI WOKWI TERBARU: SMART CLOSED-HOUSE IOT (RANSUMKU)
-**Inovasi:** Smart Closed-House & Travelling Hopper Feeder berbasis ESP32  
-**Inovator:** Aditya Ramadhani (SMKN 2 Surabaya)  
-**Platform:** RansumKu - Top 10 Finalis Lomba Inovasi Peternakan Nasional
+# Panduan Simulasi Wokwi: Maket Stik Es Krim & IoT RansumKu
+
+Simulasi ini sudah **disamakan 1:1** dengan rancangan final maket stik es krim (termasuk **Sakelar Utama di Titik 1**, **Lampu LED Hangat**, **Proteksi Kelembaban `RH >= 75%`**, dan **tanpa sensor bau/buzzer**).
 
 ---
 
-## 1. Fitur Unggulan Versi Terbaru (Versi Siap Demo Juri)
+## 1. Perbandingan Alat Fisik di Maket vs Perwakilan di Wokwi
 
-1. **⚡ Auto-Run Live Demo (Otomatis Berjalan Tanpa Ketik Apapun)**:
-   - Begitu tombol hijau **Play ▶** diklik, motor penarik pakan **langsung otomatis meluncur jalan**, relay kipas & misting atap langsung aktif, dan layar OLED langsung menyala!
-   - Sangat praktis saat presentasi di depan juri karena Anda tidak perlu repot mengetik perintah di Serial Monitor.
-2. **📟 Layar OLED Display 128x64 SSD1306**:
-   - Menampilkan telemetri *real-time*: Suhu (°C), Kelembaban (% RH), Indeks THI Ilmiah (Aman/Waspada/Kritis/Bahaya), Status Kipas, Status Sprinkler Atap, dan arah gerak kereta pakan.
-3. **🔄 Siklus Kereta Pakan Bolak-Balik Otomatis (*Auto-Shuttle Loop*)**:
-   - Motor servo berayun aktif menarik tali pakan maju dari **Pangkal A $\to$ Ujung B** (5 detik).
-   - Sampai di B, motor jeda 2 detik, lalu otomatis berputar balik mundur dari **Ujung B $\to$ Pangkal A** (5 detik).
-   - Siklus berulang otomatis terus-menerus.
-4. **💡 Lampu Indikator Relay Riil**:
-   - Terminal `COM` relay terhubung ke 5V sehingga **LED Cyan (Kipas)** dan **LED Biru (Sprinkler Atap)** menyala terang saat relay aktif.
-5. **🧮 Formula THI Ilmiah NRC / Zulovich & DeShazer (1990)**:
-   $$THI = 0.8 \times T + \frac{RH}{100} \times (T - 14.4) + 46.4$$
-   Formula ini **100% identik dan selaras** dengan sistem kalkulasi web RansumKu.
+Karena Wokwi adalah simulator elektronik di browser, komponen mekanik/air diwakili oleh modul elektronik pada **nomor pin GPIO ESP32 yang 100% sama**:
 
----
-
-## 2. Cara Menjalankan Simulasi di Wokwi (Hanya 1 Menit)
-
-1. Buka browser dan kunjungi: **[https://wokwi.com/projects/new/esp32](https://wokwi.com/projects/new/esp32)**
-2. Salin 3 file dari folder `wokwi/` ke project Wokwi Anda:
-   * **Tab `diagram.json`:** Buka file `wokwi/diagram.json`, salin seluruh isinya, dan tempel ke tab `diagram.json` di Wokwi. *(Semua komponen, kabel rapi, OLED, servo, relay, dan sensor langsung muncul di layar)*.
-   * **Tab `sketch.ino`:** Buka file `wokwi/sketch.ino`, salin seluruh isinya, dan tempel ke tab `sketch.ino` di Wokwi.
-   * **Tab `Library Manager`:** Klik tab Library (ikon tumpukan buku di Wokwi) dan pastikan 4 library berikut terpasang (sesuai isi `wokwi/libraries.txt`):
-     ```text
-     DHT sensor library for ESPx
-     Adafruit SSD1306
-     Adafruit GFX Library
-     ESP32Servo
-     ```
-3. Klik tombol hijau **▶ (Play / Start Simulation)** di pojok atas!
+| Alat di Maket Stik Es Krim | Wujud di Wokwi (`diagram.json`) | Pin ESP32 | Cara Coba di Wokwi |
+| :--- | :--- | :--- | :--- |
+| **Sakelar Rocker Merah `ON/OFF` (Titik 1)** | `Slide Switch` (`Sakelar Utama ON/OFF`) | `GPIO 26` | Geser sakelar untuk mematikan/menyalakan seluruh maket & layar OLED. |
+| **Sensor Suhu & RH `DHT22`** | `DHT22` Putih | `GPIO 15` | Klik sensor lalu geser *slider* Suhu (`°C`) dan Humidity (`% RH`). |
+| **Layar `OLED 0.96"` I2C** | `OLED SSD1306 128x64` | `SDA 21`, `SCL 22` | Otomatis menampilkan Suhu, RH, `THI`, status alat, & arah pakan. |
+| **Driver `L298N` + Motor Kuning Katrol** | `Servo Motor` (`Motor Katrol Pakan`) | `GPIO 18` | Lengan motor berputar bolak-balik menarik kereta `A -> B` & `B -> A`. |
+| **2× Micro Limit Switch (`A` & `B`)** | 2× `Pushbutton` (Hijau = `A`, Merah = `B`) | `A: 33`, `B: 32` | Klik tombol saat motor jalan untuk menghentikan kereta seketika. |
+| **Relay Ch-1 + Kipas Plafon** | `Relay Module` + `LED Cyan` | `GPIO 12` | Menyala otomatis saat `Suhu >= 31°C` atau `THI >= 78`. |
+| **Relay Ch-2 + Pompa Sprinkler Atap** | `Relay Module` + `LED Biru` | `GPIO 14` | Menyala saat `THI >= 80`, dan **otomatis terkunci OFF bila `RH >= 75%`**. |
+| **Lampu LED Hangat Fotoperiode** | `LED Kuning` (`Lampu LED Hangat`) | `GPIO 27` | Menyala selama sistem aktif (fotoperiode ayam petelur). |
+| **Pipa & *Nipple Drinker* Ayam** | *(Tidak ada di Wokwi)* | Tanpa Listrik | Murni sistem gravitasi air (*fail-safe* 24 jam tanpa kabel). |
 
 ---
 
-## 3. Peta Komponen dalam Simulasi
+## 2. Cara Membuka & Menjalankan di Wokwi (1 Menit)
 
-```
-       [ SENSOR DHT22 ] (GPIO 15)           [ LAYAR OLED SSD1306 ] (I2C: 21, 22)      [ MOTOR SERVO PAKAN ] (GPIO 18)
-          Suhu & Kelembaban                    Monitor Telemetri & THI                   Winch Penarik Kereta Rel
-                 │                                      │                                      │
-                 └───────────────────────┬──────────────┴──────────────────────────────────────┘
-                                         │
-                               ┌─────────┴─────────┐
-                               │   ESP32 DEVKIT    │
-                               └─────────┬─────────┘
-                 ┌───────────────────────┼───────────────────────┐
-                 │                       │                       │
-          [RELAY KIPAS]           [RELAY SPRINKLER]        [LIMIT SWITCH]
-            (GPIO 12)               (GPIO 14)              (GPIO 32 & 33)
-                 │                       │                       │
-          LED Cyan Blower         LED Biru Misting Atap    Batas Pangkal A & Ujung B
-```
+1. Buka **[https://wokwi.com/projects/new/esp32](https://wokwi.com/projects/new/esp32)** di browser.
+2. Pada tab **`diagram.json`**, hapus isinya lalu *paste* seluruh isi file `wokwi/diagram.json`.
+3. Pada tab **`sketch.ino`**, hapus isinya lalu *paste* seluruh isi file `wokwi/sketch.ino`.
+4. Pada tab **Library Manager** (ikon tumpukan buku), pastikan 4 library sesuai `wokwi/libraries.txt` sudah ditambahkan:
+   - `DHT sensor library for ESPx`
+   - `Adafruit SSD1306`
+   - `Adafruit GFX Library`
+   - `ESP32Servo`
+5. Klik tombol hijau **Play ▶**!
 
 ---
 
-## 4. Skenario Pengujian Interaktif yang Bisa Dicoba
+## 3. Empat Pengujian Interaktif di Wokwi
 
-### Skenario 1: Demonstrasi Live Demo Otomatis (Default)
-- Cukup klik **Play ▶**.
-- Perhatikan **Motor Servo Pakan** di kanan atas langsung berputar bolak-balik menarik kereta.
-- Perhatikan **Layar OLED** di tengah menampilkan data suhu 33.5°C, THI 86.6 (BAHAYA), Kipas AKTIF, Atap NYEMPROT, dan status PAKAN MAJU/MUNDUR.
-- Perhatikan **LED Cyan (Kipas)** dan **LED Biru (Sprinkler Atap)** menyala terang membuktikan relay bekerja!
-
-### Skenario 2: Mengubah Suhu Lingkungan Secara Interaktif
-1. Klik sensor **DHT22** di pojok kiri atas.
-2. Geser slider suhu ke **28°C** (suhu sejuk):
-   - Layar OLED otomatis berubah menjadi `THI: 75.2 (WASPADA)`.
-   - Relay Kipas & Sprinkler otomatis mati (**OFF**), dan kedua LED padam untuk menghemat energi!
-3. Geser kembali suhu ke **35°C** (cuaca panas ekstrem):
-   - Kipas dan Sprinkler Atap langsung menyala kembali (**ON**)!
-
-### Skenario 3: Uji Tombol Limit Switch Mekanik
-1. Saat motor sedang bergerak maju, klik tombol hijau **Limit Switch Pangkal A** atau tombol merah **Limit Switch Ujung B**.
-2. Motor langsung berhenti seketika (*safety interlock*), membuktikan proteksi tabrakan mekanis bekerja 100%!
+1. **Tes Sakelar Utama Titik 1:** Klik `Sakelar Utama ON/OFF` di kiri tengah -> layar OLED langsung padam dan semua relay/motor berhenti. Klik lagi -> sistem menyala kembali.
+2. **Tes Cuaca Sejuk vs Panas:** Klik `DHT22`, turunkan suhu ke `28°C` -> Kipas & Pompa Sprinkler otomatis **OFF**. Naikkan ke `34°C` (`RH 65%`) -> Kipas & Pompa Sprinkler otomatis **ON**.
+3. **Tes Kunci Pengaman Lembap (`RH >= 75%`):** Pada suhu `34°C`, naikkan slider *Humidity* `DHT22` ke `80%` -> LED Biru `Pompa Sprinkler Atap` langsung **MATI** dan layar OLED menulis `Atp:LOCK-RH!` supaya kotoran ayam tidak basah/bau, sementara `Kipas Plafon` tetap **ON** mengeringkan udara!
+4. **Tes Limit Switch Rel Kereta Pakan:** Saat status pakan `MAJU (A->B)`, tekan tombol merah `Limit Switch Ujung B` -> motor langsung berhenti aman, jeda `2 detik`, lalu berbalik `MUNDUR (B->A)`.

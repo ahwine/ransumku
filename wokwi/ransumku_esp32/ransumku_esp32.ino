@@ -191,7 +191,8 @@ void updateAktuator() {
     if (suhu >= 31.0f || thi >= 78.0f) aktKipas = true;
     else if (suhu < 30.0f && thi < 76.0f) aktKipas = false;
 
-    if (suhu >= 33.0f || thi >= 80.0f) aktSprinkler = true;
+    if (curRH >= 75.0f) aktSprinkler = false; // Safety lock RH >= 75% cegah lembap/amonia
+    else if (suhu >= 33.0f || thi >= 80.0f) aktSprinkler = true;
     else if (suhu < 31.5f && thi < 78.0f) aktSprinkler = false;
   }
 
