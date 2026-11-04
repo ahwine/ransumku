@@ -54,103 +54,75 @@
         </div>
 
         @if (isset($weather))
-            {{-- 3. Card Cuaca Mikro Kandang + Indeks Stres Panas (THI) --}}
-            <div class="bg-white rounded-[24px] border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3.5">
-                {{-- Header Cuaca --}}
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-muted uppercase tracking-wider block">CUACA MIKRO KANDANG</span>
-                    <a href="{{ route('kontroler.index') }}" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold text-[#7e22ce] bg-[#f3e8ff] hover:bg-purple-100 transition shadow-2xs" title="Buka Kontroler & 3D Digital Twin">
-                        <span>Kontroler 3D</span>
-                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                    </a>
-                </div>
+            {{-- 3. Card Terpadu: Cuaca Mikro Kandang + Indeks Stres Panas (THI) Persis Gambar Referensi --}}
+            <div class="bg-white rounded-2xl border border-line p-4 shadow-2xs space-y-3.5">
+                {{-- Bagian Atas: Cuaca Mikro Kandang --}}
+                <div class="space-y-2.5">
+                    <span class="text-xs font-black text-ink block">Cuaca Mikro Kandang</span>
 
-                {{-- Suhu, Ilustrasi Cuaca, RH, & Angin --}}
-                <div class="flex items-center justify-between gap-2">
-                    <div>
-                        <div class="flex items-baseline gap-1">
-                            <span data-live-suhu class="text-3xl font-black text-ink tracking-tight transition-all duration-300">{{ $weather['suhu'] }}</span>
-                            <span class="text-base font-bold text-ink">°C</span>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-baseline gap-1">
+                                <span data-live-suhu class="text-3xl font-black text-ink tracking-tight transition-all duration-300">{{ $weather['suhu'] }}</span>
+                                <span class="text-xl font-bold text-ink">°C</span>
+                            </div>
+                            <p data-live-cuaca class="text-xs font-bold text-ink mt-0.5">{{ $weather['cuaca_teks'] }}</p>
                         </div>
-                        <p data-live-cuaca class="text-xs font-bold text-ink mt-0.5">{{ $weather['cuaca_teks'] }}</p>
-                        <p class="text-[11px] text-muted font-medium">Dalam kandang</p>
+                        <div data-live-icon-container class="w-14 h-14 shrink-0 grid place-items-center">
+                            @include('partials.weather-svg', ['type' => $weatherType, 'sizeClass' => 'w-14 h-14'])
+                        </div>
                     </div>
 
-                    {{-- Ilustrasi Cuaca Berwarna (Animated Weather SVG) --}}
-                    <div data-live-icon-container class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 grid place-items-center">
-                        @include('partials.weather-svg', ['type' => $weatherType, 'sizeClass' => 'w-12 h-12 sm:w-14 sm:h-14'])
-                    </div>
-
-                    {{-- RH & Kecepatan Angin dengan Ikon Berwarna --}}
-                    <div class="space-y-1.5 text-right text-xs font-bold text-ink">
-                        <div class="flex items-center justify-end gap-1.5" title="Kelembaban Relatif (RH)">
+                    {{-- RH & Kecepatan Angin --}}
+                    <div class="flex items-center gap-4 text-xs font-bold text-ink">
+                        <span class="flex items-center gap-1.5" title="Kelembaban Relatif (RH)">
                             <span class="material-symbols-outlined text-[16px] text-blue-500">water_drop</span>
                             <span><strong data-live-rh>{{ $weather['kelembaban'] }}%</strong> RH</span>
-                        </div>
-                        <div class="flex items-center justify-end gap-1.5" title="Kecepatan Angin">
+                        </span>
+                        <span class="flex items-center gap-1.5" title="Kecepatan Angin">
                             <span class="material-symbols-outlined text-[16px] text-teal-600">air</span>
-                            <span><strong data-live-angin>{{ $weather['angin_kmh'] }}</strong> km/jam</span>
-                        </div>
+                            <span><strong data-live-angin>{{ $weather['angin_kmh'] }}</strong> km/h</span>
+                        </span>
                     </div>
                 </div>
 
-                {{-- Indeks Stres Panas (THI) Bar & Marker --}}
-                <div class="space-y-2 pt-1 border-t border-line/50">
-                    @php
-                        $thiVal = $weather['thi'] ?? 72.0;
-                        $thiIsBahaya = $thiVal >= 78;
-                        $thiIsWaspada = $thiVal >= 72 && $thiVal < 78;
-                    @endphp
+                {{-- Garis Pemisah Antara Cuaca dan THI --}}
+                <div class="border-t border-line/70"></div>
+
+                {{-- Bagian Bawah: Indeks Stres Panas (THI) --}}
+                <div class="space-y-3">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-ink">Indeks Stres Panas (THI)</span>
-                        <span data-live-thi-badge class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $thiIsBahaya ? 'bg-rose-50 text-rose-700 border border-rose-200' : ($thiIsWaspada ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200') }}">
-                            THI {{ $weather['thi'] }} · {{ $weather['status_thi'] ?? ($thiIsBahaya ? 'Kritis-panas' : ($thiIsWaspada ? 'Waspada' : 'Aman')) }}
+                        <span class="text-xs font-black text-ink">Indeks Stres Panas (THI)</span>
+                        <span data-live-thi-badge class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            THI {{ $weather['thi'] }}
                         </span>
                     </div>
 
-                    {{-- Continuous Bar Gauge dengan Circular Ring Marker --}}
-                    <div class="space-y-1 pt-1.5">
-                        <div class="relative w-full h-2 rounded-full overflow-hidden bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500 shadow-inner"></div>
-                        <div class="relative w-full h-3 -mt-3.5 pointer-events-none">
-                            <div data-live-thi-marker class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white border-2 border-rose-600 shadow-xs transition-all duration-700 ease-out" style="left: {{ $thiPercent }}%;"></div>
+                    {{-- Visual Bar Gauge THI (3 Segmen Skala Bersih: Aman, Waspada, Bahaya) dengan Marker --}}
+                    <div class="space-y-1 pt-1">
+                        <div class="relative w-full h-3 mb-0.5">
+                            <div data-live-thi-marker class="absolute bottom-0 -translate-x-1/2 flex flex-col items-center transition-all duration-700 ease-out" style="left: {{ $thiPercent }}%;">
+                                <span class="w-2.5 h-2.5 rotate-45 bg-amber-500 shadow-xs"></span>
+                            </div>
                         </div>
-                        <div class="flex justify-between text-[10px] text-muted font-bold pt-1 select-none">
-                            <span>Aman</span>
-                            <span>Waspada</span>
-                            <span>Bahaya</span>
+                        <div class="relative w-full h-2 rounded-full bg-slate-100 overflow-hidden shadow-inner flex">
+                            <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Aman"></div>
+                            <div class="h-full bg-amber-400" style="width: 30%;" title="Zona Waspada"></div>
+                            <div class="h-full bg-rose-500" style="width: 30%;" title="Zona Bahaya"></div>
+                        </div>
+                        <div class="flex w-full text-[10px] text-ink/70 font-bold pt-1 select-none">
+                            <div style="width: 40%;" class="text-center">Aman</div>
+                            <div style="width: 30%;" class="text-center">Waspada</div>
+                            <div style="width: 30%;" class="text-center">Bahaya</div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {{-- Banner Kondisi Ayam / Peringatan Stres Panas Sesuai Foto --}}
-                @php
-                    $dampakStr = (string) $dampakAyam;
-                    $parts = array_filter(array_map('trim', explode('.', $dampakStr)));
-                    $firstPart = array_shift($parts) ?? $dampakStr;
-                    $firstPartClean = ltrim(preg_replace('/^(kondisi ayam:\s*|ayam\s*)/i', '', $firstPart));
-                    $firstPartClean = lcfirst(rtrim($firstPartClean, '.'));
-                    $restPart = implode('. ', $parts);
-                    if (!empty($restPart) && !str_ends_with($restPart, '.')) {
-                        $restPart .= '.';
-                    }
-                @endphp
-                <div class="p-3 rounded-2xl bg-[#fff5f5] border border-rose-100 flex items-start gap-2.5 text-xs text-rose-800">
-                    <span class="material-symbols-outlined text-[18px] text-rose-600 shrink-0 mt-0.5">error</span>
-                    <div class="space-y-0.5 leading-snug">
-                        <p class="text-xs text-rose-900">
-                            <strong class="font-bold text-rose-950">Kondisi ayam:</strong> {{ $firstPartClean }}.
-                        </p>
-                        @if (!empty($restPart))
-                            <p class="text-xs text-rose-800 font-normal">
-                                {{ $restPart }}
-                            </p>
-                        @else
-                            <p class="text-xs text-rose-800 font-normal">
-                                Nafsu makan anjlok 15–25%, risiko cangkang tipis atau retak tinggi.
-                            </p>
-                        @endif
-                    </div>
-                </div>
+            {{-- 4. Card Kondisi Ayam --}}
+            <div class="bg-white rounded-2xl border border-line p-4 shadow-2xs space-y-1.5">
+                <h3 class="text-xs font-black text-ink">Kondisi Ayam</h3>
+                <p data-live-dampak class="text-xs text-ink/80 font-medium leading-relaxed">{{ $dampakAyam }}</p>
             </div>
         @endif
 
