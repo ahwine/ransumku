@@ -777,14 +777,11 @@
 
                     {{-- Cari Tanggal Spesifik (Diletakkan di sisi kiri filter agar popup kalender terbuka ke arah dalam layar dan tidak terpotong di tepi kanan) --}}
                     <div class="flex items-center gap-1">
-                        <div class="relative flex items-center cursor-pointer" onclick="const inp = document.getElementById('desk_cari_tanggal'); if (inp) { try { inp.showPicker(); } catch(e) { inp.focus(); } }">
-                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-[15px] text-muted pointer-events-none">calendar_today</span>
-                            <input type="date" name="cari_tanggal" id="desk_cari_tanggal" value="{{ $cariTanggal }}" max="{{ today()->toDateString() }}"
-                                   onchange="this.form.submit()"
-                                   onclick="try { this.showPicker(); } catch(e) {}"
-                                   class="h-7 pl-7 pr-2 rounded-lg bg-white border border-line text-xs font-semibold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 shadow-2xs cursor-pointer"
-                                   title="Pilih tanggal spesifik untuk memfilter">
-                        </div>
+                        <input type="date" name="cari_tanggal" id="desk_cari_tanggal" value="{{ $cariTanggal }}" max="{{ today()->toDateString() }}"
+                               onchange="this.form.submit()"
+                               onclick="try { this.showPicker(); } catch(e) {}"
+                               class="h-7 px-2.5 rounded-lg bg-white border border-line text-xs font-semibold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 shadow-2xs cursor-pointer"
+                               title="Pilih tanggal spesifik untuk memfilter">
 
                         @if ($cariTanggal || $filterPeriode !== 'semua')
                             <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="h-7 px-2 rounded-lg bg-surface hover:bg-surface-2 border border-line text-muted hover:text-rose-600 flex items-center justify-center transition shadow-2xs" title="Reset filter (Tampilkan semua)">
