@@ -101,21 +101,26 @@
                             </a>
                         </div>
 
-                        {{-- Quick Fill dari Catatan Kemarin --}}
+                        {{-- Quick Fill dari Catatan Kemarin (Sesuai Mockup) --}}
                         @if ($yesterdayLog)
-                        <div class="flex items-center justify-between gap-2 bg-[#edf5f0] p-2.5 rounded-xl" style="border: none;">
-                            <div class="text-xs text-[#567263] truncate">
-                                <span class="font-bold text-[#0f3d26]">Catatan Kemarin ({{ $yesterdayLog->tanggal->translatedFormat('d M') }}):</span>
-                                {{ Fmt::num($yesterdayLog->pakan_kg, 1) }} kg · {{ Fmt::num($yesterdayLog->telur_butir, 0) }} btr
+                        <div class="p-3.5 rounded-2xl bg-[#f2f7f3] border border-[#d3e3d9] space-y-2.5 transition-all">
+                            <div class="flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-1.5 font-bold text-[#0f3d26]">
+                                    <span class="material-symbols-outlined text-[16px] text-[#1f7a4a]">history</span>
+                                    <span>Catatan Kemarin</span>
+                                </div>
+                                <span class="text-[11px] font-semibold text-[#567263]">{{ $yesterdayLog->tanggal->translatedFormat('d M') }}</span>
+                            </div>
+                            <div class="text-xs font-semibold text-[#0f3d26]">
+                                {{ Fmt::num($yesterdayLog->pakan_kg, 1) }} kg pakan &nbsp;—&nbsp; {{ Fmt::num($yesterdayLog->telur_butir, 0) }} butir telur
                             </div>
                             <button type="button" id="btn-quick-fill"
                                     data-pakan="{{ (float) $yesterdayLog->pakan_kg }}"
                                     data-telur="{{ (int) $yesterdayLog->telur_butir }}"
                                     data-berat="{{ $yesterdayLog->telur_kg !== null ? (float) $yesterdayLog->telur_kg : '' }}"
-                                    class="px-2.5 py-1 rounded-lg text-xs font-bold text-[#1f7a4a] hover:text-[#18643c] bg-white transition shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
-                                    style="border: 1px solid #d9e6dd; color: #1f7a4a;">
-                                <span class="material-symbols-outlined text-[15px] text-amber-500 icon-fill">bolt</span>
-                                Salin Angka Kemarin
+                                    class="w-full py-2 px-3 rounded-xl text-xs font-bold text-white bg-[#135933] hover:bg-[#0e4427] active:scale-[0.99] transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[15px] text-amber-300 icon-fill">bolt</span>
+                                <span>Salin Angka Kemarin</span>
                             </button>
                         </div>
                         @endif

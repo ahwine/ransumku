@@ -1926,7 +1926,7 @@ function initLiveSensorPoller() {
 
                 // Update THI Badge & Kategori
                 if (thiBadge && data.thi !== undefined) {
-                    const isCompact = thiBadge.dataset.thiCompact === 'true';
+                    const isCompact = thiBadge.dataset.thiCompact === 'true' || widget.classList.contains('lg:hidden') || widget.closest('.lg\\:hidden') !== null || window.innerWidth < 1024;
                     if (isCompact) {
                         thiBadge.textContent = 'THI ' + data.thi;
                     } else {

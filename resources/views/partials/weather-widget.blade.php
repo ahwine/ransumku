@@ -124,12 +124,12 @@
         {{-- Sisi Kanan (Kolom 6-12): Visual Gauge Indeks Stres Panas (THI) Bersih & Modern --}}
         <div class="lg:col-span-7 bg-white rounded-xl p-4 border border-line space-y-3 shadow-2xs">
             {{-- Header THI Status dengan Pill Badge Melengkung Halus --}}
-            <div class="flex items-center justify-between flex-wrap gap-2">
-                <span class="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-1.5">
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-1.5 whitespace-nowrap shrink-0">
                     <span class="material-symbols-outlined text-[16px] text-amber-600">thermostat_auto</span>
                     <span>Indeks Stres Panas (THI)</span>
                 </span>
-                <span data-live-thi-badge class="px-3.5 py-1 rounded-full text-xs font-bold shadow-2xs transition-all duration-300 {{ $weather['badge_class'] }}">
+                <span data-live-thi-badge class="px-3.5 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0 shadow-2xs transition-all duration-300 {{ $weather['badge_class'] }}">
                     THI {{ $weather['thi'] }} · {{ $weather['thi_kategori_singkat'] }}
                 </span>
             </div>
