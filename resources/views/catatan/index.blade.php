@@ -40,18 +40,18 @@
 
 {{-- Tabs --}}
 <div data-tabs class="space-y-4">
-    <div class="flex justify-start">
-        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-3 md:inline-flex md:items-center gap-1 p-1 rounded-2xl md:rounded-full text-center select-none w-full max-w-lg bg-[#e6eeea] md:bg-[#e4eee7] border border-line/60 shadow-2xs overflow-hidden">
+    <div class="w-full">
+        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-3 gap-1 p-1 rounded-2xl md:rounded-full text-center select-none w-full bg-[#e6eeea] md:bg-[#e4eee7] border border-line/60 shadow-2xs overflow-hidden">
             <div data-tab-slider class="tab-slider !rounded-xl md:!rounded-full" aria-hidden="true"></div>
-            <button type="button" data-tab="form" class="relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }}">
+            <button type="button" data-tab="form" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
                 <span class="md:hidden">Catat</span>
                 <span class="hidden md:inline">Catat Harian</span>
             </button>
-            <button type="button" data-tab="dashboard" class="relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }}">
+            <button type="button" data-tab="dashboard" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
                 <span class="md:hidden">Laporan</span>
                 <span class="hidden md:inline">Laporan Performa</span>
             </button>
-            <button type="button" data-tab="beli" class="relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }}">
+            <button type="button" data-tab="beli" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
                 <span class="md:hidden">Belanja</span>
                 <span class="hidden md:inline">Belanja Pakan</span>
             </button>
@@ -60,6 +60,10 @@
 
     {{-- Panel 1: Form Catatan Harian Cerdas --}}
     <section data-panel="form" class="{{ $tabAktif === 'form' ? '' : 'hidden' }} space-y-4">
+        {{-- ======================================================== --}}
+        {{-- A. TAMPILAN MOBILE CATAT HARIAN (block md:hidden)         --}}
+        {{-- ======================================================== --}}
+        <div class="block md:hidden space-y-4" id="catat-mobile-container">
         {{-- Grid 2 Kolom: Kiri (Form Input) & Kanan (Live Cockpit & Pratinjau Analitik) --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
             {{-- KOLOM KIRI (1/2): Formulir Input Catatan Harian (Image 1 style) --}}
@@ -447,93 +451,6 @@
                 @endforelse
             </div>
 
-            {{-- DESKTOP TABLE VIEW (hidden md:block) --}}
-            <div class="hidden md:block overflow-x-auto -mx-4 sm:-mx-5 px-4 sm:px-5">
-                <table class="w-full text-xs text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-line text-[11px] font-bold text-muted uppercase tracking-wider">
-                            <th class="py-2.5 pr-3">Tanggal</th>
-                            <th class="py-2.5 px-3">Produksi Telur</th>
-                            <th class="py-2.5 px-3">Pakan Terpakai</th>
-                            <th class="py-2.5 px-3 text-center">HDP</th>
-                            <th class="py-2.5 px-3 text-center">Pakan/Ekor</th>
-                            <th class="py-2.5 px-3 text-center">Mati</th>
-                            <th class="py-2.5 px-3">Catatan</th>
-                            <th class="py-2.5 pl-3 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line/60">
-                        @forelse ($riwayat as $r)
-                            @php
-                                $itemHdp = $jumlahAyam > 0 ? round(($r->telur_butir / $jumlahAyam) * 100, 1) : 0;
-                                $itemGr = $jumlahAyam > 0 ? round(($r->pakan_kg * 1000) / $jumlahAyam, 1) : 0;
-                            @endphp
-                            <tr class="hover:bg-surface/50 transition-colors group">
-                                <td class="py-3 pr-3 font-bold text-ink whitespace-nowrap">
-                                    {{ $r->tanggal->translatedFormat('d M Y') }}
-                                </td>
-                                <td class="py-3 px-3 whitespace-nowrap">
-                                    <span class="font-bold text-ink">{{ Fmt::num($r->telur_butir, 0) }} btr</span>
-                                    <span class="text-muted text-[11px] ml-1">({{ Fmt::num($r->telurKgEfektif(), 1) }} kg)</span>
-                                </td>
-                                <td class="py-3 px-3 whitespace-nowrap font-medium text-ink">
-                                    {{ Fmt::num($r->pakan_kg, 1) }} kg
-                                </td>
-                                <td class="py-3 px-3 text-center whitespace-nowrap">
-                                    <span class="font-bold {{ $itemHdp >= 80 ? 'text-emerald-700' : ($itemHdp >= 65 ? 'text-teal-700' : 'text-amber-700') }}">
-                                        {{ $itemHdp }}%
-                                    </span>
-                                </td>
-                                <td class="py-3 px-3 text-center whitespace-nowrap text-muted font-medium">
-                                    {{ $itemGr }} g
-                                </td>
-                                <td class="py-3 px-3 text-center whitespace-nowrap">
-                                    @if ($r->ayam_mati > 0)
-                                        <span class="font-bold text-rose-600">
-                                            {{ $r->ayam_mati }} ekor
-                                        </span>
-                                    @else
-                                        <span class="text-muted/40 font-mono">-</span>
-                                    @endif
-                                </td>
-                                <td class="py-3 px-3 max-w-[180px] truncate text-muted text-[11px] italic" title="{{ $r->catatan }}">
-                                    {{ $r->catatan ? Str::limit($r->catatan, 30) : '-' }}
-                                </td>
-                                <td class="py-3 pl-3 text-right whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-1.5">
-                                        <a href="{{ route('catatan.index', ['tanggal' => $r->tanggal->toDateString(), 'tab' => 'form']) }}" class="px-2.5 py-1 rounded-md text-xs font-bold text-[#1f7a4a] hover:text-[#18643c] hover:bg-surface border border-[#d9e6dd] transition cursor-pointer" title="Edit catatan">
-                                            Edit
-                                        </a>
-                                        <form method="POST" action="{{ route('catatan.destroy', $r) }}" data-confirm="Hapus catatan produksi tanggal {{ $r->tanggal->translatedFormat('d M Y') }}?" data-confirm-title="Hapus Catatan Harian" data-confirm-btn="Ya, Hapus Catatan">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="p-1 rounded-md text-muted hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" title="Hapus catatan">
-                                                <span class="material-symbols-outlined text-[16px]">delete</span>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8" class="py-8 text-center text-muted">
-                                    <div class="flex flex-col items-center justify-center gap-1.5">
-                                        <span class="material-symbols-outlined text-[26px] text-muted/40">search_off</span>
-                                        <p class="text-xs font-semibold text-ink">Tidak ada catatan pada filter yang dipilih</p>
-                                        <p class="text-[11px] text-muted">Coba ubah filter periode atau tanggal pencarian Anda.</p>
-                                        @if ($cariTanggal || $filterPeriode !== 'semua')
-                                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="mt-1 text-xs font-bold text-[#1f7a4a] hover:underline inline-flex items-center gap-1">
-                                                <span class="material-symbols-outlined text-[14px]">refresh</span>
-                                                Reset ke Semua Catatan
-                                            </a>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
             {{-- Navigasi Pagination (Sesuai Gambar Referensi) --}}
             @if ($riwayat->hasPages())
                 @php
@@ -594,9 +511,439 @@
                 </div>
             @endif
         </div>
-    </section>
+        </div>
 
-    {{-- Panel 2: Dashboard & Laporan --}}
+{{-- ======================================================== --}}
+{{-- B. TAMPILAN DESKTOP CATAT HARIAN (hidden md:block)        --}}
+{{-- 100% Mengembalikan UI Asli Desktop dari commit 143dc55~1  --}}
+{{-- ======================================================== --}}
+<div class="hidden md:block space-y-5" id="catat-desktop-container">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+            {{-- KOLOM KIRI (1/2): Formulir Input Catatan Harian --}}
+            <div class="flex flex-col">
+                <form method="POST" action="{{ route('catatan.store') }}" id="form-catat-desktop" class="card space-y-4 flex-1 flex flex-col justify-between">
+                    @csrf
+                    <div class="space-y-4">
+                        {{-- Header Form Bersih & Tegas --}}
+                        <div class="flex items-center justify-between pb-2.5 border-b border-line">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px] text-brand">edit_note</span>
+                                <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Catat Data Hari Ini</h2>
+                            </div>
+                            <span class="text-tiny font-medium text-muted">Kandang: <strong class="text-ink">{{ $farm->nama }}</strong></span>
+                        </div>
+
+                        {{-- Banner Mode Edit (Muncul jika tanggal yang dipilih sudah ada catatan) --}}
+                        <div id="desk-mode-status-banner" class="{{ $isEdit ? '' : 'hidden' }} py-2 px-3 rounded-lg bg-amber-50 border border-amber-300 text-xs text-amber-950 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-amber-700">edit_calendar</span>
+                                <span><strong>Mode Edit:</strong> Catatan tanggal <span id="desk-mode-status-date" class="font-bold underline">{{ $form->tanggal ? $form->tanggal->translatedFormat('d M Y') : now()->translatedFormat('d M Y') }}</span> sudah ada. Mengisi form ini akan memperbarui data.</span>
+                            </div>
+                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="text-[11px] font-bold text-amber-900 hover:text-amber-700 underline">Reset Hari Ini</a>
+                        </div>
+
+                        {{-- Quick Fill dari Catatan Kemarin --}}
+                        @if ($yesterdayLog)
+                        <div class="flex items-center justify-between gap-2 bg-surface/60 p-2.5 rounded-xl border border-line/70">
+                            <div class="text-xs text-muted truncate">
+                                <span class="font-bold text-ink">Catatan Kemarin ({{ $yesterdayLog->tanggal->translatedFormat('d M') }}):</span>
+                                {{ Fmt::num($yesterdayLog->pakan_kg, 1) }} kg · {{ Fmt::num($yesterdayLog->telur_butir, 0) }} btr
+                            </div>
+                            <button type="button" id="desk-btn-quick-fill"
+                                    data-pakan="{{ (float) $yesterdayLog->pakan_kg }}"
+                                    data-telur="{{ (int) $yesterdayLog->telur_butir }}"
+                                    data-berat="{{ $yesterdayLog->telur_kg !== null ? (float) $yesterdayLog->telur_kg : '' }}"
+                                    class="px-2.5 py-1 rounded-lg text-xs font-bold text-brand hover:text-brand-dark bg-white hover:bg-surface border border-line transition shadow-2xs flex items-center gap-1 cursor-pointer shrink-0">
+                                <span class="material-symbols-outlined text-[15px] text-amber-500 icon-fill">bolt</span>
+                                Salin Angka Kemarin
+                            </button>
+                        </div>
+                        @endif
+
+                        {{-- Grid Input 2 Kolom Seimbang --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            {{-- Kolom Kiri 1: Tanggal Pencatatan --}}
+                            <div>
+                                <label class="lbl text-xs font-bold text-ink" for="desk_tanggal">Tanggal Pencatatan</label>
+                                <input id="desk_tanggal" name="tanggal" type="date" value="{{ old('tanggal', $form->tanggal->toDateString()) }}" max="{{ today()->toDateString() }}" class="field font-semibold" required>
+                            </div>
+
+                            {{-- Kolom Kanan 1: Kematian Ayam --}}
+                            <div>
+                                <label class="lbl text-xs font-bold text-ink" for="desk_ayam_mati">Ayam Mati (ekor)</label>
+                                <div class="relative">
+                                    <input id="desk_ayam_mati" name="ayam_mati" type="number" min="0" class="field font-semibold pr-12" value="{{ old('ayam_mati', $form->ayam_mati ?? 0) }}" placeholder="0">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted pointer-events-none">ekor</span>
+                                </div>
+                            </div>
+
+                            {{-- Kolom Kiri 2: Jumlah Telur --}}
+                            <div class="relative">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="lbl text-xs font-bold text-ink !mb-0" for="desk_telur_butir">Jumlah Telur (butir)</label>
+                                    <button type="button" id="desk-btn-toggle-rak-calc" class="text-[11px] text-brand hover:text-brand-dark hover:underline font-bold cursor-pointer inline-flex items-center gap-0.5" title="Bantu hitung dari jumlah rak/tray telur (1 rak = 30 butir)">
+                                        <span class="material-symbols-outlined text-[13px]">grid_view</span>
+                                        <span>Hitung per Rak (30)</span>
+                                    </button>
+                                </div>
+                                <div class="relative">
+                                    <input id="desk_telur_butir" name="telur_butir" type="number" min="0" class="field text-lg font-black text-ink pr-14" value="{{ old('telur_butir', $form->telur_butir) }}" required placeholder="0">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted pointer-events-none">butir</span>
+                                </div>
+
+                                {{-- Popover Mini Kalkulator Rak Telur --}}
+                                <div id="desk-popover-calc-rak" class="hidden absolute top-full left-0 right-0 z-30 mt-1.5 p-3 rounded-xl bg-white border border-brand/30 shadow-xl space-y-2.5">
+                                    <div class="flex items-center justify-between pb-1.5 border-b border-line text-xs">
+                                        <span class="font-bold text-ink flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-brand text-[16px]">calculate</span>
+                                            Kalkulator Rak Telur
+                                        </span>
+                                        <span class="text-[10px] text-muted font-medium bg-surface px-1.5 py-0.5 rounded">1 Rak = 30 butir</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                            <label class="block text-[10.5px] text-muted font-semibold mb-0.5" for="desk-calc-rak-input">Jumlah Rak</label>
+                                            <div class="relative">
+                                                <input type="number" id="desk-calc-rak-input" min="0" step="1" placeholder="0" class="w-full h-8 px-2.5 pr-8 rounded-lg bg-surface border border-line text-xs font-bold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted font-medium pointer-events-none">rak</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10.5px] text-muted font-semibold mb-0.5" for="desk-calc-sisa-input">Sisa Butir</label>
+                                            <div class="relative">
+                                                <input type="number" id="desk-calc-sisa-input" min="0" step="1" placeholder="0" class="w-full h-8 px-2.5 pr-8 rounded-lg bg-surface border border-line text-xs font-bold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted font-medium pointer-events-none">btr</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200/60 flex items-center justify-between text-xs">
+                                        <span class="text-emerald-900 text-[11px] font-medium">Hasil Total:</span>
+                                        <strong id="desk-calc-rak-total-preview" class="text-sm font-black text-emerald-800">0 butir</strong>
+                                    </div>
+
+                                    <div class="flex items-center justify-end gap-1.5 pt-0.5">
+                                        <button type="button" id="desk-btn-cancel-rak-calc" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-surface transition cursor-pointer">
+                                            Batal
+                                        </button>
+                                        <button type="button" id="desk-btn-apply-rak-calc" class="px-3 py-1 rounded-lg bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer">
+                                            Terapkan ke Form
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Kolom Kanan 2: Pakan Terpakai --}}
+                            <div>
+                                <label class="lbl text-xs font-bold text-ink" for="desk_pakan_kg">Pakan Terpakai (kg)</label>
+                                <div class="relative">
+                                    <input id="desk_pakan_kg" name="pakan_kg" type="number" step="0.1" min="0" class="field text-lg font-black text-ink pr-10" value="{{ old('pakan_kg', (float) $form->pakan_kg) }}" required placeholder="0">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted pointer-events-none">kg</span>
+                                </div>
+                            </div>
+
+                            {{-- Kolom Kiri 3: Berat Telur (Opsional) --}}
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="lbl text-xs font-bold text-ink !mb-0" for="desk_telur_kg">Total Berat Telur</label>
+                                    <button type="button" id="desk-btn-calc-egg-weight" class="text-[11px] text-muted hover:text-brand hover:underline font-medium cursor-pointer" title="Hitung estimasi bobot otomatis dari butir x 62g">
+                                        Hitung ~62g/butir
+                                    </button>
+                                </div>
+                                <div class="relative">
+                                    <input id="desk_telur_kg" name="telur_kg" type="number" step="0.1" min="0" class="field pr-10" value="{{ old('telur_kg', $form->telur_kg) }}" placeholder="Opsional">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted pointer-events-none">kg</span>
+                                </div>
+                            </div>
+
+                            {{-- Kolom Kanan 3: Biaya Lain-lain (Opsional) --}}
+                            <div>
+                                <label class="lbl text-xs font-bold text-ink" for="desk_biaya_lain">Biaya Tambahan Lainnya</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted pointer-events-none">Rp</span>
+                                    <input id="desk_biaya_lain" name="biaya_lain" type="number" min="0" step="500" class="field pl-9" value="{{ old('biaya_lain', $form->biaya_lain ?? 0) }}" placeholder="0 (obat, vitamin, dll)">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Catatan Gejala / Kondisi --}}
+                        <div>
+                            <label class="lbl text-xs font-bold text-ink" for="desk_catatan">Catatan Kondisi Kandang / Gejala Ayam</label>
+                            <textarea id="desk_catatan" name="catatan" rows="2" class="field !min-h-[52px] py-2 text-xs" placeholder="Contoh: Cuaca panas terik, ayam minum lebih banyak dari biasanya...">{{ old('catatan', $form->catatan) }}</textarea>
+                        </div>
+                    </div>
+
+                    <button class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-md hover:shadow-brand/20 transition active:scale-95 cursor-pointer mt-2">
+                        <span class="material-symbols-outlined text-[18px]">save</span>
+                        <span id="desk-btn-submit-text">{{ $isEdit ? 'Perbarui Catatan Harian' : 'Simpan Catatan Harian' }}</span>
+                    </button>
+                </form>
+            </div>
+
+            {{-- KOLOM KANAN (1/2): Live Cockpit & Pratinjau Performa Harian (Non-Sticky, Seimbang dengan Kiri) --}}
+            <div class="flex flex-col">
+                <div id="desk-live-preview-box" class="card space-y-4 bg-white border border-line shadow-2xs flex-1 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        {{-- Header Cockpit --}}
+                        <div class="flex items-center justify-between pb-2.5 border-b border-line">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-brand text-[18px]">query_stats</span>
+                                <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Pratinjau Performa Harian</h3>
+                            </div>
+                            <span class="text-tiny font-semibold text-muted">Populasi: <strong class="text-ink">{{ number_format($jumlahAyam, 0, ',', '.') }} ekor</strong></span>
+                        </div>
+
+                        {{-- 4 Kotak Metrik 2x2 --}}
+                        <div class="grid grid-cols-2 gap-3 text-center">
+                            {{-- 1. HDP --}}
+                            <div class="p-3.5 rounded-xl bg-surface/60 border border-line/70 shadow-2xs flex flex-col justify-between">
+                                <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-0.5">Hen-Day (HDP)</span>
+                                <strong id="desk-preview-hdp-val" class="text-2xl sm:text-3xl text-ink block font-black">0.0%</strong>
+                                <span id="desk-preview-hdp-badge" class="inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-muted">Menunggu data</span>
+                            </div>
+
+                            {{-- 2. Pakan / Ekor --}}
+                            <div class="p-3.5 rounded-xl bg-surface/60 border border-line/70 shadow-2xs flex flex-col justify-between">
+                                <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-0.5">Pakan / Ekor</span>
+                                <strong id="desk-preview-feed-val" class="text-2xl sm:text-3xl text-ink block font-black">0 <span class="text-sm font-normal">gr</span></strong>
+                                <span id="desk-preview-feed-badge" class="inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-muted">Std: 110g</span>
+                            </div>
+
+                            {{-- 3. FCR Instan --}}
+                            <div class="p-3.5 rounded-xl bg-surface/60 border border-line/70 shadow-2xs flex flex-col justify-between">
+                                <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-0.5">FCR Instan</span>
+                                <strong id="desk-preview-fcr-val" class="text-2xl sm:text-3xl text-ink block font-black">0.00</strong>
+                                <span id="desk-preview-fcr-badge" class="inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-muted">Efisiensi</span>
+                            </div>
+
+                            {{-- 4. Biaya Pakan --}}
+                            <div class="p-3.5 rounded-xl bg-surface/60 border border-line/70 shadow-2xs flex flex-col justify-between">
+                                <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-0.5">Biaya Pakan <span class="tag-est">est</span></span>
+                                <strong id="desk-preview-cost-val" class="text-xl sm:text-2xl text-ink block font-black">Rp 0</strong>
+                                <span id="desk-preview-margin-sub" class="inline-block mt-1 text-[10px] text-muted font-medium">@ {{ Fmt::rp($harga) }}/kg</span>
+                            </div>
+                        </div>
+
+                        {{-- Alert Box Dinamis --}}
+                        <div id="desk-preview-alert-box" class="hidden p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                            <span id="desk-preview-alert-icon" class="material-symbols-outlined text-[18px]"></span>
+                            <span id="desk-preview-alert-text"></span>
+                        </div>
+
+                        {{-- Ringkasan Acuan Fase & Standar Bibit --}}
+                        <div class="p-3 rounded-xl bg-surface/50 border border-line/70 flex items-center justify-between text-xs">
+                            <div class="space-y-0.5">
+                                <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block">Fase & Strain Ayam</span>
+                                <span class="font-bold text-ink">Mg ke-{{ $farm->umurMinggu() }} · {{ $farm->strain_ayam ?? 'Lohmann Brown' }}</span>
+                            </div>
+                            <div class="text-right space-y-0.5">
+                                <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block">Target Produksi (HDP)</span>
+                                <span class="font-bold text-emerald-700">85% – 92%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Footer Acuan Konsumsi --}}
+                    <div class="pt-3 border-t border-line/60 flex items-center justify-between text-tiny text-muted">
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px] text-brand">tune</span>
+                            Standar Pakan: <strong class="text-ink font-semibold">110–120 g/ekor/hari</strong>
+                        </span>
+                        <span class="font-medium text-ink/70">Kalkulasi Otomatis</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Riwayat Catatan Harian (5 per halaman + Filter Cepat & Pencarian) --}}
+        <div class="card space-y-3.5">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-line">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[19px] text-brand">history</span>
+                    <div>
+                        <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Catatan Harian Terbaru</h2>
+                        <span class="text-tiny font-medium text-muted">
+                            Total {{ $riwayat->total() }} catatan {{ ($filterPeriode !== 'semua' || $cariTanggal) ? '(terfilter)' : '' }}
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Kontrol Filter Periode & Pencarian Tanggal --}}
+                <form method="GET" action="{{ route('catatan.index') }}" class="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="tab" value="form">
+
+                    {{-- Quick Pill Filter: Semua, Bulan Ini, Bulan Lalu, 30 Hari --}}
+                    <div class="inline-flex p-0.5 bg-surface rounded-lg border border-line text-[11px] font-bold select-none shadow-2xs">
+                        <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'semua']) }}"
+                           class="px-2.5 py-1 rounded-md transition-all {{ ($filterPeriode === 'semua' && !$cariTanggal) ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
+                            Semua
+                        </a>
+                        <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'bulan_ini']) }}"
+                           class="px-2.5 py-1 rounded-md transition-all {{ $filterPeriode === 'bulan_ini' ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
+                            Bulan Ini
+                        </a>
+                        <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'bulan_lalu']) }}"
+                           class="px-2.5 py-1 rounded-md transition-all {{ $filterPeriode === 'bulan_lalu' ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
+                            Bulan Lalu
+                        </a>
+                        <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => '30_hari']) }}"
+                           class="px-2.5 py-1 rounded-md transition-all {{ $filterPeriode === '30_hari' ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink' }}">
+                            30 Hari
+                        </a>
+                    </div>
+
+                    {{-- Cari Tanggal Spesifik --}}
+                    <div class="flex items-center gap-1">
+                        <input type="date" name="cari_tanggal" value="{{ $cariTanggal }}" max="{{ today()->toDateString() }}"
+                               onchange="this.form.submit()"
+                               class="h-7 px-2 rounded-lg bg-white border border-line text-xs font-semibold text-ink focus:border-brand focus:ring-1 focus:ring-brand/20 shadow-2xs"
+                               title="Pilih tanggal spesifik untuk memfilter">
+
+                        @if ($cariTanggal || $filterPeriode !== 'semua')
+                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="h-7 px-2 rounded-lg bg-surface hover:bg-surface-2 border border-line text-muted hover:text-rose-600 flex items-center justify-center transition shadow-2xs" title="Reset filter (Tampilkan semua)">
+                                <span class="material-symbols-outlined text-[15px]">close</span>
+                            </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto -mx-4 sm:-mx-5 px-4 sm:px-5">
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-line text-[11px] font-bold text-muted uppercase tracking-wider">
+                            <th class="py-2.5 pr-3">Tanggal</th>
+                            <th class="py-2.5 px-3">Produksi Telur</th>
+                            <th class="py-2.5 px-3">Pakan Terpakai</th>
+                            <th class="py-2.5 px-3 text-center">HDP</th>
+                            <th class="py-2.5 px-3 text-center">Pakan/Ekor</th>
+                            <th class="py-2.5 px-3 text-center">Mati</th>
+                            <th class="py-2.5 px-3">Catatan</th>
+                            <th class="py-2.5 pl-3 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line/60">
+                        @forelse ($riwayat as $r)
+                            @php
+                                $itemHdp = $jumlahAyam > 0 ? round(($r->telur_butir / $jumlahAyam) * 100, 1) : 0;
+                                $itemGr = $jumlahAyam > 0 ? round(($r->pakan_kg * 1000) / $jumlahAyam, 1) : 0;
+                            @endphp
+                            <tr class="hover:bg-surface/50 transition-colors group">
+                                {{-- Tanggal --}}
+                                <td class="py-3 pr-3 font-bold text-ink whitespace-nowrap">
+                                    {{ $r->tanggal->translatedFormat('d M Y') }}
+                                </td>
+
+                                {{-- Produksi Telur --}}
+                                <td class="py-3 px-3 whitespace-nowrap">
+                                    <span class="font-bold text-ink">{{ Fmt::num($r->telur_butir, 0) }} btr</span>
+                                    <span class="text-muted text-[11px] ml-1">({{ Fmt::num($r->telurKgEfektif(), 1) }} kg)</span>
+                                </td>
+
+                                {{-- Pakan Terpakai --}}
+                                <td class="py-3 px-3 whitespace-nowrap font-medium text-ink">
+                                    {{ Fmt::num($r->pakan_kg, 1) }} kg
+                                </td>
+
+                                {{-- HDP --}}
+                                <td class="py-3 px-3 text-center whitespace-nowrap">
+                                    <span class="font-bold {{ $itemHdp >= 80 ? 'text-emerald-700' : ($itemHdp >= 65 ? 'text-teal-700' : 'text-amber-700') }}">
+                                        {{ $itemHdp }}%
+                                    </span>
+                                </td>
+
+                                {{-- Pakan/Ekor --}}
+                                <td class="py-3 px-3 text-center whitespace-nowrap text-muted font-medium">
+                                    {{ $itemGr }} g
+                                </td>
+
+                                {{-- Mortalitas (Tanpa ikon x, jika 0 tampilkan tanda -) --}}
+                                <td class="py-3 px-3 text-center whitespace-nowrap">
+                                    @if ($r->ayam_mati > 0)
+                                        <span class="font-bold text-rose-600">
+                                            {{ $r->ayam_mati }} ekor
+                                        </span>
+                                    @else
+                                        <span class="text-muted/40 font-mono">-</span>
+                                    @endif
+                                </td>
+
+                                {{-- Catatan --}}
+                                <td class="py-3 px-3 max-w-[180px] truncate text-muted text-[11px] italic" title="{{ $r->catatan }}">
+                                    {{ $r->catatan ? Str::limit($r->catatan, 30) : '-' }}
+                                </td>
+
+                                {{-- Aksi --}}
+                                <td class="py-3 pl-3 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <a href="{{ route('catatan.index', ['tanggal' => $r->tanggal->toDateString(), 'tab' => 'form']) }}" class="px-2.5 py-1 rounded-md text-xs font-bold text-brand hover:text-brand-dark hover:bg-surface border border-line transition cursor-pointer" title="Edit catatan">
+                                            Edit
+                                        </a>
+                                        <form method="POST" action="{{ route('catatan.destroy', $r) }}" data-confirm="Hapus catatan produksi tanggal {{ $r->tanggal->translatedFormat('d M Y') }}?" data-confirm-title="Hapus Catatan Harian" data-confirm-btn="Ya, Hapus Catatan">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="p-1 rounded-md text-muted hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" title="Hapus catatan">
+                                                <span class="material-symbols-outlined text-[16px]">delete</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="py-8 text-center text-muted">
+                                    <div class="flex flex-col items-center justify-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[26px] text-muted/40">search_off</span>
+                                        <p class="text-xs font-semibold text-ink">Tidak ada catatan pada filter yang dipilih</p>
+                                        <p class="text-[11px] text-muted">Coba ubah filter periode atau tanggal pencarian Anda.</p>
+                                        @if ($cariTanggal || $filterPeriode !== 'semua')
+                                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" class="mt-1 text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[14px]">refresh</span>
+                                                Reset ke Semua Catatan
+                                            </a>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Navigasi Pagination Elegan --}}
+            @if ($riwayat->hasPages())
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-line text-xs">
+                    <span class="text-muted">
+                        Menampilkan <strong class="text-ink font-semibold">{{ $riwayat->firstItem() }}</strong> – <strong class="text-ink font-semibold">{{ $riwayat->lastItem() }}</strong> dari <strong class="text-ink font-semibold">{{ $riwayat->total() }}</strong> catatan
+                    </span>
+                    <div class="flex items-center gap-1">
+                        @if ($riwayat->onFirstPage())
+                            <span class="px-2.5 py-1 rounded-lg border border-line/40 text-muted/40 cursor-not-allowed text-xs">« Prev</span>
+                        @else
+                            <a href="{{ $riwayat->previousPageUrl() }}" class="px-2.5 py-1 rounded-lg border border-line bg-white hover:bg-surface text-ink font-bold transition shadow-2xs text-xs cursor-pointer">« Prev</a>
+                        @endif
+
+                        @foreach ($riwayat->getUrlRange(max(1, $riwayat->currentPage() - 2), min($riwayat->lastPage(), $riwayat->currentPage() + 2)) as $page => $url)
+                            @if ($page == $riwayat->currentPage())
+                                <span class="w-7 h-7 flex items-center justify-center rounded-lg bg-brand text-white font-bold text-xs shadow-2xs">{{ $page }}</span>
+                            @else
+                                <a href="{{ $url }}" class="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-white hover:bg-surface text-ink font-semibold transition text-xs cursor-pointer">{{ $page }}</a>
+                            @endif
+                        @endforeach
+
+                        @if ($riwayat->hasMorePages())
+                            <a href="{{ $riwayat->nextPageUrl() }}" class="px-2.5 py-1 rounded-lg border border-line bg-white hover:bg-surface text-ink font-bold transition shadow-2xs text-xs cursor-pointer">Next »</a>
+                        @else
+                            <span class="px-2.5 py-1 rounded-lg border border-line/40 text-muted/40 cursor-not-allowed text-xs">Next »</span>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        </div>
+
+
+
+</div>
+    </section>
     <section data-panel="dashboard" class="{{ $tabAktif === 'dashboard' ? '' : 'hidden' }} space-y-4">
         {{-- ======================================================== --}}
         {{-- A. TAMPILAN MOBILE DASHBOARD & LAPORAN (lg:hidden)        --}}
@@ -1830,333 +2177,410 @@ document.addEventListener('DOMContentLoaded', function () {
     const hargaPakanPerKg = {{ $harga }};
     const existingLogs = @json($existingLogs);
 
-    const inputTanggal = document.getElementById('tanggal');
-    const inputPakan = document.getElementById('pakan_kg');
-    const inputTelur = document.getElementById('telur_butir');
-    const inputBerat = document.getElementById('telur_kg');
-    const inputMati = document.getElementById('ayam_mati');
-    const inputBiayaLain = document.getElementById('biaya_lain');
-    const inputCatatan = document.getElementById('catatan');
+    function initCatatController(isDesktop) {
+        const pfxDash = isDesktop ? 'desk-' : '';
 
-    const previewHdpVal = document.getElementById('preview-hdp-val');
-    const previewHdpBadge = document.getElementById('preview-hdp-badge');
-    const previewFeedVal = document.getElementById('preview-feed-val');
-    const previewFeedBadge = document.getElementById('preview-feed-badge');
-    const previewFcrVal = document.getElementById('preview-fcr-val');
-    const previewFcrBadge = document.getElementById('preview-fcr-badge');
-    const previewCostVal = document.getElementById('preview-cost-val');
-    const previewAlertBox = document.getElementById('preview-alert-box');
-    const previewAlertIcon = document.getElementById('preview-alert-icon');
-    const previewAlertText = document.getElementById('preview-alert-text');
-    const modeStatusBanner = document.getElementById('mode-status-banner');
-    const modeStatusDate = document.getElementById('mode-status-date');
-    const btnSubmitText = document.getElementById('btn-submit-text');
+        const inputTanggal = document.getElementById(isDesktop ? 'desk_tanggal' : 'tanggal');
+        const inputPakan = document.getElementById(isDesktop ? 'desk_pakan_kg' : 'pakan_kg');
+        const inputTelur = document.getElementById(isDesktop ? 'desk_telur_butir' : 'telur_butir');
+        const inputBerat = document.getElementById(isDesktop ? 'desk_telur_kg' : 'telur_kg');
+        const inputMati = document.getElementById(isDesktop ? 'desk_ayam_mati' : 'ayam_mati');
+        const inputBiayaLain = document.getElementById(isDesktop ? 'desk_biaya_lain' : 'biaya_lain');
+        const inputCatatan = document.getElementById(isDesktop ? 'desk_catatan' : 'catatan');
 
-    function updateLivePreview() {
-        const pakan = parseFloat(inputPakan.value) || 0;
-        const butir = parseInt(inputTelur.value) || 0;
-        let berat = parseFloat(inputBerat.value);
-        if (isNaN(berat) || berat <= 0) {
-            berat = butir * 0.062;
-        }
-        const mati = parseInt(inputMati ? inputMati.value : 0) || 0;
+        const previewHdpVal = document.getElementById(pfxDash + 'preview-hdp-val');
+        const previewHdpBadge = document.getElementById(pfxDash + 'preview-hdp-badge');
+        const previewFeedVal = document.getElementById(pfxDash + 'preview-feed-val');
+        const previewFeedBadge = document.getElementById(pfxDash + 'preview-feed-badge');
+        const previewFcrVal = document.getElementById(pfxDash + 'preview-fcr-val');
+        const previewFcrBadge = document.getElementById(pfxDash + 'preview-fcr-badge');
+        const previewCostVal = document.getElementById(pfxDash + 'preview-cost-val');
+        const previewMarginSub = document.getElementById(pfxDash + 'preview-margin-sub');
+        const previewAlertBox = document.getElementById(pfxDash + 'preview-alert-box');
+        const previewAlertIcon = document.getElementById(pfxDash + 'preview-alert-icon');
+        const previewAlertText = document.getElementById(pfxDash + 'preview-alert-text');
+        const modeStatusBanner = document.getElementById(pfxDash + 'mode-status-banner');
+        const modeStatusDate = document.getElementById(pfxDash + 'mode-status-date');
+        const btnSubmitText = document.getElementById(pfxDash + 'btn-submit-text');
 
-        // 1. HDP %
-        const hdp = jumlahAyam > 0 ? (butir / jumlahAyam) * 100 : 0;
-        previewHdpVal.textContent = hdp > 0 ? hdp.toFixed(1) + '%' : '0.0%';
-        if (butir === 0) {
-            previewHdpBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#e8f2eb] text-[#476b55]';
-            previewHdpBadge.textContent = 'Menunggu data';
-        } else if (hdp >= 85) {
-            previewHdpBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#1f7a4a] text-white';
-            previewHdpBadge.textContent = 'Prima / Sangat Baik';
-        } else if (hdp >= 75) {
-            previewHdpBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#dcefe2] text-[#0f3d26]';
-            previewHdpBadge.textContent = 'Normal';
-        } else {
-            previewHdpBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#fdf0cf] text-[#7a4d05]';
-            previewHdpBadge.textContent = 'Perhatian (<75%)';
-        }
+        if (!inputTanggal || !inputPakan || !inputTelur) return;
 
-        // 2. Konsumsi gr/ekor/hari
-        const grPerEkor = (jumlahAyam > 0 && pakan > 0) ? (pakan * 1000) / jumlahAyam : 0;
-        previewFeedVal.innerHTML = `${Math.round(grPerEkor)} <span class="text-xs font-normal">gr</span>`;
-        if (pakan === 0) {
-            previewFeedBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#e8f2eb] text-[#476b55]';
-            previewFeedBadge.textContent = 'std: 110g';
-        } else if (grPerEkor >= 105 && grPerEkor <= 125) {
-            previewFeedBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#dcefe2] text-[#0f3d26]';
-            previewFeedBadge.textContent = 'Ideal (110-125g)';
-        } else if (grPerEkor < 105) {
-            previewFeedBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#fdf0cf] text-[#7a4d05]';
-            previewFeedBadge.textContent = 'Rendah (<105g)';
-        } else {
-            previewFeedBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#ffe4e6] text-[#be123c]';
-            previewFeedBadge.textContent = 'Boros (>125g)';
-        }
-
-        // 3. FCR Instan
-        const fcr = (berat > 0 && pakan > 0) ? (pakan / berat) : 0;
-        previewFcrVal.textContent = fcr > 0 ? fcr.toFixed(2) : '0.00';
-        if (fcr === 0) {
-            previewFcrBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#e8f2eb] text-[#476b55]';
-            previewFcrBadge.textContent = 'Efisiensi';
-        } else if (fcr <= 2.15) {
-            previewFcrBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#dcefe2] text-[#0f3d26]';
-            previewFcrBadge.textContent = 'Sangat Efisien';
-        } else if (fcr <= 2.45) {
-            previewFcrBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#e8f2eb] text-[#476b55]';
-            previewFcrBadge.textContent = 'Normal';
-        } else {
-            previewFcrBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#ffe4e6] text-[#be123c]';
-            previewFcrBadge.textContent = 'Tinggi (>2.45)';
-        }
-
-        // 4. Biaya Pakan Hari Ini & Est. Margin Kotor
-        const totalBiaya = pakan * hargaPakanPerKg;
-        previewCostVal.textContent = 'Rp ' + Math.round(totalBiaya).toLocaleString('id-ID');
-        const previewMarginSub = document.getElementById('preview-margin-sub');
-        if (previewMarginSub) {
-            const hargaTelur = {{ (int) config('ransumku.harga_telur_default', 26000) }};
-            const estKg = berat > 0 ? berat : (butir * 0.062);
-            const estRevenue = estKg * hargaTelur;
-            if (estRevenue > 0 && totalBiaya > 0) {
-                const margin = estRevenue - totalBiaya;
-                const sign = margin >= 0 ? '+' : '';
-                previewMarginSub.textContent = `Est. Margin: ${sign}Rp ${Math.round(margin).toLocaleString('id-ID')}`;
-                previewMarginSub.className = margin >= 0 ? 'inline-block mt-0.5 text-[10px] font-bold text-emerald-700' : 'inline-block mt-0.5 text-[10px] font-bold text-rose-700';
-            } else {
-                previewMarginSub.textContent = '@ {{ Fmt::rp($harga) }}/kg';
-                previewMarginSub.className = 'inline-block mt-0.5 text-[10px] text-muted font-medium';
-            }
-        }
-
-        // Dynamic Alert Message
-        if (mati >= 5) {
-            previewAlertBox.className = 'p-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-rose-100 text-rose-900 border border-rose-300';
-            previewAlertIcon.textContent = 'warning';
-            previewAlertText.textContent = `Perhatian: Ada ${mati} ekor ayam mati tercatat hari ini. Pantau sirkulasi dan gejala penyakit!`;
-            previewAlertBox.classList.remove('hidden');
-        } else if (hdp > 0 && hdp < 65) {
-            previewAlertBox.className = 'p-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-amber-100 text-amber-900 border border-amber-300';
-            previewAlertIcon.textContent = 'info';
-            previewAlertText.textContent = `Produksi telur rendah (${hdp.toFixed(1)}%). Cek kecukupan nutrisi pakan atau potensi stres suhu.`;
-            previewAlertBox.classList.remove('hidden');
-        } else if (hdp >= 88 && fcr > 0 && fcr <= 2.15) {
-            previewAlertBox.className = 'p-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-emerald-100 text-emerald-900 border border-emerald-300';
-            previewAlertIcon.textContent = 'verified';
-            previewAlertText.textContent = `Luar biasa! Performa kandang hari ini sangat prima (HDP ${hdp.toFixed(1)}%, FCR ${fcr.toFixed(2)}).`;
-            previewAlertBox.classList.remove('hidden');
-        } else {
-            previewAlertBox.classList.add('hidden');
-        }
-    }
-
-    [inputPakan, inputTelur, inputBerat, inputMati].forEach(el => {
-        if (el) {
-            el.addEventListener('input', updateLivePreview);
-        }
-    });
-
-    // Button: Hitung ~62g/butir
-    const btnCalcEgg = document.getElementById('btn-calc-egg-weight');
-    if (btnCalcEgg && inputTelur && inputBerat) {
-        btnCalcEgg.addEventListener('click', function () {
+        function updateLivePreview() {
+            const pakan = parseFloat(inputPakan.value) || 0;
             const butir = parseInt(inputTelur.value) || 0;
-            if (butir > 0) {
-                const estKg = (butir * 0.062).toFixed(1);
-                inputBerat.value = estKg;
-                updateLivePreview();
-            } else {
-                window.showToast('Silakan isi jumlah butir telur terlebih dahulu.', 'warning', 'Perhatian');
-                inputTelur.focus();
+            let berat = parseFloat(inputBerat ? inputBerat.value : 0);
+            if (isNaN(berat) || berat <= 0) {
+                berat = butir * 0.062;
             }
-        });
-    }
+            const mati = parseInt(inputMati ? inputMati.value : 0) || 0;
 
-    // Kalkulator Bantu Hitung Rak Telur (1 Rak = 30 butir)
-    const btnToggleRak = document.getElementById('btn-toggle-rak-calc');
-    const popoverRak = document.getElementById('popover-calc-rak');
-    const inputCalcRak = document.getElementById('calc_rak_input');
-    const inputCalcSisa = document.getElementById('calc_sisa_input');
-    const previewRakTotal = document.getElementById('calc_rak_total_preview');
-    const btnApplyRak = document.getElementById('btn-apply-rak-calc');
-    const btnCancelRak = document.getElementById('btn-cancel-rak-calc');
-
-    function updateRakPreviewTotal() {
-        const rak = parseInt(inputCalcRak ? inputCalcRak.value : 0) || 0;
-        const sisa = parseInt(inputCalcSisa ? inputCalcSisa.value : 0) || 0;
-        const total = (rak * 30) + sisa;
-        if (previewRakTotal) {
-            previewRakTotal.textContent = `${total.toLocaleString('id-ID')} butir (${rak} rak + ${sisa} btr)`;
-        }
-        return total;
-    }
-
-    if (btnToggleRak && popoverRak) {
-        btnToggleRak.addEventListener('click', function (e) {
-            e.stopPropagation();
-            const isHidden = popoverRak.classList.contains('hidden');
-            if (isHidden) {
-                popoverRak.classList.remove('hidden');
-                const currentTotal = parseInt(inputTelur?.value) || 0;
-                if (currentTotal > 0 && inputCalcRak && inputCalcSisa) {
-                    inputCalcRak.value = Math.floor(currentTotal / 30);
-                    inputCalcSisa.value = currentTotal % 30;
+            // 1. HDP %
+            const hdp = jumlahAyam > 0 ? (butir / jumlahAyam) * 100 : 0;
+            if (previewHdpVal) previewHdpVal.textContent = hdp > 0 ? hdp.toFixed(1) + '%' : '0.0%';
+            if (previewHdpBadge) {
+                if (isDesktop) {
+                    if (butir === 0) {
+                        previewHdpBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-muted';
+                        previewHdpBadge.textContent = 'Menunggu data';
+                    } else if (hdp >= 85) {
+                        previewHdpBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800';
+                        previewHdpBadge.textContent = 'Prima / Sangat Baik';
+                    } else if (hdp >= 75) {
+                        previewHdpBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800';
+                        previewHdpBadge.textContent = 'Normal';
+                    } else {
+                        previewHdpBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900';
+                        previewHdpBadge.textContent = 'Perhatian (<75%)';
+                    }
+                } else {
+                    if (butir === 0) {
+                        previewHdpBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#e8f2eb] text-[#476b55]';
+                        previewHdpBadge.textContent = 'Menunggu data';
+                    } else if (hdp >= 85) {
+                        previewHdpBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#1f7a4a] text-white';
+                        previewHdpBadge.textContent = 'Prima / Sangat Baik';
+                    } else if (hdp >= 75) {
+                        previewHdpBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#dcefe2] text-[#0f3d26]';
+                        previewHdpBadge.textContent = 'Normal';
+                    } else {
+                        previewHdpBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#fdf0cf] text-[#7a4d05]';
+                        previewHdpBadge.textContent = 'Perhatian (<75%)';
+                    }
                 }
-                updateRakPreviewTotal();
-                if (inputCalcRak) inputCalcRak.focus();
-            } else {
-                popoverRak.classList.add('hidden');
             }
-        });
-    }
 
-    [inputCalcRak, inputCalcSisa].forEach(el => {
-        if (el) {
-            el.addEventListener('input', updateRakPreviewTotal);
-            el.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (btnApplyRak) btnApplyRak.click();
+            // 2. Konsumsi gr/ekor/hari
+            const grPerEkor = (jumlahAyam > 0 && pakan > 0) ? (pakan * 1000) / jumlahAyam : 0;
+            if (previewFeedVal) previewFeedVal.innerHTML = `${Math.round(grPerEkor)} <span class="${isDesktop ? 'text-sm font-normal' : 'text-xs font-normal'}">gr</span>`;
+            if (previewFeedBadge) {
+                if (isDesktop) {
+                    if (pakan === 0) {
+                        previewFeedBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-muted';
+                        previewFeedBadge.textContent = 'Std: 110g';
+                    } else if (grPerEkor >= 105 && grPerEkor <= 125) {
+                        previewFeedBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800';
+                        previewFeedBadge.textContent = 'Ideal (110-125g)';
+                    } else if (grPerEkor < 105) {
+                        previewFeedBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900';
+                        previewFeedBadge.textContent = 'Rendah (<105g)';
+                    } else {
+                        previewFeedBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800';
+                        previewFeedBadge.textContent = 'Boros (>125g)';
+                    }
+                } else {
+                    if (pakan === 0) {
+                        previewFeedBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#e8f2eb] text-[#476b55]';
+                        previewFeedBadge.textContent = 'std: 110g';
+                    } else if (grPerEkor >= 105 && grPerEkor <= 125) {
+                        previewFeedBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#dcefe2] text-[#0f3d26]';
+                        previewFeedBadge.textContent = 'Ideal (110-125g)';
+                    } else if (grPerEkor < 105) {
+                        previewFeedBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#fdf0cf] text-[#7a4d05]';
+                        previewFeedBadge.textContent = 'Rendah (<105g)';
+                    } else {
+                        previewFeedBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#ffe4e6] text-[#be123c]';
+                        previewFeedBadge.textContent = 'Boros (>125g)';
+                    }
+                }
+            }
+
+            // 3. FCR Instan
+            const fcr = (berat > 0 && pakan > 0) ? (pakan / berat) : 0;
+            if (previewFcrVal) previewFcrVal.textContent = fcr > 0 ? fcr.toFixed(2) : '0.00';
+            if (previewFcrBadge) {
+                if (isDesktop) {
+                    if (fcr === 0) {
+                        previewFcrBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-muted';
+                        previewFcrBadge.textContent = 'Efisiensi';
+                    } else if (fcr <= 2.15) {
+                        previewFcrBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800';
+                        previewFcrBadge.textContent = 'Sangat Efisien';
+                    } else if (fcr <= 2.45) {
+                        previewFcrBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800';
+                        previewFcrBadge.textContent = 'Normal';
+                    } else {
+                        previewFcrBadge.className = 'inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800';
+                        previewFcrBadge.textContent = 'Tinggi (>2.45)';
+                    }
+                } else {
+                    if (fcr === 0) {
+                        previewFcrBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#e8f2eb] text-[#476b55]';
+                        previewFcrBadge.textContent = 'Efisiensi';
+                    } else if (fcr <= 2.15) {
+                        previewFcrBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#dcefe2] text-[#0f3d26]';
+                        previewFcrBadge.textContent = 'Sangat Efisien';
+                    } else if (fcr <= 2.45) {
+                        previewFcrBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#e8f2eb] text-[#476b55]';
+                        previewFcrBadge.textContent = 'Normal';
+                    } else {
+                        previewFcrBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#ffe4e6] text-[#be123c]';
+                        previewFcrBadge.textContent = 'Tinggi (>2.45)';
+                    }
+                }
+            }
+
+            // 4. Biaya Pakan Hari Ini
+            const totalBiaya = pakan * hargaPakanPerKg;
+            if (previewCostVal) previewCostVal.textContent = 'Rp ' + Math.round(totalBiaya).toLocaleString('id-ID');
+            if (previewMarginSub) {
+                if (isDesktop) {
+                    previewMarginSub.textContent = '@ Rp ' + Number(hargaPakanPerKg).toLocaleString('id-ID') + '/kg';
+                } else {
+                    const hargaTelur = 26000;
+                    const estKg = berat > 0 ? berat : (butir * 0.062);
+                    const estRevenue = estKg * hargaTelur;
+                    if (estRevenue > 0 && totalBiaya > 0) {
+                        const margin = estRevenue - totalBiaya;
+                        const sign = margin >= 0 ? '+' : '';
+                        previewMarginSub.textContent = `Est. Margin: ${sign}Rp ${Math.round(margin).toLocaleString('id-ID')}`;
+                        previewMarginSub.className = margin >= 0 ? 'inline-block mt-0.5 text-[10px] font-bold text-emerald-700' : 'inline-block mt-0.5 text-[10px] font-bold text-rose-700';
+                    } else {
+                        previewMarginSub.textContent = '@ Rp ' + Number(hargaPakanPerKg).toLocaleString('id-ID') + '/kg';
+                        previewMarginSub.className = 'inline-block mt-0.5 text-[10px] text-muted font-medium';
+                    }
+                }
+            }
+
+            // Alert Box Dinamis
+            if (previewAlertBox && previewAlertIcon && previewAlertText) {
+                const roundedClass = isDesktop ? 'rounded-xl' : 'rounded-2xl';
+                if (mati >= 5) {
+                    previewAlertBox.className = `p-2 ${roundedClass} text-xs font-semibold flex items-center gap-2 bg-rose-100 text-rose-900 border border-rose-300`;
+                    previewAlertIcon.textContent = 'warning';
+                    previewAlertText.textContent = `Perhatian: Ada ${mati} ekor ayam mati tercatat hari ini. Pantau sirkulasi dan gejala penyakit!`;
+                    previewAlertBox.classList.remove('hidden');
+                } else if (hdp > 0 && hdp < 65) {
+                    previewAlertBox.className = `p-2 ${roundedClass} text-xs font-semibold flex items-center gap-2 bg-amber-100 text-amber-900 border border-amber-300`;
+                    previewAlertIcon.textContent = 'info';
+                    previewAlertText.textContent = `Produksi telur rendah (${hdp.toFixed(1)}%). Cek kecukupan nutrisi pakan atau potensi stres suhu.`;
+                    previewAlertBox.classList.remove('hidden');
+                } else if (hdp >= 88 && fcr > 0 && fcr <= 2.15) {
+                    previewAlertBox.className = `p-2 ${roundedClass} text-xs font-semibold flex items-center gap-2 bg-emerald-100 text-emerald-900 border border-emerald-300`;
+                    previewAlertIcon.textContent = 'verified';
+                    previewAlertText.textContent = `Luar biasa! Performa kandang hari ini sangat prima (HDP ${hdp.toFixed(1)}%, FCR ${fcr.toFixed(2)}).`;
+                    previewAlertBox.classList.remove('hidden');
+                } else {
+                    previewAlertBox.classList.add('hidden');
+                }
+            }
+        }
+
+        [inputPakan, inputTelur, inputBerat, inputMati].forEach(el => {
+            if (el) el.addEventListener('input', updateLivePreview);
+        });
+
+        // Button: Hitung ~62g/butir
+        const btnCalcEgg = document.getElementById(pfxDash + 'btn-calc-egg-weight');
+        if (btnCalcEgg && inputTelur && inputBerat) {
+            btnCalcEgg.addEventListener('click', function () {
+                const butir = parseInt(inputTelur.value) || 0;
+                if (butir > 0) {
+                    const estKg = (butir * 0.062).toFixed(1);
+                    inputBerat.value = estKg;
+                    updateLivePreview();
+                } else {
+                    if (window.showToast) window.showToast('Silakan isi jumlah butir telur terlebih dahulu.', 'warning', 'Perhatian');
+                    inputTelur.focus();
                 }
             });
         }
-    });
 
-    if (btnApplyRak && inputTelur && popoverRak) {
-        btnApplyRak.addEventListener('click', function () {
-            const total = updateRakPreviewTotal();
-            inputTelur.value = total;
-            popoverRak.classList.add('hidden');
-            updateLivePreview();
-            if (window.showToast) {
-                window.showToast(`Berhasil menerapkan ${total.toLocaleString('id-ID')} butir telur.`, 'success', 'Kalkulator Rak');
+        // Kalkulator Bantu Hitung Rak Telur (1 Rak = 30 butir)
+        const btnToggleRak = document.getElementById(pfxDash + 'btn-toggle-rak-calc');
+        const popoverRak = document.getElementById(pfxDash + 'popover-calc-rak');
+        const inputCalcRak = document.getElementById(isDesktop ? 'desk-calc-rak-input' : 'calc_rak_input');
+        const inputCalcSisa = document.getElementById(isDesktop ? 'desk-calc-sisa-input' : 'calc_sisa_input');
+        const previewRakTotal = document.getElementById(pfxDash + 'calc_rak_total_preview');
+        const btnApplyRak = document.getElementById(pfxDash + 'btn-apply-rak-calc');
+        const btnCancelRak = document.getElementById(pfxDash + 'btn-cancel-rak-calc');
+
+        function updateRakPreviewTotal() {
+            const rak = parseInt(inputCalcRak ? inputCalcRak.value : 0) || 0;
+            const sisa = parseInt(inputCalcSisa ? inputCalcSisa.value : 0) || 0;
+            const total = (rak * 30) + sisa;
+            if (previewRakTotal) {
+                previewRakTotal.textContent = `${total.toLocaleString('id-ID')} butir (${rak} rak + ${sisa} btr)`;
+            }
+            return total;
+        }
+
+        if (btnToggleRak && popoverRak) {
+            btnToggleRak.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const isHidden = popoverRak.classList.contains('hidden');
+                if (isHidden) {
+                    popoverRak.classList.remove('hidden');
+                    const currentTotal = parseInt(inputTelur?.value) || 0;
+                    if (currentTotal > 0 && inputCalcRak && inputCalcSisa) {
+                        inputCalcRak.value = Math.floor(currentTotal / 30);
+                        inputCalcSisa.value = currentTotal % 30;
+                    }
+                    updateRakPreviewTotal();
+                    if (inputCalcRak) inputCalcRak.focus();
+                } else {
+                    popoverRak.classList.add('hidden');
+                }
+            });
+        }
+
+        [inputCalcRak, inputCalcSisa].forEach(el => {
+            if (el) {
+                el.addEventListener('input', updateRakPreviewTotal);
+                el.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (btnApplyRak) btnApplyRak.click();
+                    }
+                });
             }
         });
-    }
 
-    if (btnCancelRak && popoverRak) {
-        btnCancelRak.addEventListener('click', function () {
-            popoverRak.classList.add('hidden');
+        if (btnApplyRak && inputTelur && popoverRak) {
+            btnApplyRak.addEventListener('click', function () {
+                const total = updateRakPreviewTotal();
+                inputTelur.value = total;
+                popoverRak.classList.add('hidden');
+                updateLivePreview();
+                if (window.showToast) {
+                    window.showToast(`Berhasil menerapkan ${total.toLocaleString('id-ID')} butir telur.`, 'success', 'Kalkulator Rak');
+                }
+            });
+        }
+
+        if (btnCancelRak && popoverRak) {
+            btnCancelRak.addEventListener('click', function () {
+                popoverRak.classList.add('hidden');
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (popoverRak && !popoverRak.classList.contains('hidden')) {
+                if (!popoverRak.contains(e.target) && e.target !== btnToggleRak && !btnToggleRak.contains(e.target)) {
+                    popoverRak.classList.add('hidden');
+                }
+            }
         });
-    }
 
-    document.addEventListener('click', function (e) {
-        if (popoverRak && !popoverRak.classList.contains('hidden')) {
-            if (!popoverRak.contains(e.target) && e.target !== btnToggleRak && !btnToggleRak.contains(e.target)) {
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && popoverRak && !popoverRak.classList.contains('hidden')) {
                 popoverRak.classList.add('hidden');
             }
-        }
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && popoverRak && !popoverRak.classList.contains('hidden')) {
-            popoverRak.classList.add('hidden');
-        }
-    });
-
-    // Button: Quick fill from yesterday
-    const btnQuickFill = document.getElementById('btn-quick-fill');
-    if (btnQuickFill) {
-        btnQuickFill.addEventListener('click', function () {
-            const pakan = this.dataset.pakan;
-            const telur = this.dataset.telur;
-            const berat = this.dataset.berat;
-            if (pakan) inputPakan.value = pakan;
-            if (telur) inputTelur.value = telur;
-            if (berat) inputBerat.value = berat;
-            updateLivePreview();
-        });
-    }
-
-    // Detect date changes and switch edit mode
-    const tanggalDisplay = document.getElementById('tanggal-display');
-    function updateTanggalDisplay(val) {
-        if (!val || !tanggalDisplay) return;
-        const parts = val.split('-');
-        if (parts.length === 3) {
-            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            const day = parseInt(parts[2], 10);
-            const month = months[parseInt(parts[1], 10) - 1];
-            const year = parts[0];
-            tanggalDisplay.textContent = `${day} ${month} ${year}`;
-        }
-    }
-
-    if (inputTanggal) {
-        inputTanggal.addEventListener('input', function () {
-            updateTanggalDisplay(this.value);
         });
 
-        inputTanggal.addEventListener('change', function () {
-            const tgl = this.value;
-            updateTanggalDisplay(tgl);
-            if (existingLogs && existingLogs[tgl]) {
-                const log = existingLogs[tgl];
-                if (modeStatusBanner) {
-                    modeStatusBanner.classList.remove('hidden');
-                    if (modeStatusDate) {
-                        const parts = tgl.split('-');
-                        if (parts.length === 3) {
-                            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                            const day = String(parseInt(parts[2], 10)).padStart(2, '0');
-                            const month = months[parseInt(parts[1], 10) - 1];
-                            const year = parts[0];
-                            modeStatusDate.textContent = `${day} ${month} ${year}`;
-                        } else {
-                            modeStatusDate.textContent = tgl;
+        // Button: Quick fill from yesterday
+        const btnQuickFill = document.getElementById(pfxDash + 'btn-quick-fill');
+        if (btnQuickFill) {
+            btnQuickFill.addEventListener('click', function () {
+                const pakan = this.dataset.pakan;
+                const telur = this.dataset.telur;
+                const berat = this.dataset.berat;
+                if (pakan && inputPakan) inputPakan.value = pakan;
+                if (telur && inputTelur) inputTelur.value = telur;
+                if (berat && inputBerat) inputBerat.value = berat;
+                updateLivePreview();
+            });
+        }
+
+        // Mobile date display helper
+        const tanggalDisplay = !isDesktop ? document.getElementById('tanggal-display') : null;
+        function updateTanggalDisplay(val) {
+            if (!val || !tanggalDisplay) return;
+            const parts = val.split('-');
+            if (parts.length === 3) {
+                const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                const day = parseInt(parts[2], 10);
+                const month = months[parseInt(parts[1], 10) - 1];
+                const year = parts[0];
+                tanggalDisplay.textContent = `${day} ${month} ${year}`;
+            }
+        }
+
+        if (inputTanggal) {
+            if (!isDesktop) {
+                inputTanggal.addEventListener('input', function () {
+                    updateTanggalDisplay(this.value);
+                });
+            }
+
+            inputTanggal.addEventListener('change', function () {
+                const tgl = this.value;
+                if (!isDesktop) updateTanggalDisplay(tgl);
+
+                if (existingLogs && existingLogs[tgl]) {
+                    const log = existingLogs[tgl];
+                    if (modeStatusBanner) {
+                        modeStatusBanner.classList.remove('hidden');
+                        if (modeStatusDate) {
+                            const parts = tgl.split('-');
+                            if (parts.length === 3) {
+                                const months = isDesktop 
+                                    ? ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+                                    : ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                const day = isDesktop ? String(parseInt(parts[2], 10)) : String(parseInt(parts[2], 10)).padStart(2, '0');
+                                const month = months[parseInt(parts[1], 10) - 1];
+                                const year = parts[0];
+                                modeStatusDate.textContent = `${day} ${month} ${year}`;
+                            } else {
+                                modeStatusDate.textContent = tgl;
+                            }
                         }
                     }
-                }
-                if (btnSubmitText) btnSubmitText.textContent = 'Perbarui Catatan';
-                inputPakan.value = log.pakan_kg;
-                inputTelur.value = log.telur_butir;
-                inputBerat.value = log.telur_kg !== null ? log.telur_kg : '';
-                if (inputMati) inputMati.value = log.ayam_mati;
-                if (inputBiayaLain) inputBiayaLain.value = log.biaya_lain;
-                if (inputCatatan) inputCatatan.value = log.catatan;
-            } else {
-                if (modeStatusBanner) modeStatusBanner.classList.add('hidden');
-                if (btnSubmitText) btnSubmitText.textContent = 'Simpan Catatan';
-            }
-            updateLivePreview();
-        });
-    }
-
-    // Tombol Batal Mode Edit
-    const btnBatalEdit = document.getElementById('btn-batal-edit');
-    if (btnBatalEdit) {
-        btnBatalEdit.addEventListener('click', function (e) {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (!urlParams.has('tanggal') && inputTanggal) {
-                e.preventDefault();
-                const todayStr = '{{ today()->toDateString() }}';
-                inputTanggal.value = todayStr;
-                updateTanggalDisplay(todayStr);
-                if (modeStatusBanner) modeStatusBanner.classList.add('hidden');
-                if (btnSubmitText) btnSubmitText.textContent = 'Simpan Catatan';
-                if (existingLogs && existingLogs[todayStr]) {
-                    const log = existingLogs[todayStr];
-                    inputPakan.value = log.pakan_kg;
-                    inputTelur.value = log.telur_butir;
-                    inputBerat.value = log.telur_kg !== null ? log.telur_kg : '';
+                    if (btnSubmitText) btnSubmitText.textContent = isDesktop ? 'Perbarui Catatan Harian' : 'Perbarui Catatan';
+                    if (inputPakan) inputPakan.value = log.pakan_kg;
+                    if (inputTelur) inputTelur.value = log.telur_butir;
+                    if (inputBerat) inputBerat.value = log.telur_kg !== null ? log.telur_kg : '';
                     if (inputMati) inputMati.value = log.ayam_mati;
                     if (inputBiayaLain) inputBiayaLain.value = log.biaya_lain;
                     if (inputCatatan) inputCatatan.value = log.catatan;
                 } else {
-                    inputPakan.value = '';
-                    inputTelur.value = '';
-                    inputBerat.value = '';
-                    if (inputMati) inputMati.value = 0;
-                    if (inputBiayaLain) inputBiayaLain.value = '';
-                    if (inputCatatan) inputCatatan.value = '';
+                    if (modeStatusBanner) modeStatusBanner.classList.add('hidden');
+                    if (btnSubmitText) btnSubmitText.textContent = isDesktop ? 'Simpan Catatan Harian' : 'Simpan Catatan';
                 }
                 updateLivePreview();
+            });
+        }
+
+        // Tombol Batal Mode Edit (Mobile)
+        if (!isDesktop) {
+            const btnBatalEdit = document.getElementById('btn-batal-edit');
+            if (btnBatalEdit) {
+                btnBatalEdit.addEventListener('click', function (e) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (!urlParams.has('tanggal') && inputTanggal) {
+                        e.preventDefault();
+                        const todayStr = '{{ today()->toDateString() }}';
+                        inputTanggal.value = todayStr;
+                        updateTanggalDisplay(todayStr);
+                        if (modeStatusBanner) modeStatusBanner.classList.add('hidden');
+                        if (btnSubmitText) btnSubmitText.textContent = 'Simpan Catatan';
+                        if (existingLogs && existingLogs[todayStr]) {
+                            const log = existingLogs[todayStr];
+                            inputPakan.value = log.pakan_kg;
+                            inputTelur.value = log.telur_butir;
+                            inputBerat.value = log.telur_kg !== null ? log.telur_kg : '';
+                            if (inputMati) inputMati.value = log.ayam_mati;
+                            if (inputBiayaLain) inputBiayaLain.value = log.biaya_lain;
+                            if (inputCatatan) inputCatatan.value = log.catatan;
+                        } else {
+                            inputPakan.value = '';
+                            inputTelur.value = '';
+                            inputBerat.value = '';
+                            if (inputMati) inputMati.value = 0;
+                            if (inputBiayaLain) inputBiayaLain.value = '';
+                            if (inputCatatan) inputCatatan.value = '';
+                        }
+                        updateLivePreview();
+                    }
+                });
             }
-        });
+        }
+
+        updateLivePreview();
     }
 
+    // Inisialisasi formulir Mobile & Desktop secara independen
+    initCatatController(false);
+    initCatatController(true);
     // Salin Laporan Periodik ke WhatsApp (Mendukung Desktop & Mobile)
     const btnsCopyWa = document.querySelectorAll('#btn-copy-wa, [data-copy-wa]');
     btnsCopyWa.forEach(btn => {
@@ -2408,9 +2832,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Jalankan kalkulasi awal saat halaman dimuat
-    updateLivePreview();
-    updateBeliPreview();
-    updateBeliPreviewDesk();
+    if (typeof updateBeliPreview === "function") updateBeliPreview();
+    if (typeof updateBeliPreviewDesk === "function") updateBeliPreviewDesk();
 });
 </script>
 @endsection

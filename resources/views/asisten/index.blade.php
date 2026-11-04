@@ -26,10 +26,10 @@
 @endphp
 
 <div data-tabs class="lg:flex-1 lg:min-h-0 lg:flex lg:flex-col space-y-2">
-    <div class="flex items-center justify-start shrink-0">
-        <div data-tab-nav class="tab-segmented-track relative inline-flex items-center gap-1 p-1 rounded-2xl md:rounded-full text-center text-xs sm:text-sm font-bold select-none bg-[#e6eeea] md:bg-surface-2 border border-line/60 shadow-2xs">
+    <div class="w-full shrink-0">
+        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-2 gap-1 p-1 rounded-2xl md:rounded-full text-center text-xs sm:text-sm font-bold select-none w-full bg-[#e6eeea] md:bg-surface-2 border border-line/60 shadow-2xs overflow-hidden">
             <div data-tab-slider class="tab-slider !rounded-xl md:!rounded-full" aria-hidden="true"></div>
-            <button type="button" data-tab="tanya" class="relative z-10 py-2 px-3 sm:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-[#0f3d26] md:text-ink font-black md:font-bold' : 'text-ink/75 md:text-muted hover:text-ink font-bold md:font-semibold' }}">
+            <button type="button" data-tab="tanya" class="w-full relative z-10 py-2.5 px-3 sm:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-[#0f3d26] md:text-ink font-black md:font-bold' : 'text-ink/75 md:text-muted hover:text-ink font-bold md:font-semibold' }} flex items-center justify-center">
                 <span class="sm:hidden">Tanya AI</span>
                 <span class="hidden sm:inline">Tanya Asisten AI</span>
             </button>
@@ -37,7 +37,7 @@
                 $isPeringatanActive = ($tabAktif === 'peringatan');
                 $unreadCountTab = $isPeringatanActive ? 0 : $alerts->where('dibaca', false)->count();
             @endphp
-            <button type="button" data-tab="peringatan" onclick="bukaTabPeringatan()" class="relative z-10 py-2 px-3 sm:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-[#0f3d26] md:text-ink font-black md:font-bold' : 'text-ink/75 md:text-muted hover:text-ink font-bold md:font-semibold' }} flex items-center gap-1.5">
+            <button type="button" data-tab="peringatan" onclick="bukaTabPeringatan()" class="w-full relative z-10 py-2.5 px-3 sm:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-[#0f3d26] md:text-ink font-black md:font-bold' : 'text-ink/75 md:text-muted hover:text-ink font-bold md:font-semibold' }} flex items-center justify-center gap-1.5">
                 <span class="sm:hidden">Peringatan</span>
                 <span class="hidden sm:inline">Peringatan Dini</span>
                 @if ($unreadCountTab > 0)
