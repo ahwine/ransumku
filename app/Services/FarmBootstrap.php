@@ -160,5 +160,22 @@ class FarmBootstrap
         app(RationCalculator::class)->hitung($farm, 40, null, $std);
 
         app(AnomalyDetector::class)->evaluate($farm);
+
+        if ($farm->alerts()->count() === 0) {
+            \App\Models\Alert::create([
+                'farm_id' => $farm->id,
+                'jenis' => 'biaya_per_kg_telur_naik',
+                'level' => 'waspada',
+                'tanggal_data' => now()->subDays(2)->toDateString(),
+                'pesan' => 'Biaya pakan per kg telur (estimasi) naik tajam: sekitar Rp 24.880 vs biasanya Rp 15.929.',
+            ]);
+            \App\Models\Alert::create([
+                'farm_id' => $farm->id,
+                'jenis' => 'pakan_naik_telur_turun',
+                'level' => 'waspada',
+                'tanggal_data' => now()->subDays(2)->toDateString(),
+                'pesan' => 'Pakan naik 10% atau lebih selama 3 hari berturut-turut (rata-rata 28,4 kg vs biasanya 22,1 kg), sementara telur turun (rata-rata 144 butir vs biasanya 171 butir).',
+            ]);
+        }
     }
 }

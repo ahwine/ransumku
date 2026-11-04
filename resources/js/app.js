@@ -331,6 +331,14 @@ function createStandardChart(el, cfg) {
             responsive: true,
             maintainAspectRatio: false,
             animation: false, // Animasi dikendalikan oleh orkestrator terkoordinasi
+            layout: {
+                padding: {
+                    left: 6,
+                    right: 4,
+                    top: 4,
+                    bottom: 0
+                }
+            },
             plugins: {
                 legend: {
                     display: cfg.legend ?? false,

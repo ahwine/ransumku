@@ -107,7 +107,7 @@ class HomeController extends Controller
         $chartPakan = [
             'type' => 'line',
             'labels' => $chartLabels,
-            'legend' => true,
+            'legend' => false,
             'datasets' => [
                 [
                     'label' => 'Konsumsi (gr/ekor)',
@@ -184,7 +184,7 @@ class HomeController extends Controller
         $chartFcr = [
             'type' => 'line',
             'labels' => $chartLabels,
-            'legend' => true,
+            'legend' => false,
             'zero' => false,
             'datasets' => [
                 [

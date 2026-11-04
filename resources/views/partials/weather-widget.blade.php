@@ -122,7 +122,7 @@
         </div>
 
         {{-- Sisi Kanan (Kolom 6-12): Visual Gauge Indeks Stres Panas (THI) Bersih & Modern --}}
-        <div class="lg:col-span-7 bg-white rounded-xl p-4 border border-line space-y-3 shadow-2xs">
+        <div class="lg:col-span-7 bg-white rounded-lg md:rounded-xl p-4 border border-line space-y-3 shadow-2xs">
             {{-- Header THI Status dengan Pill Badge Melengkung Halus --}}
             <div class="flex items-center justify-between gap-2">
                 <span class="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-1.5 whitespace-nowrap shrink-0">

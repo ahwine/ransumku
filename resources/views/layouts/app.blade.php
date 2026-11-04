@@ -130,7 +130,7 @@
 
 {{-- 3. Header Mobile --}}
 <header class="lg:hidden fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-line">
-    <div class="h-16 px-4 flex items-center justify-between max-w-lg mx-auto">
+    <div class="h-16 px-2.5 sm:px-4 flex items-center justify-between max-w-lg mx-auto">
         {{-- Sisi Kiri: Logo Ayam & Tab Kandang Aktif (Sesuai Gambar Referensi 2) --}}
         <div class="flex items-center gap-2 min-w-0 pr-1">
             <a href="{{ route('beranda') }}" class="flex items-center shrink-0 select-none group" aria-label="Beranda RansumKu">
@@ -230,7 +230,7 @@
 </header>
 
 {{-- 4. Main Content Area --}}
-<main class="lg:ml-64 pt-20 lg:pt-20 {{ request()->routeIs('asisten.*') ? 'pb-24 lg:pb-2.5 lg:h-screen lg:max-h-screen lg:flex lg:flex-col lg:overflow-hidden box-border' : 'pb-28 lg:pb-12' }} px-4 lg:px-8 @yield('main_class')">
+<main class="lg:ml-64 pt-20 lg:pt-20 {{ request()->routeIs('asisten.*') ? 'pb-24 lg:pb-2.5 lg:h-screen lg:max-h-screen lg:flex lg:flex-col lg:overflow-hidden box-border' : 'pb-28 lg:pb-12' }} px-2.5 sm:px-4 lg:px-8 @yield('main_class')">
     <div class="w-full {{ request()->routeIs('asisten.*') ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : 'space-y-5' }} @yield('container_class')">
         @yield('isi')
     </div>

@@ -72,7 +72,7 @@
             @foreach ($farms as $f)
                 @php $isActive = ($activeFarm && $activeFarm->id === $f->id); @endphp
                 {{-- Card Kandang: Warna Putih Bersih, Proporsional & Rapi --}}
-                <div class="bg-white rounded-2xl border {{ $isActive ? 'border-brand/40 shadow-xs' : 'border-line shadow-2xs' }} hover:shadow-xs transition p-4 sm:p-5 flex flex-col justify-between space-y-3">
+                <div class="bg-white rounded-lg sm:rounded-2xl border {{ $isActive ? 'border-brand/40 shadow-xs' : 'border-line shadow-2xs' }} hover:shadow-xs transition p-4 sm:p-5 flex flex-col justify-between space-y-3">
                     <div class="space-y-3">
                         {{-- Baris Atas Card: Nama Kandang & Status Aktif --}}
                         <div class="flex items-start justify-between gap-2">

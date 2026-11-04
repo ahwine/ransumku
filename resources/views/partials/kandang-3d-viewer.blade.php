@@ -5,7 +5,7 @@
      Fitur: Kereta Hopper Katrol L298N, Sirkulasi Blower, Misting Atap, Ayam 3D
      ========================================================================= --}}
 
-<div class="bg-white rounded-2xl border border-line p-4 sm:p-5 md:p-6 shadow-2xs space-y-3.5 sm:space-y-4" id="section-digital-twin-3d">
+<div class="bg-white rounded-lg md:rounded-2xl border border-line p-4 sm:p-5 md:p-6 shadow-2xs space-y-3.5 sm:space-y-4" id="section-digital-twin-3d">
     {{-- Header Digital Twin 3D (Rapi & Bebas Tombol Menumpuk) --}}
     <div class="flex items-center justify-between gap-3 pb-3 border-b border-line">
         <div class="flex items-center gap-3">

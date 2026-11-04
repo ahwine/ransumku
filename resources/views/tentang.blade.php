@@ -4,7 +4,7 @@
 
 <div class="space-y-6">
     {{-- 1. Kartu Pengenalan Utama ("Apa itu RansumKu?") --}}
-    <div class="bg-white rounded-2xl border border-line p-6 md:p-7 shadow-2xs">
+    <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-6 md:p-7 shadow-2xs">
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             <img src="{{ asset('images/logo.png') }}" alt="Logo RansumKu" class="w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0" />
 
@@ -30,7 +30,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {{-- Tujuan 1: Efisiensi Biaya --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
                 <div class="space-y-2">
                     <h3 class="text-sm font-bold text-ink">
                         <span class="text-brand mr-1.5">1.</span>Menghemat Biaya Pakan Harian
@@ -45,7 +45,7 @@
             </div>
 
             {{-- Tujuan 2: Menjamin Kualitas Nutrisi --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
                 <div class="space-y-2">
                     <h3 class="text-sm font-bold text-ink">
                         <span class="text-brand mr-1.5">2.</span>Memastikan Nutrisi Sesuai Standar
@@ -60,7 +60,7 @@
             </div>
 
             {{-- Tujuan 3: Rekap Digital Otomatis --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
                 <div class="space-y-2">
                     <h3 class="text-sm font-bold text-ink">
                         <span class="text-brand mr-1.5">3.</span>Pencatatan Kandang Tanpa Kertas
@@ -86,7 +86,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {{-- Fitur 1: Peracik Ransum --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
                 <div class="space-y-2.5">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
@@ -114,7 +114,7 @@
             </div>
 
             {{-- Fitur 2: Buku Kandang --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
                 <div class="space-y-2.5">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
@@ -142,7 +142,7 @@
             </div>
 
             {{-- Fitur 3: Kontrol Stok & Manajemen Bahan --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
                 <div class="space-y-2.5">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
@@ -170,7 +170,7 @@
             </div>
 
             {{-- Fitur 4: Asisten Cerdas --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between space-y-3">
                 <div class="space-y-2.5">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
@@ -209,7 +209,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- Langkah 1 --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
                 <div class="space-y-2">
                     <h3 class="text-xs font-bold text-ink">
                         <span class="text-brand mr-1.5">1.</span>Atur Data Kandang & Bahan
@@ -224,7 +224,7 @@
             </div>
 
             {{-- Langkah 2 --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
                 <div class="space-y-2">
                     <h3 class="text-xs font-bold text-ink">
                         <span class="text-brand mr-1.5">2.</span>Racik Ransum Hemat
@@ -239,7 +239,7 @@
             </div>
 
             {{-- Langkah 3 --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
                 <div class="space-y-2">
                     <h3 class="text-xs font-bold text-ink">
                         <span class="text-brand mr-1.5">3.</span>Catat Telur Tiap Sore
@@ -254,7 +254,7 @@
             </div>
 
             {{-- Langkah 4 --}}
-            <div class="bg-white rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
+            <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-5 shadow-2xs space-y-2 flex flex-col justify-between">
                 <div class="space-y-2">
                     <h3 class="text-xs font-bold text-ink">
                         <span class="text-brand mr-1.5">4.</span>Pantau & Cetak Laporan
@@ -280,7 +280,7 @@
 
         <div class="space-y-2.5">
             {{-- FAQ 1 --}}
-            <details class="group bg-white rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
+            <details class="group bg-white rounded-lg sm:rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
                 <summary class="flex items-center justify-between cursor-pointer list-none select-none text-ink [&::-webkit-details-marker]:hidden">
                     <div class="flex items-center gap-2.5 pr-4">
                         <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">?</span>
@@ -294,7 +294,7 @@
             </details>
 
             {{-- FAQ 2 --}}
-            <details class="group bg-white rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
+            <details class="group bg-white rounded-lg sm:rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
                 <summary class="flex items-center justify-between cursor-pointer list-none select-none text-ink [&::-webkit-details-marker]:hidden">
                     <div class="flex items-center gap-2.5 pr-4">
                         <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">?</span>
@@ -308,7 +308,7 @@
             </details>
 
             {{-- FAQ 3 --}}
-            <details class="group bg-white rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
+            <details class="group bg-white rounded-lg sm:rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
                 <summary class="flex items-center justify-between cursor-pointer list-none select-none text-ink [&::-webkit-details-marker]:hidden">
                     <div class="flex items-center gap-2.5 pr-4">
                         <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">?</span>
@@ -322,7 +322,7 @@
             </details>
 
             {{-- FAQ 4 --}}
-            <details class="group bg-white rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
+            <details class="group bg-white rounded-lg sm:rounded-2xl border border-line p-4 sm:px-5 sm:py-4 shadow-2xs hover:border-brand/40 transition-all">
                 <summary class="flex items-center justify-between cursor-pointer list-none select-none text-ink [&::-webkit-details-marker]:hidden">
                     <div class="flex items-center gap-2.5 pr-4">
                         <span class="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center shrink-0">?</span>

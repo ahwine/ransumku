@@ -104,7 +104,7 @@
                 $extraBadges = $s->ringkasanParameterTambahan();
                 $isSekunder = $s->isSumberSekunder();
             @endphp
-            <div class="kartu-standar bg-white rounded-2xl border {{ $s->verified ? 'border-line' : 'border-amber-200/90' }} p-5 shadow-2xs hover:shadow-xs transition space-y-3.5 flex flex-col justify-between"
+            <div class="kartu-standar bg-white rounded-lg sm:rounded-2xl border {{ $s->verified ? 'border-line' : 'border-amber-200/90' }} p-5 shadow-2xs hover:shadow-xs transition space-y-3.5 flex flex-col justify-between"
                  data-nama="{{ strtolower($s->nama . ' ' . $s->organisasi_sumber . ' ' . $sumberTeks . ' ' . $edisiTeks . ' ' . $kategoriFase . ' ' . ($isSekunder ? 'sumber sekunder ' : '') . ($deskripsi ?? '')) }}"
                  data-kategori-fase="{{ $kategoriFase }}"
                  data-verified="{{ $s->verified ? '1' : '0' }}"

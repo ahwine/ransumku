@@ -5,16 +5,16 @@
     $isList = $is_list ?? false;
 @endphp
 
-<div class="{{ $isList ? 'p-4 md:py-4 md:px-5 hover:bg-surface/30 transition-colors' : 'rounded-2xl border border-line/80 bg-white p-4 sm:p-5 hover:border-line hover:shadow-xs transition-all shadow-2xs' }} flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="{{ $isList ? 'p-4 md:py-4 md:px-5 hover:bg-surface/30 transition-colors' : 'rounded-lg md:rounded-xl border border-line/80 bg-white p-4 sm:p-5 hover:border-line hover:shadow-xs transition-all shadow-2xs' }} flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div class="space-y-2 min-w-0 flex-1">
         {{-- Status Badge & Tanggal --}}
         <div class="flex items-center gap-2 text-xs">
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold {{ $danger ? 'bg-rose-50 text-rose-700 border border-rose-200/80' : 'bg-amber-50 text-amber-800 border border-amber-200/80' }}">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 whitespace-nowrap {{ $danger ? 'bg-rose-50 text-rose-700 border border-rose-200/80' : 'bg-amber-50 text-amber-800 border border-amber-200/80' }}">
                 <span class="material-symbols-outlined text-[13px]">{{ $danger ? 'error' : 'warning' }}</span>
                 <span>{{ $danger ? 'Waspada' : 'Perhatian' }}</span>
             </span>
-            <span class="text-muted/40">•</span>
-            <span class="text-muted font-medium text-[11px]">
+            <span class="text-muted/40 shrink-0">•</span>
+            <span class="text-muted font-medium text-[11px] shrink-0 whitespace-nowrap">
                 {{ optional($alert->tanggal_data)->translatedFormat('d F Y') }}
             </span>
         </div>

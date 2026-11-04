@@ -95,7 +95,7 @@
         {{-- Grid 2 Kolom Bahan Pakan: Proporsional, Tidak Melar, & Rapi --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             @forelse ($bahan as $b)
-                <div class="bg-white rounded-2xl border border-line p-4 sm:p-5 shadow-2xs hover:shadow-xs transition flex flex-col justify-between space-y-3" data-bahan-card data-bahan-nama="{{ strtolower($b->nama) }}">
+                <div class="bg-white rounded-lg sm:rounded-2xl border border-line p-4 sm:p-5 shadow-2xs hover:shadow-xs transition flex flex-col justify-between space-y-3" data-bahan-card data-bahan-nama="{{ strtolower($b->nama) }}">
                     <div class="space-y-3">
                         {{-- Baris Atas: Nama Bahan, Pill Tags & Harga Acuan --}}
                         <div class="flex items-start justify-between gap-3">

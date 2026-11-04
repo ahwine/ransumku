@@ -12,7 +12,7 @@
 <div data-mobile-catatan-header class="{{ $tabAktif === 'dashboard' ? 'hidden' : 'block md:hidden' }} space-y-1.5 mb-2">
     <div class="flex items-center justify-between gap-3">
         <h1 class="text-2xl font-black text-[#0f3d26] tracking-tight">Produksi</h1>
-        <a href="{{ route('kandang.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold text-[#0f3d26] bg-white border border-[#d9e6dd] shadow-2xs hover:bg-[#f4f8f5] transition shrink-0" title="Kelola Multi-Kandang">
+        <a href="{{ route('kandang.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#0f3d26] bg-white border border-[#d9e6dd] shadow-2xs hover:bg-[#f4f8f5] transition shrink-0" title="Kelola Multi-Kandang">
             <span class="material-symbols-outlined text-[18px] text-[#1f7a4a]">segment</span>
             <span>Ganti Kandang</span>
         </a>
@@ -41,17 +41,17 @@
 {{-- Tabs --}}
 <div data-tabs class="space-y-4">
     <div class="w-full">
-        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-3 gap-1 p-1 rounded-2xl md:rounded-full text-center select-none w-full bg-[#e6eeea] md:bg-[#e4eee7] border border-line/60 shadow-2xs overflow-hidden">
-            <div data-tab-slider class="tab-slider !rounded-xl md:!rounded-full" aria-hidden="true"></div>
-            <button type="button" data-tab="form" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
+        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-3 gap-1 p-1 rounded-full text-center select-none w-full bg-[#e6eeea] md:bg-[#e4eee7] border border-line/60 shadow-2xs overflow-hidden">
+            <div data-tab-slider class="tab-slider !rounded-full" aria-hidden="true"></div>
+            <button type="button" data-tab="form" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
                 <span class="md:hidden">Catat</span>
                 <span class="hidden md:inline">Catat Harian</span>
             </button>
-            <button type="button" data-tab="dashboard" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
+            <button type="button" data-tab="dashboard" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
                 <span class="md:hidden">Laporan</span>
                 <span class="hidden md:inline">Laporan Performa</span>
             </button>
-            <button type="button" data-tab="beli" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
+            <button type="button" data-tab="beli" class="w-full relative z-10 py-2.5 md:py-2 px-1.5 md:px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm md:text-xs font-bold {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 md:text-[#567263] hover:text-ink md:hover:text-[#0f3d26] font-bold' }} flex items-center justify-center">
                 <span class="md:hidden">Belanja</span>
                 <span class="hidden md:inline">Belanja Pakan</span>
             </button>
@@ -68,12 +68,12 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
             {{-- KOLOM KIRI (1/2): Formulir Input Catatan Harian (Image 1 style) --}}
             <div class="flex flex-col">
-                <form method="POST" action="{{ route('catatan.store') }}" class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs space-y-4 flex-1 flex flex-col justify-between" style="border: none;">
+                <form method="POST" action="{{ route('catatan.store') }}" class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 shadow-xs space-y-4 flex-1 flex flex-col justify-between" style="border: none;">
                     @csrf
                     <div class="space-y-4">
                         {{-- Header Form Bersih & Tegas (Image 1 style) --}}
                         <div class="flex items-center gap-3 pb-3 border-b border-[#eef4f0]">
-                            <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style="background-color: #dcefe2; color: #1f7a4a;">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style="background-color: #dcefe2; color: #1f7a4a;">
                                 <span class="material-symbols-outlined text-[22px]">edit</span>
                             </div>
                             <div>
@@ -83,9 +83,9 @@
                         </div>
 
                         {{-- Banner Mode Edit (Muncul jika tanggal yang dipilih sudah ada catatan) --}}
-                        <div id="mode-status-banner" class="{{ $isEdit ? '' : 'hidden' }} p-3.5 sm:p-4 rounded-2xl flex items-center justify-between gap-3 transition-all" style="background-color: #fffdf5; border: 1.5px solid #fde68a;">
+                        <div id="mode-status-banner" class="{{ $isEdit ? '' : 'hidden' }} p-3.5 sm:p-4 rounded-md sm:rounded-xl flex items-center justify-between gap-3 transition-all" style="background-color: #fffdf5; border: 1.5px solid #fde68a;">
                             <div class="flex items-center gap-3 sm:gap-3.5 min-w-0">
-                                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs" style="background-color: #fef3c7; color: #92400e;">
+                                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0 shadow-2xs" style="background-color: #fef3c7; color: #92400e;">
                                     <span class="material-symbols-outlined text-[24px] sm:text-[26px]">edit_calendar</span>
                                 </div>
                                 <div class="min-w-0 space-y-1">
@@ -98,7 +98,7 @@
                                     <p class="text-[11px] sm:text-xs text-[#567263] font-normal leading-tight">Mengubah catatan yang sudah tersimpan.</p>
                                 </div>
                             </div>
-                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" id="btn-batal-edit" class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold bg-white text-[#92400e] hover:bg-amber-50/70 active:scale-95 transition shadow-2xs shrink-0" style="border: 1.5px solid #fde68a;" title="Reset formulir ke hari ini">
+                            <a href="{{ route('catatan.index', ['tab' => 'form']) }}" id="btn-batal-edit" class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs font-bold bg-white text-[#92400e] hover:bg-amber-50/70 active:scale-95 transition shadow-2xs shrink-0" style="border: 1.5px solid #fde68a;" title="Reset formulir ke hari ini">
                                 <span class="material-symbols-outlined text-[16px] text-[#b45309]">restart_alt</span>
                                 <span>Reset</span>
                             </a>
@@ -106,10 +106,10 @@
 
                         {{-- Quick Fill dari Catatan Kemarin (Sesuai Mockup Foto 1) --}}
                         @if ($yesterdayLog)
-                        <div class="p-4 sm:p-5 rounded-[24px] bg-[#f2f7f4] border border-[#d7e6dc] space-y-3.5 transition-all">
+                        <div class="p-4 sm:p-5 rounded-md sm:rounded-xl bg-[#f2f7f4] border border-[#d7e6dc] space-y-3.5 transition-all">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-[#e3eee6] border border-[#d2e3d7]">
+                                    <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-[#e3eee6] border border-[#d2e3d7]">
                                         <span class="material-symbols-outlined text-[24px] text-[#0f3d26]">calendar_today</span>
                                     </div>
                                     <div class="min-w-0 space-y-0.5">
@@ -127,7 +127,7 @@
                                     data-pakan="{{ (float) $yesterdayLog->pakan_kg }}"
                                     data-telur="{{ (int) $yesterdayLog->telur_butir }}"
                                     data-berat="{{ $yesterdayLog->telur_kg !== null ? (float) $yesterdayLog->telur_kg : '' }}"
-                                    class="w-full py-3.5 px-4 rounded-2xl text-sm font-bold text-white bg-[#115e37] hover:bg-[#0d4a2b] active:scale-[0.99] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer">
+                                    class="w-full py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-[#115e37] hover:bg-[#0d4a2b] active:scale-[0.99] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer">
                                 <span class="material-symbols-outlined text-[20px] text-white icon-fill">bolt</span>
                                 <span>Salin Angka Kemarin</span>
                             </button>
@@ -172,7 +172,7 @@
                                 </div>
 
                                 {{-- Popover Mini Kalkulator Rak Telur --}}
-                                <div id="popover-calc-rak" class="hidden absolute top-full left-0 right-0 z-30 mt-1.5 p-3.5 rounded-2xl bg-white border border-[#1f7a4a]/30 shadow-xl space-y-2.5">
+                                <div id="popover-calc-rak" class="hidden absolute top-full left-0 right-0 z-30 mt-1.5 p-3.5 rounded-xl bg-white border border-[#1f7a4a]/30 shadow-xl space-y-2.5">
                                     <div class="flex items-center justify-between pb-1.5 border-b border-[#eef4f0] text-xs">
                                         <span class="font-bold text-[#0f3d26] flex items-center gap-1.5">
                                             <span class="material-symbols-outlined text-[#1f7a4a] text-[18px]">calculate</span>
@@ -253,7 +253,7 @@
                         </div>
 
                         {{-- Notice Banner (Image 1 style) --}}
-                        <div class="p-3 rounded-2xl flex items-center gap-3" style="background-color: #eef6f0; border: none;">
+                        <div class="p-3 rounded-xl flex items-center gap-3" style="background-color: #eef6f0; border: none;">
                             <span class="material-symbols-outlined text-[20px] shrink-0" style="color: #1f7a4a;">segment</span>
                             <p class="text-xs text-[#567263] leading-snug">
                                 Standar pakan <strong class="font-bold text-[#0f3d26]">110–120 g/ekor/hari</strong>. Kalkulasi otomatis.
@@ -262,7 +262,7 @@
                     </div>
 
                     {{-- CTA Button (Image 1 style) --}}
-                    <button type="submit" class="w-full py-3.5 px-4 rounded-2xl text-white font-bold text-sm shadow-xs transition active:scale-[0.99] flex items-center justify-center cursor-pointer mt-2" style="background-color: #1f7a4a; color: #ffffff; border: none;">
+                    <button type="submit" class="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm shadow-xs transition active:scale-[0.99] flex items-center justify-center cursor-pointer mt-2" style="background-color: #1f7a4a; color: #ffffff; border: none;">
                         <span id="btn-submit-text">{{ $isEdit ? 'Perbarui Catatan' : 'Simpan Catatan' }}</span>
                     </button>
                 </form>
@@ -270,87 +270,87 @@
 
             {{-- KOLOM KANAN (1/2): Live Cockpit & Pratinjau Performa Harian (Tampil di Mobile & Desktop - Sesuai Gambar 2) --}}
             <div class="flex flex-col">
-                <div id="live-preview-box" class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs space-y-4 flex-1 flex flex-col justify-between" style="border: none;">
+                <div id="live-preview-box" class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 shadow-xs space-y-4 flex-1 flex flex-col justify-between" style="border: none;">
                     <div class="space-y-4">
                         {{-- Header Cockpit (Sesuai Gambar 2) --}}
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[22px]" style="color: #1f7a4a;">trending_up</span>
-                                <h3 class="text-xs font-extrabold text-[#0f3d26] uppercase tracking-wider">PRATINJAU PERFORMA HARIAN</h3>
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                                <span class="material-symbols-outlined text-[20px]" style="color: #1f7a4a;">trending_up</span>
+                                <h3 class="text-xs font-extrabold text-[#0f3d26] uppercase tracking-wider whitespace-nowrap">PRATINJAU PERFORMA</h3>
                             </div>
-                            <span class="text-xs text-[#567263] font-medium">Populasi: <strong class="text-[#0f3d26] font-bold">{{ number_format($jumlahAyam, 0, ',', '.') }} ekor</strong></span>
+                            <span class="text-xs text-[#567263] font-medium shrink-0 whitespace-nowrap">Populasi: <strong class="text-[#0f3d26] font-bold">{{ number_format($jumlahAyam, 0, ',', '.') }} ekor</strong></span>
                         </div>
 
                         {{-- 4 Kotak Metrik 2x2 (Sesuai Gambar 2) --}}
                         <div class="grid grid-cols-2 gap-3 text-center">
                             {{-- 1. HEN-DAY (HDP) --}}
-                            <div class="p-3.5 rounded-2xl flex flex-col items-center justify-between" style="background-color: #f4f8f5; border: none;">
-                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block mb-1">HEN-DAY (HDP)</span>
-                                <strong id="preview-hdp-val" class="text-2xl sm:text-3xl text-[#0f3d26] block font-black mb-1">0.0%</strong>
-                                <span id="preview-hdp-badge" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold" style="background-color: #e8f2eb; color: #476b55;">Menunggu data</span>
+                            <div class="p-3 rounded-lg flex flex-col items-center justify-between" style="background-color: #f4f8f5; border: none;">
+                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block mb-1 whitespace-nowrap truncate">HEN-DAY (HDP)</span>
+                                <strong id="preview-hdp-val" class="text-2xl sm:text-3xl text-[#0f3d26] block font-black mb-1 whitespace-nowrap">0.0%</strong>
+                                <span id="preview-hdp-badge" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap" style="background-color: #e8f2eb; color: #476b55;">Menunggu data</span>
                             </div>
 
                             {{-- 2. PAKAN / EKOR --}}
-                            <div class="p-3.5 rounded-2xl flex flex-col items-center justify-between" style="background-color: #f4f8f5; border: none;">
-                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block mb-1">PAKAN / EKOR</span>
-                                <strong id="preview-feed-val" class="text-2xl sm:text-3xl text-[#0f3d26] block font-black mb-1">0 <span class="text-xs font-normal text-[#567263]">gr</span></strong>
-                                <span id="preview-feed-badge" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold" style="background-color: #e8f2eb; color: #476b55;">std: 110g</span>
+                            <div class="p-3 rounded-lg flex flex-col items-center justify-between" style="background-color: #f4f8f5; border: none;">
+                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block mb-1 whitespace-nowrap truncate">PAKAN / EKOR</span>
+                                <strong id="preview-feed-val" class="text-2xl sm:text-3xl text-[#0f3d26] block font-black mb-1 whitespace-nowrap">0 <span class="text-xs font-normal text-[#567263]">gr</span></strong>
+                                <span id="preview-feed-badge" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap" style="background-color: #e8f2eb; color: #476b55;">std: 110g</span>
                             </div>
 
                             {{-- 3. FCR INSTAN --}}
-                            <div class="p-3.5 rounded-2xl flex flex-col items-center justify-between" style="background-color: #f4f8f5; border: none;">
-                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block mb-1">FCR INSTAN</span>
-                                <strong id="preview-fcr-val" class="text-2xl sm:text-3xl text-[#0f3d26] block font-black mb-1">0.00</strong>
-                                <span id="preview-fcr-badge" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold" style="background-color: #e8f2eb; color: #476b55;">Efisiensi</span>
+                            <div class="p-3 rounded-lg flex flex-col items-center justify-between" style="background-color: #f4f8f5; border: none;">
+                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block mb-1 whitespace-nowrap truncate">FCR INSTAN</span>
+                                <strong id="preview-fcr-val" class="text-2xl sm:text-3xl text-[#0f3d26] block font-black mb-1 whitespace-nowrap">0.00</strong>
+                                <span id="preview-fcr-badge" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap" style="background-color: #e8f2eb; color: #476b55;">Efisiensi</span>
                             </div>
 
                             {{-- 4. BIAYA PAKAN EST --}}
-                            <div class="p-3.5 rounded-2xl flex flex-col items-center justify-between" style="background-color: #f4f8f5; border: none;">
-                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block mb-1">
+                            <div class="p-3 rounded-lg flex flex-col items-center justify-between" style="background-color: #f4f8f5; border: none;">
+                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block mb-1 whitespace-nowrap truncate">
                                      BIAYA PAKAN <span class="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase" style="background-color: #e4eee7; color: #476b55;">EST</span>
                                 </span>
-                                <strong id="preview-cost-val" class="text-xl sm:text-2xl text-[#0f3d26] block font-black mb-1">Rp 0</strong>
-                                <span id="preview-margin-sub" class="inline-block text-[10px] text-[#567263] font-medium">@ {{ Fmt::rp($harga) }}/kg</span>
+                                <strong id="preview-cost-val" class="text-xl sm:text-2xl text-[#0f3d26] block font-black mb-1 whitespace-nowrap">Rp 0</strong>
+                                <span id="preview-margin-sub" class="inline-block text-[10px] text-[#567263] font-medium whitespace-nowrap">@ {{ Fmt::rp($harga) }}/kg</span>
                             </div>
                         </div>
 
                         {{-- Alert Box Dinamis --}}
-                        <div id="preview-alert-box" class="hidden p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                        <div id="preview-alert-box" class="hidden p-2.5 rounded-lg text-xs font-semibold flex items-center gap-2">
                             <span id="preview-alert-icon" class="material-symbols-outlined text-[18px]"></span>
                             <span id="preview-alert-text"></span>
                         </div>
 
                         {{-- Ringkasan Acuan Fase & Standar Bibit (Sesuai Gambar 2) --}}
-                        <div class="p-3.5 rounded-2xl flex items-center justify-between text-xs" style="background-color: #f4f8f5; border: none;">
-                            <div class="space-y-0.5">
-                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block">FASE & STRAIN AYAM</span>
-                                <strong class="font-extrabold text-[#0f3d26] text-xs sm:text-sm block">Mg ke-{{ $farm->umurMinggu() }} · {{ $farm->strain_ayam ?? 'Lohmann Brown' }}</strong>
+                        <div class="p-3 rounded-lg flex items-center justify-between gap-2 text-xs" style="background-color: #f4f8f5; border: none;">
+                            <div class="space-y-0.5 min-w-0">
+                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block shrink-0 whitespace-nowrap">FASE & STRAIN AYAM</span>
+                                <strong class="font-extrabold text-[#0f3d26] text-xs sm:text-sm block truncate">Mg ke-{{ $farm->umurMinggu() }} · {{ $farm->strain_ayam ?? 'Lohmann Brown' }}</strong>
                             </div>
-                            <div class="text-right space-y-0.5">
-                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block text-right">TARGET PRODUKSI (HDP)</span>
-                                <strong class="font-extrabold text-xs sm:text-sm block text-right" style="color: #1f7a4a;">85% – 92%</strong>
+                            <div class="text-right space-y-0.5 shrink-0 whitespace-nowrap">
+                                <span class="text-[10px] text-[#567263] uppercase tracking-wider font-bold block text-right whitespace-nowrap">TARGET PRODUKSI (HDP)</span>
+                                <strong class="font-extrabold text-xs sm:text-sm block text-right whitespace-nowrap" style="color: #1f7a4a;">85% – 92%</strong>
                             </div>
                         </div>
                     </div>
 
                     {{-- Footer Acuan Konsumsi (Sesuai Gambar 2) --}}
-                    <div class="pt-3 border-t border-[#eef4f0] flex items-center justify-between text-xs text-[#567263]">
-                        <span class="flex items-center gap-1.5 font-bold text-[#0f3d26]">
+                    <div class="pt-3 border-t border-[#eef4f0] flex items-center justify-between gap-1 text-xs text-[#567263]">
+                        <span class="flex items-center gap-1.5 font-bold text-[#0f3d26] shrink-0 whitespace-nowrap">
                             <span class="material-symbols-outlined text-[18px]" style="color: #1f7a4a;">tune</span>
                             Standar Pakan:
                         </span>
-                        <strong class="text-[#0f3d26] font-bold text-xs">110–120 g/ekor/hari</strong>
-                        <span class="font-medium text-[#567263]">Kalkulasi Otomatis</span>
+                        <strong class="text-[#0f3d26] font-bold text-xs shrink-0 whitespace-nowrap">110–120 g/ekor/hari</strong>
+                        <span class="font-medium text-[#567263] shrink-0 whitespace-nowrap hidden sm:inline">Kalkulasi Otomatis</span>
                     </div>
                 </div>
             </div>
         </div>
 
         {{-- Riwayat Catatan Harian (Image 2 style) --}}
-        <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5" style="border: none;">
+        <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 shadow-xs space-y-3.5" style="border: none;">
             {{-- Card Header --}}
             <div class="flex items-center gap-3 pb-3 border-b border-[#eef4f0]">
-                <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style="background-color: #dcefe2; color: #1f7a4a;">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style="background-color: #dcefe2; color: #1f7a4a;">
                     <span class="material-symbols-outlined text-[22px]">history</span>
                 </div>
                 <div>
@@ -359,22 +359,22 @@
                 </div>
             </div>
 
-            {{-- Filter Pills Track (Image 2 style) --}}
-            <div class="flex items-center p-1 rounded-2xl w-full" style="background-color: #e4eee7;">
+            {{-- Filter Pills Track (Pill Badge Style) --}}
+            <div class="flex items-center p-1 rounded-full w-full" style="background-color: #e4eee7;">
                 <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'semua']) }}"
-                   class="flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all {{ ($filterPeriode === 'semua' && !$cariTanggal) ? 'bg-white text-[#0f3d26] shadow-xs' : 'text-[#567263] hover:text-[#0f3d26]' }}">
+                   class="flex-1 py-1.5 text-center text-xs font-bold rounded-full transition-all {{ ($filterPeriode === 'semua' && !$cariTanggal) ? 'bg-white text-[#0f3d26] shadow-xs' : 'text-[#567263] hover:text-[#0f3d26]' }}">
                     Semua
                 </a>
                 <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'bulan_ini']) }}"
-                   class="flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all {{ $filterPeriode === 'bulan_ini' ? 'bg-white text-[#0f3d26] shadow-xs' : 'text-[#567263] hover:text-[#0f3d26]' }}">
+                   class="flex-1 py-1.5 text-center text-xs font-bold rounded-full transition-all {{ $filterPeriode === 'bulan_ini' ? 'bg-white text-[#0f3d26] shadow-xs' : 'text-[#567263] hover:text-[#0f3d26]' }}">
                     Bulan Ini
                 </a>
                 <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => 'bulan_lalu']) }}"
-                   class="flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all {{ $filterPeriode === 'bulan_lalu' ? 'bg-white text-[#0f3d26] shadow-xs' : 'text-[#567263] hover:text-[#0f3d26]' }}">
+                   class="flex-1 py-1.5 text-center text-xs font-bold rounded-full transition-all {{ $filterPeriode === 'bulan_lalu' ? 'bg-white text-[#0f3d26] shadow-xs' : 'text-[#567263] hover:text-[#0f3d26]' }}">
                     Bulan Lalu
                 </a>
                 <a href="{{ route('catatan.index', ['tab' => 'form', 'periode' => '30_hari']) }}"
-                   class="flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all {{ $filterPeriode === '30_hari' ? 'bg-white text-[#0f3d26] shadow-xs' : 'text-[#567263] hover:text-[#0f3d26]' }}">
+                   class="flex-1 py-1.5 text-center text-xs font-bold rounded-full transition-all {{ $filterPeriode === '30_hari' ? 'bg-white text-[#0f3d26] shadow-xs' : 'text-[#567263] hover:text-[#0f3d26]' }}">
                     30 Hari
                 </a>
             </div>
@@ -386,10 +386,10 @@
                     <span class="absolute left-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-[18px] pointer-events-none z-20" style="color: #1f7a4a;">calendar_today</span>
                     <input type="date" name="cari_tanggal" id="cari_tanggal" value="{{ $cariTanggal }}" max="{{ today()->toDateString() }}"
                            onchange="this.form.submit()"
-                           class="w-full h-11 pl-10 pr-10 rounded-2xl text-xs font-semibold focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10"
+                           class="w-full h-11 pl-10 pr-10 rounded-lg text-xs font-semibold focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10"
                            style="border: 1px solid #e4eee7; background-color: #f8fbf9; color: #0f3d26;">
-                    <div class="w-full h-11 pl-10 pr-10 rounded-2xl text-xs font-semibold {{ $cariTanggal ? 'text-[#0f3d26]' : 'text-[#567263]' }} flex items-center pointer-events-none"
-                         style="border: 1px solid #e4eee7; background-color: #f8fbf9;">
+                    <div class="w-full h-11 pl-10 pr-10 rounded-lg text-xs font-semibold {{ $cariTanggal ? 'text-[#0f3d26]' : 'text-[#567263]' }} flex items-center pointer-events-none"
+                          style="border: 1px solid #e4eee7; background-color: #f8fbf9;">
                         {{ $cariTanggal ? \Carbon\Carbon::parse($cariTanggal)->translatedFormat('d M Y') : 'Pilih tanggal' }}
                     </div>
                     @if ($cariTanggal)
@@ -407,19 +407,19 @@
                         $itemHdp = $jumlahAyam > 0 ? round(($r->telur_butir / $jumlahAyam) * 100, 1) : 0;
                         $hdpFormatted = str_replace('.', ',', (string) $itemHdp);
                     @endphp
-                    <a href="{{ route('catatan.index', ['tanggal' => $r->tanggal->toDateString(), 'tab' => 'form']) }}" class="block rounded-2xl p-3.5 shadow-2xs hover:shadow-xs transition space-y-2" style="background-color: #f8fbf9; border: none;">
-                        <div class="flex items-center justify-between">
-                            <span class="font-extrabold text-sm text-[#0f3d26]">{{ $r->tanggal->translatedFormat('d M Y') }}</span>
+                    <a href="{{ route('catatan.index', ['tanggal' => $r->tanggal->toDateString(), 'tab' => 'form']) }}" class="block rounded-lg sm:rounded-xl p-3.5 shadow-2xs hover:shadow-xs transition space-y-2" style="background-color: #f8fbf9; border: none;">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-extrabold text-sm text-[#0f3d26] shrink-0 whitespace-nowrap">{{ $r->tanggal->translatedFormat('d M Y') }}</span>
                             @if ($itemHdp >= 85)
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold text-white" style="background-color: #1f7a4a; color: #ffffff;">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold text-white shrink-0 whitespace-nowrap" style="background-color: #1f7a4a; color: #ffffff;">
                                     HDP {{ $hdpFormatted }}%
                                 </span>
                             @elseif ($itemHdp >= 75)
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold" style="background-color: #dcefe2; color: #0f3d26;">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap" style="background-color: #dcefe2; color: #0f3d26;">
                                     HDP {{ $hdpFormatted }}%
                                 </span>
                             @else
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold" style="background-color: #fdf0cf; color: #7a4d05;">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap" style="background-color: #fdf0cf; color: #7a4d05;">
                                     HDP {{ $hdpFormatted }}%
                                 </span>
                             @endif
@@ -474,11 +474,11 @@
                     <div class="flex items-center justify-center gap-2.5 sm:gap-3">
                         {{-- Tombol Sebelumnya (<) --}}
                         @if ($riwayat->onFirstPage())
-                            <span class="w-11 h-11 rounded-2xl bg-white opacity-35 flex items-center justify-center cursor-not-allowed shadow-2xs" style="border: 1px solid #d9e6dd; color: #0f3d26;">
+                            <span class="w-11 h-11 rounded-xl bg-white opacity-35 flex items-center justify-center cursor-not-allowed shadow-2xs" style="border: 1px solid #d9e6dd; color: #0f3d26;">
                                 <span class="material-symbols-outlined text-[20px]">chevron_left</span>
                             </span>
                         @else
-                            <a href="{{ $riwayat->previousPageUrl() }}" class="w-11 h-11 rounded-2xl bg-white flex items-center justify-center hover:bg-[#f4f8f5] transition shadow-2xs cursor-pointer" style="border: 1px solid #d9e6dd; color: #0f3d26;">
+                            <a href="{{ $riwayat->previousPageUrl() }}" class="w-11 h-11 rounded-xl bg-white flex items-center justify-center hover:bg-[#f4f8f5] transition shadow-2xs cursor-pointer" style="border: 1px solid #d9e6dd; color: #0f3d26;">
                                 <span class="material-symbols-outlined text-[20px]">chevron_left</span>
                             </a>
                         @endif
@@ -486,19 +486,19 @@
                         {{-- Angka Halaman --}}
                         @foreach ($riwayat->getUrlRange($startPage, $endPage) as $page => $url)
                             @if ($page == $currPage)
-                                <span class="w-11 h-11 rounded-2xl font-bold text-sm flex items-center justify-center shadow-xs" style="background-color: #1f7a4a; color: #ffffff; border: none;">{{ $page }}</span>
+                                <span class="w-11 h-11 rounded-xl font-bold text-sm flex items-center justify-center shadow-xs" style="background-color: #1f7a4a; color: #ffffff; border: none;">{{ $page }}</span>
                             @else
-                                <a href="{{ $url }}" class="w-11 h-11 rounded-2xl bg-white font-bold text-sm flex items-center justify-center hover:bg-[#f4f8f5] transition shadow-2xs cursor-pointer" style="border: 1px solid #d9e6dd; color: #0f3d26;">{{ $page }}</a>
+                                <a href="{{ $url }}" class="w-11 h-11 rounded-xl bg-white font-bold text-sm flex items-center justify-center hover:bg-[#f4f8f5] transition shadow-2xs cursor-pointer" style="border: 1px solid #d9e6dd; color: #0f3d26;">{{ $page }}</a>
                             @endif
                         @endforeach
 
                         {{-- Tombol Selanjutnya (>) --}}
                         @if ($riwayat->hasMorePages())
-                            <a href="{{ $riwayat->nextPageUrl() }}" class="w-11 h-11 rounded-2xl bg-white flex items-center justify-center hover:bg-[#f4f8f5] transition shadow-2xs cursor-pointer" style="border: 1px solid #d9e6dd; color: #0f3d26;">
+                            <a href="{{ $riwayat->nextPageUrl() }}" class="w-11 h-11 rounded-xl bg-white flex items-center justify-center hover:bg-[#f4f8f5] transition shadow-2xs cursor-pointer" style="border: 1px solid #d9e6dd; color: #0f3d26;">
                                 <span class="material-symbols-outlined text-[20px]">chevron_right</span>
                             </a>
                         @else
-                            <span class="w-11 h-11 rounded-2xl bg-white opacity-35 flex items-center justify-center cursor-not-allowed shadow-2xs" style="border: 1px solid #d9e6dd; color: #0f3d26;">
+                            <span class="w-11 h-11 rounded-xl bg-white opacity-35 flex items-center justify-center cursor-not-allowed shadow-2xs" style="border: 1px solid #d9e6dd; color: #0f3d26;">
                                 <span class="material-symbols-outlined text-[20px]">chevron_right</span>
                             </span>
                         @endif
@@ -952,9 +952,9 @@
             {{-- Filter Rentang Data (Pill Capsule) --}}
             <div class="flex items-center justify-between gap-3 pt-1">
                 <span class="text-sm font-bold text-ink">Rentang data</span>
-                <div class="inline-flex p-1 bg-[#e6eeea] rounded-2xl border border-line/60 text-xs font-bold select-none shadow-2xs">
-                    <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'minggu']) }}" class="px-4 py-1.5 rounded-xl transition-all {{ $rentang === 7 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">7 Hari</a>
-                    <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'bulan']) }}" class="px-4 py-1.5 rounded-xl transition-all {{ $rentang === 30 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">30 Hari</a>
+                <div class="inline-flex p-1 bg-[#e6eeea] rounded-full border border-line/60 text-xs font-bold select-none shadow-2xs">
+                    <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'minggu']) }}" class="px-4 py-1.5 rounded-full transition-all {{ $rentang === 7 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">7 Hari</a>
+                    <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'bulan']) }}" class="px-4 py-1.5 rounded-full transition-all {{ $rentang === 30 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">30 Hari</a>
                 </div>
             </div>
 
@@ -975,25 +975,25 @@
                 ? round(($laporan['ini']['pakan'] - $laporan['lalu']['pakan']) / $laporan['lalu']['pakan'] * 100, 1)
                 : null;
         @endphp
-        <div class="bg-white rounded-[28px] border border-line/70 p-4 sm:p-5 shadow-2xs space-y-4">
+        <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-4">
             {{-- Header Bar --}}
-            <div class="flex items-start justify-between gap-2">
-                <div>
-                    <h2 class="text-base sm:text-lg font-black text-ink tracking-tight leading-tight">
-                        Laporan Ringkas<br>{{ $rentang }} Hari
+            <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                    <h2 class="text-sm sm:text-base font-black text-ink tracking-tight leading-tight whitespace-nowrap">
+                        Laporan Ringkas {{ $rentang }} Hari
                     </h2>
-                    <p class="text-xs text-muted mt-0.5 leading-tight">
-                        Dibanding {{ $rentang }} hari<br>sebelumnya
+                    <p class="text-xs text-muted mt-0.5 leading-tight whitespace-nowrap truncate">
+                        Dibanding {{ $rentang }} hari sebelumnya
                     </p>
                 </div>
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0 whitespace-nowrap">
                     <span class="material-symbols-outlined text-[15px]">trending_up</span>
-                    <span>Minggu ke-{{ $farm->umurMinggu() }} · {{ $faseSingkat }}</span>
+                    <span>Mg-{{ $farm->umurMinggu() }} · {{ $faseSingkat }}</span>
                 </div>
             </div>
 
             {{-- Estimasi Margin Kotor Banner --}}
-            <div class="bg-[#186b3e] text-white rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+            <div class="bg-[#186b3e] text-white rounded-lg sm:rounded-xl p-4 sm:p-5 shadow-xs space-y-1">
                 <span class="text-[11px] sm:text-xs font-bold text-white/80 uppercase tracking-wider block">ESTIMASI MARGIN KOTOR</span>
                 <div class="text-2xl sm:text-3xl font-black text-white tracking-tight">
                     {{ $marginKotor >= 0 ? '+' : '-' }}Rp {{ number_format(abs($marginKotor), 0, ',', '.') }}
@@ -1006,7 +1006,7 @@
             {{-- 2x2 Grid KPI --}}
             <div class="grid grid-cols-2 gap-3">
                 {{-- KPI 1: Total Telur --}}
-                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
+                <div class="p-3.5 sm:p-4 rounded-md sm:rounded-lg bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
                     <div>
                         <span class="text-[10px] sm:text-[11px] text-muted uppercase tracking-wider font-bold block mb-1">TOTAL TELUR</span>
                         <div class="text-xl sm:text-2xl text-ink font-black">
@@ -1028,7 +1028,7 @@
                 </div>
 
                 {{-- KPI 2: Konsumsi Pakan --}}
-                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
+                <div class="p-3.5 sm:p-4 rounded-md sm:rounded-lg bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
                     <div>
                         <span class="text-[10px] sm:text-[11px] text-muted uppercase tracking-wider font-bold block mb-1">KONSUMSI PAKAN</span>
                         <div class="text-xl sm:text-2xl text-ink font-black">
@@ -1050,7 +1050,7 @@
                 </div>
 
                 {{-- KPI 3: Biaya Pakan --}}
-                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
+                <div class="p-3.5 sm:p-4 rounded-md sm:rounded-lg bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between gap-1 mb-1">
                             <span class="text-[10px] sm:text-[11px] text-muted uppercase tracking-wider font-bold">BIAYA PAKAN</span>
@@ -1070,7 +1070,7 @@
                 </div>
 
                 {{-- KPI 4: Biaya / Kg Telur --}}
-                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
+                <div class="p-3.5 sm:p-4 rounded-md sm:rounded-lg bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between gap-1 mb-1">
                             <span class="text-[10px] sm:text-[11px] text-muted uppercase tracking-wider font-bold">BIAYA/KG TELUR</span>
@@ -1088,13 +1088,13 @@
 
             {{-- Tombol Aksi (Unduh & Salin) --}}
             <div class="grid grid-cols-2 gap-3 pt-1">
-                <button type="button" id="btn-buka-laporan-modal" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-bold py-3.5 px-3 sm:px-4 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-xs transition active:scale-98 cursor-pointer" title="Pratinjau & Unduh Dokumen Laporan (PDF)">
-                    <span class="material-symbols-outlined text-[19px]">download</span>
-                    <span>Unduh laporan</span>
+                <button type="button" id="btn-buka-laporan-modal" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-bold py-3.5 px-2.5 sm:px-4 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm shadow-xs transition active:scale-98 cursor-pointer whitespace-nowrap" title="Pratinjau & Unduh Dokumen Laporan (PDF)">
+                    <span class="material-symbols-outlined text-[18px] sm:text-[19px] shrink-0">download</span>
+                    <span class="whitespace-nowrap">Unduh laporan</span>
                 </button>
-                <button type="button" id="btn-copy-wa" class="w-full bg-white hover:bg-surface text-ink font-bold py-3.5 px-3 sm:px-4 rounded-2xl border border-line/80 flex items-center justify-center gap-2 text-sm shadow-2xs transition active:scale-98 cursor-pointer" title="Salin Ringkasan Laporan ke WhatsApp / Clipboard">
-                    <span class="material-symbols-outlined text-[19px] text-ink">content_copy</span>
-                    <span>Salin laporan</span>
+                <button type="button" id="btn-copy-wa" class="w-full bg-white hover:bg-surface text-ink font-bold py-3.5 px-2.5 sm:px-4 rounded-xl border border-line/80 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm shadow-2xs transition active:scale-98 cursor-pointer whitespace-nowrap" title="Salin Ringkasan Laporan ke WhatsApp / Clipboard">
+                    <span class="material-symbols-outlined text-[18px] sm:text-[19px] text-ink shrink-0">content_copy</span>
+                    <span class="whitespace-nowrap">Salin laporan</span>
                 </button>
             </div>
 
@@ -1147,7 +1147,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-buku-grafik-container>
             {{-- Grafik 1: Pakan --}}
-            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
+            <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
                 <div>
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-xs bg-[#c97a1e] inline-block shrink-0"></span>
@@ -1179,7 +1179,7 @@
             </div>
 
             {{-- Grafik 2: Telur --}}
-            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
+            <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
                 <div>
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-xs bg-[#116a3a] inline-block shrink-0"></span>
@@ -1211,7 +1211,7 @@
             </div>
 
             {{-- Grafik 3: Biaya Pakan Harian --}}
-            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
+            <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
                 <div>
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-xs bg-[#0e7490] inline-block shrink-0"></span>
@@ -1244,7 +1244,7 @@
             </div>
 
             {{-- Grafik 4: Efisiensi --}}
-            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
+            <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
                 <div>
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-xs bg-[#7c3aed] inline-block shrink-0"></span>
@@ -1462,12 +1462,12 @@
         {{-- ======================================================== --}}
         <div class="lg:hidden space-y-4">
             {{-- 1. Kartu Ringkasan Belanja (Image 2 style) --}}
-        <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3">
+        <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3">
             <h2 class="text-xs font-black text-ink uppercase tracking-wider">RINGKASAN BELANJA</h2>
 
             {{-- Row 1: 2 Kolom (Total Pengeluaran & Total Volume Pakan) --}}
             <div class="grid grid-cols-2 gap-3">
-                <div class="bg-[#f4f7f5] rounded-2xl p-3.5 border border-line/60 flex flex-col justify-between">
+                <div class="bg-[#f4f7f5] rounded-lg p-3.5 border border-line/60 flex flex-col justify-between">
                     <span class="text-[10px] text-muted uppercase font-bold tracking-wider">TOTAL PENGELUARAN</span>
                     <div class="mt-1">
                         <div class="text-xl font-black text-ink truncate">{{ Fmt::rp($totalBelanjaRiil) }}</div>
@@ -1477,7 +1477,7 @@
                     </div>
                 </div>
 
-                <div class="bg-[#f4f7f5] rounded-2xl p-3.5 border border-line/60 flex flex-col justify-between">
+                <div class="bg-[#f4f7f5] rounded-lg p-3.5 border border-line/60 flex flex-col justify-between">
                     <span class="text-[10px] text-muted uppercase font-bold tracking-wider">TOTAL VOLUME PAKAN</span>
                     <div class="mt-1">
                         <div class="text-xl font-black text-ink">
@@ -1491,7 +1491,7 @@
             </div>
 
             {{-- Row 2: Deviasi Biaya Ransum Full Width --}}
-            <div class="bg-[#f4f7f5] rounded-2xl p-3.5 border border-line/60 flex items-center justify-between gap-3">
+            <div class="bg-[#f4f7f5] rounded-lg p-3.5 border border-line/60 flex items-center justify-between gap-3">
                 <div class="min-w-0">
                     <span class="text-[10px] text-muted uppercase font-bold tracking-wider block">DEVIASI BIAYA RANSUM</span>
                     <span class="text-[11px] text-muted mt-0.5 block truncate">Selisih harga toko vs acuan formulasi</span>
@@ -1518,10 +1518,10 @@
         </div>
 
         {{-- 2. Kartu Catat Pembelian Bahan --}}
-        <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-4">
+        <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-4">
             {{-- Header Card --}}
             <div class="flex items-center gap-3 pb-3 border-b border-line/60">
-                <div class="w-10 h-10 rounded-2xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center shrink-0">
+                <div class="w-10 h-10 rounded-xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-[20px]">shopping_cart</span>
                 </div>
                 <div>
@@ -1565,8 +1565,8 @@
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold text-ink block" for="beli_tanggal">Tanggal pembelian</label>
                     <div class="relative cursor-pointer">
-                        <input id="beli_tanggal" name="tanggal" type="date" value="{{ today()->toDateString() }}" max="{{ today()->toDateString() }}" class="w-full h-11 rounded-2xl bg-white px-4 pr-11 text-sm font-semibold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" required>
-                        <div id="beli-tanggal-display" class="w-full h-11 rounded-2xl bg-white px-4 pr-11 text-sm font-semibold text-ink flex items-center pointer-events-none border border-line">
+                        <input id="beli_tanggal" name="tanggal" type="date" value="{{ today()->toDateString() }}" max="{{ today()->toDateString() }}" class="w-full h-11 rounded-xl bg-white px-4 pr-11 text-sm font-semibold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" required>
+                        <div id="beli-tanggal-display" class="w-full h-11 rounded-xl bg-white px-4 pr-11 text-sm font-semibold text-ink flex items-center pointer-events-none border border-line">
                             {{ today()->translatedFormat('j F Y') }}
                         </div>
                         <span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[18px] text-[#116a3a] pointer-events-none z-20">calendar_today</span>
@@ -1577,7 +1577,7 @@
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold text-ink block" for="kg">Jumlah beli</label>
                     <div class="relative">
-                        <input id="kg" name="kg" type="number" step="0.5" min="0.5" class="w-full rounded-2xl border border-line bg-white px-4 py-2.5 pr-12 text-sm font-bold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none transition" placeholder="50" required>
+                        <input id="kg" name="kg" type="number" step="0.5" min="0.5" class="w-full rounded-xl border border-line bg-white px-4 py-2.5 pr-12 text-sm font-bold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none transition" placeholder="50" required>
                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none select-none">kg</span>
                     </div>
                 </div>
@@ -1587,20 +1587,20 @@
                     <label class="text-xs font-bold text-ink block" for="harga_nyata">Harga nyata toko</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none select-none">Rp</span>
-                        <input id="harga_nyata" name="harga_nyata" type="number" step="50" min="0" class="w-full rounded-2xl border border-line bg-white pl-10 pr-12 text-sm font-bold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none transition" placeholder="6700" required>
+                        <input id="harga_nyata" name="harga_nyata" type="number" step="50" min="0" class="w-full rounded-xl border border-line bg-white pl-10 pr-12 text-sm font-bold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none transition" placeholder="6700" required>
                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted pointer-events-none select-none">/kg</span>
                     </div>
                 </div>
 
                 {{-- Live Estimasi Box (Subtotal & Deviasi) --}}
-                <div id="beli-live-calc-box" class="p-3.5 sm:p-4 rounded-2xl bg-[#f4f7f5] border border-line/60 space-y-2 transition">
+                <div id="beli-live-calc-box" class="p-3.5 sm:p-4 rounded-lg bg-[#f4f7f5] border border-line/60 space-y-2 transition">
                     <div class="flex items-center justify-between text-xs">
                         <span class="text-muted font-medium">Estimasi subtotal</span>
                         <strong id="beli-subtotal-val" class="text-lg font-black text-ink">Rp 0</strong>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-xs pt-1 border-t border-line/40">
-                        <span class="text-muted font-medium shrink-0 leading-tight">Selisih vs<br class="sm:hidden"> formulasi</span>
-                        <span id="beli-deviasi-badge" class="px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-slate-100 text-muted whitespace-nowrap">
+                        <span class="text-muted font-medium shrink-0 whitespace-nowrap">Selisih vs formulasi</span>
+                        <span id="beli-deviasi-badge" class="px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-slate-100 text-muted whitespace-nowrap shrink-0">
                             Isi kg & harga
                         </span>
                     </div>
@@ -1608,7 +1608,7 @@
 
                 {{-- Submit Button --}}
                 <div class="pt-1 space-y-2">
-                    <button type="submit" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-xs transition active:scale-98 cursor-pointer">
+                    <button type="submit" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm shadow-xs transition active:scale-98 cursor-pointer">
                         <span class="material-symbols-outlined text-[18px]">check</span>
                         <span>Catat Belanja Bahan</span>
                     </button>
@@ -1621,10 +1621,10 @@
         </div>
 
         {{-- 3. Kartu Riwayat Belanja Terkini --}}
-        <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-4">
+        <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-4">
             <div class="flex items-center justify-between gap-2 pb-3 border-b border-line/60">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-10 h-10 rounded-2xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center shrink-0">
+                    <div class="w-10 h-10 rounded-xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center shrink-0">
                         <span class="material-symbols-outlined text-[20px]">history</span>
                     </div>
                     <h2 class="text-sm sm:text-base font-black text-ink truncate">Riwayat Belanja Terkini</h2>
@@ -1663,7 +1663,7 @@
                 </div>
             @else
                 <div class="py-6 text-center space-y-2">
-                    <div class="w-14 h-14 rounded-2xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center mx-auto shadow-2xs">
+                    <div class="w-14 h-14 rounded-xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center mx-auto shadow-2xs">
                         <span class="material-symbols-outlined text-[28px]">shopping_bag</span>
                     </div>
                     <h3 class="text-sm font-black text-ink mt-3">Belum ada transaksi belanja</h3>
@@ -2343,7 +2343,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Alert Box Dinamis
             if (previewAlertBox && previewAlertIcon && previewAlertText) {
-                const roundedClass = isDesktop ? 'rounded-xl' : 'rounded-2xl';
+                const roundedClass = 'rounded-xl';
                 if (mati >= 5) {
                     previewAlertBox.className = `p-2 ${roundedClass} text-xs font-semibold flex items-center gap-2 bg-rose-100 text-rose-900 border border-rose-300`;
                     previewAlertIcon.textContent = 'warning';

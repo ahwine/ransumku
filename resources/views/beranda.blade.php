@@ -18,18 +18,18 @@
     <div class="lg:hidden space-y-4" data-weather-widget data-live-url="{{ route('api.kandang.sensor.live', $farm ?? auth()->user()->farm) }}" data-current-suhu="{{ $weather['suhu'] ?? 27.0 }}" data-current-rh="{{ $weather['kelembaban'] ?? 80 }}">
         
         {{-- 1. Section Header: Ringkasan Hari Ini & Tanggal Aktif --}}
-        <div class="flex items-center justify-between px-1 pt-0.5">
-            <h1 class="text-xl font-black text-ink tracking-tight">Ringkasan Hari Ini</h1>
-            <span class="text-xs font-bold text-brand flex items-center gap-1.5 select-none">
-                <span class="material-symbols-outlined text-[16px] text-brand">calendar_today</span>
-                <span class="text-brand">{{ today()->translatedFormat('l, j M') }}</span>
+        <div class="flex items-center justify-between gap-2 px-1 pt-0.5">
+            <h1 class="text-xl font-black text-ink tracking-tight whitespace-nowrap shrink-0">Ringkasan Hari Ini</h1>
+            <span class="text-xs font-bold text-brand flex items-center gap-1.5 select-none shrink-0 whitespace-nowrap">
+                <span class="material-symbols-outlined text-[16px] text-brand shrink-0">calendar_today</span>
+                <span class="text-brand whitespace-nowrap">{{ today()->translatedFormat('l, j M') }}</span>
             </span>
         </div>
 
         {{-- 2. Dua Kartu Metrik Ringkasan Hari Ini (Populasi & Fase Produksi) --}}
         <div class="grid grid-cols-2 gap-3">
             {{-- Card 1: Populasi --}}
-            <div class="bg-white rounded-2xl border border-line/70 p-4 shadow-2xs flex flex-col justify-between">
+            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 shadow-2xs flex flex-col justify-between">
                 <span class="text-xs font-bold text-muted">Populasi</span>
                 <div class="mt-2.5">
                     <span class="text-2xl font-black text-ink tracking-tight">
@@ -44,7 +44,7 @@
                 $faseDetail = $farm->faseUmurDetail();
                 $umurMinggu = $farm->umurMinggu();
             @endphp
-            <div class="bg-white rounded-2xl border border-line/70 p-4 shadow-2xs flex flex-col justify-between">
+            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 shadow-2xs flex flex-col justify-between">
                 <span class="text-xs font-bold text-muted">Fase produksi</span>
                 <div class="mt-2.5">
                     <span class="text-xl font-black text-ink block leading-tight">{{ ucfirst($farm->fase ?? 'Produksi') }}</span>
@@ -55,7 +55,7 @@
 
         @if (isset($weather))
             {{-- 3. Card Terpadu: Cuaca Mikro Kandang + Indeks Stres Panas (THI) Persis Gambar Referensi --}}
-            <div class="bg-white rounded-2xl border border-line p-4 shadow-2xs space-y-3.5">
+            <div class="bg-white rounded-lg sm:rounded-xl border border-line p-4 shadow-2xs space-y-3.5">
                 {{-- Bagian Atas: Cuaca Mikro Kandang --}}
                 <div class="space-y-2.5">
                     <span class="text-xs font-black text-ink block">Cuaca Mikro Kandang</span>
@@ -98,31 +98,63 @@
                         </span>
                     </div>
 
-                    {{-- Visual Bar Gauge THI (3 Segmen Skala Bersih: Aman, Waspada, Bahaya) dengan Marker --}}
+                    {{-- Visual Bar Gauge THI (4 Segmen Standar Persis Desktop: Nyaman, Waspada, Kritis, Bahaya) dengan Marker --}}
                     <div class="space-y-1 pt-1">
                         <div class="relative w-full h-3 mb-0.5">
                             <div data-live-thi-marker class="absolute bottom-0 -translate-x-1/2 flex flex-col items-center transition-all duration-700 ease-out" style="left: {{ $thiPercent }}%;">
-                                <span class="w-2.5 h-2.5 rotate-45 bg-amber-500 shadow-xs"></span>
+                                <span class="w-2.5 h-2.5 rotate-45 bg-slate-800 shadow-xs"></span>
                             </div>
                         </div>
                         <div class="relative w-full h-2 rounded-full bg-slate-100 overflow-hidden shadow-inner flex">
-                            <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Aman"></div>
-                            <div class="h-full bg-amber-400" style="width: 30%;" title="Zona Waspada"></div>
-                            <div class="h-full bg-rose-500" style="width: 30%;" title="Zona Bahaya"></div>
+                            <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Nyaman: THI < 72"></div>
+                            <div class="h-full bg-amber-400" style="width: 20%;" title="Zona Waspada: THI 72 - 78"></div>
+                            <div class="h-full bg-orange-500" style="width: 20%;" title="Zona Kritis: THI 78 - 84"></div>
+                            <div class="h-full bg-rose-600" style="width: 20%;" title="Zona Bahaya: THI ≥ 84"></div>
                         </div>
-                        <div class="flex w-full text-[10px] text-ink/70 font-bold pt-1 select-none">
-                            <div style="width: 40%;" class="text-center">Aman</div>
-                            <div style="width: 30%;" class="text-center">Waspada</div>
-                            <div style="width: 30%;" class="text-center">Bahaya</div>
+                        <div class="flex w-full text-[9px] text-ink/70 font-bold pt-1 select-none">
+                            <div style="width: 40%;" class="text-center">Nyaman</div>
+                            <div style="width: 20%;" class="text-center">Waspada</div>
+                            <div style="width: 20%;" class="text-center">Kritis</div>
+                            <div style="width: 20%;" class="text-center">Bahaya</div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {{-- 4. Card Kondisi Ayam --}}
-            <div class="bg-white rounded-2xl border border-line p-4 shadow-2xs space-y-1.5">
-                <h3 class="text-xs font-black text-ink">Kondisi Ayam</h3>
-                <p data-live-dampak class="text-xs text-ink/80 font-medium leading-relaxed">{{ $dampakAyam }}</p>
+                    {{-- Kondisi Ayam: Hanya Tulisan Bersih di Bawah Indeks THI (Tanpa Card / Pill Badge) --}}
+                    <div class="pt-2 border-t border-line/60 text-xs leading-relaxed">
+                        <span class="font-bold text-ink">Kondisi Ayam:</span>
+                        <span data-live-dampak class="text-ink/80 font-medium ml-1">{{ $dampakAyam }}</span>
+                    </div>
+
+                    {{-- Panduan Mitigasi Pakan Cuaca Terkini (Accordion Collapsible Ringkas Sesuai Desktop) --}}
+                    @if (!empty($weather['saran_manajemen']))
+                        <details class="group pt-2 border-t border-line/60 transition-all select-none">
+                            <summary class="flex items-center justify-between gap-2 cursor-pointer list-none text-xs transition-colors [&::-webkit-details-marker]:hidden">
+                                <div class="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                                    <span class="material-symbols-outlined text-[17px] text-amber-600 shrink-0">lightbulb</span>
+                                    <span class="font-bold text-ink text-xs whitespace-nowrap">
+                                        {{ count($weather['saran_manajemen']) }} Langkah Mitigasi
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-0.5 text-tiny font-semibold text-muted group-hover:text-ink transition-colors shrink-0 whitespace-nowrap">
+                                    <span class="group-open:hidden whitespace-nowrap">Buka Panduan</span>
+                                    <span class="hidden group-open:inline whitespace-nowrap">Tutup</span>
+                                    <span class="material-symbols-outlined text-[15px] transition-transform duration-200 group-open:rotate-180 shrink-0">expand_more</span>
+                                </div>
+                            </summary>
+
+                            {{-- Daftar 4 Rekomendasi Mitigasi --}}
+                            <div class="space-y-2 pt-2.5 mt-2 border-t border-line/40">
+                                @foreach ($weather['saran_manajemen'] as $index => $saran)
+                                    <div class="p-2.5 rounded-lg bg-surface/70 border border-line/60 text-xs">
+                                        <p class="text-ink font-medium leading-relaxed">
+                                            <strong class="font-bold text-ink mr-1">{{ $index + 1 }}.</strong><span>{{ $saran }}</span>
+                                        </p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </details>
+                    @endif
+                </div>
             </div>
         @endif
 
@@ -141,7 +173,7 @@
                         @php
                             $isWarning = $alert->level === 'warning' || $alert->level === 'danger';
                         @endphp
-                        <div class="bg-white rounded-2xl border border-line/70 p-4 shadow-2xs space-y-2.5">
+                        <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 shadow-2xs space-y-2.5">
                             <div class="flex items-center justify-between text-xs">
                                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold {{ $isWarning ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800' }}">
                                     <span class="material-symbols-outlined text-[14px]">{{ $isWarning ? 'warning' : 'dangerous' }}</span>
@@ -152,7 +184,7 @@
                             <p class="text-xs text-ink/85 leading-relaxed font-normal">
                                 {{ $alert->pesan }}
                             </p>
-                            <a href="{{ route('asisten.index', ['tanya' => 'Bagaimana solusi mengatasi: ' . $alert->pesan]) }}" class="w-full border border-line/80 bg-white hover:bg-surface text-[#116a3a] font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition active:scale-98 cursor-pointer">
+                            <a href="{{ route('asisten.index', ['tanya' => 'Bagaimana solusi mengatasi: ' . $alert->pesan]) }}" class="w-full border border-line/80 bg-white hover:bg-surface text-[#116a3a] font-bold py-2 px-3 rounded-md sm:rounded-lg flex items-center justify-center gap-1.5 text-xs transition active:scale-98 cursor-pointer">
                                 <span>Konsultasi solusi</span>
                                 <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                             </a>
@@ -177,39 +209,39 @@
             @php
                 $hdVal = $hdPersen > 0 ? $hdPersen : 85.0;
             @endphp
-            <div class="bg-white rounded-[24px] border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-black text-ink uppercase tracking-wider">PRODUKSI TELUR</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a]">
+            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">PRODUKSI TELUR</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0 whitespace-nowrap">
                         {{ $hdVal }}% Hen-Day
                     </span>
                 </div>
                 <div>
-                    <div class="text-2xl font-black text-ink">
+                    <div class="text-2xl font-black text-ink whitespace-nowrap">
                         {{ Fmt::num($totalTelurIni > 0 ? $totalTelurIni : 148, 0) }} <span class="text-xs font-normal text-muted">butir</span>
                     </div>
-                    <div class="text-xs font-bold text-emerald-700 mt-0.5">
+                    <div class="text-xs font-bold text-emerald-700 mt-0.5 whitespace-nowrap">
                         ↑ {{ $deltaTelur ? abs($deltaTelur) : '2,1' }}% vs kemarin
                     </div>
                 </div>
                 {{-- 2 Mini Stat Pills --}}
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">BOBOT TELUR</span>
-                        <strong class="text-ink font-bold text-sm">{{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni : 9.2, 1) }} kg</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BOBOT TELUR</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni : 9.2, 1) }} kg</strong>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">RATA-RATA (7 HARI)</span>
-                        <strong class="text-ink font-bold text-sm">{{ Fmt::num($totalTelurIni > 0 ? round($logs->avg('telur_butir')) : 144, 0) }} btr</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">RATA-RATA (7 HARI)</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($totalTelurIni > 0 ? round($logs->avg('telur_butir')) : 144, 0) }} btr</strong>
                     </div>
                 </div>
                 {{-- Canvas Grafik Telur --}}
                 <div class="h-44 pt-1">
                     <canvas data-chart='@json($chartTelur)' data-chart-name="telur" aria-label="Grafik produksi telur"></canvas>
                 </div>
-                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5">
-                    <span class="w-3 h-0.5 bg-[#2F6B3A] inline-block"></span>
-                    <span>Produksi harian</span>
+                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap">
+                    <span class="w-3 h-0.5 bg-[#2F6B3A] inline-block shrink-0"></span>
+                    <span class="whitespace-nowrap">Produksi harian</span>
                 </div>
             </div>
 
@@ -217,42 +249,42 @@
             @php
                 $survivalRate = max(0, 100 - round(($totalMatiIni / max(1, $farm->jumlah_ayam ?? 200)) * 100, 1));
             @endphp
-            <div class="bg-white rounded-[24px] border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-black text-ink uppercase tracking-wider">POPULASI AYAM</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a]">
+            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">POPULASI AYAM</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0 whitespace-nowrap">
                         {{ $survivalRate }}% bertahan
                     </span>
                 </div>
                 <div>
-                    <div class="text-2xl font-black text-ink">
+                    <div class="text-2xl font-black text-ink whitespace-nowrap">
                         {{ Fmt::num(max(0, ($farm->jumlah_ayam ?? 200) - $totalMatiIni), 0) }} <span class="text-xs font-normal text-muted">ekor aktif</span>
                     </div>
-                    <div class="text-xs font-bold text-emerald-700 mt-0.5">
+                    <div class="text-xs font-bold text-emerald-700 mt-0.5 whitespace-nowrap">
                         ✓ {{ $totalMatiIni }} kematian hari ini
                     </div>
-                    <p class="text-xs text-muted font-medium mt-1">
+                    <p class="text-xs text-muted font-medium mt-1 truncate whitespace-nowrap">
                         Minggu ke-{{ $umurMinggu }} · {{ $faseDetail['nama'] }}
                     </p>
                 </div>
                 {{-- 2 Mini Stat Pills --}}
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">TERCATAT</span>
-                        <strong class="text-ink font-bold text-sm">{{ Fmt::num($farm->jumlah_ayam ?? 200, 0) }}</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">TERCATAT</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($farm->jumlah_ayam ?? 200, 0) }}</strong>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">MORTALITAS</span>
-                        <strong class="text-ink font-bold text-sm">{{ round(($totalMatiIni / max(1, $farm->jumlah_ayam ?? 200)) * 100, 1) }}%</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">MORTALITAS</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ round(($totalMatiIni / max(1, $farm->jumlah_ayam ?? 200)) * 100, 1) }}%</strong>
                     </div>
                 </div>
                 {{-- Canvas Grafik Populasi --}}
                 <div class="h-44 pt-1">
                     <canvas data-chart='@json($chartPopulasi)' data-chart-name="populasi" aria-label="Grafik populasi ayam"></canvas>
                 </div>
-                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5">
-                    <span class="w-3 h-0.5 bg-[#0284c7] inline-block"></span>
-                    <span>Jumlah ayam hidup</span>
+                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap">
+                    <span class="w-3 h-0.5 bg-[#0284c7] inline-block shrink-0"></span>
+                    <span class="whitespace-nowrap">Jumlah ayam hidup</span>
                 </div>
             </div>
 
@@ -260,47 +292,47 @@
             @php
                 $diffGr = round($gramPerEkor - $standarPakanGr);
             @endphp
-            <div class="bg-white rounded-[24px] border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-black text-ink uppercase tracking-wider">KONSUMSI PAKAN</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">KONSUMSI PAKAN</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shrink-0 whitespace-nowrap">
                         Standar: {{ $standarPakanGr }} g/ekor
                     </span>
                 </div>
                 <div>
-                    <div class="text-2xl font-black text-ink">
+                    <div class="text-2xl font-black text-ink whitespace-nowrap">
                         {{ Fmt::num($totalPakanIni > 0 ? $totalPakanIni : 27, 0) }} <span class="text-xs font-normal text-muted">kg/hari</span>
                     </div>
-                    <div class="text-xs font-bold text-amber-700 mt-0.5">
+                    <div class="text-xs font-bold text-amber-700 mt-0.5 whitespace-nowrap">
                         {{ $diffGr >= 0 ? '↑' : '↓' }} {{ abs($diffGr) }} g di atas standar
                     </div>
                 </div>
                 {{-- 4 Mini Stat Pills (2x2 Grid) --}}
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">ASUPAN/EKOR/HARI</span>
-                        <strong class="text-ink font-bold text-sm">{{ $gramPerEkor > 0 ? round($gramPerEkor) : 135 }} g</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">ASUPAN/EKOR/HARI</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $gramPerEkor > 0 ? round($gramPerEkor) : 135 }} g</strong>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">STANDAR SNI</span>
-                        <strong class="text-ink font-bold text-sm">{{ $standarPakanGr }} g</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">STANDAR SNI</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $standarPakanGr }} g</strong>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">SELISIH</span>
-                        <strong class="text-amber-700 font-bold text-sm">{{ $diffGr >= 0 ? '+' : '' }}{{ $diffGr }} g</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">SELISIH</span>
+                        <strong class="text-amber-700 font-bold text-sm whitespace-nowrap">{{ $diffGr >= 0 ? '+' : '' }}{{ $diffGr }} g</strong>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">BIAYA RANSUM</span>
-                        <strong class="text-ink font-bold text-sm">{{ $ration ? Fmt::rp($ration->biaya_per_kg) : 'Rp 7.627' }}/kg</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BIAYA RANSUM</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $ration ? Fmt::rp($ration->biaya_per_kg) : 'Rp 7.627' }}/kg</strong>
                     </div>
                 </div>
                 {{-- Canvas Grafik Pakan --}}
                 <div class="h-44 pt-1">
                     <canvas data-chart='@json($chartPakan)' data-chart-name="pakan" aria-label="Grafik konsumsi pakan"></canvas>
                 </div>
-                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-3">
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-[#ca8a04] inline-block"></span> Konsumsi (g/ekor)</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 border-t border-dashed border-slate-400 inline-block"></span> Standar</span>
+                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-3 whitespace-nowrap">
+                    <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 bg-[#ca8a04] inline-block shrink-0"></span> Konsumsi (g/ekor)</span>
+                    <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 border-t border-dashed border-slate-400 inline-block shrink-0"></span> Standar</span>
                 </div>
             </div>
 
@@ -308,47 +340,47 @@
             @php
                 $fcrIsHigh = $fcr > 2.2;
             @endphp
-            <div class="bg-white rounded-[24px] border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-black text-ink uppercase tracking-wider">EFISIENSI & FCR</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $fcrIsHigh ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
+            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">EFISIENSI & FCR</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap {{ $fcrIsHigh ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
                         {{ $fcrIsHigh ? 'FCR Tinggi' : 'FCR Efisien' }}
                     </span>
                 </div>
                 <div>
-                    <div class="text-2xl font-black text-ink">
+                    <div class="text-2xl font-black text-ink whitespace-nowrap">
                         {{ $fcr > 0 ? number_format($fcr, 2, ',', '.') : '2,94' }} <span class="text-xs font-normal text-muted">FCR aktual</span>
                     </div>
-                    <div class="text-xs font-semibold text-muted mt-0.5">
+                    <div class="text-xs font-semibold text-muted mt-0.5 whitespace-nowrap">
                         Target SNI: 2,14
                     </div>
                 </div>
                 {{-- 4 Mini Stat Pills (2x2 Grid) --}}
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">EGG MASS</span>
-                        <strong class="text-ink font-bold text-sm">{{ $eggMass > 0 ? Fmt::num($eggMass, 1) : '45,9' }} g</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">EGG MASS</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $eggMass > 0 ? Fmt::num($eggMass, 1) : '45,9' }} g</strong>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">BIAYA/KG TELUR</span>
-                        <strong class="text-ink font-bold text-sm">{{ $biayaKgTelur ? Fmt::rp($biayaKgTelur) : 'Rp 22.142' }}</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BIAYA/KG TELUR</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $biayaKgTelur ? Fmt::rp($biayaKgTelur) : 'Rp 22.142' }}</strong>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">PAKAN SAAT INI</span>
-                        <strong class="text-ink font-bold text-sm">{{ $ration ? Fmt::rp($ration->biaya_per_kg) : 'Rp 7.627' }}/kg</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">PAKAN SAAT INI</span>
+                        <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $ration ? Fmt::rp($ration->biaya_per_kg) : 'Rp 7.627' }}/kg</strong>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5">MARGIN KOTOR/KG</span>
-                        <strong class="text-emerald-700 font-bold text-sm">{{ ($estMarginPerKgTelur ?? 5558) >= 0 ? '+' : '' }}{{ Fmt::rp($estMarginPerKgTelur ?? 5558) }}</strong>
+                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
+                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">MARGIN KOTOR/KG</span>
+                        <strong class="text-emerald-700 font-bold text-sm whitespace-nowrap truncate block">{{ ($estMarginPerKgTelur ?? 5558) >= 0 ? '+' : '' }}{{ Fmt::rp($estMarginPerKgTelur ?? 5558) }}</strong>
                     </div>
                 </div>
                 {{-- Canvas Grafik FCR --}}
                 <div class="h-44 pt-1">
                     <canvas data-chart='@json($chartFcr)' data-chart-name="fcr" aria-label="Grafik tren FCR"></canvas>
                 </div>
-                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-3">
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-[#7c3aed] inline-block"></span> FCR aktual</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 border-t border-dashed border-slate-400 inline-block"></span> Standar SNI (2,14)</span>
+                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-3 whitespace-nowrap">
+                    <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 bg-[#7c3aed] inline-block shrink-0"></span> FCR aktual</span>
+                    <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 border-t border-dashed border-slate-400 inline-block shrink-0"></span> Standar SNI (2,14)</span>
                 </div>
             </div>
         </div>

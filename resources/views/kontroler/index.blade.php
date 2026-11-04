@@ -5,7 +5,7 @@
 
 <div class="space-y-5">
     {{-- 1. Header Banner Halaman: Smart Controller & Status Gateway IoT --}}
-    <div class="bg-white rounded-2xl border border-line p-5 md:p-6 shadow-2xs">
+    <div class="bg-white rounded-lg md:rounded-2xl border border-line p-5 md:p-6 shadow-2xs">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div class="flex items-start gap-3.5">
                 <div class="w-12 h-12 rounded-2xl bg-brand/10 text-brand grid place-items-center shrink-0 shadow-2xs">
@@ -82,12 +82,12 @@
     @include('partials.kandang-3d-viewer')
 
     {{-- 3. Card Utama: Pusat Kendali Aktuator Interaktif (Mode Otomatis & Manual) --}}
-    <div class="bg-white rounded-2xl border border-line p-5 md:p-6 shadow-2xs">
+    <div class="bg-white rounded-lg md:rounded-2xl border border-line p-5 md:p-6 shadow-2xs">
         @include('partials.controller-widget')
     </div>
 
     {{-- 3. Panduan Teknis & Skematik Hardware-Agnostic (Spesifikasi untuk Juri Lomba & Peternak) --}}
-    <div class="bg-white rounded-2xl border border-line p-5 md:p-6 shadow-2xs space-y-4">
+    <div class="bg-white rounded-lg md:rounded-2xl border border-line p-5 md:p-6 shadow-2xs space-y-4">
         <div class="flex items-center gap-2.5 pb-3 border-b border-line">
             <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 grid place-items-center shrink-0">
                 <span class="material-symbols-outlined text-[19px]">developer_board</span>

@@ -24,7 +24,7 @@
     </div>
 
     {{-- Tombol Utama: Racik Ransum Baru Full Width --}}
-    <a href="{{ route('ransum.create') }}" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-black py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-xs transition active:scale-98 cursor-pointer">
+    <a href="{{ route('ransum.create') }}" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm shadow-xs transition active:scale-98 cursor-pointer">
         <span class="material-symbols-outlined text-[19px]">add</span>
         <span>Racik Ransum Baru</span>
     </a>
@@ -32,7 +32,7 @@
     {{-- Baris Ringkasan KPI Koleksi Resep Mobile (3 Kartu Berdampingan) --}}
     <div class="grid grid-cols-3 gap-2.5">
         {{-- Kartu 1: Total Resep --}}
-        <div class="bg-white rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
+        <div class="bg-white rounded-lg sm:rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
             <span class="text-[10px] text-muted uppercase font-bold tracking-wider block">RESEP</span>
             <div class="mt-1">
                 <span class="text-lg sm:text-xl font-black text-ink">{{ $totalResep }}</span>
@@ -41,7 +41,7 @@
         </div>
 
         {{-- Kartu 2: Biaya Formulasi Terakhir --}}
-        <div class="bg-white rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
+        <div class="bg-white rounded-lg sm:rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
             <span class="text-[10px] text-muted uppercase font-bold tracking-wider block">BIAYA TERAKHIR</span>
             <div class="mt-1">
                 <span class="text-lg sm:text-xl font-black text-ink">{{ $latestHarga > 0 ? Fmt::rp($latestHarga) : 'Rp 0' }}</span>
@@ -50,7 +50,7 @@
         </div>
 
         {{-- Kartu 3: Tingkat Kelayakan Nutrisi --}}
-        <div class="bg-white rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
+        <div class="bg-white rounded-lg sm:rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
             <span class="text-[10px] text-muted uppercase font-bold tracking-wider block">NUTRISI</span>
             <div class="mt-1">
                 <span class="text-lg sm:text-xl font-black text-ink">{{ $resepLayakCount }}/{{ max(1, $totalResep) }}</span>
@@ -62,7 +62,7 @@
     {{-- Daftar Kartu Resep Ransum Mobile --}}
     <div class="space-y-4">
         @forelse ($rations as $r)
-            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3.5">
+            <div class="bg-white rounded-lg sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3.5">
                 {{-- Header Kartu Resep --}}
                 <div class="space-y-1">
                     <h2 class="text-base font-black text-ink tracking-tight">
@@ -156,7 +156,7 @@
             </div>
         @empty
             {{-- Empty State jika belum ada resep --}}
-            <div class="bg-white rounded-3xl p-12 text-center space-y-4 shadow-2xs border border-line/70 flex flex-col items-center justify-center">
+            <div class="bg-white rounded-lg sm:rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-2xs border border-line/70 flex flex-col items-center justify-center">
                 <div class="w-16 h-16 rounded-2xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center shadow-2xs">
                     <span class="material-symbols-outlined text-[32px]">calculate</span>
                 </div>
