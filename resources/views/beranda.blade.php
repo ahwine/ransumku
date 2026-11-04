@@ -98,22 +98,40 @@
                         </span>
                     </div>
 
-                    {{-- Visual Bar Gauge THI (3 Segmen Skala Bersih: Aman, Waspada, Bahaya) dengan Marker --}}
-                    <div class="space-y-1 pt-1">
-                        <div class="relative w-full h-3 mb-0.5">
+                    {{-- Visual Bar Gauge THI Unggas (Rentang 60 - 90+) --}}
+                    <div class="space-y-1.5 pt-1">
+                        {{-- Pin Marker Posisi THI Saat Ini (Di Atas Bar, Menunjuk ke Titik Nilai) --}}
+                        <div class="relative w-full h-6 mb-1.5">
                             <div data-live-thi-marker class="absolute bottom-0 -translate-x-1/2 flex flex-col items-center transition-all duration-700 ease-out" style="left: {{ $thiPercent }}%;">
-                                <span class="w-2.5 h-2.5 rotate-45 bg-amber-500 shadow-xs"></span>
+                                <span data-live-thi-pin-text class="text-[11px] font-bold text-ink whitespace-nowrap leading-none bg-surface border border-line px-2 py-1 rounded-md shadow-2xs">
+                                    THI {{ $weather['thi'] }}
+                                </span>
+                                <span class="w-1.5 h-1.5 rotate-45 bg-surface border-r border-b border-line -mt-1 shadow-2xs"></span>
                             </div>
                         </div>
+
+                        {{-- Bar Warna THI: 40% Nyaman, 20% Waspada, 20% Kritis, 20% Bahaya --}}
                         <div class="relative w-full h-2 rounded-full bg-slate-100 overflow-hidden shadow-inner flex">
-                            <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Aman"></div>
-                            <div class="h-full bg-amber-400" style="width: 30%;" title="Zona Waspada"></div>
-                            <div class="h-full bg-rose-500" style="width: 30%;" title="Zona Bahaya"></div>
+                            <div class="h-full bg-emerald-500" style="width: 40%;" title="Zona Nyaman: THI < 72"></div>
+                            <div class="h-full bg-amber-400" style="width: 20%;" title="Waspada Panas: THI 72 - 78"></div>
+                            <div class="h-full bg-orange-500" style="width: 20%;" title="Kritis Heat Stress: THI 78 - 84"></div>
+                            <div class="h-full bg-rose-600" style="width: 20%;" title="Bahaya Ekstrem: THI ≥ 84"></div>
                         </div>
-                        <div class="flex w-full text-[10px] text-ink/70 font-bold pt-1 select-none">
-                            <div style="width: 40%;" class="text-center">Aman</div>
-                            <div style="width: 30%;" class="text-center">Waspada</div>
-                            <div style="width: 30%;" class="text-center">Bahaya</div>
+
+                        {{-- Label Skala THI: Masing-masing Tepat Sejajar di Bawah Segmen Warnanya --}}
+                        <div class="flex w-full text-[8px] sm:text-[9px] text-muted font-medium pt-1 select-none">
+                            <div style="width: 40%;" class="text-center truncate">
+                                <span>&lt; 72 (Nyaman)</span>
+                            </div>
+                            <div style="width: 20%;" class="text-center truncate">
+                                <span>72-78 (Waspada)</span>
+                            </div>
+                            <div style="width: 20%;" class="text-center truncate">
+                                <span>78-84 (Kritis)</span>
+                            </div>
+                            <div style="width: 20%;" class="text-center truncate">
+                                <span>&gt; 84 (Bahaya)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
