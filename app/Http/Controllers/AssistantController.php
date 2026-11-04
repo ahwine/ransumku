@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ChatSession;
 use App\Services\AiAssistant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class AssistantController extends Controller
@@ -32,14 +33,47 @@ class AssistantController extends Controller
         $sessionParam = $r->query('session');
         $activeSession = null;
         $chats = collect();
+        $isGenerating = false;
 
-        // Default selalu buka sesi obrolan baru setiap kali dimuat / di-refresh
-        if (is_numeric($sessionParam) && (int) $sessionParam > 0) {
+        if ($sessionParam === 'baru') {
+            session()->forget('active_chat_session_id');
+            $activeSession = null;
+            $chats = collect();
+        } elseif (is_numeric($sessionParam) && (int) $sessionParam > 0) {
             $activeSession = $chatSessions->firstWhere('id', (int) $sessionParam);
-            $chats = $activeSession ? $activeSession->messages()->orderBy('id')->get() : collect();
+            if ($activeSession) {
+                session(['active_chat_session_id' => $activeSession->id]);
+                $chats = $activeSession->messages()->orderBy('id')->get();
+            }
+        } else {
+            // Ketika peternak kembali ke asisten (tanpa parameter ?session=):
+            // 1. Cek sesi yang disimpan di PHP session
+            $storedId = session('active_chat_session_id');
+            if ($storedId && ($s = $chatSessions->firstWhere('id', (int) $storedId))) {
+                $activeSession = $s;
+            } elseif ($chatSessions->isNotEmpty()) {
+                // 2. Cek apakah ada sesi yang sedang diproses AI di latar belakang
+                $generatingSession = $chatSessions->first(fn ($s) => Cache::has("chat_generating_{$s->id}"));
+                if ($generatingSession) {
+                    $activeSession = $generatingSession;
+                } else {
+                    // 3. Fallback ke sesi percakapan terakhir yang memiliki pesan
+                    $activeSession = $chatSessions->firstWhere('messages_count', '>', 0) ?? $chatSessions->first();
+                }
+            }
+
+            if ($activeSession) {
+                session(['active_chat_session_id' => $activeSession->id]);
+                $chats = $activeSession->messages()->orderBy('id')->get();
+            }
         }
 
-        return view('asisten.index', compact('alerts', 'chatSessions', 'activeSession', 'chats', 'aiAktif'));
+        if ($activeSession) {
+            $lastMsg = $chats->last();
+            $isGenerating = Cache::has("chat_generating_{$activeSession->id}") || ($lastMsg && $lastMsg->role === 'user');
+        }
+
+        return view('asisten.index', compact('alerts', 'chatSessions', 'activeSession', 'chats', 'aiAktif', 'isGenerating'));
     }
 
     public function chat(Request $r, AiAssistant $ai)
@@ -52,12 +86,13 @@ class AssistantController extends Controller
         if ($aksi === 'hapus_semua') {
             $farm->chats()->delete();
             $farm->chatSessions()->delete();
+            session()->forget('active_chat_session_id');
 
             if ($r->wantsJson() || $r->ajax()) {
                 return response()->json(['status' => 'success', 'message' => 'Semua riwayat obrolan berhasil dibersihkan.']);
             }
 
-            return redirect()->route('asisten.index', ['tab' => 'tanya'])
+            return redirect()->route('asisten.index', ['tab' => 'tanya', 'session' => 'baru'])
                 ->with('pesan', 'Seluruh riwayat obrolan berhasil dibersihkan.');
         }
 
@@ -68,6 +103,10 @@ class AssistantController extends Controller
             if ($session) {
                 $session->delete();
             }
+            if ((int) session('active_chat_session_id') === $sessionId) {
+                session()->forget('active_chat_session_id');
+            }
+            Cache::forget("chat_generating_{$sessionId}");
 
             if ($r->wantsJson() || $r->ajax()) {
                 return response()->json(['status' => 'success', 'deleted_id' => $sessionId]);
@@ -99,16 +138,22 @@ class AssistantController extends Controller
             if (! $session) {
                 return response()->json(['status' => 'error', 'message' => 'Sesi tidak ditemukan.'], 404);
             }
+            session(['active_chat_session_id' => $session->id]);
+
             $messages = $session->messages()->orderBy('id')->get()->map(fn ($m) => [
                 'role' => $m->role,
                 'isi' => $m->isi,
                 'time' => $m->created_at->format('H:i'),
             ]);
 
+            $lastMsg = $session->messages()->latest('id')->first();
+            $isGenerating = Cache::has("chat_generating_{$session->id}") || ($lastMsg && $lastMsg->role === 'user');
+
             return response()->json([
                 'status' => 'success',
                 'session_id' => $session->id,
                 'session_title' => $session->judul,
+                'is_generating' => $isGenerating,
                 'messages' => $messages,
             ]);
         }
@@ -140,39 +185,33 @@ class AssistantController extends Controller
             $isNewSession = true;
         }
 
-        // Ambil riwayat chat dalam sesi ini untuk konteks multi-turn Gemini
-        $riwayat = $session->messages()->latest('id')->limit(8)->get()->reverse()->values();
+        session(['active_chat_session_id' => $session->id]);
 
         // Simpan pesan user
-        $session->messages()->create([
+        $userMsg = $session->messages()->create([
             'farm_id' => $farm->id,
             'role' => 'user',
             'isi' => $pesan,
         ]);
 
-        // Dapatkan jawaban dari AI Gemini
-        $jawaban = $ai->jawab($farm, $pesan, $riwayat);
-
-        // Simpan jawaban asisten AI
-        $assistantMsg = $session->messages()->create([
-            'farm_id' => $farm->id,
-            'role' => 'assistant',
-            'isi' => $jawaban,
-        ]);
-
-        // Perbarui waktu pembaruan sesi agar naik ke atas daftar Recents
         $session->touch();
 
-        // Respon JSON untuk mode Real-Time AJAX (tanpa refresh halaman ala ChatGPT)
+        // Tandai proses generating di latar belakang
+        Cache::put("chat_generating_{$session->id}", true, 180);
+
+        // Jalankan pembuatan jawaban AI di background CLI
+        $this->dispatchBackgroundGeneration($session->id);
+
+        // Respon langsung ke client (tidak menunggu Gemini selesai)
         if ($r->wantsJson() || $r->ajax()) {
             return response()->json([
                 'status' => 'success',
                 'session_id' => $session->id,
                 'session_title' => $session->judul,
                 'is_new_session' => $isNewSession,
-                'jawaban' => $jawaban,
+                'is_generating' => true,
                 'user_message' => $pesan,
-                'created_at' => $assistantMsg->created_at->format('H:i'),
+                'created_at' => $userMsg->created_at->format('H:i'),
             ]);
         }
 
@@ -182,8 +221,64 @@ class AssistantController extends Controller
         ])->withFragment('chat-bawah');
     }
 
-    public function baru()
+    public function status(Request $r)
     {
+        $farm = $this->farm();
+        $sessionId = (int) $r->query('session_id');
+        $session = $farm->chatSessions()->find($sessionId);
+
+        if (! $session) {
+            return response()->json(['status' => 'not_found'], 404);
+        }
+
+        $isGenerating = Cache::has("chat_generating_{$sessionId}");
+        $lastMessage = $session->messages()->latest('id')->first();
+
+        // Jika pesan terakhir adalah assistant dan cache generating sudah selesai
+        if ($lastMessage && $lastMessage->role === 'assistant' && ! $isGenerating) {
+            return response()->json([
+                'status' => 'completed',
+                'session_id' => $session->id,
+                'message_id' => $lastMessage->id,
+                'jawaban' => $lastMessage->isi,
+                'created_at' => $lastMessage->created_at->format('H:i'),
+            ]);
+        }
+
+        if ($isGenerating || ($lastMessage && $lastMessage->role === 'user')) {
+            return response()->json([
+                'status' => 'generating',
+                'session_id' => $session->id,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'idle',
+            'session_id' => $session->id,
+        ]);
+    }
+
+    protected function dispatchBackgroundGeneration(int $sessionId): void
+    {
+        $artisanPath = base_path('artisan');
+        $phpBinary = PHP_BINARY ?: 'php';
+        $cmd = sprintf(
+            '%s %s asisten:generate %d > /dev/null 2>&1 &',
+            escapeshellarg($phpBinary),
+            escapeshellarg($artisanPath),
+            $sessionId
+        );
+        @exec($cmd);
+    }
+
+    public function baru(Request $r)
+    {
+        session()->forget('active_chat_session_id');
+
+        if ($r->wantsJson() || $r->ajax()) {
+            return response()->json(['status' => 'success']);
+        }
+
         return redirect()->route('asisten.index', ['tab' => 'tanya', 'session' => 'baru']);
     }
 
@@ -200,7 +295,13 @@ class AssistantController extends Controller
     {
         abort_unless($session->farm_id === $this->farm()->id, 403);
 
+        $sessionId = $session->id;
         $session->delete();
+
+        if ((int) session('active_chat_session_id') === $sessionId) {
+            session()->forget('active_chat_session_id');
+        }
+        Cache::forget("chat_generating_{$sessionId}");
 
         return redirect()->route('asisten.index', ['tab' => 'tanya'])
             ->with('pesan', 'Sesi percakapan berhasil dihapus.');
@@ -211,8 +312,9 @@ class AssistantController extends Controller
         $farm = $this->farm();
         $farm->chats()->delete();
         $farm->chatSessions()->delete();
+        session()->forget('active_chat_session_id');
 
-        return redirect()->route('asisten.index', ['tab' => 'tanya'])
+        return redirect()->route('asisten.index', ['tab' => 'tanya', 'session' => 'baru'])
             ->with('pesan', 'Seluruh riwayat obrolan berhasil dibersihkan.');
     }
 

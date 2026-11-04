@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
 
         // Modul C: Asisten
         Route::get('/asisten', [AssistantController::class, 'index'])->name('asisten.index');
+        Route::get('/asisten/status', [AssistantController::class, 'status'])->name('asisten.status');
         Route::post('/asisten/chat', [AssistantController::class, 'chat'])->name('asisten.chat')->middleware('throttle:60,1');
         Route::delete('/asisten/chat', [AssistantController::class, 'hapusChat'])->name('asisten.chat.destroy');
         Route::match(['get', 'post'], '/asisten/session/baru', [AssistantController::class, 'baru'])->name('asisten.session.baru');

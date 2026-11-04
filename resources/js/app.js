@@ -60,14 +60,22 @@ Chart.register(bukuSweepClipPlugin);
 function animateSequentialDots(chart, onComplete) {
     if (!chart || !chart.ctx || !chart.data?.datasets) return;
 
+    const getBaseRadius = (ds, i) => {
+        const r = ds.pointRadius ?? 4;
+        return Array.isArray(r) ? (r[i] ?? 0) : r;
+    };
+    const getBaseBorder = (ds, i) => {
+        const b = ds.pointBorderWidth ?? 2;
+        return Array.isArray(b) ? (b[i] ?? 2) : b;
+    };
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         chart.data.datasets.forEach((ds, idx) => {
             const meta = chart.getDatasetMeta(idx);
             if (meta && meta.data) {
-                const baseRadius = ds.pointRadius ?? 4;
-                meta.data.forEach(pt => {
-                    pt.options.radius = baseRadius;
-                    pt.options.borderWidth = ds.pointBorderWidth ?? 2;
+                meta.data.forEach((pt, i) => {
+                    pt.options.radius = getBaseRadius(ds, i);
+                    pt.options.borderWidth = getBaseBorder(ds, i);
                 });
             }
         });
@@ -127,11 +135,15 @@ function animateSequentialDots(chart, onComplete) {
             const meta = chart.getDatasetMeta(idx);
             if (!meta || !meta.data) return;
 
-            const baseRadius = ds.pointRadius ?? 4;
-            const baseBorder = ds.pointBorderWidth ?? 2;
-            if (baseRadius <= 0) return;
-
             meta.data.forEach((pt, i) => {
+                const baseRadius = getBaseRadius(ds, i);
+                const baseBorder = getBaseBorder(ds, i);
+                if (baseRadius <= 0) {
+                    pt.options.radius = 0;
+                    pt.options.borderWidth = 0;
+                    return;
+                }
+
                 const pointStart = i * staggerMs;
                 const pointElapsed = elapsed - pointStart;
 
@@ -159,11 +171,9 @@ function animateSequentialDots(chart, onComplete) {
             chart.data.datasets.forEach((ds, idx) => {
                 const meta = chart.getDatasetMeta(idx);
                 if (meta && meta.data) {
-                    const baseRadius = ds.pointRadius ?? 4;
-                    const baseBorder = ds.pointBorderWidth ?? 2;
-                    meta.data.forEach(pt => {
-                        pt.options.radius = baseRadius;
-                        pt.options.borderWidth = baseBorder;
+                    meta.data.forEach((pt, i) => {
+                        pt.options.radius = getBaseRadius(ds, i);
+                        pt.options.borderWidth = getBaseBorder(ds, i);
                     });
                 }
             });
@@ -360,6 +370,9 @@ function createStandardChart(el, cfg) {
                 x: {
                     grid: { display: false },
                     ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 6,
+                        maxRotation: 0,
                         font: { size: 10, family: "'Plus Jakarta Sans', 'Poppins', sans-serif" },
                         color: '#5C7A6D'
                     }
@@ -384,7 +397,7 @@ function createStandardChart(el, cfg) {
                                 return null;
                             }
                             if (val >= 1000000) return (val / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
-                            if (val >= 10000) return (val / 1000).toLocaleString('id-ID') + ' rb';
+                            if (val >= 1000) return (val / 1000).toLocaleString('id-ID') + 'rb';
                             return val.toLocaleString('id-ID');
                         }
                     }
@@ -465,14 +478,14 @@ function triggerBukuKandangOrchestration() {
         if (ci) ci.resize();
     });
 
-    // 2. Grafik Konsumsi Pakan (delay: 80ms, durasi: 1200ms)
+    // 2. Grafik Konsumsi Pakan (batang, delay: 80ms)
     if (bukuChartsMap.pakan) {
-        animateBukuLine(bukuChartsMap.pakan, 80, 1200);
+        animateBukuBar(bukuChartsMap.pakan, 80);
     }
 
-    // 3. Grafik Produksi Telur (batang muncul berurutan dari kiri ke kanan, delay: 280ms)
+    // 3. Grafik Produksi Telur (garis menyapu kiri ke kanan, delay: 280ms, durasi: 1200ms)
     if (bukuChartsMap.telur) {
-        animateBukuBar(bukuChartsMap.telur, 280);
+        animateBukuLine(bukuChartsMap.telur, 280, 1200);
     }
 
     // 4. Grafik Biaya Pakan Harian (delay: 480ms, durasi: 1200ms)
@@ -643,11 +656,11 @@ function initSlidingTabs() {
                 b.classList.remove('bg-brand', 'bg-white', 'shadow-xs', 'shadow-sm', 'text-white');
 
                 if (isActive) {
-                    b.classList.remove('text-muted');
-                    b.classList.add('text-ink', 'font-bold');
+                    b.classList.remove('text-muted', 'text-ink/75', 'font-semibold');
+                    b.classList.add('text-[#0f3d26]', 'font-black');
                 } else {
-                    b.classList.remove('text-ink');
-                    b.classList.add('text-muted', 'hover:text-ink', 'font-semibold');
+                    b.classList.remove('text-[#0f3d26]', 'font-black');
+                    b.classList.add('text-ink/75', 'hover:text-ink', 'font-bold');
                 }
             });
 
@@ -667,6 +680,15 @@ function initSlidingTabs() {
                     p.classList.remove('tab-slide-right', 'tab-slide-left', 'tab-panel-enter');
                 }
             });
+
+            const mobileHeader = document.querySelector('[data-mobile-catatan-header]');
+            if (mobileHeader) {
+                if (tabId === 'dashboard') {
+                    mobileHeader.classList.add('hidden');
+                } else {
+                    mobileHeader.classList.remove('hidden');
+                }
+            }
 
             try {
                 const url = new URL(window.location.href);

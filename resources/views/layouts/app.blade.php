@@ -282,12 +282,12 @@
                 <span class="text-[10px] leading-none tracking-tight mt-[3px] transition-colors {{ request()->routeIs('beranda') ? 'text-brand font-bold' : 'text-[#88998F] font-semibold group-hover:text-ink' }}">Dashboard</span>
             </a>
 
-            {{-- 2. Buku Kandang --}}
-            <a href="{{ route('catatan.index') }}" class="group flex flex-col items-center justify-center h-full transition-all" aria-label="Buku Kandang" title="Buku Kandang">
+            {{-- 2. Kandang --}}
+            <a href="{{ route('catatan.index') }}" class="group flex flex-col items-center justify-center h-full transition-all" aria-label="Kandang" title="Kandang">
                 <div class="w-12 h-7 rounded-full flex items-center justify-center transition-all duration-200 {{ request()->routeIs('catatan.*') ? 'bg-brand/12 text-brand font-bold' : 'bg-transparent text-[#88998F] group-hover:text-ink' }}">
                     <span class="material-symbols-outlined text-[20px] leading-none transition-colors {{ request()->routeIs('catatan.*') ? 'icon-fill' : '' }}">menu_book</span>
                 </div>
-                <span class="text-[9.5px] sm:text-[10px] leading-none tracking-tight mt-[3px] transition-colors whitespace-nowrap {{ request()->routeIs('catatan.*') ? 'text-brand font-bold' : 'text-[#88998F] font-semibold group-hover:text-ink' }}">Buku Kandang</span>
+                <span class="text-[10px] leading-none tracking-tight mt-[3px] transition-colors {{ request()->routeIs('catatan.*') ? 'text-brand font-bold' : 'text-[#88998F] font-semibold group-hover:text-ink' }}">Kandang</span>
             </a>
 
             {{-- 3. Ruang Tengah dengan Label 'Catat' di bawah tombol ayam --}}

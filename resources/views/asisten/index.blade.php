@@ -10,29 +10,36 @@
     $chatSessions = $chatSessions ?? ($farm ? $farm->chatSessions()->withCount('messages')->orderByDesc('pinned')->orderByDesc('updated_at')->get() : collect());
     $sessionParam = request()->query('session');
     
-    // Default selalu sesi baru ketika dimuat atau di-refresh
-    if ($sessionParam && is_numeric($sessionParam) && (int) $sessionParam > 0) {
-        $activeSession = $activeSession ?? $chatSessions->firstWhere('id', (int) $sessionParam);
-        $chats = $chats ?? ($activeSession ? $activeSession->messages()->orderBy('id')->get() : collect());
-    } else {
+    if ($sessionParam === 'baru') {
         $activeSession = null;
         $chats = collect();
+        $isGenerating = false;
+    } else {
+        if (!isset($activeSession) || $activeSession === null) {
+            $activeSession = ($sessionParam && is_numeric($sessionParam)) 
+                ? $chatSessions->firstWhere('id', (int) $sessionParam) 
+                : ($chatSessions->firstWhere('messages_count', '>', 0) ?? $chatSessions->first());
+        }
+        $chats = $chats ?? ($activeSession ? $activeSession->messages()->orderBy('id')->get() : collect());
+        $isGenerating = $isGenerating ?? ($activeSession ? ($chats->last()?->role === 'user' || \Illuminate\Support\Facades\Cache::has("chat_generating_{$activeSession->id}")) : false);
     }
 @endphp
 
 <div data-tabs class="lg:flex-1 lg:min-h-0 lg:flex lg:flex-col space-y-2">
     <div class="flex items-center justify-start shrink-0">
-        <div data-tab-nav class="tab-segmented-track relative inline-flex items-center gap-1 p-1 rounded-full text-center text-xs sm:text-sm font-bold select-none bg-surface-2 border border-line/60 shadow-2xs">
+        <div data-tab-nav class="tab-segmented-track relative inline-flex items-center gap-1 p-1 rounded-2xl text-center text-xs sm:text-sm font-bold select-none bg-[#e6eeea] border border-line/60 shadow-2xs">
             <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
-            <button type="button" data-tab="tanya" class="relative z-10 py-2 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }}">
-                Tanya Asisten AI
+            <button type="button" data-tab="tanya" class="relative z-10 py-2 px-3 sm:px-4 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'tanya' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }}">
+                <span class="sm:hidden">Tanya AI</span>
+                <span class="hidden sm:inline">Tanya Asisten AI</span>
             </button>
             @php
                 $isPeringatanActive = ($tabAktif === 'peringatan');
                 $unreadCountTab = $isPeringatanActive ? 0 : $alerts->where('dibaca', false)->count();
             @endphp
-            <button type="button" data-tab="peringatan" onclick="bukaTabPeringatan()" class="relative z-10 py-2 px-4 rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-ink font-bold' : 'text-muted hover:text-ink font-semibold' }} flex items-center gap-1.5">
-                <span>Peringatan Dini</span>
+            <button type="button" data-tab="peringatan" onclick="bukaTabPeringatan()" class="relative z-10 py-2 px-3 sm:px-4 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none {{ $tabAktif === 'peringatan' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }} flex items-center gap-1.5">
+                <span class="sm:hidden">Peringatan</span>
+                <span class="hidden sm:inline">Peringatan Dini</span>
                 @if ($unreadCountTab > 0)
                     <span id="tab-unread-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white shadow-2xs">
                         {{ $unreadCountTab > 9 ? '9+' : $unreadCountTab }}
@@ -254,6 +261,20 @@
                                 </div>
                             @endif
                         @endforeach
+
+                        @if (!empty($isGenerating))
+                            <div id="loading-bubble-desk" class="flex gap-2.5 items-start w-full">
+                                <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+                                </div>
+                                <div class="p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium">
+                                        <span class="w-2 h-2 rounded-full bg-brand animate-ping"></span>
+                                        <span class="animate-pulse text-muted">Asisten sedang menganalisis & menyusun jawaban di latar belakang...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div id="chat-bawah"></div>
@@ -402,6 +423,20 @@
                                 </div>
                             @endif
                         @endforeach
+
+                        @if (!empty($isGenerating))
+                            <div id="loading-bubble-mob" class="flex items-start gap-2 max-w-[90%] self-start">
+                                <div class="w-8 h-8 rounded-full bg-[#EBF5EE] border border-[#CDE5D6] text-brand grid place-items-center shrink-0 mt-0.5 shadow-2xs" style="background-color: #EBF5EE; border-color: #CDE5D6; color: #116a3a;">
+                                    <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+                                </div>
+                                <div class="bg-[#F8FAF9] border border-line/70 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-ink leading-relaxed shadow-2xs flex-1 min-w-0 ai-content-box" style="background-color: #f8faf9;">
+                                    <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium" style="color: #116a3a;">
+                                        <span class="w-2 h-2 rounded-full bg-brand animate-ping" style="background-color: #116a3a;"></span>
+                                        <span class="animate-pulse text-muted">Sedang menganalisis di latar belakang...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -435,7 +470,7 @@
                         <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                         <span>Kembali ke Chat</span>
                     </button>
-                    <div class="text-[11px] font-semibold text-muted">
+                    <div id="mobile-history-total-count" class="text-[11px] font-semibold text-muted">
                         {{ $chatSessions->count() }} Sesi
                     </div>
                 </div>
@@ -518,7 +553,7 @@
                 <div id="history-section-unpinned" class="space-y-2">
                     <div class="flex items-center justify-between text-xs font-bold text-ink uppercase tracking-wider px-1">
                         <span>Semua Percakapan</span>
-                        <span class="text-[11px] text-muted font-semibold">{{ $unpinnedMobile->count() }}</span>
+                        <span id="mobile-history-unpinned-count" class="text-[11px] text-muted font-semibold">{{ $unpinnedMobile->count() }}</span>
                     </div>
 
                     <div class="space-y-1.5" id="history-unpinned-list">
@@ -563,13 +598,13 @@
                                 </div>
                             </div>
                         @empty
-                            @if ($pinnedMobile->isEmpty())
-                                <div class="p-6 text-center text-xs text-muted italic bg-surface/30 rounded-2xl border border-line/60">
-                                    Belum ada riwayat obrolan tersimpan.
-                                </div>
-                            @endif
                         @endforelse
                     </div>
+                </div>
+
+                {{-- Empty state mobile notice if 0 history items --}}
+                <div id="empty-history-mobile-notice" class="{{ $chatSessions->isEmpty() ? '' : 'hidden' }} p-6 text-center text-xs text-muted italic bg-surface/30 rounded-2xl border border-line/60">
+                    Belum ada riwayat obrolan tersimpan.
                 </div>
 
                 {{-- Bottom + Obrolan Baru button in History view --}}
@@ -736,8 +771,13 @@
 
 <script>
 let currentSessionId = {{ $activeSession ? $activeSession->id : 'null' }};
+let isGeneratingInitial = {{ (!empty($isGenerating) && $activeSession) ? 'true' : 'false' }};
 // Selalu gunakan path relatif agar tidak pernah ada masalah CORS lintas localhost dan 127.0.0.1
 const endpointChat = '/asisten/chat';
+const endpointStatus = '{{ route('asisten.status') }}';
+
+let pollingTimer = null;
+let isPollingActive = false;
 
 function getCsrfToken() {
     return document.querySelector('input[name="_token"]')?.value || '{{ csrf_token() }}';
@@ -845,34 +885,22 @@ function formatAiMarkdown(text) {
     return htmlBlocks.join('');
 }
 
-function scrollToBottom() {
+function scrollToBottom(smooth = false) {
+    const behavior = smooth ? 'smooth' : 'auto';
     setTimeout(() => {
         const chatBox = document.getElementById('chat-box');
         if (chatBox) {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-    }, 30);
-}
-
-function isiDanKirim(teks) {
-    const input = document.getElementById('input-pesan');
-    if (input) {
-        input.value = teks;
-        handleFormSubmit();
-    }
-}
-
-function scrollToBottom() {
-    setTimeout(() => {
-        const chatBox = document.getElementById('chat-box');
-        if (chatBox) {
-            chatBox.scrollTop = chatBox.scrollHeight;
+            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: behavior });
         }
         const mobileChatBox = document.getElementById('mobile-chat-box');
         if (mobileChatBox) {
-            mobileChatBox.scrollTop = mobileChatBox.scrollHeight;
+            mobileChatBox.scrollTo({ top: mobileChatBox.scrollHeight, behavior: behavior });
         }
-    }, 30);
+        const chatBawah = document.getElementById('chat-bawah');
+        if (chatBawah && window.innerWidth < 768) {
+            chatBawah.scrollIntoView({ behavior: behavior, block: 'end' });
+        }
+    }, 40);
 }
 
 function isiDanKirim(teks) {
@@ -1008,8 +1036,192 @@ function updateMobileCardHighlight(activeId) {
     });
 }
 
+function buatLoadingBubble() {
+    const deskContainer = document.getElementById('messages-container');
+    const mobContainer = document.getElementById('mobile-messages-container');
+
+    let deskContentBox = document.getElementById('ai-loading-box-desk') || document.querySelector('#loading-bubble-desk .ai-content-box');
+    let mobContentBox = document.getElementById('ai-loading-box-mob') || document.querySelector('#loading-bubble-mob .ai-content-box');
+
+    if (!deskContentBox && deskContainer) {
+        const aiBubbleDesk = document.createElement('div');
+        aiBubbleDesk.id = 'loading-bubble-desk';
+        aiBubbleDesk.className = 'flex gap-2.5 items-start w-full';
+        deskContentBox = document.createElement('div');
+        deskContentBox.id = 'ai-loading-box-desk';
+        deskContentBox.className = 'p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0';
+        deskContentBox.innerHTML = `
+            <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium">
+                <span class="w-2 h-2 rounded-full bg-brand animate-ping"></span>
+                <span class="animate-pulse text-muted">Asisten sedang menganalisis & menyusun jawaban di latar belakang...</span>
+            </div>
+        `;
+        aiBubbleDesk.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/20 text-brand grid place-items-center shrink-0 mt-0.5">
+                <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+            </div>
+        `;
+        aiBubbleDesk.appendChild(deskContentBox);
+        deskContainer.appendChild(aiBubbleDesk);
+    }
+
+    if (!mobContentBox && mobContainer) {
+        const aiBubbleMob = document.createElement('div');
+        aiBubbleMob.id = 'loading-bubble-mob';
+        aiBubbleMob.className = 'flex items-start gap-2 max-w-[90%] self-start';
+        mobContentBox = document.createElement('div');
+        mobContentBox.id = 'ai-loading-box-mob';
+        mobContentBox.className = 'bg-[#F8FAF9] border border-line/70 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-ink leading-relaxed shadow-2xs flex-1 min-w-0 ai-content-box';
+        mobContentBox.style.backgroundColor = '#f8faf9';
+        mobContentBox.innerHTML = `
+            <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium" style="color: #116a3a;">
+                <span class="w-2 h-2 rounded-full bg-brand animate-ping" style="background-color: #116a3a;"></span>
+                <span class="animate-pulse text-muted">Sedang menganalisis di latar belakang...</span>
+            </div>
+        `;
+        aiBubbleMob.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-[#EBF5EE] border border-[#CDE5D6] text-brand grid place-items-center shrink-0 mt-0.5 shadow-2xs" style="background-color: #EBF5EE; border-color: #CDE5D6; color: #116a3a;">
+                <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+            </div>
+        `;
+        aiBubbleMob.appendChild(mobContentBox);
+        mobContainer.appendChild(aiBubbleMob);
+    }
+
+    scrollToBottom();
+    return { deskBox: deskContentBox, mobBox: mobContentBox };
+}
+
+function hentikanPollingStatus() {
+    if (pollingTimer) {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+    }
+    isPollingActive = false;
+}
+
+function setInputLoadingState(isLoading) {
+    const inputDesk = document.getElementById('input-pesan');
+    const inputMob = document.getElementById('mobile-input-pesan');
+    const btnDesk = document.getElementById('btn-kirim');
+    const btnMob = document.getElementById('mobile-btn-kirim');
+
+    if (inputDesk) inputDesk.disabled = isLoading;
+    if (inputMob) inputMob.disabled = isLoading;
+    if (btnDesk) btnDesk.disabled = isLoading;
+    if (btnMob) btnMob.disabled = isLoading;
+
+    if (!isLoading) {
+        if (window.innerWidth >= 768 && inputDesk) inputDesk.focus();
+        else if (inputMob) inputMob.focus();
+    }
+}
+
+function mulaiPollingStatus(sessionId, customDeskBox = null, customMobBox = null) {
+    if (!sessionId) return;
+    hentikanPollingStatus();
+    isPollingActive = true;
+    setInputLoadingState(true);
+
+    let boxes = [
+        customDeskBox || document.getElementById('ai-loading-box-desk') || document.querySelector('#loading-bubble-desk .ai-content-box'),
+        customMobBox || document.getElementById('ai-loading-box-mob') || document.querySelector('#loading-bubble-mob .ai-content-box')
+    ].filter(Boolean);
+
+    if (boxes.length === 0) {
+        const created = buatLoadingBubble();
+        boxes = [created.deskBox, created.mobBox].filter(Boolean);
+    }
+
+    let pollCount = 0;
+    const maxPolls = 120; // 120 detik (2 menit)
+
+    const cek = async () => {
+        if (!isPollingActive || currentSessionId !== sessionId) {
+            hentikanPollingStatus();
+            return;
+        }
+
+        pollCount++;
+        if (pollCount > maxPolls) {
+            hentikanPollingStatus();
+            setInputLoadingState(false);
+            const timeoutHtml = `
+                <div class="flex items-center gap-2 text-xs text-amber-ink bg-amber-soft border border-amber/30 rounded-xl p-3">
+                    <span class="material-symbols-outlined text-[16px]">hourglass_empty</span>
+                    <span>Pemrosesan memerlukan waktu lebih lama dari biasanya. Silakan muat ulang halaman untuk mengecek jawaban AI.</span>
+                </div>
+            `;
+            boxes.forEach(b => { if (b) b.innerHTML = timeoutHtml; });
+            return;
+        }
+
+        try {
+            const res = await fetch(`${endpointStatus}?session_id=${sessionId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!res.ok) return;
+
+            const data = await res.json();
+            if (data.status === 'completed' && data.jawaban) {
+                hentikanPollingStatus();
+                setInputLoadingState(false);
+
+                let activeBoxes = [
+                    document.getElementById('ai-loading-box-desk') || document.querySelector('#loading-bubble-desk .ai-content-box') || customDeskBox,
+                    document.getElementById('ai-loading-box-mob') || document.querySelector('#loading-bubble-mob .ai-content-box') || customMobBox
+                ].filter(Boolean);
+
+                if (activeBoxes.length === 0) {
+                    const created = buatLoadingBubble();
+                    activeBoxes = [created.deskBox, created.mobBox].filter(Boolean);
+                }
+
+                streamWords(activeBoxes, data.jawaban, () => {
+                    activeBoxes.forEach(b => {
+                        b.id = '';
+                        const parentBubble = b.closest('#loading-bubble-desk, #loading-bubble-mob');
+                        if (parentBubble) {
+                            parentBubble.id = '';
+                        }
+                    });
+                    const mobBox = activeBoxes.find(b => b.closest('#mobile-messages-container'));
+                    if (mobBox && !mobBox.querySelector('.msg-timestamp')) {
+                        const timeEl = document.createElement('div');
+                        timeEl.className = 'text-[10px] text-muted text-right mt-1 font-medium msg-timestamp';
+                        timeEl.textContent = data.created_at || 'Baru saja';
+                        mobBox.appendChild(timeEl);
+                    }
+                    scrollToBottom(true);
+                });
+
+                const subtitleEl = document.getElementById('current-session-subtitle');
+                if (subtitleEl) {
+                    const totalMsgs = document.querySelectorAll('#messages-container > div').length;
+                    subtitleEl.textContent = `Sesi ID #${sessionId} • ${totalMsgs} pesan`;
+                }
+            }
+        } catch (e) {
+            console.warn('Polling status error:', e);
+        }
+    };
+
+    setTimeout(() => {
+        if (isPollingActive) {
+            cek();
+            pollingTimer = setInterval(cek, 1000);
+        }
+    }, 800);
+}
+
 function mulaiObrolanBaru() {
+    hentikanPollingStatus();
     currentSessionId = null;
+    setInputLoadingState(false);
     
     // Reset desktop
     const deskContainer = document.getElementById('messages-container');
@@ -1043,12 +1255,15 @@ function mulaiObrolanBaru() {
     updateMobileCardHighlight(null);
     tutupRiwayatMobile();
 
-    window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
+    fetch('{{ route('asisten.session.baru') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya&session=baru') }}');
     const input = window.innerWidth >= 768 ? document.getElementById('input-pesan') : document.getElementById('mobile-input-pesan');
     if (input) input.focus();
 }
 
 async function pilihSession(id) {
+    hentikanPollingStatus();
+    setInputLoadingState(false);
     currentSessionId = id;
     
     // 1. Highlight di desktop sidebar
@@ -1114,7 +1329,7 @@ async function pilihSession(id) {
             const subtitleEl = document.getElementById('current-session-subtitle');
             if (subtitleEl) subtitleEl.textContent = `Sesi ID #${id} • ${data.messages.length} pesan`;
             
-            window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
+            window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}&session=' + id);
 
             data.messages.forEach(m => {
                 const timeText = escapeHtml(m.time || '');
@@ -1175,6 +1390,11 @@ async function pilihSession(id) {
                 }
             });
             scrollToBottom();
+
+            if (data.is_generating || (data.messages && data.messages.length > 0 && data.messages[data.messages.length - 1].role === 'user')) {
+                buatLoadingBubble();
+                mulaiPollingStatus(id);
+            }
         }
     } catch (e) {
         if (container) container.innerHTML = '';
@@ -1305,13 +1525,15 @@ async function kirimPesanRealtime() {
 
     if (deskContainer) {
         const aiBubbleDesk = document.createElement('div');
+        aiBubbleDesk.id = 'loading-bubble-desk';
         aiBubbleDesk.className = 'flex gap-2.5 items-start w-full';
         deskContentBox = document.createElement('div');
+        deskContentBox.id = 'ai-loading-box-desk';
         deskContentBox.className = 'p-3.5 rounded-2xl rounded-tl-xs bg-[#f4f7f5] border border-[#e2ece6] text-xs sm:text-sm text-ink leading-relaxed shadow-xs ai-content-box flex-1 min-w-0';
         deskContentBox.innerHTML = `
             <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium">
                 <span class="w-2 h-2 rounded-full bg-brand animate-ping"></span>
-                <span class="animate-pulse text-muted">Asisten sedang menganalisis & menyusun jawaban...</span>
+                <span class="animate-pulse text-muted">Asisten sedang menganalisis & menyusun jawaban di latar belakang...</span>
             </div>
         `;
         aiBubbleDesk.innerHTML = `
@@ -1325,14 +1547,16 @@ async function kirimPesanRealtime() {
 
     if (mobContainer) {
         const aiBubbleMob = document.createElement('div');
+        aiBubbleMob.id = 'loading-bubble-mob';
         aiBubbleMob.className = 'flex items-start gap-2 max-w-[90%] self-start';
         mobContentBox = document.createElement('div');
-        mobContentBox.className = 'bg-[#F8FAF9] border border-line/70 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-ink leading-relaxed shadow-2xs flex-1 min-w-0';
+        mobContentBox.id = 'ai-loading-box-mob';
+        mobContentBox.className = 'bg-[#F8FAF9] border border-line/70 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-ink leading-relaxed shadow-2xs flex-1 min-w-0 ai-content-box';
         mobContentBox.style.backgroundColor = '#f8faf9';
         mobContentBox.innerHTML = `
             <div class="flex items-center gap-2 text-brand text-xs py-0.5 font-medium" style="color: #116a3a;">
                 <span class="w-2 h-2 rounded-full bg-brand animate-ping" style="background-color: #116a3a;"></span>
-                <span class="animate-pulse text-muted">Sedang menganalisis...</span>
+                <span class="animate-pulse text-muted">Sedang menganalisis di latar belakang...</span>
             </div>
         `;
         aiBubbleMob.innerHTML = `
@@ -1366,28 +1590,27 @@ async function kirimPesanRealtime() {
         }
 
         const data = await response.json();
+        let isSuccess = false;
 
         if (data.status === 'success') {
-            const boxes = [deskContentBox, mobContentBox].filter(Boolean);
-            streamWords(boxes, data.jawaban, () => {
-                if (mobContentBox) {
-                    const timeEl = document.createElement('div');
-                    timeEl.className = 'text-[10px] text-muted text-right mt-1 font-medium';
-                    timeEl.textContent = data.created_at || 'Baru saja';
-                    mobContentBox.appendChild(timeEl);
-                }
-            });
+            isSuccess = true;
+            const targetSessionId = data.session_id || currentSessionId;
+            currentSessionId = targetSessionId;
 
             if (data.is_new_session && data.session_id) {
-                currentSessionId = data.session_id;
                 const titleEl = document.getElementById('current-session-title');
                 if (titleEl) titleEl.textContent = data.session_title;
                 const subtitleEl = document.getElementById('current-session-subtitle');
-                if (subtitleEl) subtitleEl.textContent = `Sesi ID #${data.session_id} • 2 pesan`;
+                if (subtitleEl) subtitleEl.textContent = `Sesi ID #${data.session_id} • 1 pesan`;
 
-                window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}');
+                window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}&session=' + data.session_id);
                 tambahSesiKeSidebar(data.session_id, data.session_title);
+            } else {
+                window.history.replaceState(null, '', '{{ url('/asisten?tab=tanya') }}&session=' + targetSessionId);
             }
+
+            // Jalankan polling real-time untuk memantau status pembuatan respons AI di latar belakang
+            mulaiPollingStatus(targetSessionId, deskContentBox, mobContentBox);
         } else {
             const errHtml = `
                 <div class="flex items-center gap-2 text-xs text-danger-ink bg-danger-soft border border-danger/30 rounded-xl p-3">
@@ -1408,16 +1631,9 @@ async function kirimPesanRealtime() {
         if (deskContentBox) deskContentBox.innerHTML = errHtml;
         if (mobContentBox) mobContentBox.innerHTML = errHtml;
     } finally {
-        if (inputDesk) {
-            inputDesk.disabled = false;
-            if (window.innerWidth >= 768) inputDesk.focus();
+        if (!isSuccess) {
+            setInputLoadingState(false);
         }
-        if (inputMob) {
-            inputMob.disabled = false;
-            if (window.innerWidth < 768) inputMob.focus();
-        }
-        if (btnDesk) btnDesk.disabled = false;
-        if (btnMob) btnMob.disabled = false;
         scrollToBottom();
     }
 }
@@ -1534,6 +1750,51 @@ function tambahSesiKeSidebar(id, judul) {
         `;
         histUnpinnedList.insertBefore(histItem, histUnpinnedList.firstChild);
     }
+    updateHistoryCounters();
+}
+
+function updateHistoryCounters() {
+    const totalItems = document.querySelectorAll('#mobile-history-view [data-history-item]').length;
+    const unpinnedItems = document.querySelectorAll('#history-unpinned-list [data-history-item]').length;
+    const pinnedItems = document.querySelectorAll('#history-pinned-list [data-history-item]').length;
+
+    const totalEl = document.getElementById('mobile-history-total-count');
+    if (totalEl) totalEl.textContent = `${totalItems} Sesi`;
+
+    const unpinnedEl = document.getElementById('mobile-history-unpinned-count');
+    if (unpinnedEl) unpinnedEl.textContent = unpinnedItems;
+
+    const pinnedSection = document.getElementById('history-section-pinned');
+    if (pinnedSection) {
+        if (pinnedItems === 0) pinnedSection.classList.add('hidden');
+        else pinnedSection.classList.remove('hidden');
+    }
+
+    const unpinnedSection = document.getElementById('history-section-unpinned');
+    if (unpinnedSection) {
+        if (unpinnedItems === 0 && pinnedItems > 0) unpinnedSection.classList.add('hidden');
+        else unpinnedSection.classList.remove('hidden');
+    }
+
+    const emptyNotice = document.getElementById('empty-history-mobile-notice');
+    if (emptyNotice) {
+        if (totalItems === 0) emptyNotice.classList.remove('hidden');
+        else emptyNotice.classList.add('hidden');
+    }
+
+    // Periksa juga apakah desktop list kosong
+    const recentsCount = document.querySelectorAll('#recents-list .session-item').length;
+    const pinnedDeskCount = document.querySelectorAll('#pinned-list .session-item').length;
+    if (recentsCount === 0 && pinnedDeskCount === 0) {
+        const recentsList = document.getElementById('recents-list');
+        if (recentsList && !document.getElementById('empty-history-notice')) {
+            const emptyDesk = document.createElement('div');
+            emptyDesk.id = 'empty-history-notice';
+            emptyDesk.className = 'p-4 text-center text-xs text-muted italic';
+            emptyDesk.textContent = 'Belum ada riwayat percakapan. Mulai pertanyaan pertama Anda!';
+            recentsList.appendChild(emptyDesk);
+        }
+    }
 }
 
 function hapusSession(id, e) {
@@ -1565,6 +1826,9 @@ function hapusSession(id, e) {
                     // Hapus dari mobile history
                     const elHist = document.querySelector(`#mobile-history-view [data-session-id="${id}"]`);
                     if (elHist) elHist.remove();
+
+                    // Perbarui counter & empty state secara instan tanpa reload
+                    updateHistoryCounters();
 
                     if (currentSessionId === id) {
                         mulaiObrolanBaru();
@@ -1651,7 +1915,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    scrollToBottom();
+    // Otomatis seret layar ke percakapan terakhir saat halaman dimuat
+    scrollToBottom(true);
+    setTimeout(() => scrollToBottom(true), 150);
+
+    // Mulai polling jika saat halaman dimuat AI sedang memproses jawaban di latar belakang
+    if (isGeneratingInitial && currentSessionId) {
+        mulaiPollingStatus(currentSessionId);
+    }
 
     // Auto-fill & auto-submit jika diarahkan dari kartu peringatan dashboard (?tanya=...)
     const urlParams = new URLSearchParams(window.location.search);

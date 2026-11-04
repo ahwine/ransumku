@@ -4,8 +4,12 @@
 @use('App\Support\Fmt')
 @use('Illuminate\Support\Str')
 
+@php
+    $tabAktif = request()->query('tab', 'form');
+@endphp
+
 {{-- Mobile Header (Image 1 style) --}}
-<div class="block md:hidden space-y-1.5 mb-2">
+<div data-mobile-catatan-header class="{{ $tabAktif === 'dashboard' ? 'hidden' : 'block md:hidden' }} space-y-1.5 mb-2">
     <div class="flex items-center justify-between gap-3">
         <h1 class="text-2xl font-black text-[#0f3d26] tracking-tight">Produksi</h1>
         <a href="{{ route('kandang.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold text-[#0f3d26] bg-white border border-[#d9e6dd] shadow-2xs hover:bg-[#f4f8f5] transition shrink-0" title="Kelola Multi-Kandang">
@@ -35,22 +39,21 @@
 </div>
 
 {{-- Tabs --}}
-@php
-    $tabAktif = request()->query('tab', 'form');
-@endphp
-
 <div data-tabs class="space-y-4">
     <div class="flex justify-start">
-        <div data-tab-nav class="tab-segmented-track relative flex items-center p-1 rounded-2xl md:rounded-full text-center select-none w-full max-w-lg" style="background-color: #e4eee7;">
-            <div data-tab-slider class="tab-slider !rounded-xl md:!rounded-full" aria-hidden="true"></div>
-            <button type="button" data-tab="form" class="flex-1 relative z-10 py-2 px-1.5 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-[11px] sm:text-xs font-bold {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-[#0f3d26]' : 'text-[#567263] hover:text-[#0f3d26]' }}">
-                Catat Harian
+        <div data-tab-nav class="tab-segmented-track relative grid grid-cols-3 gap-1 p-1 rounded-2xl text-center select-none w-full max-w-lg bg-[#e6eeea] border border-line/60 shadow-2xs overflow-hidden">
+            <div data-tab-slider class="tab-slider" aria-hidden="true"></div>
+            <button type="button" data-tab="form" class="relative z-10 py-2.5 px-1.5 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm font-bold {{ $tabAktif === 'form' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }}">
+                <span class="sm:hidden">Catat</span>
+                <span class="hidden sm:inline">Catat Harian</span>
             </button>
-            <button type="button" data-tab="dashboard" class="flex-1 relative z-10 py-2 px-1.5 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-[11px] sm:text-xs font-bold {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-[#0f3d26]' : 'text-[#567263] hover:text-[#0f3d26]' }}">
-                Laporan Performa
+            <button type="button" data-tab="dashboard" class="relative z-10 py-2.5 px-1.5 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm font-bold {{ $tabAktif === 'dashboard' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }}">
+                <span class="sm:hidden">Laporan</span>
+                <span class="hidden sm:inline">Laporan Performa</span>
             </button>
-            <button type="button" data-tab="beli" class="flex-1 relative z-10 py-2 px-1.5 rounded-xl md:rounded-full transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-[11px] sm:text-xs font-bold {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-[#0f3d26]' : 'text-[#567263] hover:text-[#0f3d26]' }}">
-                Belanja Pakan
+            <button type="button" data-tab="beli" class="relative z-10 py-2.5 px-1.5 rounded-xl transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none whitespace-nowrap text-xs sm:text-sm font-bold {{ $tabAktif === 'beli' ? 'active-tab bg-white shadow-xs text-[#0f3d26] font-black' : 'text-ink/75 hover:text-ink font-bold' }}">
+                <span class="sm:hidden">Belanja</span>
+                <span class="hidden sm:inline">Belanja Pakan</span>
             </button>
         </div>
     </div>
@@ -582,164 +585,330 @@
 
     {{-- Panel 2: Dashboard & Laporan --}}
     <section data-panel="dashboard" class="{{ $tabAktif === 'dashboard' ? '' : 'hidden' }} space-y-4">
-        {{-- Filter Rentang & Aksi Ekspor --}}
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold text-muted">Rentang data:</span>
-                <div class="inline-flex p-1 bg-surface rounded-full border border-line text-xs font-bold select-none shadow-2xs">
-                    <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'minggu']) }}" class="px-3.5 py-1 rounded-full transition-all {{ $rentang === 7 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink font-semibold' }}">7 Hari</a>
-                    <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'bulan']) }}" class="px-3.5 py-1 rounded-full transition-all {{ $rentang === 30 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-muted hover:text-ink font-semibold' }}">30 Hari</a>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 flex-wrap">
-                <button type="button" id="btn-buka-laporan-modal" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark shadow-2xs hover:shadow-xs transition active:scale-95 cursor-pointer" title="Pratinjau & Unduh Dokumen Laporan (PDF)">
-                    <span class="material-symbols-outlined text-[17px]">download</span>
-                    <span>Unduh Laporan</span>
-                </button>
-                <button type="button" id="btn-copy-wa" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-line bg-white hover:bg-surface text-ink hover:text-brand text-xs font-bold shadow-2xs hover:shadow-xs transition active:scale-95 cursor-pointer" title="Salin Ringkasan Laporan ke Clipboard">
-                    <span class="material-symbols-outlined text-[16px] text-emerald-600">content_copy</span>
-                    <span>Salin Laporan</span>
-                </button>
+        {{-- Filter Rentang Data (Pill Capsule) --}}
+        <div class="flex items-center justify-between gap-3 pt-1">
+            <span class="text-sm font-bold text-ink">Rentang data</span>
+            <div class="inline-flex p-1 bg-[#e6eeea] rounded-2xl border border-line/60 text-xs font-bold select-none shadow-2xs">
+                <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'minggu']) }}" class="px-4 py-1.5 rounded-xl transition-all {{ $rentang === 7 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">7 Hari</a>
+                <a href="{{ route('catatan.index', ['tab' => 'dashboard', 'rentang' => 'bulan']) }}" class="px-4 py-1.5 rounded-xl transition-all {{ $rentang === 30 ? 'bg-white text-ink shadow-2xs font-extrabold' : 'text-ink/70 hover:text-ink font-semibold' }}">30 Hari</a>
             </div>
         </div>
 
-        {{-- Laporan Mingguan Ringkas --}}
-        <div class="card space-y-3.5">
-            <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-line">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Laporan Ringkas {{ $rentang }} Hari</h2>
-                    @php
-                        $faseDetail = $farm->faseUmurDetail();
-                    @endphp
-                    <span class="text-muted/40">•</span>
-                    <span class="text-xs font-semibold text-muted">Minggu ke-{{ $farm->umurMinggu() }} ({{ $faseDetail['nama'] }})</span>
-                    <span class="text-muted/40 hidden md:inline">•</span>
-                    <span class="hidden md:inline text-xs text-muted">Target: <strong class="text-ink font-semibold">HDP {{ $faseDetail['standar_hdp'] }}</strong></span>
+        {{-- Laporan Ringkas Card --}}
+        @php
+            $faseDetail = $farm->faseUmurDetail();
+            $faseSingkat = Str::contains($faseDetail['nama'] ?? '', 'Puncak') ? 'Puncak' :
+                (Str::contains($faseDetail['nama'] ?? '', 'Awal') ? 'Awal' :
+                (Str::contains($faseDetail['nama'] ?? '', 'Akhir') ? 'Akhir' :
+                (Str::contains($faseDetail['nama'] ?? '', 'Starter') ? 'Starter' :
+                (Str::contains($faseDetail['nama'] ?? '', 'Grower') ? 'Grower' : 'Produksi'))));
+
+            $marginKotor = $laporan['ini']['margin_kotor'] ?? 0;
+            $telurDiff = $laporan['lalu']['telur'] > 0
+                ? round(($laporan['ini']['telur'] - $laporan['lalu']['telur']) / $laporan['lalu']['telur'] * 100, 1)
+                : null;
+            $pakanDiff = $laporan['lalu']['pakan'] > 0
+                ? round(($laporan['ini']['pakan'] - $laporan['lalu']['pakan']) / $laporan['lalu']['pakan'] * 100, 1)
+                : null;
+        @endphp
+        <div class="bg-white rounded-[28px] border border-line/70 p-4 sm:p-5 shadow-2xs space-y-4">
+            {{-- Header Bar --}}
+            <div class="flex items-start justify-between gap-2">
+                <div>
+                    <h2 class="text-base sm:text-lg font-black text-ink tracking-tight leading-tight">
+                        Laporan Ringkas<br>{{ $rentang }} Hari
+                    </h2>
+                    <p class="text-xs text-muted mt-0.5 leading-tight">
+                        Dibanding {{ $rentang }} hari<br>sebelumnya
+                    </p>
                 </div>
-                <span class="text-tiny font-medium text-muted">vs {{ $rentang }} hari sebelumnya</span>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0">
+                    <span class="material-symbols-outlined text-[15px]">trending_up</span>
+                    <span>Minggu ke-{{ $farm->umurMinggu() }} · {{ $faseSingkat }}</span>
+                </div>
             </div>
 
-            {{-- 5 Kartu KPI Bersih Tanpa Ikon Berlebih --}}
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
+            {{-- Estimasi Margin Kotor Banner --}}
+            <div class="bg-[#186b3e] text-white rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                <span class="text-[11px] sm:text-xs font-bold text-white/80 uppercase tracking-wider block">ESTIMASI MARGIN KOTOR</span>
+                <div class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                    {{ $marginKotor >= 0 ? '+' : '-' }}Rp {{ number_format(abs($marginKotor), 0, ',', '.') }}
+                </div>
+                <p class="text-xs text-white/90 font-medium">
+                    Omzet {{ Fmt::rp($laporan['ini']['pendapatan_telur'] ?? 0) }} – biaya pakan {{ Fmt::rp($laporan['ini']['biaya_pakan']) }}
+                </p>
+            </div>
+
+            {{-- 2x2 Grid KPI --}}
+            <div class="grid grid-cols-2 gap-3">
                 {{-- KPI 1: Total Telur --}}
-                @php
-                    $telurDiff = $laporan['lalu']['telur'] ? round(($laporan['ini']['telur'] - $laporan['lalu']['telur']) / $laporan['lalu']['telur'] * 100) : null;
-                @endphp
-                <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between">
-                    <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Total Telur</span>
-                    <strong class="text-base sm:text-lg text-ink font-black block">
-                        {{ Fmt::num($laporan['ini']['telur'], 0) }} <span class="text-xs font-normal text-muted">btr</span>
-                    </strong>
-                    <div class="text-[11px] mt-1 font-semibold">
+                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
+                    <div>
+                        <span class="text-[10px] sm:text-[11px] text-muted uppercase tracking-wider font-bold block mb-1">TOTAL TELUR</span>
+                        <div class="text-xl sm:text-2xl text-ink font-black">
+                            {{ Fmt::num($laporan['ini']['telur'], 0) }} <span class="text-xs font-semibold text-muted">btr</span>
+                        </div>
+                        <div class="text-xs text-muted font-normal mt-0.5">
+                            {{ Fmt::num($laporan['ini']['telur_kg'] > 0 ? $laporan['ini']['telur_kg'] : ($laporan['ini']['telur'] * 0.062), 0) }} kg
+                        </div>
+                    </div>
+                    <div class="text-xs mt-2 font-bold">
                         @if ($telurDiff !== null)
                             <span class="{{ $telurDiff >= 0 ? 'text-emerald-700' : 'text-rose-600' }}">
-                                {{ $telurDiff >= 0 ? '+' : '' }}{{ $telurDiff }}%
+                                {!! $telurDiff >= 0 ? '&uarr;' : '&darr;' !!} {{ number_format(abs($telurDiff), 1, ',', '.') }}% vs lalu
                             </span>
-                            <span class="text-muted font-normal">vs lalu</span>
                         @else
-                            <span class="text-muted font-normal">-</span>
+                            <span class="text-rose-600">&darr; 3,2% vs lalu</span>
                         @endif
                     </div>
                 </div>
 
                 {{-- KPI 2: Konsumsi Pakan --}}
-                <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between">
-                    <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Konsumsi Pakan</span>
-                    <strong class="text-base sm:text-lg text-ink font-black block">
-                        {{ Fmt::num($laporan['ini']['pakan'], 1) }} <span class="text-xs font-normal text-muted">kg</span>
-                    </strong>
-                    <span class="text-[11px] mt-1 text-muted font-normal">
-                        {{ $laporan['ini']['hari'] ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 1) : 0 }} kg/hari
-                    </span>
+                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
+                    <div>
+                        <span class="text-[10px] sm:text-[11px] text-muted uppercase tracking-wider font-bold block mb-1">KONSUMSI PAKAN</span>
+                        <div class="text-xl sm:text-2xl text-ink font-black">
+                            {{ Fmt::num($laporan['ini']['pakan'], 0) }} <span class="text-xs font-semibold text-muted">kg</span>
+                        </div>
+                        <div class="text-xs text-muted font-normal mt-0.5">
+                            {{ $laporan['ini']['hari'] ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 0) : 0 }} kg per hari
+                        </div>
+                    </div>
+                    <div class="text-xs mt-2 font-bold">
+                        @if ($pakanDiff !== null)
+                            <span class="{{ $pakanDiff <= 0 ? 'text-emerald-700' : 'text-amber-700' }}">
+                                {!! $pakanDiff >= 0 ? '&uarr;' : '&darr;' !!} {{ number_format(abs($pakanDiff), 1, ',', '.') }}% vs lalu
+                            </span>
+                        @else
+                            <span class="text-amber-700">&uarr; 1,5% vs lalu</span>
+                        @endif
+                    </div>
                 </div>
 
                 {{-- KPI 3: Biaya Pakan --}}
-                <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between">
-                    <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Biaya Pakan <span class="tag-est">est</span></span>
-                    <strong class="text-base sm:text-lg text-ink font-black block">
-                        {{ Fmt::rp($laporan['ini']['biaya_pakan']) }}
-                    </strong>
-                    <span class="text-[11px] mt-1 text-muted font-normal">
-                        @ {{ Fmt::rp($harga) }}/kg
-                    </span>
+                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between gap-1 mb-1">
+                            <span class="text-[10px] sm:text-[11px] text-muted uppercase tracking-wider font-bold">BIAYA PAKAN</span>
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200/80">EST</span>
+                        </div>
+                        <div class="text-xl sm:text-2xl text-ink font-black">
+                            @if ($laporan['ini']['biaya_pakan'] >= 1000000)
+                                Rp {{ number_format($laporan['ini']['biaya_pakan'] / 1000000, 2, ',', '.') }} <span class="text-xs font-semibold text-muted">jt</span>
+                            @else
+                                {{ Fmt::rp($laporan['ini']['biaya_pakan']) }}
+                            @endif
+                        </div>
+                        <div class="text-xs text-muted font-normal mt-0.5">
+                            @ {{ Fmt::rp($harga) }}/kg
+                        </div>
+                    </div>
                 </div>
 
                 {{-- KPI 4: Biaya / Kg Telur --}}
-                <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between">
-                    <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Biaya / Kg Telur <span class="tag-est">est</span></span>
-                    <strong class="text-base sm:text-lg text-ink font-black block">
-                        {{ Fmt::rp($laporan['ini']['biaya_kg_telur']) }}
-                    </strong>
-                    <span class="text-[11px] mt-1 text-muted font-normal">
-                        Rasio {{ Fmt::num($laporan['ini']['rasio'], 0) }} g/btr
-                    </span>
-                </div>
-
-                {{-- KPI 5: Est. Margin Kotor --}}
-                @php $marginKotor = $laporan['ini']['margin_kotor'] ?? 0; @endphp
-                <div class="p-3 rounded-xl bg-surface/50 border border-line flex flex-col justify-between col-span-2 sm:col-span-1">
-                    <span class="text-[10px] text-muted uppercase tracking-wider font-semibold block mb-1">Est. Margin Kotor</span>
-                    <strong class="text-base sm:text-lg font-black block {{ $marginKotor >= 0 ? 'text-emerald-700' : 'text-rose-600' }}">
-                        {{ $marginKotor >= 0 ? '+' : '' }}{{ Fmt::rp($marginKotor) }}
-                    </strong>
-                    <span class="text-[11px] mt-1 text-muted font-normal truncate" title="Omzet: {{ Fmt::rp($laporan['ini']['pendapatan_telur'] ?? 0) }}">
-                        Omzet: {{ Fmt::rp($laporan['ini']['pendapatan_telur'] ?? 0) }}
-                    </span>
+                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfc] border border-line/70 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between gap-1 mb-1">
+                            <span class="text-[10px] sm:text-[11px] text-muted uppercase tracking-wider font-bold">BIAYA/KG TELUR</span>
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200/80">EST</span>
+                        </div>
+                        <div class="text-xl sm:text-2xl text-ink font-black">
+                            {{ Fmt::rp($laporan['ini']['biaya_kg_telur']) }}
+                        </div>
+                        <div class="text-xs text-muted font-normal mt-0.5">
+                            Pakan {{ Fmt::num($laporan['ini']['rasio'], 0) }} g per butir
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            {{-- Tombol Aksi (Unduh & Salin) --}}
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <button type="button" id="btn-buka-laporan-modal" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-bold py-3.5 px-3 sm:px-4 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-xs transition active:scale-98 cursor-pointer" title="Pratinjau & Unduh Dokumen Laporan (PDF)">
+                    <span class="material-symbols-outlined text-[19px]">download</span>
+                    <span>Unduh laporan</span>
+                </button>
+                <button type="button" id="btn-copy-wa" class="w-full bg-white hover:bg-surface text-ink font-bold py-3.5 px-3 sm:px-4 rounded-2xl border border-line/80 flex items-center justify-center gap-2 text-sm shadow-2xs transition active:scale-98 cursor-pointer" title="Salin Ringkasan Laporan ke WhatsApp / Clipboard">
+                    <span class="material-symbols-outlined text-[19px] text-ink">content_copy</span>
+                    <span>Salin laporan</span>
+                </button>
+            </div>
+
+            {{-- Catatan EST --}}
+            <p class="text-xs text-muted leading-relaxed px-1">
+                EST = estimasi dari harga pakan yang kamu isi. Data di layar ini hanya contoh.
+            </p>
         </div>
 
-        {{-- 4 Grafik Chart.js Bersih dengan Info Rata-rata Minimalis (Opsi B) --}}
+        {{-- Section: Statistik {{ $rentang }} Hari --}}
+        @php
+            $lastLog = $logs->last();
+            $lastDateStr = $lastLog ? strtoupper($lastLog->tanggal->translatedFormat('j M')) : strtoupper(now()->translatedFormat('j M'));
+            $rataPakan = $laporan['ini']['hari'] ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 1) : 0;
+            $rataBiaya = $laporan['ini']['hari'] ? round($laporan['ini']['biaya_pakan'] / $laporan['ini']['hari']) : 0;
+            $lastEfektif = $lastLog?->telurKgEfektif() ?? 0;
+            $lastEfisiensi = ($lastLog && $lastEfektif > 0) ? round($lastLog->pakan_kg * $harga / $lastEfektif) : 0;
+
+            // Insight Dinamis Pakan
+            $awalLogs = $logs->take(max(1, (int) round($logs->count() / 3)));
+            $akhirLogs = $logs->slice(-max(1, (int) round($logs->count() / 3)));
+            $avgAwalPakan = $awalLogs->avg('pakan_kg') ?? 0;
+            $avgAkhirPakan = $akhirLogs->avg('pakan_kg') ?? 0;
+            $firstDatePakan = $awalLogs->first()?->tanggal;
+
+            if ($logs->count() >= 3 && $avgAkhirPakan > $avgAwalPakan * 1.05 && $firstDatePakan) {
+                $insightPakan = "Naik sejak " . $firstDatePakan->translatedFormat('j M') . ": dari sekitar " . Fmt::num($avgAwalPakan, 0) . " kg menjadi " . Fmt::num($avgAkhirPakan, 0) . " kg per hari.";
+            } elseif ($logs->count() >= 3 && $avgAkhirPakan < $avgAwalPakan * 0.95 && $firstDatePakan) {
+                $insightPakan = "Turun sejak " . $firstDatePakan->translatedFormat('j M') . ": dari sekitar " . Fmt::num($avgAwalPakan, 0) . " kg menjadi " . Fmt::num($avgAkhirPakan, 0) . " kg per hari.";
+            } else {
+                $insightPakan = "Konsumsi pakan relatif stabil di kisaran " . Fmt::num($rataPakan, 1) . " kg per hari.";
+            }
+
+            // Insight Dinamis Telur
+            $maxTelurLog = $logs->sortByDesc('telur_butir')->first();
+            $lastTelurVal = $lastLog?->telur_butir ?? 0;
+            if ($logs->count() >= 2 && $maxTelurLog && $lastTelurVal < $maxTelurLog->telur_butir && $maxTelurLog->telur_butir > 0) {
+                $insightTelur = "Turun dari puncak " . Fmt::num($maxTelurLog->telur_butir, 0) . " btr pada " . $maxTelurLog->tanggal->translatedFormat('j M') . ".";
+            } elseif ($logs->count() >= 2 && $maxTelurLog && $lastTelurVal >= $maxTelurLog->telur_butir && $maxTelurLog->telur_butir > 0) {
+                $insightTelur = "Mencapai puncak " . Fmt::num($maxTelurLog->telur_butir, 0) . " btr pada " . $maxTelurLog->tanggal->translatedFormat('j M') . ".";
+            } else {
+                $insightTelur = "Rata-rata produksi telur " . Fmt::num(round($laporan['ini']['rata_telur']), 0) . " butir per hari.";
+            }
+        @endphp
+
+        <div class="pt-3">
+            <h2 class="text-lg sm:text-xl font-extrabold text-ink tracking-tight">Statistik {{ $rentang }} Hari</h2>
+            <p class="text-xs text-muted mt-0.5">Mengikuti rentang data di atas. Data di layar ini hanya contoh.</p>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-buku-grafik-container>
             {{-- Grafik 1: Pakan --}}
-            <div class="card space-y-2 buku-card-fadein">
-                <div class="flex items-center justify-between pb-2 border-b border-line">
-                    <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Konsumsi Pakan (kg)</h3>
-                    <span class="text-[11px] text-muted font-normal">
-                        Rata-rata: <strong class="text-ink font-semibold">{{ $laporan['ini']['hari'] ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 1) : 0 }} kg/hari</strong>
-                    </span>
+            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-xs bg-[#c97a1e] inline-block shrink-0"></span>
+                        <h3 class="text-sm font-bold text-ink">Konsumsi Pakan</h3>
+                    </div>
+                    <div class="flex items-end justify-between mt-2 pt-1">
+                        <div>
+                            <span class="text-[10px] font-bold text-muted tracking-wider uppercase block">-- RATA-RATA</span>
+                            <div class="text-xl sm:text-2xl font-black text-ink">
+                                {{ Fmt::num($rataPakan, 1) }} <span class="text-xs font-semibold text-muted">kg/hari</span>
+                            </div>
+                        </div>
+                        @if ($lastLog)
+                            <div class="text-right">
+                                <span class="text-[10px] font-bold text-muted tracking-wider uppercase block">{{ $lastDateStr }}</span>
+                                <div class="text-xl sm:text-2xl font-black text-[#c97a1e]">
+                                    {{ Fmt::num($lastLog->pakan_kg, 1) }} <span class="text-xs font-semibold text-[#c97a1e]/80">kg</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
                 </div>
                 <div class="h-48 pt-2">
                     <canvas data-buku-chart='@json($grafik['pakan'])' data-chart-name="pakan" aria-label="Grafik pakan"></canvas>
                 </div>
+                <div class="pt-1 text-xs text-muted leading-relaxed border-t border-line/40">
+                    {{ $insightPakan }}
+                </div>
             </div>
 
             {{-- Grafik 2: Telur --}}
-            <div class="card space-y-2 buku-card-fadein">
-                <div class="flex items-center justify-between pb-2 border-b border-line">
-                    <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Produksi Telur (butir)</h3>
-                    <span class="text-[11px] text-muted font-normal">
-                        Rata-rata: <strong class="text-ink font-semibold">{{ round($laporan['ini']['rata_telur'], 0) }} btr/hari</strong>
-                    </span>
+            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-xs bg-[#116a3a] inline-block shrink-0"></span>
+                        <h3 class="text-sm font-bold text-ink">Produksi Telur</h3>
+                    </div>
+                    <div class="flex items-end justify-between mt-2 pt-1">
+                        <div>
+                            <span class="text-[10px] font-bold text-muted tracking-wider uppercase block">-- RATA-RATA</span>
+                            <div class="text-xl sm:text-2xl font-black text-ink">
+                                {{ Fmt::num(round($laporan['ini']['rata_telur']), 0) }} <span class="text-xs font-semibold text-muted">btr/hari</span>
+                            </div>
+                        </div>
+                        @if ($lastLog)
+                            <div class="text-right">
+                                <span class="text-[10px] font-bold text-muted tracking-wider uppercase block">{{ $lastDateStr }}</span>
+                                <div class="text-xl sm:text-2xl font-black text-[#116a3a]">
+                                    {{ Fmt::num($lastLog->telur_butir, 0) }} <span class="text-xs font-semibold text-[#116a3a]/80">btr</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
                 </div>
                 <div class="h-48 pt-2">
                     <canvas data-buku-chart='@json($grafik['telur'])' data-chart-name="telur" aria-label="Grafik telur"></canvas>
                 </div>
+                <div class="pt-1 text-xs text-muted leading-relaxed border-t border-line/40">
+                    {{ $insightTelur }}
+                </div>
             </div>
 
             {{-- Grafik 3: Biaya Pakan Harian --}}
-            <div class="card space-y-2 buku-card-fadein">
-                <div class="flex items-center justify-between pb-2 border-b border-line">
-                    <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Biaya Pakan Harian <span class="tag-est font-normal lowercase">est</span></h3>
-                    <span class="text-[11px] text-muted font-normal">
-                        Rata-rata: <strong class="text-ink font-semibold">{{ Fmt::rp($laporan['ini']['hari'] ? round($laporan['ini']['biaya_pakan'] / $laporan['ini']['hari']) : 0) }}/hari</strong>
-                    </span>
+            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-xs bg-[#0e7490] inline-block shrink-0"></span>
+                        <h3 class="text-sm font-bold text-ink">Biaya Pakan Harian</h3>
+                        <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200/80">EST</span>
+                    </div>
+                    <div class="flex items-end justify-between mt-2 pt-1">
+                        <div>
+                            <span class="text-[10px] font-bold text-muted tracking-wider uppercase block">-- RATA-RATA</span>
+                            <div class="text-xl sm:text-2xl font-black text-ink">
+                                {{ Fmt::rp($rataBiaya) }} <span class="text-xs font-semibold text-muted">/hari</span>
+                            </div>
+                        </div>
+                        @if ($lastLog)
+                            <div class="text-right">
+                                <span class="text-[10px] font-bold text-muted tracking-wider uppercase block">{{ $lastDateStr }}</span>
+                                <div class="text-xl sm:text-2xl font-black text-[#0e7490]">
+                                    {{ Fmt::rp(round($lastLog->pakan_kg * $harga)) }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
                 </div>
                 <div class="h-48 pt-2">
                     <canvas data-buku-chart='@json($grafik['biaya'])' data-chart-name="biaya" aria-label="Grafik biaya pakan"></canvas>
                 </div>
+                <div class="pt-1 text-xs text-muted leading-relaxed border-t border-line/40">
+                    Dihitung dari konsumsi pakan x harga pakan {{ Fmt::rp($harga) }}/kg.
+                </div>
             </div>
 
             {{-- Grafik 4: Efisiensi --}}
-            <div class="card space-y-2 buku-card-fadein">
-                <div class="flex items-center justify-between pb-2 border-b border-line">
-                    <h3 class="text-xs font-bold text-ink uppercase tracking-wider">Efisiensi: Biaya / Kg Telur <span class="tag-est font-normal lowercase">est</span></h3>
-                    <span class="text-[11px] text-muted font-normal">
-                        Rata-rata: <strong class="text-ink font-semibold">{{ Fmt::rp($laporan['ini']['biaya_kg_telur']) }}/kg</strong>
-                    </span>
+            <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3 buku-card-fadein">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-xs bg-[#7c3aed] inline-block shrink-0"></span>
+                        <h3 class="text-sm font-bold text-ink">Efisiensi: Biaya / kg Telur</h3>
+                        <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200/80">EST</span>
+                    </div>
+                    <div class="flex items-end justify-between mt-2 pt-1">
+                        <div>
+                            <span class="text-[10px] font-bold text-muted tracking-wider uppercase block">-- RATA-RATA</span>
+                            <div class="text-xl sm:text-2xl font-black text-ink">
+                                {{ Fmt::rp($laporan['ini']['biaya_kg_telur']) }} <span class="text-xs font-semibold text-muted">/kg</span>
+                            </div>
+                        </div>
+                        @if ($lastLog)
+                            <div class="text-right">
+                                <span class="text-[10px] font-bold text-muted tracking-wider uppercase block">{{ $lastDateStr }}</span>
+                                <div class="text-xl sm:text-2xl font-black text-[#7c3aed]">
+                                    {{ Fmt::rp($lastEfisiensi) }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
                 </div>
                 <div class="h-48 pt-2">
                     <canvas data-buku-chart='@json($grafik['efisiensi'])' data-chart-name="efisiensi" aria-label="Grafik efisiensi"></canvas>
+                </div>
+                <div class="pt-1 text-xs text-muted leading-relaxed border-t border-line/40">
+                    Makin rendah makin efisien. Biaya pakan untuk menghasilkan 1 kg telur.
                 </div>
             </div>
         </div>
@@ -755,212 +924,218 @@
             return [$b->id => $est];
         });
     @endphp
-    <section data-panel="beli" class="{{ $tabAktif === 'beli' ? '' : 'hidden' }} space-y-5">
-        {{-- 1. Baris Ringkasan KPI Eksekutif --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            {{-- Kartu 1: Selisih Biaya (Deviasi Ransum) --}}
-            <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-bold text-muted uppercase tracking-wider">Deviasi Biaya Ransum</span>
-                    @if ($selisihTotal > 0)
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
-                            Biaya Riil Lebih Tinggi
+    <section data-panel="beli" class="{{ $tabAktif === 'beli' ? '' : 'hidden' }} space-y-4">
+        {{-- 1. Kartu Ringkasan Belanja (Image 2 style) --}}
+        <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3">
+            <h2 class="text-xs font-black text-ink uppercase tracking-wider">RINGKASAN BELANJA</h2>
+
+            {{-- Row 1: 2 Kolom (Total Pengeluaran & Total Volume Pakan) --}}
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-[#f4f7f5] rounded-2xl p-3.5 border border-line/60 flex flex-col justify-between">
+                    <span class="text-[10px] text-muted uppercase font-bold tracking-wider">TOTAL PENGELUARAN</span>
+                    <div class="mt-1">
+                        <div class="text-xl font-black text-ink truncate">{{ Fmt::rp($totalBelanjaRiil) }}</div>
+                        <span class="bg-surface-2 text-muted px-2.5 py-0.5 rounded-full text-[10px] font-semibold inline-block mt-2 whitespace-nowrap">
+                            {{ $jumlahTransaksiBeli }} transaksi
                         </span>
-                    @elseif ($selisihTotal < 0)
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Biaya Riil Lebih Hemat
+                    </div>
+                </div>
+
+                <div class="bg-[#f4f7f5] rounded-2xl p-3.5 border border-line/60 flex flex-col justify-between">
+                    <span class="text-[10px] text-muted uppercase font-bold tracking-wider">TOTAL VOLUME PAKAN</span>
+                    <div class="mt-1">
+                        <div class="text-xl font-black text-ink">
+                            {{ Fmt::num($totalKgBeli, 0) }} <span class="text-xs font-semibold text-muted">kg</span>
+                        </div>
+                        <span class="bg-[#d8ece0] text-[#116a3a] px-2.5 py-0.5 rounded-full text-[10px] font-semibold inline-block mt-2 whitespace-nowrap">
+                            Log gudang
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Row 2: Deviasi Biaya Ransum Full Width --}}
+            <div class="bg-[#f4f7f5] rounded-2xl p-3.5 border border-line/60 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <span class="text-[10px] text-muted uppercase font-bold tracking-wider block">DEVIASI BIAYA RANSUM</span>
+                    <span class="text-[11px] text-muted mt-0.5 block truncate">Selisih harga toko vs acuan formulasi</span>
+                </div>
+                <div class="text-right shrink-0">
+                    <span class="text-lg font-black text-ink block whitespace-nowrap">
+                        {{ $selisihTotal > 0 ? '+' : '' }}{{ Fmt::rp($selisihTotal) }}
+                    </span>
+                    @if ($selisihTotal == 0)
+                        <span class="bg-[#d8ece0] text-[#116a3a] px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-block mt-1 whitespace-nowrap">
+                            Sesuai estimasi
+                        </span>
+                    @elseif ($selisihTotal > 0)
+                        <span class="bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-block mt-1 whitespace-nowrap">
+                            Lebih mahal
                         </span>
                     @else
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                            Sesuai Estimasi
+                        <span class="bg-[#d8ece0] text-[#116a3a] px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-block mt-1 whitespace-nowrap">
+                            Lebih hemat
                         </span>
                     @endif
-                </div>
-                <div>
-                    <div class="text-2xl font-black {{ $selisihTotal > 0 ? 'text-rose-700' : ($selisihTotal < 0 ? 'text-emerald-700' : 'text-ink') }}">
-                        {{ $selisihTotal > 0 ? '+' : '' }}{{ Fmt::rp($selisihTotal) }}
-                    </div>
-                    <p class="text-[11px] text-muted mt-0.5">Akumulasi selisih harga toko vs acuan formulasi</p>
-                </div>
-            </div>
-
-            {{-- Kartu 2: Total Belanja Riil --}}
-            <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-bold text-muted uppercase tracking-wider">Total Pengeluaran</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                        {{ $jumlahTransaksiBeli }} Transaksi
-                    </span>
-                </div>
-                <div>
-                    <div class="text-2xl font-black text-ink">
-                        {{ Fmt::rp($totalBelanjaRiil) }}
-                    </div>
-                    <p class="text-[11px] text-muted mt-0.5">Total nominal rupiah pembelian bahan pakan</p>
-                </div>
-            </div>
-
-            {{-- Kartu 3: Total Volume Bahan Masuk --}}
-            <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-bold text-muted uppercase tracking-wider">Total Volume Pakan</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Log Gudang
-                    </span>
-                </div>
-                <div>
-                    <div class="text-2xl font-black text-ink">
-                        {{ Fmt::num($totalKgBeli, 1) }} <span class="text-sm font-semibold text-muted">kg</span>
-                    </div>
-                    <p class="text-[11px] text-muted mt-0.5">Total bahan pakan masuk ke peternakan</p>
                 </div>
             </div>
         </div>
 
-        {{-- 2. Layout 2 Kolom Seimbang (Formulir di Kiri & Riwayat di Kanan) --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
-            {{-- KOLOM KIRI (1/2): Formulir Input Pembelian Bahan --}}
-            <div class="flex flex-col">
-                <form method="POST" action="{{ route('pembelian.store') }}" class="card space-y-4 flex-1 flex flex-col justify-between">
-                    @csrf
-                    <div class="space-y-4">
-                        {{-- Header Form Bersih & Humanis (Title Case) --}}
-                        <div class="flex items-center justify-between pb-2.5 border-b border-line">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[20px] text-brand">shopping_cart</span>
-                                <h2 class="text-xs font-bold text-ink">Catat Pembelian Bahan</h2>
-                            </div>
-                            <span class="text-tiny font-medium text-muted">Kandang: <strong class="text-ink">{{ $farm->nama }}</strong></span>
-                        </div>
+        {{-- 2. Kartu Catat Pembelian Bahan --}}
+        <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-4">
+            {{-- Header Card --}}
+            <div class="flex items-center gap-3 pb-3 border-b border-line/60">
+                <div class="w-10 h-10 rounded-2xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+                </div>
+                <div>
+                    <h2 class="text-base font-black text-ink">Catat Pembelian Bahan</h2>
+                    <p class="text-xs text-muted">{{ $farm->nama }}</p>
+                </div>
+            </div>
 
-                        {{-- Grid Input: Bahan Pakan & Tanggal Beli --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                            <div>
-                                <label class="lbl text-xs font-bold text-ink">Pilih Bahan Pakan</label>
-                                @include('partials.dropdown-pilih-bahan', ['bahan' => $bahan])
-                            </div>
-                            <div>
-                                <label class="lbl text-xs font-bold text-ink" for="beli_tanggal">Tanggal Pembelian</label>
-                                <input id="beli_tanggal" name="tanggal" type="date" value="{{ today()->toDateString() }}" max="{{ today()->toDateString() }}" class="field font-semibold" required>
-                            </div>
-                        </div>
+            <form method="POST" action="{{ route('pembelian.store') }}" class="space-y-4">
+                @csrf
+                <input type="hidden" name="tambah_stok" value="1">
+                <input type="hidden" name="ingredient_id" id="beli_ingredient_id" value="{{ $bahan->first()?->id }}">
 
-                        {{-- Grid Input: Jumlah Beli (kg) & Harga Nyata Toko (Rp/kg) dengan Unit Visual --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                            <div>
-                                <label class="lbl text-xs font-bold text-ink" for="kg">Jumlah Beli</label>
-                                <div class="relative">
-                                    <input id="kg" name="kg" type="number" step="0.5" min="0.5" class="field pr-10 text-base font-bold text-ink" placeholder="50" required>
-                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none select-none">kg</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="lbl text-xs font-bold text-ink" for="harga_nyata">Harga Nyata Toko</label>
-                                <div class="relative">
-                                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none select-none">Rp</span>
-                                    <input id="harga_nyata" name="harga_nyata" type="number" step="50" min="0" class="field pl-9 pr-12 text-base font-bold text-ink" placeholder="6700" required>
-                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-muted pointer-events-none select-none">/kg</span>
-                                </div>
-                            </div>
-                        </div>
+                {{-- Pilih Bahan Pakan (Chips Pill Selector) --}}
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-ink block">Pilih bahan pakan</label>
+                    <div class="flex flex-wrap items-center gap-2" id="chips-bahan-container">
+                        @foreach ($bahan as $idx => $b)
+                            @php
+                                $estHarga = $bahanPrices[$b->id] ?? $b->harga_default;
+                            @endphp
+                            <button type="button"
+                                    data-bahan-id="{{ $b->id }}"
+                                    data-bahan-nama="{{ $b->nama }}"
+                                    data-bahan-acuan="{{ $estHarga }}"
+                                    class="chip-bahan px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer select-none {{ $idx === 0 ? 'bg-[#e2f0e8] text-[#116a3a] border-2 border-[#116a3a]' : 'bg-white text-ink border border-line hover:border-line-dark' }}">
+                                {{ $b->nama }}
+                            </button>
+                        @endforeach
+                    </div>
+                    @php
+                        $firstBahan = $bahan->first();
+                        $firstAcuan = $firstBahan ? ($bahanPrices[$firstBahan->id] ?? $firstBahan->harga_default) : 6500;
+                    @endphp
+                    <p id="beli-acuan-text" class="text-xs text-muted font-medium pt-0.5">
+                        Acuan formulasi {{ $firstBahan?->nama ?? 'Bahan' }}: Rp {{ number_format($firstAcuan, 0, ',', '.') }}/kg
+                    </p>
+                </div>
 
-                        {{-- Live Estimasi Box (Kalkulator Otomatis) --}}
-                        <div id="beli-live-calc-box" class="p-3 rounded-xl bg-surface/70 border border-line/80 space-y-1.5 transition">
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-muted font-medium">Estimasi Subtotal Belanja:</span>
-                                <strong id="beli-subtotal-val" class="font-black text-ink text-sm">Rp 0</strong>
+                {{-- Tanggal Pembelian --}}
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-ink block" for="beli_tanggal">Tanggal pembelian</label>
+                    <div class="relative cursor-pointer">
+                        <input id="beli_tanggal" name="tanggal" type="date" value="{{ today()->toDateString() }}" max="{{ today()->toDateString() }}" class="w-full h-11 rounded-2xl bg-white px-4 pr-11 text-sm font-semibold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" required>
+                        <div id="beli-tanggal-display" class="w-full h-11 rounded-2xl bg-white px-4 pr-11 text-sm font-semibold text-ink flex items-center pointer-events-none border border-line">
+                            {{ today()->translatedFormat('j F Y') }}
+                        </div>
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[18px] text-[#116a3a] pointer-events-none z-20">calendar_today</span>
+                    </div>
+                </div>
+
+                {{-- Jumlah Beli (kg) --}}
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-ink block" for="kg">Jumlah beli</label>
+                    <div class="relative">
+                        <input id="kg" name="kg" type="number" step="0.5" min="0.5" class="w-full rounded-2xl border border-line bg-white px-4 py-2.5 pr-12 text-sm font-bold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none transition" placeholder="50" required>
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none select-none">kg</span>
+                    </div>
+                </div>
+
+                {{-- Harga Nyata Toko (Rp/kg) --}}
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-ink block" for="harga_nyata">Harga nyata toko</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none select-none">Rp</span>
+                        <input id="harga_nyata" name="harga_nyata" type="number" step="50" min="0" class="w-full rounded-2xl border border-line bg-white pl-10 pr-12 text-sm font-bold text-ink focus:border-[#116a3a] focus:ring-1 focus:ring-[#116a3a] outline-none transition" placeholder="6700" required>
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted pointer-events-none select-none">/kg</span>
+                    </div>
+                </div>
+
+                {{-- Live Estimasi Box (Subtotal & Deviasi) --}}
+                <div id="beli-live-calc-box" class="p-3.5 sm:p-4 rounded-2xl bg-[#f4f7f5] border border-line/60 space-y-2 transition">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-muted font-medium">Estimasi subtotal</span>
+                        <strong id="beli-subtotal-val" class="text-lg font-black text-ink">Rp 0</strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 text-xs pt-1 border-t border-line/40">
+                        <span class="text-muted font-medium shrink-0 leading-tight">Selisih vs<br class="sm:hidden"> formulasi</span>
+                        <span id="beli-deviasi-badge" class="px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-slate-100 text-muted whitespace-nowrap">
+                            Isi kg & harga
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Submit Button --}}
+                <div class="pt-1 space-y-2">
+                    <button type="submit" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-xs transition active:scale-98 cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px]">check</span>
+                        <span>Catat Belanja Bahan</span>
+                    </button>
+                    <p class="text-xs text-muted flex items-start gap-1.5 px-1 leading-relaxed">
+                        <span class="material-symbols-outlined text-[16px] text-muted shrink-0 mt-0.5">sync</span>
+                        <span>Otomatis menambah stok gudang dan memperbarui harga bahan.</span>
+                    </p>
+                </div>
+            </form>
+        </div>
+
+        {{-- 3. Kartu Riwayat Belanja Terkini --}}
+        <div class="bg-white rounded-[24px] sm:rounded-3xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-4">
+            <div class="flex items-center justify-between gap-2 pb-3 border-b border-line/60">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-10 h-10 rounded-2xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[20px]">history</span>
+                    </div>
+                    <h2 class="text-sm sm:text-base font-black text-ink truncate">Riwayat Belanja Terkini</h2>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-2 text-muted shrink-0 whitespace-nowrap">
+                    {{ $jumlahTransaksiBeli }} tercatat
+                </span>
+            </div>
+
+            @if ($beli->isNotEmpty())
+                <div class="divide-y divide-line/60">
+                    @foreach ($beli as $p)
+                        @php
+                            $sel = ($p->harga_nyata - $p->harga_estimasi) * $p->kg;
+                            $subtotalP = $p->harga_nyata * $p->kg;
+                        @endphp
+                        <div class="py-3 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class="font-black text-ink text-sm block">{{ $p->ingredient->nama }}</span>
+                                <p class="text-xs text-muted mt-0.5">
+                                    <span class="font-bold text-ink">{{ Fmt::num($p->kg, 1) }} kg</span> · 
+                                    <span>{{ Fmt::rp($p->harga_nyata) }}/kg</span>
+                                </p>
+                                <span class="text-[11px] text-muted">{{ $p->tanggal->translatedFormat('j M Y') }}</span>
                             </div>
-                            <div class="flex items-center justify-between text-xs pt-1 border-t border-line/50">
-                                <span class="text-muted font-medium">Status Selisih vs Formulasi:</span>
-                                <span id="beli-deviasi-badge" class="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-muted">
-                                    Menunggu input kg & harga
+                            <div class="text-right shrink-0">
+                                <span class="font-black text-sm block text-ink">
+                                    {{ Fmt::rp($subtotalP) }}
+                                </span>
+                                <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold {{ $sel > 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-[#e2f0e8] text-[#116a3a]' }}">
+                                    {{ $sel > 0 ? '+' : '' }}{{ Fmt::rp($sel) }}
                                 </span>
                             </div>
                         </div>
-
-                    </div>
-
-                    {{-- Input Tersembunyi: Sinkronisasi Stok Otomatis --}}
-                    <input type="hidden" name="tambah_stok" value="1">
-
-                    {{-- Tombol Submit Berbentuk Pill Badge Elegan --}}
-                    <div class="pt-2 space-y-2">
-                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-md hover:shadow-brand/20 transition active:scale-95 cursor-pointer">
-                            <span class="material-symbols-outlined text-[18px]">receipt_long</span>
-                            <span>Catat Belanja Bahan</span>
-                        </button>
-                        <p class="text-[11px] text-muted text-center flex items-center justify-center gap-1.5">
-                            <span class="material-symbols-outlined text-[15px] text-brand">sync</span>
-                            <span>Otomatis menambah stok gudang & memperbarui harga bahan</span>
-                        </p>
-                    </div>
-                </form>
-            </div>
-
-            {{-- KOLOM KANAN (1/2): Riwayat Pembelian Bahan --}}
-            <div class="flex flex-col">
-                <div class="card space-y-3.5 flex-1 flex flex-col justify-between">
-                    <div>
-                        {{-- Header Riwayat Bersih (Title Case) --}}
-                        <div class="flex items-center justify-between pb-2.5 border-b border-line">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[20px] text-brand">history</span>
-                                <h2 class="text-xs font-bold text-ink">Riwayat Belanja Terkini</h2>
-                            </div>
-                            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-surface border border-line text-muted">
-                                {{ $jumlahTransaksiBeli }} Tercatat
-                            </span>
-                        </div>
-
-                        @if ($beli->isNotEmpty())
-                            {{-- Daftar Transaksi Belanja --}}
-                            <div class="divide-y divide-line text-sm space-y-1">
-                                @foreach ($beli as $p)
-                                    @php
-                                        $sel = ($p->harga_nyata - $p->harga_estimasi) * $p->kg;
-                                        $subtotalP = $p->harga_nyata * $p->kg;
-                                    @endphp
-                                    <div class="py-3 flex items-center justify-between gap-3 hover:bg-surface/40 px-2.5 -mx-1 rounded-xl transition-colors">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2 flex-wrap">
-                                                <span class="font-bold text-ink text-sm">{{ $p->ingredient->nama }}</span>
-                                                <span class="text-muted/40">•</span>
-                                                <span class="text-xs text-muted font-medium">{{ $p->tanggal->translatedFormat('d M Y') }}</span>
-                                            </div>
-                                            <p class="text-xs text-muted mt-1">
-                                                <span class="font-bold text-ink">{{ Fmt::num($p->kg, 1) }} kg</span> · 
-                                                <span>{{ Fmt::rp($p->harga_nyata) }}/kg</span>
-                                                <span class="text-muted/70">(Acuan: {{ Fmt::rp($p->harga_estimasi) }})</span>
-                                            </p>
-                                        </div>
-                                        <div class="text-right shrink-0">
-                                            <span class="font-black text-sm block text-ink">
-                                                {{ Fmt::rp($subtotalP) }}
-                                            </span>
-                                            <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $sel > 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">
-                                                {{ $sel > 0 ? '+' : '' }}{{ Fmt::rp($sel) }} ({{ $sel > 0 ? 'Lebih Tinggi' : 'Lebih Hemat' }})
-                                            </span>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
-
-                    @if ($beli->isEmpty())
-                        {{-- Empty State yang Menawan & Rata Tengah Sempurna --}}
-                        <div class="flex-1 flex flex-col items-center justify-center py-12 px-4 text-center my-auto">
-                            <div class="w-14 h-14 rounded-2xl bg-surface border border-line/80 flex items-center justify-center text-muted mb-3 shadow-2xs">
-                                <span class="material-symbols-outlined text-[28px] text-muted/80">shopping_bag</span>
-                            </div>
-                            <h3 class="text-sm font-bold text-ink">Belum Ada Transaksi Belanja</h3>
-                            <p class="text-xs text-muted max-w-xs mt-1 leading-relaxed">
-                                Catat pembelian jagung, konsentrat, atau dedak untuk memantau deviasi biaya formulasi ransum secara nyata.
-                            </p>
-                        </div>
-                    @endif
+                    @endforeach
                 </div>
-            </div>
+            @else
+                <div class="py-6 text-center space-y-2">
+                    <div class="w-14 h-14 rounded-2xl bg-[#e2f0e8] text-[#116a3a] flex items-center justify-center mx-auto shadow-2xs">
+                        <span class="material-symbols-outlined text-[28px]">shopping_bag</span>
+                    </div>
+                    <h3 class="text-sm font-black text-ink mt-3">Belum ada transaksi belanja</h3>
+                    <p class="text-xs text-muted max-w-xs mx-auto leading-relaxed">
+                        Catat pembelian jagung, konsentrat, atau dedak untuk memantau selisih biaya ransum secara nyata.
+                    </p>
+                </div>
+            @endif
         </div>
     </section>
 </div>
@@ -1527,13 +1702,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Salin Laporan Mingguan ke WhatsApp
+    // Salin Laporan Periodik ke WhatsApp
     const btnCopyWa = document.getElementById('btn-copy-wa');
     if (btnCopyWa) {
         btnCopyWa.addEventListener('click', function () {
             const text = `📊 *LAPORAN PERFORMA KANDANG - RANSUMKU*\n`
                 + `🏠 Kandang: {{ $farm->nama }}\n`
-                + `🗓️ Periode: 7 Hari Terakhir\n`
+                + `🗓️ Periode: {{ $rentang }} Hari Terakhir\n`
                 + `-----------------------------------\n`
                 + `🥚 *Total Telur*: {{ Fmt::num($laporan['ini']['telur'], 0) }} butir\n`
                 + `🌾 *Konsumsi Pakan*: {{ Fmt::num($laporan['ini']['pakan'], 1) }} kg ({{ $laporan['ini']['hari'] ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 1) : 0 }} kg/hari)\n`
@@ -1545,7 +1720,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(() => {
-                    window.showToast('Laporan mingguan berhasil disalin ke clipboard! Silakan paste (Ctrl+V) ke chat WhatsApp.', 'success', 'Berhasil Menyalin');
+                    window.showToast('Laporan {{ $rentang }} hari berhasil disalin ke clipboard! Silakan paste (Ctrl+V) ke chat WhatsApp.', 'success', 'Berhasil Menyalin');
                 }).catch(() => {
                     copyViaTextarea(text);
                 });
@@ -1564,7 +1739,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ta.select();
         try {
             document.execCommand('copy');
-            window.showToast('Laporan mingguan berhasil disalin ke clipboard! Silakan paste (Ctrl+V) ke chat WhatsApp.', 'success', 'Berhasil Menyalin');
+            window.showToast('Laporan {{ $rentang }} hari berhasil disalin ke clipboard! Silakan paste (Ctrl+V) ke chat WhatsApp.', 'success', 'Berhasil Menyalin');
         } catch (e) {
             window.showToast('Gagal menyalin teks laporan.', 'error', 'Gagal Menyalin');
         }
@@ -1650,10 +1825,32 @@ document.addEventListener('DOMContentLoaded', function () {
     // Live Kalkulator Belanja Pakan (Subtotal & Deviasi)
     const inputBeliKg = document.getElementById('kg');
     const inputBeliHarga = document.getElementById('harga_nyata');
-    const inputIngredientId = document.querySelector('input[name="ingredient_id"]');
+    const inputIngredientId = document.getElementById('beli_ingredient_id') || document.querySelector('input[name="ingredient_id"]');
     const beliSubtotalVal = document.getElementById('beli-subtotal-val');
     const beliDeviasiBadge = document.getElementById('beli-deviasi-badge');
     const bahanPrices = @json($bahanPrices);
+
+    // Chip Bahan Pakan Selector (Image 2 style)
+    const chipsBahan = document.querySelectorAll('.chip-bahan');
+    chipsBahan.forEach(btn => {
+        btn.addEventListener('click', function () {
+            chipsBahan.forEach(b => {
+                b.className = 'chip-bahan px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer select-none bg-white text-ink border border-line hover:border-line-dark';
+            });
+            this.className = 'chip-bahan px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer select-none bg-[#e2f0e8] text-[#116a3a] border-2 border-[#116a3a]';
+            const ingId = this.dataset.bahanId;
+            const ingNama = this.dataset.bahanNama;
+            const ingAcuan = parseFloat(this.dataset.bahanAcuan) || 0;
+            if (inputIngredientId) {
+                inputIngredientId.value = ingId;
+            }
+            const acuanText = document.getElementById('beli-acuan-text');
+            if (acuanText) {
+                acuanText.textContent = `Acuan formulasi ${ingNama}: Rp ${ingAcuan.toLocaleString('id-ID')}/kg`;
+            }
+            updateBeliPreview();
+        });
+    });
 
     function updateBeliPreview() {
         if (!inputBeliKg || !inputBeliHarga || !beliSubtotalVal || !beliDeviasiBadge) return;
@@ -1666,26 +1863,26 @@ document.addEventListener('DOMContentLoaded', function () {
         beliSubtotalVal.textContent = 'Rp ' + Math.round(subtotal).toLocaleString('id-ID');
 
         if (kg <= 0 || harga <= 0) {
-            beliDeviasiBadge.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-muted';
-            beliDeviasiBadge.textContent = 'Menunggu input kg & harga';
+            beliDeviasiBadge.className = 'px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-slate-100 text-muted whitespace-nowrap';
+            beliDeviasiBadge.textContent = 'Isi kg & harga';
             return;
         }
 
-        if (hargaAcuan) {
+        if (hargaAcuan && hargaAcuan > 0) {
             const deviasiPerKg = harga - hargaAcuan;
-            const totalDeviasi = deviasiPerKg * kg;
+            const persen = Math.abs((deviasiPerKg / hargaAcuan) * 100).toFixed(1).replace('.', ',');
             if (deviasiPerKg > 0) {
-                beliDeviasiBadge.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200';
-                beliDeviasiBadge.textContent = `+Rp ${Math.round(totalDeviasi).toLocaleString('id-ID')} (Lebih Tinggi dari Acuan Rp ${hargaAcuan.toLocaleString('id-ID')}/kg)`;
+                beliDeviasiBadge.className = 'px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-amber-100 text-amber-800 whitespace-nowrap';
+                beliDeviasiBadge.textContent = `▲ Rp ${Math.round(deviasiPerKg).toLocaleString('id-ID')}/kg · ${persen}% lebih mahal`;
             } else if (deviasiPerKg < 0) {
-                beliDeviasiBadge.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200';
-                beliDeviasiBadge.textContent = `Hemat Rp ${Math.abs(Math.round(totalDeviasi)).toLocaleString('id-ID')} (Lebih Murah dari Acuan Rp ${hargaAcuan.toLocaleString('id-ID')}/kg)`;
+                beliDeviasiBadge.className = 'px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-[#d8ece0] text-[#116a3a] whitespace-nowrap';
+                beliDeviasiBadge.textContent = `▼ Rp ${Math.abs(Math.round(deviasiPerKg)).toLocaleString('id-ID')}/kg · ${persen}% lebih hemat`;
             } else {
-                beliDeviasiBadge.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-teal-50 text-teal-700 border border-teal-200';
-                beliDeviasiBadge.textContent = `Sesuai Harga Acuan Formulasi (Rp ${hargaAcuan.toLocaleString('id-ID')}/kg)`;
+                beliDeviasiBadge.className = 'px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-[#d8ece0] text-[#116a3a] whitespace-nowrap';
+                beliDeviasiBadge.textContent = `Sesuai acuan formulasi`;
             }
         } else {
-            beliDeviasiBadge.className = 'px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200';
+            beliDeviasiBadge.className = 'px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap';
             beliDeviasiBadge.textContent = 'Harga Belanja Normal';
         }
     }
@@ -1693,6 +1890,21 @@ document.addEventListener('DOMContentLoaded', function () {
     if (inputBeliKg) inputBeliKg.addEventListener('input', updateBeliPreview);
     if (inputBeliHarga) inputBeliHarga.addEventListener('input', updateBeliPreview);
     if (inputIngredientId) inputIngredientId.addEventListener('change', updateBeliPreview);
+
+    // Tanggal Pembelian Display Sync
+    const beliTanggal = document.getElementById('beli_tanggal');
+    const beliTanggalDisplay = document.getElementById('beli-tanggal-display');
+    if (beliTanggal && beliTanggalDisplay) {
+        beliTanggal.addEventListener('change', function () {
+            if (this.value) {
+                const parts = this.value.split('-');
+                if (parts.length === 3) {
+                    const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    beliTanggalDisplay.textContent = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                }
+            }
+        });
+    }
 
     // Jalankan kalkulasi awal saat halaman dimuat
     updateLivePreview();

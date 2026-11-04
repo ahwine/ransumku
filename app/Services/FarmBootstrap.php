@@ -117,22 +117,39 @@ class FarmBootstrap
             }
         }
 
-        // 14 hari catatan: 11 hari normal, 3 hari terakhir anomali (pakan naik, telur turun)
-        $pakan = [21.8, 22.2, 22.0, 21.6, 22.4, 22.1, 21.9, 22.3, 22.0, 21.8, 22.1, 25.2, 26.4, 27.5];
-        $telur = [171, 169, 172, 168, 170, 173, 169, 171, 170, 172, 169, 152, 143, 136];
-        $mati = [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 2];
+        // 30 hari catatan: konsisten dengan prototype laporan 30 hari & 7 hari
+        $pakan = [
+            22.3, 22.8, 23.3, 23.3, 23.8, 24.3, 24.8, 25.3, 25.8, 26.3,
+            26.5, 27.0, 27.0, 27.5, 28.0, 28.0, 28.5, 28.5, 29.0, 29.0,
+            29.5, 30.0, 30.0, 30.0, 29.5, 29.0, 28.5, 28.0, 27.5, 27.0
+        ];
+        $telur = [
+            133, 135, 136, 138, 139, 141, 143, 144, 146, 148,
+            150, 152, 154, 156, 158, 159, 160, 157, 152, 146,
+            154, 148, 142, 138, 134, 132, 134, 136, 140, 145
+        ];
+        $mati = [
+            0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+            1, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+            1, 1, 2, 1, 2, 1, 1, 0, 0, 0
+        ];
 
-        for ($i = 13; $i >= 0; $i--) {
-            $k = 13 - $i;
+        $totalKgSoFar = 0;
+        for ($i = 29; $i >= 0; $i--) {
+            $k = 29 - $i;
+            $t = $telur[$k];
+            $kg = ($k === 29) ? round(270.0 - $totalKgSoFar, 2) : round($t * 0.062068965, 2);
+            $totalKgSoFar += $kg;
+
             DailyLog::create([
                 'farm_id' => $farm->id,
                 'tanggal' => now()->subDays($i)->toDateString(),
                 'pakan_kg' => $pakan[$k],
-                'telur_butir' => $telur[$k],
-                'telur_kg' => round($telur[$k] * 0.062, 2),
+                'telur_butir' => $t,
+                'telur_kg' => $kg,
                 'ayam_mati' => $mati[$k],
-                'biaya_lain' => $k % 5 === 0 ? 15000 : 0,
-                'catatan' => $k >= 11 ? 'Pakan dihabiskan lebih banyak, telur terlihat berkurang.' : null,
+                'biaya_lain' => $k % 7 === 0 ? 15000 : 0,
+                'catatan' => $k >= 20 ? 'Pakan dihabiskan lebih banyak, telur terlihat berkurang.' : null,
             ]);
         }
 

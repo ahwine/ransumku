@@ -117,16 +117,18 @@
                     </div>
 
                     {{-- Switcher Pill Tabs --}}
-                    <div class="inline-flex rounded-full bg-surface-2 p-1 text-xs font-bold border border-line/60" id="tabGroupResep">
+                    <div class="inline-flex rounded-2xl bg-[#e6eeea] p-1 text-xs font-bold border border-line/60 shadow-2xs" id="tabGroupResep">
                         <button type="button" 
                                 id="btnTabAsFed" 
-                                class="px-3.5 py-1.5 rounded-full transition bg-white shadow-2xs text-brand font-bold select-none cursor-pointer">
-                            <span>Timbangan Segar (As-Fed)</span>
+                                class="px-3.5 py-1.5 rounded-xl transition bg-white shadow-2xs text-[#0f3d26] font-black select-none cursor-pointer">
+                            <span class="sm:hidden">Segar (As-Fed)</span>
+                            <span class="hidden sm:inline">Timbangan Segar (As-Fed)</span>
                         </button>
                         <button type="button" 
                                 id="btnTabBk" 
-                                class="px-3.5 py-1.5 rounded-full transition text-muted hover:text-ink font-semibold select-none cursor-pointer">
-                            <span>Formulasi Kering (BK)</span>
+                                class="px-3.5 py-1.5 rounded-xl transition text-ink/75 hover:text-ink font-bold select-none cursor-pointer">
+                            <span class="sm:hidden">Kering (BK)</span>
+                            <span class="hidden sm:inline">Formulasi Kering (BK)</span>
                         </button>
                     </div>
                 </div>
