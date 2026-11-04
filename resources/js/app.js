@@ -425,18 +425,50 @@ function createStandardChart(el, cfg) {
 const bukuChartsMap = {};
 const berandaChartsMap = {};
 
+// Helper: Memeriksa apakah suatu elemen atau kontainer sedang aktif dan terlihat
+// Mendukung tab-panel dan breakpoint responsif Tailwind (seperti hidden lg:block atau lg:hidden)
+function isElementVisible(el) {
+    if (!el) return false;
+
+    // 1. Jika elemen berada dalam tab panel ([data-panel]), pastikan panel tidak berkelas 'hidden'
+    const panel = el.closest('[data-panel]');
+    if (panel && panel.classList.contains('hidden')) {
+        return false;
+    }
+
+    // 2. Cek apakah elemen atau parent-nya memiliki computed display: 'none'
+    let curr = el;
+    while (curr && curr !== document.body && curr !== document.documentElement) {
+        const style = window.getComputedStyle(curr);
+        if (style.display === 'none' || style.visibility === 'hidden') {
+            return false;
+        }
+        curr = curr.parentElement;
+    }
+    return true;
+}
+
 // Helper: Cek apakah canvas relevan dengan breakpoint layar aktif (mencegah inisialisasi ganda mobile vs desktop)
 function shouldInitCanvas(canvas) {
     if (!canvas) return false;
     const isMobile = window.innerWidth < 1024;
-    // Jika mobile, lewati canvas yang ada di kontainer desktop-only
-    if (isMobile && canvas.closest('.hidden.lg\\:block, .hidden.lg\\:flex')) {
-        return false;
+
+    // Jika desktop (>= 1024px), jangan inisialisasi canvas yang berada di kontainer khusus mobile
+    if (!isMobile) {
+        const mobParent = canvas.closest('.lg\\:hidden, [class*="lg:hidden"]');
+        if (mobParent && window.getComputedStyle(mobParent).display === 'none') {
+            return false;
+        }
     }
-    // Jika desktop, lewati canvas yang ada di kontainer mobile-only
-    if (!isMobile && canvas.closest('.lg\\:hidden')) {
-        return false;
+
+    // Jika mobile (< 1024px), jangan inisialisasi canvas yang berada di kontainer khusus desktop
+    if (isMobile) {
+        const deskParent = canvas.closest('.hidden.lg\\:block, .hidden.lg\\:flex, [class*="lg:block"]');
+        if (deskParent && window.getComputedStyle(deskParent).display === 'none') {
+            return false;
+        }
     }
+
     return true;
 }
 
@@ -486,15 +518,8 @@ function triggerBukuKandangOrchestration() {
     const durasiBar = isMobile ? 450 : 650;
 
     containers.forEach((container) => {
-        // Periksa apakah tab dashboard sedang aktif
-        const panel = container.closest('[data-panel]');
-        if (panel && panel.classList.contains('hidden')) return;
-
-        // Periksa apakah kontainer ini sedang tersembunyi (misal mobile vs desktop)
-        if (container.closest('.hidden')) return;
-        const style = window.getComputedStyle(container);
-        if (style.display === 'none' || style.visibility === 'hidden') return;
-        if (container.parentElement && window.getComputedStyle(container.parentElement).display === 'none') return;
+        // Cek apakah kontainer sedang aktif & terlihat untuk breakpoint saat ini
+        if (!isElementVisible(container)) return;
 
         // 1. Fade-in halus pada kartu grafik
         const cards = container.querySelectorAll('.buku-card-fadein, .stat-card-fadein');
@@ -535,10 +560,8 @@ function triggerBerandaOrchestration() {
     const durasiBar = isMobile ? 450 : 600;
 
     containers.forEach((container) => {
-        if (container.closest('.hidden')) return;
-        const style = window.getComputedStyle(container);
-        if (style.display === 'none' || style.visibility === 'hidden') return;
-        if (container.parentElement && window.getComputedStyle(container.parentElement).display === 'none') return;
+        // Cek apakah kontainer sedang aktif & terlihat untuk breakpoint saat ini
+        if (!isElementVisible(container)) return;
 
         // Inisialisasi lazy & animasi setiap grafik di dalam kontainer yang aktif
         const canvases = container.querySelectorAll('canvas[data-chart]');
@@ -570,19 +593,26 @@ if (bukuContainers && bukuContainers.length > 0) {
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    const panel = entry.target.closest('[data-panel]');
-                    if (!panel || !panel.classList.contains('hidden')) {
-                        triggerBukuKandangOrchestration();
-                    }
+                if (entry.isIntersecting && isElementVisible(entry.target)) {
+                    triggerBukuKandangOrchestration();
                 }
             });
         }, { threshold: 0.05, rootMargin: '100px 0px' });
 
         bukuContainers.forEach((el) => observer.observe(el));
-    } else {
-        setTimeout(triggerBukuKandangOrchestration, 200);
     }
+
+    // Trigger otomatis jika kontainer sudah terlihat di viewport saat boot (Desktop & Mobile)
+    setTimeout(() => {
+        bukuContainers.forEach((el) => {
+            if (isElementVisible(el)) {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    triggerBukuKandangOrchestration();
+                }
+            }
+        });
+    }, 80);
 }
 
 // IntersectionObserver untuk Beranda Dashboard (Lazy Load & Stagger Animation)
@@ -591,17 +621,37 @@ if (berandaContainers && berandaContainers.length > 0) {
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                if (entry.isIntersecting) {
+                if (entry.isIntersecting && isElementVisible(entry.target)) {
                     triggerBerandaOrchestration();
                 }
             });
         }, { threshold: 0.05, rootMargin: '100px 0px' });
 
         berandaContainers.forEach((el) => observer.observe(el));
-    } else {
-        setTimeout(triggerBerandaOrchestration, 200);
     }
+
+    // Trigger otomatis jika kontainer sudah terlihat di viewport saat boot (Desktop & Mobile)
+    setTimeout(() => {
+        berandaContainers.forEach((el) => {
+            if (isElementVisible(el)) {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    triggerBerandaOrchestration();
+                }
+            }
+        });
+    }, 80);
 }
+
+// Resize listener yang responsif terhadap perubahan ukuran layar / orientasi
+let chartResizeDebounce = null;
+window.addEventListener('resize', () => {
+    clearTimeout(chartResizeDebounce);
+    chartResizeDebounce = setTimeout(() => {
+        triggerBerandaOrchestration();
+        triggerBukuKandangOrchestration();
+    }, 200);
+});
 
 // Apple-style Sliding Segmented Tabs ([data-tabs])
 function initSlidingTabs() {
