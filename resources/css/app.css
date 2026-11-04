@@ -512,3 +512,26 @@
     opacity: 0;
     cursor: pointer;
 }
+
+/* =========================================================================
+   Virtual Keyboard & Bottom Nav Mobile Handling
+   Saat virtual keyboard aktif (focus pada input mobile):
+   - Sembunyikan floating bottom nav agar tidak menutupi tampilan/input
+   - Hilangkan padding bawah berlebih pada main container
+   ========================================================================= */
+body.keyboard-open #mobile-bottom-nav,
+#mobile-bottom-nav.keyboard-hidden {
+    transform: translateY(160%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+body.keyboard-open main {
+    padding-bottom: 0.5rem !important;
+}
+
+body.keyboard-open #mobile-chat-view {
+    min-height: 0 !important;
+}
+

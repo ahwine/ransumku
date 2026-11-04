@@ -2006,9 +2006,120 @@ function initLiveSensorPoller() {
     });
 }
 
+/**
+ * Penanganan Virtual Keyboard & Bottom Navigation pada Layar Mobile
+ * Saat keyboard virtual muncul (misal ketika fokus input chat / form):
+ * 1. Sembunyikan bottom navigation bar agar tidak menutupi tampilan/input.
+ * 2. Sesuaikan tinggi dan scroll pada tampilan chat mobile (#mobile-chat-view)
+ *    agar kolom chat dan pesan tetap berada tepat di atas keyboard.
+ * 3. Kembalikan posisi bottom nav ketika keyboard ditutup / input blur.
+ */
+function initMobileKeyboardHandler() {
+    if (typeof window === 'undefined') return;
+
+    let keyboardTimeout = null;
+
+    const updateMobileChatLayout = (isOpen) => {
+        const chatView = document.getElementById('mobile-chat-view');
+        if (!chatView || window.innerWidth >= 768) return;
+
+        if (isOpen && window.visualViewport) {
+            const viewRect = chatView.getBoundingClientRect();
+            const topPos = Math.max(56, viewRect.top);
+            // Sisa tinggi vertikal di dalam visual viewport
+            const availableHeight = Math.floor(window.visualViewport.height - topPos - 8);
+            if (availableHeight > 160) {
+                chatView.style.height = `${availableHeight}px`;
+                chatView.style.minHeight = '0px';
+            }
+
+            // Scroll pesan ke bagian paling bawah agar pesan terbaru tetap terlihat
+            setTimeout(() => {
+                const chatBox = document.getElementById('mobile-chat-box');
+                if (chatBox) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+                const activeInput = document.getElementById('mobile-input-pesan');
+                if (activeInput && document.activeElement === activeInput) {
+                    activeInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 60);
+        } else {
+            chatView.style.height = '';
+            chatView.style.minHeight = '';
+        }
+    };
+
+    const setKeyboardState = (isOpen) => {
+        const bottomNav = document.getElementById('mobile-bottom-nav');
+        if (isOpen) {
+            document.body.classList.add('keyboard-open');
+            if (bottomNav) {
+                bottomNav.classList.add('keyboard-hidden');
+            }
+        } else {
+            document.body.classList.remove('keyboard-open');
+            if (bottomNav) {
+                bottomNav.classList.remove('keyboard-hidden');
+            }
+        }
+        updateMobileChatLayout(isOpen);
+    };
+
+    // Event listener focusin: segera deteksi jika input/textarea diakses di mobile
+    document.addEventListener('focusin', (e) => {
+        if (window.innerWidth >= 1024) return;
+        const target = e.target;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+            if (keyboardTimeout) clearTimeout(keyboardTimeout);
+            setKeyboardState(true);
+        }
+    });
+
+    // Event listener focusout: kembalikan state setelah jeda kecil
+    document.addEventListener('focusout', (e) => {
+        if (window.innerWidth >= 1024) return;
+        if (keyboardTimeout) clearTimeout(keyboardTimeout);
+        keyboardTimeout = setTimeout(() => {
+            const active = document.activeElement;
+            const isStillInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+            if (!isStillInput) {
+                setKeyboardState(false);
+            }
+        }, 150);
+    });
+
+    // Event listener visualViewport: memastikan sinkron jika keyboard ditutup lewat gesture / tombol back
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) return;
+            const heightDiff = window.innerHeight - window.visualViewport.height;
+            if (heightDiff > 140) {
+                setKeyboardState(true);
+            } else if (heightDiff < 60) {
+                const active = document.activeElement;
+                const isStillInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+                if (!isStillInput) {
+                    setKeyboardState(false);
+                }
+            }
+        });
+
+        window.visualViewport.addEventListener('scroll', () => {
+            if (document.body.classList.contains('keyboard-open') && window.innerWidth < 768) {
+                updateMobileChatLayout(true);
+            }
+        });
+    }
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLiveSensorPoller);
+    document.addEventListener('DOMContentLoaded', () => {
+        initLiveSensorPoller();
+        initMobileKeyboardHandler();
+    });
 } else {
     initLiveSensorPoller();
+    initMobileKeyboardHandler();
 }
 

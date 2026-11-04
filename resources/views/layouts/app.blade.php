@@ -14,7 +14,7 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="RansumKu: alat bantu hitung ransum ayam petelur, buku kandang digital, dan asisten cerdas untuk peternak kecil.">
     <meta name="theme-color" content="#002415">
@@ -237,7 +237,7 @@
 </main>
 
 {{-- 5. Floating Curved Bottom Navigation Bar (Mobile - Gojek Style with Symmetrical 3x3) --}}
-<nav class="lg:hidden fixed bottom-2.5 inset-x-2.5 sm:inset-x-6 max-w-lg mx-auto z-40 select-none pointer-events-none" style="bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));" aria-label="Navigasi Utama Mobile">
+<nav id="mobile-bottom-nav" class="lg:hidden fixed bottom-2.5 inset-x-2.5 sm:inset-x-6 max-w-lg mx-auto z-40 select-none pointer-events-none transition-all duration-200 transform" style="bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));" aria-label="Navigasi Utama Mobile">
     <div class="relative w-full h-[64px] pointer-events-auto filter drop-shadow-[0_8px_22px_rgba(0,36,21,0.08)] drop-shadow-[0_2px_6px_rgba(0,36,21,0.04)]">
         
         {{-- Background Layer with Seamless Center Notch --}}
