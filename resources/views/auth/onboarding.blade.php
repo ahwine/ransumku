@@ -13,17 +13,18 @@
         <label class="lbl" for="jumlah_ayam">Jumlah ayam</label>
         <input id="jumlah_ayam" name="jumlah_ayam" type="number" min="1" inputmode="numeric" value="{{ old('jumlah_ayam', 200) }}" class="field text-center text-h-md" required>
     </div>
-    <fieldset>
-        <legend class="lbl">Fase ayam</legend>
-        <div class="grid grid-cols-3 gap-2">
-            @foreach (['starter' => 'Starter', 'grower' => 'Grower', 'produksi' => 'Produksi'] as $v => $l)
-                <label class="cursor-pointer">
-                    <input type="radio" name="fase" value="{{ $v }}" class="peer sr-only" @checked(old('fase', 'produksi') === $v)>
-                    <span class="block text-center py-3 rounded-xl border-2 border-line font-bold peer-checked:border-brand peer-checked:bg-brand/5 peer-checked:text-brand">{{ $l }}</span>
-                </label>
-            @endforeach
+    <div class="grid grid-cols-2 gap-3">
+        <div>
+            <label class="lbl" for="umur_awal_minggu">Umur Masuk (Mg)</label>
+            <input id="umur_awal_minggu" name="umur_awal_minggu" type="number" min="1" max="120" value="{{ old('umur_awal_minggu', 18) }}" class="field font-semibold text-center" required>
         </div>
-    </fieldset>
+        <div>
+            <label class="lbl" for="strain_ayam">Strain / Jenis Bibit</label>
+            <input id="strain_ayam" name="strain_ayam" value="{{ old('strain_ayam', 'Lohmann Brown') }}" class="field font-semibold text-center">
+        </div>
+    </div>
+    <input type="hidden" name="fase" value="produksi">
+    <p class="text-[11px] text-muted text-center">Sub-fase produksi ayam petelur akan terdeteksi otomatis dari umur ayam.</p>
     <button id="btn-onboarding" class="btn-primary w-full">Lanjut</button>
 </form>
 @endsection

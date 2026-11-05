@@ -38,7 +38,7 @@ class FarmController extends Controller
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:80'],
             'jumlah_ayam' => ['required', 'integer', 'min:1', 'max:1000000'],
-            'fase' => ['required', Rule::in(['starter', 'grower', 'produksi'])],
+            'fase' => ['nullable', Rule::in(['starter', 'grower', 'produksi'])],
             'lokasi_kota' => ['nullable', 'string', 'max:50'],
             'tgl_chick_in' => ['nullable', 'date'],
             'umur_awal_minggu' => ['nullable', 'integer', 'min:1', 'max:120'],
@@ -46,8 +46,9 @@ class FarmController extends Controller
         ], [
             'nama.required' => 'Nama kandang wajib diisi.',
             'jumlah_ayam.min' => 'Jumlah ayam minimal 1 ekor.',
-            'fase.in' => 'Pilih salah satu fase pemeliharaan.',
         ]);
+
+        $validated['fase'] = $validated['fase'] ?? 'produksi';
 
         if (empty($validated['lokasi_kota'])) {
             $validated['lokasi_kota'] = 'Surabaya';
@@ -87,12 +88,14 @@ class FarmController extends Controller
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:80'],
             'jumlah_ayam' => ['required', 'integer', 'min:1', 'max:1000000'],
-            'fase' => ['required', Rule::in(['starter', 'grower', 'produksi'])],
+            'fase' => ['nullable', Rule::in(['starter', 'grower', 'produksi'])],
             'lokasi_kota' => ['nullable', 'string', 'max:50'],
             'tgl_chick_in' => ['nullable', 'date'],
             'umur_awal_minggu' => ['nullable', 'integer', 'min:1', 'max:120'],
             'strain_ayam' => ['nullable', 'string', 'max:60'],
         ]);
+
+        $validated['fase'] = $validated['fase'] ?? 'produksi';
 
         $farm->update($validated);
 

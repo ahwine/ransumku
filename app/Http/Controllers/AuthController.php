@@ -73,8 +73,11 @@ class AuthController extends Controller
         $data = $r->validate([
             'nama' => 'required|string|max:80',
             'jumlah_ayam' => 'required|integer|min:1|max:1000000',
-            'fase' => 'required|in:starter,grower,produksi',
+            'fase' => 'nullable|in:starter,grower,produksi',
+            'umur_awal_minggu' => 'nullable|integer|min:1|max:120',
+            'strain_ayam' => 'nullable|string|max:60',
         ]);
+        $data['fase'] = $data['fase'] ?? 'produksi';
 
         $farm = Farm::create($data + ['user_id' => auth()->id()]);
         $boot->setupFarm($farm);

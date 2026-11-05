@@ -47,7 +47,7 @@
                                     <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">Aktif</span>
                                 </div>
                                 <p class="text-[10px] text-muted font-semibold truncate mt-0.5">
-                                    {{ number_format($f->jumlah_ayam, 0, ',', '.') }} Ekor · Fase {{ ucfirst($f->fase) }} · {{ $kotaDisplay }}, {{ $provDisplay }}
+                                    {{ number_format($f->jumlah_ayam, 0, ',', '.') }} Ekor · Mg ke-{{ $f->umurMinggu() }} ({{ $f->faseUmurDetail()['nama'] }}) · {{ $kotaDisplay }}
                                 </p>
                             </div>
                         </div>
@@ -62,7 +62,7 @@
                                 <div class="min-w-0 flex-1">
                                     <span class="text-xs sm:text-sm font-bold text-ink group-hover:text-brand transition-colors block truncate">{{ $f->nama }}</span>
                                     <p class="text-[10px] text-muted font-medium truncate mt-0.5">
-                                        {{ number_format($f->jumlah_ayam, 0, ',', '.') }} Ekor · Fase {{ ucfirst($f->fase) }} · {{ $kotaDisplay }}, {{ $provDisplay }}
+                                        {{ number_format($f->jumlah_ayam, 0, ',', '.') }} Ekor · Mg ke-{{ $f->umurMinggu() }} ({{ $f->faseUmurDetail()['nama'] }}) · {{ $kotaDisplay }}
                                     </p>
                                 </div>
                             </button>
@@ -116,40 +116,41 @@
 
         <form method="POST" action="{{ route('kandang.store') }}" class="space-y-3.5">
             @csrf
+            <input type="hidden" name="fase" value="produksi">
             <div>
                 <label class="lbl">Nama Kandang <span class="text-danger">*</span></label>
-                <input type="text" name="nama" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: Kandang B - Pullet" required autocomplete="off">
+                <input type="text" name="nama" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: Kandang Flamboyan" required autocomplete="off">
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="lbl">Populasi Awal (Ekor) <span class="text-danger">*</span></label>
-                    <input type="number" name="jumlah_ayam" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: 500" required>
+                    <input type="number" name="jumlah_ayam" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: 200" required>
                 </div>
                 <div>
-                    <label class="lbl">Fase Pemeliharaan <span class="text-danger">*</span></label>
-                    @include('partials.dropdown-pilih-fase', ['id' => 'fase-tambah-global', 'value' => old('fase', 'produksi')])
-                </div>
-            </div>
-
-            <div>
-                <label class="lbl">Sentra Lokasi / Kota</label>
-                @include('partials.dropdown-pilih-kota', ['id' => 'kota-tambah-global', 'value' => old('lokasi_kota', 'Surabaya'), 'presetKota' => $presetKota])
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-dashed border-line">
-                <div>
-                    <label class="lbl">Tgl Chick-in</label>
-                    <input type="date" name="tgl_chick_in" value="{{ now()->subWeeks(10)->toDateString() }}" max="{{ today()->toDateString() }}" class="field !min-h-10 text-xs font-medium">
-                </div>
-                <div>
-                    <label class="lbl">Umur Masuk (Mg)</label>
-                    <input type="number" name="umur_awal_minggu" value="18" min="1" max="100" class="field !min-h-10 text-xs font-medium" placeholder="Default: 18">
-                </div>
-                <div>
-                    <label class="lbl">Strain Bibit</label>
+                    <label class="lbl">Strain / Jenis Bibit</label>
                     <input type="text" name="strain_ayam" value="Lohmann Brown" class="field !min-h-10 text-xs font-medium" placeholder="Misal: Lohmann Brown">
                 </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="lbl">Sentra Lokasi / Kota</label>
+                    @include('partials.dropdown-pilih-kota', ['id' => 'kota-tambah-global', 'value' => old('lokasi_kota', 'Surabaya'), 'presetKota' => $presetKota])
+                </div>
+                <div>
+                    <label class="lbl">Umur Masuk Ayam (Minggu) <span class="text-danger">*</span></label>
+                    <input type="number" name="umur_awal_minggu" value="18" min="1" max="120" class="field !min-h-10 text-xs font-medium" placeholder="Default: 18" required>
+                </div>
+            </div>
+
+            <div class="pt-1">
+                <label class="lbl">Tanggal Masuk (Chick-in)</label>
+                <input type="date" name="tgl_chick_in" value="{{ now()->subWeeks(2)->toDateString() }}" max="{{ today()->toDateString() }}" class="field !min-h-10 text-xs font-medium">
+                <p class="text-[11px] text-muted mt-1 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px] text-brand">info</span>
+                    <span>Sub-fase produksi (Pullet, Awal Bertelur, Puncak, Stabil) terdeteksi otomatis dari umur ayam.</span>
+                </p>
             </div>
 
             <div class="flex justify-end items-center gap-2 pt-3 border-t border-line">
@@ -185,6 +186,7 @@
             <form method="POST" action="{{ route('kandang.update', $f) }}" class="space-y-3.5">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="fase" value="{{ $f->fase ?? 'produksi' }}">
 
                 <div>
                     <label class="lbl">Nama Kandang <span class="text-danger">*</span></label>
@@ -197,29 +199,29 @@
                         <input type="number" name="jumlah_ayam" value="{{ $f->jumlah_ayam }}" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" required>
                     </div>
                     <div>
-                        <label class="lbl">Fase Pemeliharaan <span class="text-danger">*</span></label>
-                        @include('partials.dropdown-pilih-fase', ['id' => 'fase-edit-global-' . $f->id, 'value' => $f->fase])
-                    </div>
-                </div>
-
-                <div>
-                    <label class="lbl">Sentra Lokasi / Kota</label>
-                    @include('partials.dropdown-pilih-kota', ['id' => 'kota-edit-global-' . $f->id, 'value' => $f->lokasi_kota ?? 'Surabaya', 'presetKota' => $presetKota])
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-dashed border-line">
-                    <div>
-                        <label class="lbl">Tgl Chick-in</label>
-                        <input type="date" name="tgl_chick_in" value="{{ $f->tgl_chick_in?->toDateString() }}" max="{{ today()->toDateString() }}" class="field !min-h-10 text-xs font-medium">
-                    </div>
-                    <div>
-                        <label class="lbl">Umur Masuk (Mg)</label>
-                        <input type="number" name="umur_awal_minggu" value="{{ $f->umur_awal_minggu ?? 18 }}" min="1" max="100" class="field !min-h-10 text-xs font-medium">
-                    </div>
-                    <div>
-                        <label class="lbl">Strain Bibit</label>
+                        <label class="lbl">Strain / Jenis Bibit</label>
                         <input type="text" name="strain_ayam" value="{{ $f->strain_ayam ?? 'Lohmann Brown' }}" class="field !min-h-10 text-xs font-medium">
                     </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="lbl">Sentra Lokasi / Kota</label>
+                        @include('partials.dropdown-pilih-kota', ['id' => 'kota-edit-global-' . $f->id, 'value' => $f->lokasi_kota ?? 'Surabaya', 'presetKota' => $presetKota])
+                    </div>
+                    <div>
+                        <label class="lbl">Umur Masuk Ayam (Minggu) <span class="text-danger">*</span></label>
+                        <input type="number" name="umur_awal_minggu" value="{{ $f->umur_awal_minggu ?? 18 }}" min="1" max="120" class="field !min-h-10 text-xs font-medium" required>
+                    </div>
+                </div>
+
+                <div class="pt-1">
+                    <label class="lbl">Tanggal Masuk (Chick-in)</label>
+                    <input type="date" name="tgl_chick_in" value="{{ $f->tgl_chick_in?->toDateString() }}" max="{{ today()->toDateString() }}" class="field !min-h-10 text-xs font-medium">
+                    <p class="text-[11px] text-muted mt-1 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px] text-brand">info</span>
+                        <span>Status saat ini: <strong class="text-brand">{{ $f->faseUmurDetail()['nama'] }} (Mg ke-{{ $f->umurMinggu() }})</strong></span>
+                    </p>
                 </div>
 
                 <div class="flex justify-end items-center gap-2 pt-3 border-t border-line">
