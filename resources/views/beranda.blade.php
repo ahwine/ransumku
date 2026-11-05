@@ -160,6 +160,32 @@
             </div>
         @endif
 
+        {{-- 3.5. Banner Safety Stock Gudang Pakan (Mobile) --}}
+        @if (!empty($stokGudang['kritis_count']))
+            <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200/90 shadow-2xs space-y-2">
+                <div class="flex items-start gap-2.5">
+                    <span class="material-symbols-outlined text-[20px] text-amber-600 shrink-0 mt-0.5">inventory_2</span>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="text-xs font-bold text-amber-950">Safety Stock: Pakan Menipis</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white leading-tight">
+                                {{ $stokGudang['kritis_count'] }} Bahan
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                            Stok <strong>{{ implode(', ', array_slice($stokGudang['kritis_items'] ?? [], 0, 3)) }}</strong> di bawah batas konsumsi 3 hari. Segera order sebelum persediaan habis!
+                        </p>
+                    </div>
+                </div>
+                <div class="pt-1 flex justify-end">
+                    <a href="{{ route('bahan.index') }}" class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-950 bg-amber-200/80 hover:bg-amber-200 px-3 py-1 rounded-full transition shadow-2xs">
+                        <span>Buka Stok Gudang</span>
+                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        @endif
+
         {{-- 4. Section Peringatan Dini & Anomali --}}
         @if ($alerts->count() > 0)
             <div class="space-y-2.5 pt-1">
@@ -749,6 +775,32 @@
         </div>
 
     </div>
+
+    {{-- Banner Safety Stock Gudang Pakan (Desktop) --}}
+    @if (!empty($stokGudang['kritis_count']))
+        <div class="hidden lg:flex items-center justify-between p-4 rounded-xl bg-amber-50 border border-amber-200/90 shadow-2xs gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[22px]">inventory_2</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xs sm:text-sm font-bold text-amber-950">Peringatan Batas Aman Pakan (Safety Stock)</h2>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white leading-tight">
+                            {{ $stokGudang['kritis_count'] }} Bahan Perlu Pesan
+                        </span>
+                    </div>
+                    <p class="text-xs text-amber-800 mt-0.5">
+                        Persediaan <strong>{{ implode(', ', array_slice($stokGudang['kritis_items'] ?? [], 0, 4)) }}</strong> berada di bawah kebutuhan 3 hari kandang. Segera jadwalkan pengadaan agar pasokan ransum harian tidak terputus.
+                    </p>
+                </div>
+            </div>
+            <a href="{{ route('bahan.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-amber-950 bg-amber-200/80 hover:bg-amber-200 border border-amber-300 transition shadow-2xs shrink-0 cursor-pointer">
+                <span>Kelola Stok Gudang</span>
+                <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+            </a>
+        </div>
+    @endif
 
     {{-- Pusat Deteksi Dini & Anomali Kandang (Unified Anomaly Center - Khusus Desktop) --}}
     @if ($alerts->count() > 0)

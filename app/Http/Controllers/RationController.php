@@ -8,6 +8,8 @@ use App\Services\FeedConversionService;
 use App\Services\NutrientStandardService;
 use App\Services\RationCalculator;
 use App\Services\RationSafetyValidator;
+use App\Support\Fmt;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class RationController extends Controller
@@ -174,6 +176,97 @@ class RationController extends Controller
         $ration->update(['penjelasan' => $ai->jelaskan($ration)]);
 
         return redirect()->route('ransum.show', $ration)->withFragment('penjelasan');
+    }
+
+    /**
+     * Terapkan formula ransum ini dan kurangi stok bahan pakan di gudang secara otomatis.
+     */
+    public function terapkan(Ration $ration): RedirectResponse
+    {
+        $this->own($ration);
+        $farm = $this->farm();
+
+        if (! $ration->layak()) {
+            return back()->withErrors(['terapkan' => 'Ransum tidak layak nutrisi tidak dapat diterapkan ke gudang.']);
+        }
+
+        $hasil = $ration->hasil ?? [];
+        if (! empty($hasil['stok_dipotong'])) {
+            return back()->with('info', 'Ransum ini sudah pernah diterapkan ke gudang pakan.');
+        }
+
+        $items = $ration->items;
+        $dipotong = [];
+
+        foreach ($items as $it) {
+            $kgKurang = round((float) ($it->kg_as_fed ?? $it->kg), 2);
+            if ($kgKurang <= 0) {
+                continue;
+            }
+
+            $fi = $farm->farmIngredients()
+                ->where('ingredient_id', $it->ingredient_id)
+                ->first();
+
+            if (! $fi) {
+                $fi = $farm->farmIngredients()
+                    ->whereHas('ingredient', fn ($q) => $q->where('nama', $it->nama))
+                    ->first();
+            }
+
+            if ($fi) {
+                $stokAwal = (float) $fi->stok_kg;
+                $stokAkhir = max(0.0, round($stokAwal - $kgKurang, 2));
+                $fi->update(['stok_kg' => $stokAkhir]);
+                $dipotong[] = "{$it->nama} (-" . Fmt::num($kgKurang, 2) . " kg)";
+            }
+        }
+
+        $hasil['stok_dipotong'] = true;
+        $hasil['applied_at'] = now()->toIso8601String();
+        $ration->update(['hasil' => $hasil]);
+
+        return back()->with('ok', 'Racikan pakan berhasil diterapkan! Stok gudang telah dipotong otomatis: ' . implode(', ', $dipotong));
+    }
+
+    /**
+     * Batalkan penerapan formula ransum dan kembalikan stok bahan pakan ke gudang.
+     */
+    public function batalTerapkan(Ration $ration): RedirectResponse
+    {
+        $this->own($ration);
+        $farm = $this->farm();
+
+        $hasil = $ration->hasil ?? [];
+        if (empty($hasil['stok_dipotong'])) {
+            return back()->with('info', 'Ransum ini belum pernah diterapkan.');
+        }
+
+        $items = $ration->items;
+        foreach ($items as $it) {
+            $kgBalik = round((float) ($it->kg_as_fed ?? $it->kg), 2);
+            if ($kgBalik > 0) {
+                $fi = $farm->farmIngredients()
+                    ->where('ingredient_id', $it->ingredient_id)
+                    ->first();
+
+                if (! $fi) {
+                    $fi = $farm->farmIngredients()
+                        ->whereHas('ingredient', fn ($q) => $q->where('nama', $it->nama))
+                        ->first();
+                }
+
+                if ($fi) {
+                    $stokAwal = (float) $fi->stok_kg;
+                    $fi->update(['stok_kg' => round($stokAwal + $kgBalik, 2)]);
+                }
+            }
+        }
+
+        unset($hasil['stok_dipotong'], $hasil['applied_at']);
+        $ration->update(['hasil' => $hasil]);
+
+        return back()->with('ok', 'Penerapan racikan dibatalkan. Stok gudang berhasil dikembalikan.');
     }
 
     public function destroy(Ration $ration)

@@ -83,14 +83,17 @@
                         </div>
                     </a>
 
-                    {{-- 2. Bahan Pakan --}}
+                    {{-- 2. Stok Pakan Gudang --}}
                     <a href="{{ route('bahan.index') }}" class="p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 {{ request()->routeIs('bahan.*') ? 'bg-brand/10 border-brand/40 shadow-xs' : 'bg-white hover:bg-surface border-line' }}">
-                        <div class="w-9 h-9 rounded-xl {{ request()->routeIs('bahan.*') ? 'bg-brand text-white' : 'bg-surface text-ink' }} grid place-items-center">
-                            <span class="material-symbols-outlined text-[20px]">grain</span>
+                        <div class="w-9 h-9 rounded-xl {{ request()->routeIs('bahan.*') ? 'bg-brand text-white' : 'bg-surface text-ink' }} grid place-items-center relative">
+                            <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                            @if (($kritisStokCount ?? 0) > 0)
+                                <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500 ring-2 ring-white"></span>
+                            @endif
                         </div>
                         <div>
-                            <span class="text-xs font-bold text-ink block">Bahan Pakan</span>
-                            <span class="text-[10px] text-muted line-clamp-1">Katalog & Nutrisi Bahan</span>
+                            <span class="text-xs font-bold text-ink block">Stok Pakan Gudang</span>
+                            <span class="text-[10px] text-muted line-clamp-1">Inventaris & Safety Stock</span>
                         </div>
                     </a>
 

@@ -44,8 +44,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/ransum/{ration}', [RationController::class, 'show'])->name('ransum.show');
         Route::post('/ransum/{ration}/hitung-ulang', [RationController::class, 'hitungUlang'])->name('ransum.hitung-ulang');
         Route::post('/ransum/{ration}/jelaskan', [RationController::class, 'jelaskan'])->name('ransum.jelaskan');
+        Route::post('/ransum/{ration}/terapkan', [RationController::class, 'terapkan'])->name('ransum.terapkan');
+        Route::post('/ransum/{ration}/batal-terapkan', [RationController::class, 'batalTerapkan'])->name('ransum.batal-terapkan');
         Route::delete('/ransum/{ration}', [RationController::class, 'destroy'])->name('ransum.destroy');
 
+        Route::post('/bahan/stok/update', [IngredientController::class, 'updateStok'])->name('bahan.stok.update');
         Route::resource('bahan', IngredientController::class)->parameters(['bahan' => 'ingredient'])->except('show');
         Route::post('/acuan/sync', [StandardController::class, 'sync'])->name('acuan.sync');
         Route::post('/acuan/terapkan-preset', [StandardController::class, 'terapkanPreset'])->name('acuan.terapkan-preset');

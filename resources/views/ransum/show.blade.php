@@ -95,6 +95,54 @@
         </div>
     </div>
 
+    {{-- 1.5. Banner Aksi Integrasi Stok Gudang: Terapkan Racikan & Kurangi Stok Otomatis --}}
+    @php
+        $stokDipakai = !empty($ration->hasil['stok_dipotong']);
+        $tglDiterapkan = $stokDipakai && !empty($ration->hasil['applied_at']) 
+            ? \Carbon\Carbon::parse($ration->hasil['applied_at'])->translatedFormat('d M Y, H:i') 
+            : null;
+    @endphp
+
+    @if (! $stokDipakai)
+        <div class="mt-4 p-4 rounded-xl bg-brand/5 border border-brand/20 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[22px]">inventory_2</span>
+                </div>
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-ink">Terapkan Formulasi Ini ke Gudang Pakan?</h3>
+                    <p class="text-[11px] sm:text-xs text-muted">Stok bahan baku di gudang akan otomatis dipotong sebesar <strong class="text-brand font-semibold">{{ Fmt::num($asFed['total_as_fed_kg'] ?? $ration->total_kg, 2) }} kg segar</strong> sesuai timbangan riil.</p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('ransum.terapkan', $ration) }}">
+                @csrf
+                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-2xs cursor-pointer active:scale-95">
+                    <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                    <span>Terapkan & Potong Stok Gudang</span>
+                </button>
+            </form>
+        </div>
+    @else
+        <div class="mt-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[22px]">task_alt</span>
+                </div>
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-emerald-950">Racikan Telah Diterapkan ke Gudang Pakan</h3>
+                    <p class="text-[11px] sm:text-xs text-emerald-800">Stok bahan baku di gudang telah otomatis terpotong {{ $tglDiterapkan ? "pada {$tglDiterapkan} WIB" : '' }}.</p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('ransum.batal-terapkan', $ration) }}" data-confirm="Batalkan pemotongan stok untuk racikan ini? Stok bahan akan dikembalikan ke gudang pakan." data-confirm-title="Batalkan Penerapan Racikan" data-confirm-btn="Ya, Kembalikan Stok">
+                @csrf
+                <button type="submit" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-emerald-900 hover:text-rose-700 bg-white border border-emerald-300 hover:border-rose-300 transition shadow-2xs cursor-pointer">
+                    <span class="material-symbols-outlined text-[15px]">undo</span>
+                    <span>Batalkan Pemotongan</span>
+                </button>
+            </form>
+        </div>
+    @endif
+
     {{-- 2. Konten Utama: 2 Kolom Bersih --}}
     <div class="mt-4 lg:grid lg:grid-cols-12 lg:gap-6 space-y-4 lg:space-y-0 items-start">
         {{-- KOLOM KIRI: Lembar Takaran Racikan (Tanpa nested boxes) --}}

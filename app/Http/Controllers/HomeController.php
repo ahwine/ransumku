@@ -215,13 +215,16 @@ class HomeController extends Controller
             ],
         ];
 
+        $stokGudang = $farm->ringkasanStokGudang();
+
         return view('beranda', compact(
             'farm', 'logs', 'hariIni', 'ration', 'biayaKgTelur', 'alerts', 'hargaUsangHari',
             'totalTelurIni', 'totalTelurKgIni', 'rataGrTelur', 'hdPersen', 'telurUtuh', 'telurBentes',
             'deltaTelur', 'standarPakanGr', 'totalPakanIni', 'gramPerEkor', 'totalMatiIni',
             'eggMass', 'fcr', 'chartTelur', 'chartPakan', 'chartPopulasi', 'chartFcr',
             'weather', 'presetKota',
-            'hargaTelurKg', 'estPendapatanTelur', 'biayaPakanHariIni', 'estMarginKotor', 'estMarginPerKgTelur'
+            'hargaTelurKg', 'estPendapatanTelur', 'biayaPakanHariIni', 'estMarginKotor', 'estMarginPerKgTelur',
+            'stokGudang'
         ));
     }
 
