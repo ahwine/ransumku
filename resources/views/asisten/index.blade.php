@@ -56,8 +56,8 @@
             <div class="p-3 rounded-2xl bg-amber-soft/60 border border-amber/30 text-amber-ink flex items-start gap-2.5 shrink-0 mb-2">
                 <span class="material-symbols-outlined icon-fill text-[20px] text-amber-600 shrink-0 mt-0.5">info</span>
                 <div class="text-xs leading-relaxed">
-                    <strong class="font-bold">Kunci Gemini API belum dipasang di .env.</strong>
-                    <p class="text-muted mt-0.5">Asisten berjalan dalam mode jawaban bawaan (fallback otomatis tanpa crash).</p>
+                    <strong class="font-bold">Kunci OpenRouter API belum dipasang di .env.</strong>
+                    <p class="text-muted mt-0.5">Tambahkan <code>OPENROUTER_API_KEY</code> pada berkas <code>.env</code> untuk mengaktifkan AI penuh. Saat ini asisten berjalan dalam mode jawaban bawaan (fallback otomatis tanpa crash).</p>
                 </div>
             </div>
         @endif
@@ -189,7 +189,7 @@
                         <div>
                             <h3 class="font-bold text-base sm:text-lg text-ink">Halo, Peternak Cerdas!</h3>
                             <p class="text-xs text-muted mt-1 max-w-xl mx-auto leading-relaxed">
-                                Saya Asisten Cerdas RansumKu didukung Google Gemini AI. Saya siap menganalisis data performa kandang Anda, memberikan saran pakan alternatif, dan rekomendasi solusi ayam petelur.
+                                Saya Asisten Cerdas RansumKu bertenaga AI. Anda bebas menanyakan apa saja—mulai dari analisis performa kandang, formulasi pakan, info harga & bisnis, IoT, hingga pertanyaan umum sehari-hari.
                             </p>
                         </div>
 
@@ -284,7 +284,7 @@
                 <div class="p-3 bg-white flex items-center shrink-0 h-16 min-h-[64px]">
                     <form id="form-chat" action="javascript:void(0);" onsubmit="return handleFormSubmit(event);" class="relative flex items-center w-full">
                         @csrf
-                        <input id="input-pesan" name="pesan" type="text" class="w-full bg-[#f8faf9] hover:bg-white focus:bg-white text-ink placeholder:text-muted border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 rounded-full pl-5 pr-14 py-2.5 sm:py-3 text-xs sm:text-sm outline-none transition-all shadow-2xs" placeholder="Ketik pertanyaan atau keluhan tentang kandang Anda..." required autocomplete="off">
+                        <input id="input-pesan" name="pesan" type="text" class="w-full bg-[#f8faf9] hover:bg-white focus:bg-white text-ink placeholder:text-muted border border-line focus:border-brand focus:ring-2 focus:ring-brand/20 rounded-full pl-5 pr-14 py-2.5 sm:py-3 text-xs sm:text-sm outline-none transition-all shadow-2xs" placeholder="Tanyakan apa saja (kandang, pakan, harga, IoT, atau pertanyaan umum)..." required autocomplete="off">
                         <button id="btn-kirim" type="button" onclick="handleFormSubmit(event)" class="absolute right-1.5 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center transition-all shadow-2xs hover:shadow-xs active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" aria-label="Kirim" title="Kirim pesan">
                             <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
                         </button>
@@ -342,7 +342,7 @@
                         {{-- Judul & Deskripsi --}}
                         <h3 class="font-extrabold text-xl text-ink tracking-tight">Halo, Peternak Cerdas!</h3>
                         <p class="text-xs text-muted mt-1.5 max-w-[280px] mx-auto leading-relaxed">
-                            Tanyakan kendala performa kandang, analisa pakan, atau konsultasi ayam petelur kepada Asisten AI.
+                            Tanyakan apa saja—mulai dari performa kandang, analisa pakan, harga pasar, hingga pertanyaan umum kepada Asisten AI.
                         </p>
 
                         {{-- Bagian Coba Tanyakan --}}
@@ -870,19 +870,73 @@ function formatAiMarkdown(text) {
         const lines = p.split('\n');
         let paraHtml = '';
 
-        for (let line of lines) {
-            line = line.trim();
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
             if (!line) continue;
 
-            // Header ###
-            if (line.startsWith('### ')) {
+            // Tabel Markdown (| ... |)
+            if (line.startsWith('|') && line.endsWith('|')) {
+                const tableLines = [];
+                while (i < lines.length) {
+                    const candidate = lines[i].trim();
+                    if (candidate.startsWith('|') && candidate.endsWith('|')) {
+                        tableLines.push(candidate);
+                        i++;
+                    } else {
+                        break;
+                    }
+                }
+                i--;
+
+                const parsedRows = [];
+                for (const rawRow of tableLines) {
+                    const inner = rawRow.replace(/^\||\|$/g, '').trim();
+                    if (/^[\s:\-|]+$/.test(inner)) continue;
+                    parsedRows.push(inner.split('|').map(c => c.trim()));
+                }
+
+                if (parsedRows.length > 0) {
+                    const header = parsedRows.shift();
+                    let thead = '<thead class="bg-[#e8f2ec] text-ink font-bold"><tr>';
+                    for (const cell of header) {
+                        const cellHtml = cell.replace(/(?<!\w)\*(.*?)\*(?!\w)/g, '<em class="italic text-muted">$1</em>');
+                        thead += `<th class="px-2.5 py-1.5 text-left border-b border-line/80">${cellHtml}</th>`;
+                    }
+                    thead += '</tr></thead>';
+
+                    let tbody = '<tbody class="divide-y divide-line/60 bg-white">';
+                    for (const row of parsedRows) {
+                        tbody += '<tr>';
+                        for (const cell of row) {
+                            const cellHtml = cell.replace(/(?<!\w)\*(.*?)\*(?!\w)/g, '<em class="italic text-muted">$1</em>');
+                            tbody += `<td class="px-2.5 py-1.5 align-top">${cellHtml}</td>`;
+                        }
+                        tbody += '</tr>';
+                    }
+                    tbody += '</tbody>';
+                    paraHtml += `<div class="overflow-x-auto my-2 rounded-lg border border-line/80"><table class="w-full text-xs border-collapse">${thead}${tbody}</table></div>`;
+                }
+                continue;
+            }
+
+            // Header #### / ### / ## / #
+            if (line.startsWith('#### ')) {
+                paraHtml += `<div class="font-bold text-ink text-xs sm:text-sm mt-2 mb-0.5">${line.substring(5)}</div>`;
+            } else if (line.startsWith('### ')) {
                 paraHtml += `<div class="font-bold text-ink text-sm mt-2 mb-0.5">${line.substring(4)}</div>`;
             } else if (line.startsWith('## ')) {
                 paraHtml += `<div class="font-bold text-ink text-base mt-2.5 mb-0.5">${line.substring(3)}</div>`;
+            } else if (line.startsWith('# ')) {
+                paraHtml += `<div class="font-bold text-ink text-base mt-2.5 mb-0.5">${line.substring(2)}</div>`;
             }
-            // Poin bullet (* atau -)
-            else if (/^[\*\-]\s+(.*)$/.test(line)) {
-                const match = line.match(/^[\*\-]\s+(.*)$/);
+            // Blockquote (> ...)
+            else if (line.startsWith('&gt;')) {
+                const quoteText = line.replace(/^&gt;\s*/, '').replace(/(?<!\w)\*(.*?)\*(?!\w)/g, '<em class="italic text-muted">$1</em>');
+                paraHtml += `<div class="border-l-2 border-brand/60 bg-white/80 pl-2.5 py-1 my-1 text-ink/90 rounded-r">${quoteText}</div>`;
+            }
+            // Poin bullet (* atau - atau •)
+            else if (/^[\*\-•]\s+(.*)$/.test(line)) {
+                const match = line.match(/^[\*\-•]\s+(.*)$/);
                 const item = match[1].replace(/(?<!\w)\*(.*?)\*(?!\w)/g, '<em class="italic text-muted">$1</em>');
                 paraHtml += `<div class="flex items-start gap-2 my-0.5 text-ink"><span class="text-brand font-bold text-xs mt-0.5">•</span><span>${item}</span></div>`;
             }

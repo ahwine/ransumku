@@ -146,23 +146,51 @@
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">GPIO 12</span>
-                            <span class="font-bold text-ink">Relay Kipas Blower</span>
+                            <span class="font-bold text-ink">Relay Kipas Sirkulasi</span>
                         </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Sirkulasi Hawa Panas (Heat Stress)</span>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Kipas DC 4x4 Plafon (Sirkulasi Panas)</span>
                     </div>
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200">GPIO 14</span>
-                            <span class="font-bold text-ink">Relay Pompa Misting</span>
+                            <span class="font-bold text-ink">Relay Pompa Sprinkler</span>
                         </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Kabut Pendingin Atap (Severe THI)</span>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Pompa Celup Mini (Pendingin Atap)</span>
+                    </div>
+                    <div class="py-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">GPIO 15</span>
+                            <span class="font-bold text-ink">Sensor DHT22</span>
+                        </div>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Mikroklimat Suhu (°C) & RH (%)</span>
+                    </div>
+                    <div class="py-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">GPIO 18, 19</span>
+                            <span class="font-bold text-ink">Driver Motor L298N</span>
+                        </div>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Penggerak Kereta Pakan (Maju/Mundur)</span>
+                    </div>
+                    <div class="py-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200">GPIO 21, 22</span>
+                            <span class="font-bold text-ink">OLED 0.96" SSD1306</span>
+                        </div>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">I2C Bus (SDA / SCL Display Depan)</span>
                     </div>
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">GPIO 27</span>
-                            <span class="font-bold text-ink">Relay Fotoperiode</span>
+                            <span class="font-bold text-ink">LED Fotoperiode</span>
                         </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Lampu Stimulasi Hormon (16 Jam)</span>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Lampu Kuning Hangat (16 Jam/Hari)</span>
+                    </div>
+                    <div class="py-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">GPIO 32, 33</span>
+                            <span class="font-bold text-ink">Micro Limit Switch</span>
+                        </div>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Sensor Pembatas Ujung & Pangkal Rel</span>
                     </div>
                 </div>
             </div>

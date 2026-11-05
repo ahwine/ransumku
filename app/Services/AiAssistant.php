@@ -8,56 +8,69 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Asisten AI RansumKu (didukung Google Gemini API).
+ * Asisten AI RansumKu (didukung OpenRouter API dengan dukungan cadangan Google Gemini API).
  *
- * LLM bertindak sebagai konsultan ahli peternakan ayam petelur, pakan/ransum, dan manajemen kandang.
- * Memiliki guardrail ketat agar hanya menjawab seputar peternakan, unggas, pertanian, dan data kandang RansumKu.
+ * Berperan sebagai asisten AI global/serbabisa sekaligus konsultan ahli peternakan ayam petelur,
+ * pakan/ransum, IoT, bisnis, dan pengetahuan umum yang terhubung langsung dengan data kandang pengguna.
  * Formulasi angka optimasi pakan tetap dihitung oleh program (Linear Programming), bukan halusinasi LLM.
  * Jika API Key belum diisi atau koneksi gagal, sistem otomatis beralih ke fallback tanpa crash.
  */
 class AiAssistant
 {
     private const BASE_SYSTEM = <<<'SYS'
-Kamu adalah "Asisten Cerdas RansumKu", konsultan ahli spesialis peternakan ayam petelur (layer) & unggas, formulasi pakan ternak, dan manajemen kandang di Indonesia.
+Kamu adalah "Asisten Cerdas RansumKu", asisten AI serbabisa (global) yang cerdas, komunikatif, dan terhubung langsung dengan sistem manajemen peternakan ayam petelur RansumKu di Indonesia.
 
-ATURAN UTAMA & PANDUAN KERJA (STRICT GUARDRAILS):
-1. LINGKUP PENGETAHUAN & TOPIK YANG DIIZINKAN:
-   - Seluk-beluk peternakan ayam petelur (bibit/DOC, fase starter, grower, layer, afkir).
-   - Nutrisi unggas (Energi Metabolis, Protein Kasar, Kalsium, Fosfor, Serat Kasar, Lemak, Asam Amino).
-   - Bahan pakan ternak di Indonesia (jagung, bekatul/dedak, konsentrat, bungkil kedelai/SBM, sorgum, menir, maggot BSF, tepung ikan, tepung batu/grit, premix).
-   - Bahan pakan alternatif/pengganti yang murah dan aman bila bahan utama langka atau mahal.
-   - Manajemen kandang: ventilasi, suhu, pencahayaan, sanitasi, biosekuriti, kepadatan kandang, penanganan kotoran, dan pemeliharaan tempat pakan/minum.
-   - Analisis performa peternakan: FCR (Feed Conversion Ratio), Hen-Day Production (HDP %), bobot telur, mortalitas/kematian, efisiensi biaya pakan.
-   - Membaca, menganalisis, dan menjawab pertanyaan berdasarkan [DATA KANDANG PENGGUNA TERKINI] yang dilampirkan.
+PANDUAN KERJA UTAMA:
+1. CAKUPAN GLOBAL & TANPA PENOLAKAN TOPIK (NO TOPIC RESTRICTION):
+   - Kamu BEBAS dan WAJIB membantu menjawab pertanyaan APA SAJA dari pengguna secara langsung dan informatif—baik seputar peternakan ayam, formulasi pakan, harga pasar & ekonomi, bisnis, IoT/elektronika, pemrograman, matematika, pengetahuan umum, tokoh/pemerintahan, sains, maupun topik sehari-hari lainnya.
+   - JANGAN PERNAH menolak pertanyaan dengan alasan "di luar topik peternakan" atau berkata "Mohon maaf, saya khusus menangani data kandang...". Jawablah setiap pertanyaan sebaik mungkin layaknya asisten AI global yang pintar dan membantu.
 
-2. PENANGANAN DI LUAR TOPIK (OUT OF TOPIC / OOT):
-   - Jika pengguna bertanya di luar topik peternakan, unggas, pakan, pertanian, atau data kandang (misalnya tentang politik, gosip artis, coding/programming umum, resep masakan manusia, film, ramalan, tugas sekolah umum, kripto, dll):
-     TOLAK DENGAN SANTUN, RAMAH, DAN SINGKAT (1-2 kalimat).
-     Nyatakan bahwa kamu adalah asisten khusus peternakan dan pakan unggas RansumKu sehingga tidak memiliki informasi mengenai hal tersebut, lalu tawarkan bantuan terkait kandang atau pakan.
-     Contoh penolakan: "Mohon maaf, saya adalah Asisten Cerdas RansumKu yang khusus didesain untuk membantu seputar peternakan ayam, manajemen pakan, dan data kandang Anda. Saya tidak memiliki informasi di luar bidang tersebut. Apakah ada hal terkait pemeliharaan ayam atau pakan yang ingin Anda diskusikan?"
+2. PEMANFAATAN DATA KANDANG SECARA CERDAS:
+   - Di bawah instruksi ini dilampirkan [DATA KANDANG PENGGUNA TERKINI].
+   - Jika pertanyaan berkaitan dengan kandang, ayam, produksi telur, pakan/ransum, stok bahan, biaya/keuntungan, atau suhu/cuaca kandang pengguna, gunakan angka nyata dari [DATA KANDANG PENGGUNA TERKINI] secara akurat.
+   - Jika pertanyaan bersifat umum (tidak ada hubungannya dengan kandang pengguna), jawab langsung ke intinya secara natural tanpa perlu memaksakan pembahasan kandang.
 
-3. DATA KANDANG PENGGUNA:
-   - Gunakan data aktual di bagian [DATA KANDANG PENGGUNA TERKINI] untuk menjawab pertanyaan spesifik peternak (seperti tren produksi telur, konsumsi pakan, stok bahan yang menipis, atau peringatan anomali kandang). Rujuk angka nyata yang ada di kandang mereka.
+3. PERTANYAAN HARGA PASAR & INFORMASI TERKINI:
+   - Jika pengguna menanyakan harga pasar (misalnya harga telur, jagung, dedak, konsentrat saat ini), JANGAN menolak! Sebutkan harga acuan yang tercatat di sistem RansumKu pengguna serta kisaran harga pasar umum di Indonesia (tingkat peternak/kandang vs eceran konsumen), lalu beri catatan ringan bahwa harga harian dapat sedikit berbeda antar daerah (mengacu pada update Pinsar Petelur Nasional / Panel Harga Pangan Bapanas).
 
-4. BATASAN MEDIS & FORMULASI PAKAN:
-   - JANGAN mendiagnosis penyakit secara mutlak dan JANGAN meresepkan antibiotik atau obat keras tertentu. Jika ada indikasi ayam sakit atau tingkat kematian naik, berikan saran tindakan darurat awal (seperti biosekuriti, isolasi ayam sakit, cek ventilasi/air minum) dan sarankan peternak segera berkonsultasi dengan Dokter Hewan atau petugas medis peternakan.
-   - Formulasi persentase dan biaya pakan optimal dikerjakan secara eksak oleh mesin hitung RansumKu. Jika menyarankan bahan pengganti, rekomendasikan nama bahan lalu arahkan peternak untuk menambahkannya ke menu 'Daftar Bahan' dan menekan tombol 'Hitung Ulang' agar sistem menghitung formula terbaiknya.
+4. PANDUAN KESEHATAN UNGGAS & FORMULASI PAKAN:
+   - Untuk keluhan kesehatan ayam, berikan analisis kemungkinan penyebab dan langkah penanganan awal/biosekuriti yang praktis, serta sarankan pemeriksaan dokter hewan bila gejala berat atau membutuhkan resep obat keras/antibiotik.
+   - Untuk hitungan persentase formulasi ransum paling hemat secara eksak, ingatkan pengguna bahwa mereka juga bisa memasukkan bahan ke menu 'Daftar Bahan' lalu menekan 'Hitung Ulang' di menu Ransum.
 
 5. GAYA PENYAMPAIAN:
-   - Gunakan Bahasa Indonesia yang ramah, santun, bersahabat, lugas, dan mudah dipahami oleh peternak di lapangan.
-   - Gunakan format pemformatan Markdown (seperti poin-poin tebal) jika memberikan beberapa rekomendasi langkah agar mudah dibaca di layar HP/desktop.
+   - Gunakan Bahasa Indonesia yang ramah, luwes, lugas, dan mudah dipahami (atau sesuaikan bahasa jika pengguna meminta bahasa lain).
+   - Gunakan pemformatan Markdown yang rapi (poin tebal, daftar bernomor, atau tabel ringkas bila perlu).
+   - Susun jawaban secara padat, jelas, dan pastikan seluruh penjelasan selesai tuntas hingga kalimat penutup tanpa terpotong.
 SYS;
 
     /**
-     * Memeriksa apakah integrasi Gemini AI aktif (kunci API terkonfigurasi).
+     * Memeriksa apakah integrasi AI aktif (kunci OpenRouter atau Gemini terkonfigurasi).
      */
     public function tersedia(): bool
+    {
+        return $this->menggunakanOpenRouter() || $this->menggunakanGemini();
+    }
+
+    /**
+     * Memeriksa apakah kunci API OpenRouter tersedia.
+     */
+    private function menggunakanOpenRouter(): bool
+    {
+        return filled(config('ransumku.openrouter.key'));
+    }
+
+    /**
+     * Memeriksa apakah kunci API Google Gemini tersedia.
+     */
+    private function menggunakanGemini(): bool
     {
         return filled(config('ransumku.gemini.key'));
     }
 
     /**
      * Menjawab pertanyaan peternak dengan menyertakan konteks kandang & riwayat percakapan.
+     *
+     * @param  iterable<int, object>  $riwayat
      */
     public function jawab(Farm $farm, string $pertanyaan, iterable $riwayat = []): string
     {
@@ -66,9 +79,7 @@ SYS;
             ."\n\n### DATA KANDANG PENGGUNA TERKINI (Fakta aktual dari sistem RansumKu):\n"
             .$konteks;
 
-        $contents = $this->bangunPercakapan($pertanyaan, $riwayat);
-
-        return $this->panggil($contents, $systemInstruction) ?? $this->fallbackJawab($pertanyaan);
+        return $this->panggilChat($pertanyaan, $riwayat, $systemInstruction) ?? $this->fallbackJawab($pertanyaan);
     }
 
     /**
@@ -80,19 +91,99 @@ SYS;
         $prompt = "Jelaskan dalam 4-6 kalimat sederhana dan ramah mengapa komposisi ransum ini dipilih, memakai HANYA data dan angka berikut:\n"
             .$this->ringkasRansum($ration);
 
-        $contents = [
-            ['role' => 'user', 'parts' => [['text' => $prompt]]],
-        ];
+        return $this->panggilChat($prompt, [], self::BASE_SYSTEM) ?? $this->fallbackJelaskan($ration);
+    }
 
-        return $this->panggil($contents, self::BASE_SYSTEM) ?? $this->fallbackJelaskan($ration);
+    /**
+     * Mengirim permintaan percakapan ke penyedia AI aktif (OpenRouter utama, Gemini cadangan).
+     *
+     * @param  iterable<int, object>  $riwayat
+     */
+    private function panggilChat(string $pertanyaanSekarang, iterable $riwayat = [], ?string $systemInstruction = null): ?string
+    {
+        if (! $this->tersedia()) {
+            return null;
+        }
+
+        if ($this->menggunakanOpenRouter()) {
+            $messages = $this->bangunPesanOpenRouter($pertanyaanSekarang, $riwayat, $systemInstruction);
+            $jawaban = $this->panggilOpenRouter($messages);
+
+            if ($jawaban !== null) {
+                return $jawaban;
+            }
+        }
+
+        if ($this->menggunakanGemini()) {
+            $contents = $this->bangunPercakapan($pertanyaanSekarang, $riwayat);
+
+            return $this->panggilGemini($contents, $systemInstruction);
+        }
+
+        return null;
+    }
+
+    /**
+     * Memanggil OpenRouter Chat Completions API (kompatibel standar OpenAI).
+     *
+     * @param  array<int, array{role: string, content: string}>  $messages
+     */
+    private function panggilOpenRouter(array $messages): ?string
+    {
+        try {
+            $cfg = config('ransumku.openrouter');
+            $baseUrl = rtrim((string) ($cfg['base_url'] ?? 'https://openrouter.ai/api/v1'), '/');
+            $model = (string) ($cfg['model'] ?? 'openrouter/free');
+            $fallbackModels = is_array($cfg['fallback_models'] ?? null) ? $cfg['fallback_models'] : [];
+            $models = array_slice(array_values(array_unique(array_filter([$model, ...$fallbackModels]))), 0, 3);
+            $maxTokens = (int) ($cfg['max_tokens'] ?? 8192);
+            $timeout = (int) ($cfg['timeout'] ?? 120);
+
+            $payload = [
+                'model' => $model,
+                'messages' => $messages,
+                'temperature' => 0.4,
+                'max_tokens' => $maxTokens,
+            ];
+
+            if (count($models) > 1) {
+                $payload['models'] = $models;
+            }
+
+            $res = Http::withoutVerifying()
+                ->timeout($timeout)
+                ->withHeaders([
+                    'Authorization' => 'Bearer '.$cfg['key'],
+                    'Content-Type' => 'application/json',
+                    'HTTP-Referer' => (string) config('app.url', 'http://localhost'),
+                    'X-Title' => (string) config('app.name', 'RansumKu'),
+                ])
+                ->post("{$baseUrl}/chat/completions", $payload);
+
+            if (! $res->successful()) {
+                Log::warning('OpenRouter API call gagal: HTTP '.$res->status().' - '.$res->body());
+
+                return null;
+            }
+
+            $teks = trim((string) data_get($res->json(), 'choices.0.message.content', ''));
+
+            return $teks !== '' ? $teks : null;
+        } catch (\Throwable $e) {
+            Log::warning('OpenRouter API exception: '.$e->getMessage());
+
+            return null;
+        }
     }
 
     /**
      * Memanggil Google Gemini REST API dengan payload multi-turn dan system instruction.
+     *
+     * @param  array<int, array{role: string, parts: array<int, array{text: string}>}>  $contents
      */
-    private function panggil(array $contents, ?string $systemInstruction = null): ?string
+    private function panggilGemini(array $contents, ?string $systemInstruction = null): ?string
     {
-        if (! $this->tersedia()) {
+        if (! $this->menggunakanGemini()) {
             return null;
         }
 
@@ -142,10 +233,72 @@ SYS;
     }
 
     /**
+     * Menyusun riwayat percakapan agar sesuai dengan struktur `messages` OpenRouter / OpenAI API:
+     * - Diawali `system` jika ada systemInstruction
+     * - Riwayat menggunakan role `user` dan `assistant` secara bergantian
+     * - Diakhiri dengan pertanyaan pengguna terkini
+     *
+     * @param  iterable<int, object>  $riwayat
+     * @return array<int, array{role: string, content: string}>
+     */
+    private function bangunPesanOpenRouter(string $pertanyaanSekarang, iterable $riwayat, ?string $systemInstruction = null): array
+    {
+        $messages = [];
+
+        if ($systemInstruction !== null && trim($systemInstruction) !== '') {
+            $messages[] = [
+                'role' => 'system',
+                'content' => $systemInstruction,
+            ];
+        }
+
+        $chatTurns = [];
+
+        foreach ($riwayat as $chat) {
+            $rawRole = $chat->role ?? 'user';
+            $role = ($rawRole === 'assistant' || $rawRole === 'model') ? 'assistant' : 'user';
+            $teks = trim((string) ($chat->isi ?? ''));
+
+            if ($teks === '') {
+                continue;
+            }
+
+            $terakhir = count($chatTurns) - 1;
+            if ($terakhir >= 0 && $chatTurns[$terakhir]['role'] === $role) {
+                $chatTurns[$terakhir]['content'] .= "\n".$teks;
+            } else {
+                if (empty($chatTurns) && $role !== 'user') {
+                    continue;
+                }
+
+                $chatTurns[] = [
+                    'role' => $role,
+                    'content' => $teks,
+                ];
+            }
+        }
+
+        $terakhir = count($chatTurns) - 1;
+        if ($terakhir >= 0 && $chatTurns[$terakhir]['role'] === 'user') {
+            $chatTurns[$terakhir]['content'] .= "\n".$pertanyaanSekarang;
+        } else {
+            $chatTurns[] = [
+                'role' => 'user',
+                'content' => $pertanyaanSekarang,
+            ];
+        }
+
+        return [...$messages, ...$chatTurns];
+    }
+
+    /**
      * Menyusun riwayat percakapan agar sesuai dengan struktur `contents` Gemini API:
      * - Hanya menggunakan role 'user' dan 'model'
      * - Role harus bergantian (tidak boleh berurutan sama)
      * - Dimulai dari 'user' dan diakhiri dengan pertanyaan pengguna terkini
+     *
+     * @param  iterable<int, object>  $riwayat
+     * @return array<int, array{role: string, parts: array<int, array{text: string}>}>
      */
     private function bangunPercakapan(string $pertanyaanSekarang, iterable $riwayat): array
     {
@@ -198,8 +351,11 @@ SYS;
     {
         $baris = [];
         $populasi = (int) $farm->jumlah_ayam;
+        $hargaTelurAcuan = (float) config('ransumku.harga_telur_default', 27969);
+        $baris[] = "- Waktu Sistem: ".now()->translatedFormat('d F Y, H:i').' WIB';
         $baris[] = "- Nama Kandang: {$farm->nama}";
         $baris[] = "- Populasi Ayam: {$populasi} ekor (Fase: {$farm->fase})";
+        $baris[] = '- Acuan Harga Pasar Telur Ayam Ras di Sistem: Rp '.number_format($hargaTelurAcuan, 0, ',', '.').'/kg';
 
         if (! $farm->exists) {
             return implode("\n", $baris);
@@ -280,14 +436,14 @@ SYS;
     }
 
     /**
-     * Fallback jawaban cerdas jika API Gemini belum disetel atau koneksi gagal.
+     * Fallback jawaban cerdas jika API AI belum disetel atau koneksi gagal.
      */
     private function fallbackJawab(string $q): string
     {
         $q = strtolower($q);
         $statusInfo = $this->tersedia()
             ? 'Asisten AI sedang mengalami gangguan koneksi ke server.'
-            : 'Asisten AI belum terhubung (kunci GEMINI_API_KEY belum dipasang di sistem).';
+            : 'Asisten AI belum terhubung (kunci OPENROUTER_API_KEY belum dipasang di sistem).';
 
         if (str_contains($q, 'ganti') || str_contains($q, 'pengganti') || str_contains($q, 'alternatif')) {
             return "{$statusInfo}\n\nSaran pakan pengganti umum:\n- Pengganti jagung (sumber energi): sorgum, menir, atau dedak/bekatul berkualitas baik.\n- Pengganti konsentrat / sumber protein: bungkil kedelai (SBM) atau maggot BSF.\n\nSilakan masukkan bahan alternatif tersebut ke menu 'Daftar Bahan' beserta harga & stoknya, lalu tekan 'Hitung Ulang' pada menu Ransum agar program menghitung komposisi nutrisi dan biaya termurahnya.";

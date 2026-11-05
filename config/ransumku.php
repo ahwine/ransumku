@@ -13,8 +13,21 @@ return [
     ],
 
     /*
-    | Asisten AI (Gemini). Kunci diambil dari .env, jangan ditulis di kode.
+    | Asisten AI (OpenRouter sebagai penyedia utama, Google Gemini sebagai cadangan).
+    | Kunci diambil dari .env, jangan ditulis di kode.
     */
+    'openrouter' => [
+        'key' => env('OPENROUTER_API_KEY'),
+        'model' => env('OPENROUTER_MODEL', 'openrouter/free'),
+        'fallback_models' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('OPENROUTER_FALLBACK_MODELS', 'openrouter/free'))
+        ))),
+        'base_url' => env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
+        'max_tokens' => (int) env('OPENROUTER_MAX_TOKENS', 8192),
+        'timeout' => (int) env('OPENROUTER_TIMEOUT', 120),
+    ],
+
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-3.5-flash-lite'),

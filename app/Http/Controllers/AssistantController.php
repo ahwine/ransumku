@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ChatSession;
 use App\Services\AiAssistant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -260,6 +261,12 @@ class AssistantController extends Controller
 
     protected function dispatchBackgroundGeneration(int $sessionId): void
     {
+        if (app()->runningUnitTests()) {
+            Artisan::call('asisten:generate', ['session_id' => $sessionId]);
+
+            return;
+        }
+
         $artisanPath = base_path('artisan');
         $phpBinary = PHP_BINARY ?: 'php';
 
@@ -267,10 +274,15 @@ class AssistantController extends Controller
             $phpBinary = str_ireplace('php-cgi.exe', 'php.exe', $phpBinary);
         }
 
+        $isFrankenPhp = str_contains(strtolower(basename($phpBinary)), 'frankenphp');
+        $cliRunner = $isFrankenPhp
+            ? escapeshellarg($phpBinary).' php-cli'
+            : escapeshellarg($phpBinary);
+
         if (str_starts_with(strtoupper(PHP_OS), 'WIN')) {
             $cmd = sprintf(
                 'start /B "" %s %s asisten:generate %d > NUL 2>&1',
-                escapeshellarg($phpBinary),
+                $cliRunner,
                 escapeshellarg($artisanPath),
                 $sessionId
             );
@@ -278,7 +290,7 @@ class AssistantController extends Controller
         } else {
             $cmd = sprintf(
                 '%s %s asisten:generate %d > /dev/null 2>&1 &',
-                escapeshellarg($phpBinary),
+                $cliRunner,
                 escapeshellarg($artisanPath),
                 $sessionId
             );

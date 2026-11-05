@@ -2683,47 +2683,47 @@ function fixFanRendering() {
 const IOT_PIN_INFO = {
     'Panel ESP32 & Relay': {
         short: 'ESP32',
-        name: 'ESP32 + Relay 4-Channel (Panel IP65)',
-        fungsi: 'Otak sistem: membaca sensor, mengatur kipas, sprinkler, lampu, dan driver motor pakan lewat WiFi.',
+        name: 'ESP32 + Expansion Shield & Relay 2-Channel',
+        fungsi: 'Otak sistem: membaca sensor DHT22, mengatur relay kipas plafon, pompa celup sprinkler, OLED 0.96", dan driver L298N.',
         nilai: () => 'Online · menerima data'
     },
     'Motor & Driver L298N': {
         short: 'Motor L298N',
-        name: 'Motor DC + Driver L298N',
-        fungsi: 'Menggulung tali sling sehingga troli pakan bergerak bolak-balik di rel.',
+        name: 'Motor Gearbox Kuning + Driver L298N',
+        fungsi: 'Menggerakkan katrol rel agar kereta pakan bergerak bolak-balik mengisi talang 2 tingkat.',
         nilai: () => (document.getElementById('status-feeder-3d') || {}).textContent || '-'
     },
     'Limit Switch A': {
         short: 'Limit A',
-        name: 'Limit Switch A (Pangkal)',
-        fungsi: 'Menghentikan motor saat troli menyentuh ujung rel di pangkal lorong.',
-        nilai: () => (feederPositionX <= FEEDER_LIMIT_A + 0.1 ? 'TERTEKAN (troli di A)' : 'Terbuka')
+        name: 'Micro Limit Switch KW12 (Pangkal A)',
+        fungsi: 'Menghentikan motor saat kereta pakan menyentuh batas pangkal lorong kandang.',
+        nilai: () => (feederPositionX <= FEEDER_LIMIT_A + 0.1 ? 'TERTEKAN (kereta di A)' : 'Terbuka')
     },
     'Limit Switch B': {
         short: 'Limit B',
-        name: 'Limit Switch B (Ujung)',
-        fungsi: 'Menghentikan motor saat troli menyentuh ujung rel di ujung lorong.',
-        nilai: () => (feederPositionX >= FEEDER_LIMIT_B - 0.1 ? 'TERTEKAN (troli di B)' : 'Terbuka')
+        name: 'Micro Limit Switch KW12 (Ujung B)',
+        fungsi: 'Menghentikan motor saat kereta pakan menyentuh batas ujung lorong kandang.',
+        nilai: () => (feederPositionX >= FEEDER_LIMIT_B - 0.1 ? 'TERTEKAN (kereta di B)' : 'Terbuka')
     },
     'Tandon & Pompa Sprinkler': {
         short: 'Tandon & Pompa',
-        name: 'Tandon Air + Pompa Diafragma',
-        fungsi: 'Menyuplai air bertekanan ke nozzle kabut di atap untuk mendinginkan kandang.',
-        nilai: () => (isSprinklerActive3D ? 'Pompa ON (menyemprot)' : 'Pompa OFF')
+        name: 'Tandon Air & Pompa Celup Mini 3V–5V',
+        fungsi: 'Menyuplai air ke selang sprinkler atap luar untuk mendinginkan seng/mika tanpa membasahi ayam.',
+        nilai: () => (isSprinklerActive3D ? 'Pompa ON (menyemprot atap)' : 'Pompa OFF')
     },
     'Sensor DHT22 Suhu': {
         short: 'DHT22',
-        name: 'Sensor DHT22 (Suhu & RH)',
-        fungsi: 'Mengukur suhu & kelembaban udara setinggi ayam untuk menghitung THI & menjaga kotoran tetap kering.',
+        name: 'Sensor DHT22 (Suhu & RH Kandang)',
+        fungsi: 'Mengukur suhu & kelembaban udara setinggi ayam untuk evaluasi THI & proteksi anti-bau (Lock RH ≥ 75%).',
         nilai: () => {
             const t = window.kandangTelemetry;
             return t ? `${t.suhu}°C · RH ${t.kelembaban}%` : 'Menunggu data sensor...';
         }
     },
-    'Blower Sirkulasi 12V': {
-        short: 'Blower',
-        name: 'Kipas Blower Sirkulasi',
-        fungsi: 'Mengalirkan udara sepanjang lorong untuk menurunkan suhu terasa.',
+    'Kipas Sirkulasi Plafon 4x4': {
+        short: 'Kipas Plafon',
+        name: 'Kipas Sirkulasi Plafon DC (4x4 cm)',
+        fungsi: 'Membuang kubah hawa panas di bawah atap agar sirkulasi udara kandang tetap sejuk.',
         nilai: () => (isFanSpinning3D ? 'ON (berputar)' : 'OFF')
     }
 };
@@ -5021,8 +5021,8 @@ function buildKandang3DScene() {
     lblDHT.position.set(0, 1.72, -1.33);
     iotLabelsGroup.add(lblDHT);
 
-    // 6. Label Kipas Blower Sirkulasi
-    const lblFan = createBadgeSprite('Blower Sirkulasi 12V', '#38bdf8', '');
+    // 6. Label Kipas Sirkulasi Plafon (DC 4x4)
+    const lblFan = createBadgeSprite('Kipas Sirkulasi Plafon 4x4', '#38bdf8', '');
     lblFan.position.set(0, 3.65, 0);
     iotLabelsGroup.add(lblFan);
 
