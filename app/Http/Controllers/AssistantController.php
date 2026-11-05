@@ -262,13 +262,28 @@ class AssistantController extends Controller
     {
         $artisanPath = base_path('artisan');
         $phpBinary = PHP_BINARY ?: 'php';
-        $cmd = sprintf(
-            '%s %s asisten:generate %d > /dev/null 2>&1 &',
-            escapeshellarg($phpBinary),
-            escapeshellarg($artisanPath),
-            $sessionId
-        );
-        @exec($cmd);
+
+        if (str_ends_with(strtolower($phpBinary), 'php-cgi.exe')) {
+            $phpBinary = str_ireplace('php-cgi.exe', 'php.exe', $phpBinary);
+        }
+
+        if (str_starts_with(strtoupper(PHP_OS), 'WIN')) {
+            $cmd = sprintf(
+                'start /B "" %s %s asisten:generate %d > NUL 2>&1',
+                escapeshellarg($phpBinary),
+                escapeshellarg($artisanPath),
+                $sessionId
+            );
+            pclose(popen($cmd, 'r'));
+        } else {
+            $cmd = sprintf(
+                '%s %s asisten:generate %d > /dev/null 2>&1 &',
+                escapeshellarg($phpBinary),
+                escapeshellarg($artisanPath),
+                $sessionId
+            );
+            @exec($cmd);
+        }
     }
 
     public function baru(Request $r)

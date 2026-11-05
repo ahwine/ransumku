@@ -42,15 +42,6 @@
     </div>
 @endif
 
-@if ($hargaUsang)
-    <div class="mt-4 p-3.5 rounded-2xl bg-amber-soft/60 border border-amber/30 text-amber-ink flex items-start gap-2.5 text-xs">
-        <span class="material-symbols-outlined text-[20px] text-amber-ink shrink-0 mt-0.5">update</span>
-        <div class="leading-relaxed">
-            <span>Ada harga bahan yang belum diperbarui lebih dari 7 hari. <a href="{{ route('ransum.create') }}" class="font-bold underline hover:text-amber-900">Perbarui harga</a> lalu hitung ulang untuk akurasi biaya maksimal.</span>
-        </div>
-    </div>
-@endif
-
 {{-- Peringatan Ambang Batas Aman & Gizi --}}
 @if (!empty($keamanan['peringatan']))
     <div class="mt-4 space-y-2">
@@ -255,35 +246,6 @@
                         <span>*Formulasi Kering (BK) digunakan untuk standardisasi formula laboratorium sebelum dikonversi ke pakan segar.</span>
                     </div>
                 </div>
-
-                {{-- Footer Aksi: Skala Ulang & Cetak Lembar Mixer --}}
-                <div class="pt-3 border-t border-line/60 flex flex-wrap items-center justify-between gap-3 text-xs">
-                    {{-- Form Skala Ulang Cepat --}}
-                    <form method="GET" class="flex items-center gap-2">
-                        <span class="text-muted font-medium">Ubah takaran volume:</span>
-                        <div class="relative flex items-center">
-                            <input id="kg" 
-                                   name="kg" 
-                                   type="number" 
-                                   min="1" 
-                                   step="0.5" 
-                                   value="{{ (float) $skala }}" 
-                                   class="field !min-h-8 !py-1 text-xs !pr-7 font-semibold w-24">
-                            <span class="absolute right-2 text-[10px] font-bold text-muted pointer-events-none select-none">kg</span>
-                        </div>
-                        <button class="btn-outline btn-sm !min-h-8 !py-1 !px-3 rounded-full font-bold">Hitung</button>
-                    </form>
-
-                    {{-- Tombol Buka Modal Lembar Mixer --}}
-                    <button type="button" 
-                            onclick="document.getElementById('modalMixerSheet').showModal()"
-                            class="cursor-pointer font-bold text-brand hover:underline flex items-center gap-1.5 select-none text-xs"
-                            title="Lembar Aduk Wadah Mixer">
-                        <span class="material-symbols-outlined text-[17px]">receipt_long</span>
-                        <span>Lihat Lembar Aduk Wadah Mixer ({{ $mixerKg }} kg Segar)</span>
-                        <span class="sr-only">Cetak Lembar Aduk Wadah Mixer</span>
-                    </button>
-                </div>
             </section>
         </div>
 
@@ -472,59 +434,4 @@
         }
     });
 </script>
-
-{{-- Modal Lembar Aduk Wadah Mixer --}}
-<dialog id="modalMixerSheet" class="modal p-0 rounded-3xl backdrop:bg-black/50 backdrop:backdrop-blur-xs shadow-2xl border border-line max-w-lg w-full m-auto">
-    <div class="p-6 space-y-4 bg-white rounded-3xl">
-        <div class="flex items-center justify-between pb-3 border-b border-line">
-            <div class="space-y-0.5">
-                <h3 class="text-base font-bold text-ink">Lembar Aduk Wadah Mixer</h3>
-                <p class="text-xs text-muted">Kapasitas 1 Batch Wadah Mixer: <strong class="text-brand tabular-nums font-bold">{{ $mixerKg }} kg Segar</strong></p>
-            </div>
-            <button type="button" 
-                    onclick="document.getElementById('modalMixerSheet').close()" 
-                    class="w-8 h-8 rounded-full bg-surface-2 hover:bg-surface text-muted hover:text-ink flex items-center justify-center transition cursor-pointer">
-                <span class="material-symbols-outlined text-[18px]">close</span>
-            </button>
-        </div>
-
-        <p class="text-xs text-muted">
-            Panduan penakaran bahan riil untuk setiap 1 kali pengadukan mesin mixer di gudang:
-        </p>
-
-        <div class="overflow-x-auto rounded-2xl border border-line">
-            <table class="w-full text-xs">
-                <thead>
-                    <tr class="text-muted bg-surface/50 border-b border-line text-[11px] uppercase tracking-wider font-semibold">
-                        <th class="py-2.5 px-3 text-left">Bahan Pakan</th>
-                        <th class="py-2.5 px-2 text-center">Proporsi</th>
-                        <th class="py-2.5 px-3 text-center font-bold text-brand">Timbang Riil</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-line/40">
-                    @foreach ($mixingSheet as $ms)
-                        <tr class="hover:bg-surface/20 transition-colors">
-                            <td class="py-2 px-3 font-semibold text-ink text-left">{{ $ms['nama'] }}</td>
-                            <td class="py-2 px-2 text-center tabular-nums text-muted">{{ Fmt::num($ms['persen_as_fed'], 1) }}%</td>
-                            <td class="py-2 px-3 text-center tabular-nums font-bold text-brand text-sm">{{ Fmt::num($ms['kg_timbang'], 2) }} kg</td>
-                        </tr>
-                    @endforeach
-                    <tr class="bg-surface-2/60 font-bold text-ink border-t-2 border-line">
-                        <td class="py-2.5 px-3 text-left">Total Adukan Mixer</td>
-                        <td class="py-2.5 px-2 text-center tabular-nums">100%</td>
-                        <td class="py-2.5 px-3 text-center tabular-nums text-brand font-bold text-sm">{{ Fmt::num($mixerKg, 2) }} kg</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="flex items-center justify-end pt-2">
-            <button type="button" 
-                    onclick="document.getElementById('modalMixerSheet').close()" 
-                    class="btn-primary btn-sm rounded-full px-6 py-2 text-xs font-bold cursor-pointer shadow-2xs hover:shadow-brand/20 transition active:scale-95">
-                <span>Tutup</span>
-            </button>
-        </div>
-    </div>
-</dialog>
 @endsection

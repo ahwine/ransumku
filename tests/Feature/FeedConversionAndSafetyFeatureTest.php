@@ -63,7 +63,7 @@ class FeedConversionAndSafetyFeatureTest extends TestCase
         $show->assertStatus(200);
         $show->assertSee('Timbangan Segar (As-Fed)');
         $show->assertSee('Formulasi Kering (BK)');
-        $show->assertSee('Cetak Lembar Aduk Wadah Mixer');
+        $show->assertSee('Total Timbangan Segar');
 
         // Pastikan ration item tersimpan dengan data As-Fed dan BK
         $item = $ration->items()->first();
