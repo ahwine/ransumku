@@ -87,7 +87,7 @@
 
             <div class="shrink-0 pt-2 md:pt-0">
                 <button type="button" 
-                        onclick="document.getElementById('modalKonfirmasiTerapkan').showModal()"
+                        onclick="bukaModal('modalKonfirmasiTerapkan')"
                         class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black text-white bg-brand hover:bg-brand-dark transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">inventory_2</span>
                     <span>Campur Pakan & Potong Stok</span>
@@ -481,9 +481,10 @@
     </a>
 </div>
 
-{{-- MODAL KONFIRMASI CAMPUR PAKAN & POTONG STOK GUDANG --}}
-<dialog id="modalKonfirmasiTerapkan" class="rounded-2xl p-0 backdrop:bg-black/50 backdrop:backdrop-blur-xs shadow-2xl border border-line w-full max-w-lg overflow-hidden">
-    <div class="bg-white p-5 sm:p-6 space-y-4">
+{{-- MODAL KONFIRMASI CAMPUR PAKAN & POTONG STOK GUDANG (CENTERED) --}}
+<div id="modalKonfirmasiTerapkan" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0 pointer-events-none" role="dialog" aria-modal="true">
+    <div class="absolute inset-0" onclick="tutupModal('modalKonfirmasiTerapkan')"></div>
+    <div data-modal-card class="relative z-10 w-full max-w-lg bg-white rounded-2xl p-5 sm:p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
         <div class="flex items-center justify-between pb-3 border-b border-line">
             <div class="flex items-center gap-2.5">
                 <div class="w-10 h-10 rounded-xl bg-brand/10 text-brand grid place-items-center shrink-0">
@@ -494,7 +495,7 @@
                     <p class="text-[11px] text-muted">Pemotongan stok fisik di gudang pakan.</p>
                 </div>
             </div>
-            <button type="button" onclick="document.getElementById('modalKonfirmasiTerapkan').close()" class="p-1 rounded-lg text-muted hover:text-ink hover:bg-surface cursor-pointer">
+            <button type="button" onclick="tutupModal('modalKonfirmasiTerapkan')" class="p-1 rounded-lg text-muted hover:text-ink hover:bg-surface cursor-pointer">
                 <span class="material-symbols-outlined text-[18px]">close</span>
             </button>
         </div>
@@ -543,7 +544,7 @@
             @csrf
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-line">
                 <button type="button" 
-                        onclick="document.getElementById('modalKonfirmasiTerapkan').close()" 
+                        onclick="tutupModal('modalKonfirmasiTerapkan')" 
                         class="px-4 py-2 rounded-full text-xs font-semibold text-ink bg-white hover:bg-surface border border-line transition shadow-2xs cursor-pointer">
                     Batal / Nanti Dulu
                 </button>
@@ -555,7 +556,7 @@
             </div>
         </form>
     </div>
-</dialog>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {

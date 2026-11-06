@@ -45,7 +45,7 @@ class FarmBootstrap
         return [
             'Jagung' => [
                 'nama' => 'Jagung',
-                'label' => 'Jagung Kuning Giling',
+                'label' => 'Jagung',
                 'kategori' => 'Sumber Energi Utama',
                 'protein' => 8.5,
                 'energi' => 3300,
@@ -61,7 +61,7 @@ class FarmBootstrap
             ],
             'Dedak' => [
                 'nama' => 'Dedak',
-                'label' => 'Dedak Padi / Bekatul Halus',
+                'label' => 'Dedak',
                 'kategori' => 'Sumber Serat & Energi',
                 'protein' => 12.0,
                 'energi' => 2400,
@@ -77,7 +77,7 @@ class FarmBootstrap
             ],
             'Konsentrat' => [
                 'nama' => 'Konsentrat',
-                'label' => 'Konsentrat Layer Pabrikan (36-38%)',
+                'label' => 'Konsentrat',
                 'kategori' => 'Sumber Protein & Premix',
                 'protein' => 38.0,
                 'energi' => 2300,
@@ -93,7 +93,7 @@ class FarmBootstrap
             ],
             'Kapur' => [
                 'nama' => 'Kapur',
-                'label' => 'Tepung Batu Kapur (CaCO3)',
+                'label' => 'Kapur',
                 'kategori' => 'Sumber Kalsium Kerabang',
                 'protein' => 0.0,
                 'energi' => 0,
@@ -109,7 +109,7 @@ class FarmBootstrap
             ],
             'Bungkil kedelai' => [
                 'nama' => 'Bungkil kedelai',
-                'label' => 'Bungkil Kedelai (SBM - Soybean Meal)',
+                'label' => 'Bungkil Kedelai',
                 'kategori' => 'Sumber Protein Nabati',
                 'protein' => 44.0,
                 'energi' => 2230,
@@ -125,7 +125,7 @@ class FarmBootstrap
             ],
             'Menir' => [
                 'nama' => 'Menir',
-                'label' => 'Menir Beras Putih',
+                'label' => 'Menir',
                 'kategori' => 'Sumber Energi Pengganti Jagung',
                 'protein' => 8.0,
                 'energi' => 3200,
@@ -141,7 +141,7 @@ class FarmBootstrap
             ],
             'Tepung ikan' => [
                 'nama' => 'Tepung ikan',
-                'label' => 'Tepung Ikan Murni',
+                'label' => 'Tepung Ikan',
                 'kategori' => 'Sumber Protein Hewani',
                 'protein' => 55.0,
                 'energi' => 2800,
@@ -157,7 +157,7 @@ class FarmBootstrap
             ],
             'Minyak sawit' => [
                 'nama' => 'Minyak sawit',
-                'label' => 'Minyak Sawit / CPO',
+                'label' => 'Minyak Sawit',
                 'kategori' => 'Booster Energi Metabolis',
                 'protein' => 0.0,
                 'energi' => 8600,
@@ -173,7 +173,7 @@ class FarmBootstrap
             ],
             'Tepung kulit kerang' => [
                 'nama' => 'Tepung kulit kerang',
-                'label' => 'Tepung Kulit Kerang / Grit',
+                'label' => 'Kulit Kerang',
                 'kategori' => 'Kalsium Kasar Pelepasan Lambat',
                 'protein' => 0.0,
                 'energi' => 0,
@@ -189,7 +189,7 @@ class FarmBootstrap
             ],
             'Polard gandum' => [
                 'nama' => 'Polard gandum',
-                'label' => 'Polard Gandum (Wheat Pollard)',
+                'label' => 'Polard',
                 'kategori' => 'Serat Mudah Cerna',
                 'protein' => 15.0,
                 'energi' => 2200,
@@ -205,7 +205,7 @@ class FarmBootstrap
             ],
             'Bungkil kelapa' => [
                 'nama' => 'Bungkil kelapa',
-                'label' => 'Bungkil Kelapa (Copra Meal)',
+                'label' => 'Bungkil Kelapa',
                 'kategori' => 'Sumber Protein & Aroma Gurih',
                 'protein' => 21.0,
                 'energi' => 2000,
@@ -221,7 +221,7 @@ class FarmBootstrap
             ],
             'Premix layer' => [
                 'nama' => 'Premix layer',
-                'label' => 'Premix Vitamin & Mikromineral Layer',
+                'label' => 'Premix',
                 'kategori' => 'Suplemen Mikronutrisi',
                 'protein' => 0.0,
                 'energi' => 0,

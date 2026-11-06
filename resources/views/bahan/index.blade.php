@@ -14,7 +14,7 @@
         {{-- Tombol Aksi Utama: Tambah Bahan ke Gudang --}}
         <div>
             <button type="button" 
-                    onclick="document.getElementById('modalTambahBahan').showModal()"
+                    onclick="bukaModal('modalTambahBahan')"
                     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer">
                 <span class="material-symbols-outlined text-[17px]">add</span>
                 <span>+ Tambah Bahan ke Gudang</span>
@@ -208,7 +208,7 @@
                         </p>
                     </div>
                     <button type="button" 
-                            onclick="document.getElementById('modalTambahBahan').showModal()"
+                            onclick="bukaModal('modalTambahBahan')"
                             class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-2xs active:scale-95 cursor-pointer">
                         <span class="material-symbols-outlined text-[18px]">add</span>
                         <span>+ Tambah Bahan Pertama ke Gudang</span>
@@ -227,10 +227,11 @@
 </div>
 
 {{-- ======================================================== --}}
-{{-- 1. MODAL TAMBAH BAHAN KE GUDANG (DROPDOWN OTOMATIS)      --}}
+{{-- 1. MODAL TAMBAH BAHAN KE GUDANG (CENTERED & UI DROPDOWN) --}}
 {{-- ======================================================== --}}
-<dialog id="modalTambahBahan" class="rounded-2xl p-0 backdrop:bg-black/50 backdrop:backdrop-blur-xs shadow-2xl border border-line w-full max-w-lg overflow-hidden">
-    <div class="bg-white p-5 sm:p-6 space-y-4">
+<div id="modalTambahBahan" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0 pointer-events-none" role="dialog" aria-modal="true">
+    <div class="absolute inset-0" onclick="tutupModal('modalTambahBahan')"></div>
+    <div data-modal-card class="relative z-10 w-full max-w-lg bg-white rounded-2xl p-5 sm:p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
         {{-- Header Modal --}}
         <div class="flex items-center justify-between pb-3 border-b border-line">
             <div class="flex items-center gap-2.5">
@@ -242,7 +243,7 @@
                     <p class="text-[11px] text-muted">Pilih bahan pakan resmi, nutrisi terisi otomatis.</p>
                 </div>
             </div>
-            <button type="button" onclick="document.getElementById('modalTambahBahan').close()" class="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-surface cursor-pointer">
+            <button type="button" onclick="tutupModal('modalTambahBahan')" class="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-surface cursor-pointer">
                 <span class="material-symbols-outlined text-[18px]">close</span>
             </button>
         </div>
@@ -250,31 +251,93 @@
         <form method="POST" action="{{ route('bahan.store') }}" class="space-y-4">
             @csrf
 
-            {{-- 1. Dropdown Pilihan Master Bahan Pakan Petelur --}}
-            <div>
-                <label class="lbl text-xs font-bold" for="select-master-bahan">Pilih Bahan Pakan Ayam Petelur <span class="text-danger">*</span></label>
-                <select id="select-master-bahan" 
-                        name="nama_template" 
-                        onchange="pilihMasterBahan(this)"
-                        class="field !min-h-11 text-xs sm:text-sm font-semibold bg-white cursor-pointer"
-                        required>
-                    <option value="" disabled selected>-- Pilih Bahan Pakan dari Daftar --</option>
-                    @foreach ($masterCatalog as $key => $item)
-                        @php $alreadyIn = in_array($item['nama'], $existingNames, true); @endphp
-                        <option value="{{ $key }}" 
-                                data-kategori="{{ $item['kategori'] ?? '' }}"
-                                data-protein="{{ $item['protein'] ?? 0 }}"
-                                data-energi="{{ $item['energi'] ?? 0 }}"
-                                data-kalsium="{{ $item['kalsium'] ?? 0 }}"
-                                data-fosfor="{{ $item['fosfor'] ?? 0 }}"
-                                data-serat="{{ $item['serat'] ?? 0 }}"
-                                data-harga="{{ $item['harga_default'] ?? 0 }}"
-                                data-deskripsi="{{ $item['deskripsi'] ?? $item['catatan_keamanan'] ?? '' }}"
-                                {{ $alreadyIn ? 'class=text-muted' : '' }}>
-                            {{ $item['label'] ?? $item['nama'] }} ({{ $item['kategori'] ?? '' }}) {{ $alreadyIn ? '— [Sudah Ada di Gudang]' : '' }}
-                        </option>
-                    @endforeach
-                </select>
+            {{-- 1. Custom UI Dropdown Bahan Pakan --}}
+            <div class="space-y-1.5">
+                <label class="lbl text-xs font-bold" for="input-nama-template">
+                    <span>Pilih Bahan Pakan Ayam Petelur</span>
+                    <span class="text-danger">*</span>
+                </label>
+
+                <div class="relative w-full text-left custom-dropdown-container z-30" id="dropdown-master-bahan">
+                    <input type="hidden" name="nama_template" id="input-nama-template" value="" class="dropdown-hidden-input" required>
+
+                    {{-- Trigger Button UI --}}
+                    <button type="button" 
+                            onclick="toggleCustomDropdown('dropdown-master-bahan', event)" 
+                            class="dropdown-trigger w-full min-h-11 px-3.5 py-2.5 bg-white border border-line rounded-xl text-xs sm:text-sm font-semibold text-ink shadow-2xs hover:border-brand/40 focus:border-brand focus:ring-2 focus:ring-brand/15 transition cursor-pointer flex items-center justify-between"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <div class="flex items-center gap-2.5 min-w-0 pr-1">
+                            <span class="material-symbols-outlined text-[18px] text-muted dropdown-selected-icon">inventory_2</span>
+                            <span class="truncate dropdown-selected-label text-muted" id="label-selected-bahan">Pilih Bahan Pakan...</span>
+                        </div>
+                        <span class="material-symbols-outlined text-[18px] text-muted transition-transform duration-200 dropdown-caret shrink-0">expand_more</span>
+                    </button>
+
+                    {{-- Dropdown Card Menu --}}
+                    <div class="dropdown-menu hidden absolute left-0 right-0 top-full mt-1.5 rounded-2xl bg-white border border-line shadow-2xl p-2 z-50 select-none custom-dropdown-menu flex flex-col">
+                        {{-- Search Input inside Dropdown --}}
+                        <div class="p-1.5 border-b border-line/60">
+                            <div class="relative flex items-center">
+                                <span class="material-symbols-outlined absolute left-2.5 text-[16px] text-muted pointer-events-none">search</span>
+                                <input type="text"
+                                       data-dropdown-search
+                                       oninput="filterMasterBahanDropdown(this)"
+                                       placeholder="Cari bahan (mis: Jagung, Dedak)..."
+                                       class="w-full pl-8 pr-3 py-1.5 bg-surface/60 border border-line rounded-lg text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+                                       autocomplete="off">
+                            </div>
+                        </div>
+
+                        {{-- List Pilihan Bahan Pakan --}}
+                        <div class="overflow-y-auto space-y-1 p-1 max-h-56" id="list-master-bahan">
+                            @foreach ($masterCatalog as $key => $item)
+                                @php $alreadyIn = in_array($item['nama'], $existingNames, true); @endphp
+                                <button type="button"
+                                        data-master-item
+                                        data-key="{{ $key }}"
+                                        data-nama="{{ strtolower($item['label'] ?? $item['nama']) }}"
+                                        data-label="{{ $item['label'] ?? $item['nama'] }}"
+                                        data-kategori="{{ $item['kategori'] ?? '' }}"
+                                        data-protein="{{ $item['protein'] ?? 0 }}"
+                                        data-energi="{{ $item['energi'] ?? 0 }}"
+                                        data-kalsium="{{ $item['kalsium'] ?? 0 }}"
+                                        data-fosfor="{{ $item['fosfor'] ?? 0 }}"
+                                        data-serat="{{ $item['serat'] ?? 0 }}"
+                                        data-harga="{{ $item['harga_default'] ?? 0 }}"
+                                        data-deskripsi="{{ $item['deskripsi'] ?? $item['catatan_keamanan'] ?? '' }}"
+                                        onclick="pilihMasterBahanUi(this)"
+                                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-all cursor-pointer group hover:bg-surface {{ $alreadyIn ? 'opacity-70 bg-surface/40' : '' }}">
+                                    <div class="flex items-center gap-2.5 min-w-0 pr-2">
+                                        <div class="w-7 h-7 rounded-lg bg-surface-2 group-hover:bg-brand/10 text-muted group-hover:text-brand flex items-center justify-center shrink-0 transition-colors">
+                                            <span class="material-symbols-outlined text-[15px]">inventory_2</span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <span class="font-bold text-xs text-ink group-hover:text-brand block truncate">
+                                                {{ $item['label'] ?? $item['nama'] }}
+                                            </span>
+                                            <span class="text-[10px] text-muted block truncate">
+                                                PK {{ $item['protein'] }}% • EM {{ $item['energi'] }} kkal
+                                            </span>
+                                        </div>
+                                    </div>
+                                    @if ($alreadyIn)
+                                        <span class="text-[10px] font-semibold text-muted bg-surface-2 px-2 py-0.5 rounded-full shrink-0">
+                                            Di Gudang
+                                        </span>
+                                    @else
+                                        <span class="text-[10px] font-bold text-brand bg-brand-soft px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                            Pilih
+                                        </span>
+                                    @endif
+                                </button>
+                            @endforeach
+                            <div id="master-item-empty" class="hidden p-4 text-center text-xs text-muted">
+                                Tidak ada bahan pakan yang cocok.
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Preview Nutrisi Otomatis Terkunci (Live JS) --}}
@@ -353,7 +416,7 @@
             {{-- Tombol Aksi Modal --}}
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-line">
                 <button type="button" 
-                        onclick="document.getElementById('modalTambahBahan').close()" 
+                        onclick="tutupModal('modalTambahBahan')" 
                         class="px-4 py-2 rounded-full text-xs font-semibold text-ink bg-white hover:bg-surface border border-line transition shadow-2xs cursor-pointer">
                     Batal
                 </button>
@@ -364,19 +427,20 @@
             </div>
         </form>
     </div>
-</dialog>
+</div>
 
 {{-- ======================================================== --}}
-{{-- 2. MODAL EDIT / UPDATE STOK & HARGA GUDANG               --}}
+{{-- 2. MODAL EDIT / UPDATE STOK & HARGA GUDANG (CENTERED)    --}}
 {{-- ======================================================== --}}
-<dialog id="modalUpdateStok" class="rounded-2xl p-0 backdrop:bg-black/50 backdrop:backdrop-blur-xs shadow-2xl border border-line w-full max-w-md overflow-hidden">
-    <div class="bg-white p-5 sm:p-6 space-y-4">
+<div id="modalUpdateStok" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0 pointer-events-none" role="dialog" aria-modal="true">
+    <div class="absolute inset-0" onclick="tutupModal('modalUpdateStok')"></div>
+    <div data-modal-card class="relative z-10 w-full max-w-md bg-white rounded-2xl p-5 sm:p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
         <div class="flex items-center justify-between pb-3 border-b border-line">
             <div>
                 <h3 class="text-sm sm:text-base font-bold text-ink">Edit Stok & Harga Bahan</h3>
                 <p class="text-xs text-muted" id="modal-update-nama">Bahan Pakan</p>
             </div>
-            <button type="button" onclick="document.getElementById('modalUpdateStok').close()" class="p-1 rounded-lg text-muted hover:text-ink hover:bg-surface cursor-pointer">
+            <button type="button" onclick="tutupModal('modalUpdateStok')" class="p-1 rounded-lg text-muted hover:text-ink hover:bg-surface cursor-pointer">
                 <span class="material-symbols-outlined text-[18px]">close</span>
             </button>
         </div>
@@ -419,7 +483,7 @@
 
             <div class="flex items-center justify-end gap-2 pt-2 border-t border-line">
                 <button type="button" 
-                        onclick="document.getElementById('modalUpdateStok').close()" 
+                        onclick="tutupModal('modalUpdateStok')" 
                         class="px-4 py-2 rounded-full text-xs font-semibold text-ink bg-white hover:bg-surface border border-line transition shadow-2xs cursor-pointer">
                     Batal
                 </button>
@@ -430,22 +494,49 @@
             </div>
         </form>
     </div>
-</dialog>
+</div>
 
 <script>
-function pilihMasterBahan(select) {
-    const opt = select.options[select.selectedIndex];
-    if (!opt || !opt.value) return;
+function pilihMasterBahanUi(btn) {
+    const key = btn.getAttribute('data-key');
+    const label = btn.getAttribute('data-label');
+    const kategori = btn.getAttribute('data-kategori') || 'Bahan Pakan';
+    const protein = btn.getAttribute('data-protein') || '0';
+    const energi = btn.getAttribute('data-energi') || '0';
+    const kalsium = btn.getAttribute('data-kalsium') || '0';
+    const fosfor = btn.getAttribute('data-fosfor') || '0';
+    const harga = btn.getAttribute('data-harga') || '';
+    const deskripsi = btn.getAttribute('data-deskripsi') || '';
 
-    const box = document.getElementById('preview-nutrisi-box');
-    const kategori = opt.getAttribute('data-kategori') || 'Bahan Pakan';
-    const protein = opt.getAttribute('data-protein') || '0';
-    const energi = opt.getAttribute('data-energi') || '0';
-    const kalsium = opt.getAttribute('data-kalsium') || '0';
-    const fosfor = opt.getAttribute('data-fosfor') || '0';
-    const harga = opt.getAttribute('data-harga') || '';
-    const deskripsi = opt.getAttribute('data-deskripsi') || '';
+    // Set hidden input value
+    document.getElementById('input-nama-template').value = key;
 
+    // Update trigger UI
+    const labelEl = document.getElementById('label-selected-bahan');
+    if (labelEl) {
+        labelEl.textContent = label;
+        labelEl.classList.remove('text-muted');
+        labelEl.classList.add('text-ink', 'font-bold');
+    }
+
+    const triggerIcon = document.querySelector('#dropdown-master-bahan .dropdown-selected-icon');
+    if (triggerIcon) {
+        triggerIcon.classList.remove('text-muted');
+        triggerIcon.classList.add('text-brand');
+    }
+
+    // Close dropdown
+    const container = document.getElementById('dropdown-master-bahan');
+    if (container) {
+        const menu = container.querySelector('.dropdown-menu');
+        const caret = container.querySelector('.dropdown-caret');
+        const trigger = container.querySelector('.dropdown-trigger');
+        if (menu) menu.classList.add('hidden');
+        if (caret) caret.classList.remove('rotate-180');
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    // Update live nutrition preview box
     document.getElementById('preview-kategori').textContent = kategori;
     document.getElementById('preview-protein').textContent = protein + '%';
     document.getElementById('preview-energi').textContent = Number(energi).toLocaleString('id-ID') + ' kkal';
@@ -458,7 +549,28 @@ function pilihMasterBahan(select) {
         hargaInput.value = harga;
     }
 
-    box.classList.remove('hidden');
+    const box = document.getElementById('preview-nutrisi-box');
+    if (box) {
+        box.classList.remove('hidden');
+    }
+}
+
+function filterMasterBahanDropdown(input) {
+    const query = input.value.toLowerCase().trim();
+    const items = document.querySelectorAll('#list-master-bahan [data-master-item]');
+    const emptyEl = document.getElementById('master-item-empty');
+    let visibleCount = 0;
+
+    items.forEach(item => {
+        const nama = item.getAttribute('data-nama') || '';
+        const match = query === '' || nama.includes(query);
+        item.style.display = match ? 'flex' : 'none';
+        if (match) visibleCount++;
+    });
+
+    if (emptyEl) {
+        emptyEl.classList.toggle('hidden', visibleCount > 0);
+    }
 }
 
 function bukaModalUpdateStok(id, nama, stok, harga) {
@@ -466,7 +578,7 @@ function bukaModalUpdateStok(id, nama, stok, harga) {
     document.getElementById('modal-update-nama').textContent = nama;
     document.getElementById('modal-input-stok').value = stok;
     document.getElementById('modal-input-harga').value = harga;
-    document.getElementById('modalUpdateStok').showModal();
+    bukaModal('modalUpdateStok');
 }
 
 function filterBahanStok(input) {
