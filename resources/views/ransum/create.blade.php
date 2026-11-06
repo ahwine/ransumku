@@ -11,7 +11,7 @@
     </a>
     <div class="space-y-0.5 min-w-0">
         <h1 class="text-h-lg font-black tracking-tight text-ink truncate">Racik Formulasi Ransum</h1>
-        <p class="text-xs text-muted">Sesuaikan harga dan stok bahan di gudang untuk menghasilkan pakan berkualitas dengan biaya terendah.</p>
+        <p class="text-xs text-muted">Pilih bahan pakan yang tersedia di gudang untuk menghasilkan formulasi ransum berkualitas dengan biaya terendah.</p>
     </div>
 </div>
 
@@ -54,9 +54,31 @@
                 <div class="space-y-3">
                     @foreach ($fis as $fi)
                         @php
-                            $isAktif = (bool) old("bahan.{$fi->id}.aktif", $fi->aktif);
+                            $stok = (float) $fi->stok_kg;
+                            $namaBahan = strtolower($fi->ingredient->nama ?? '');
+
+                            // Ambang batas buffer safety stock 3 hari
+                            $porsiEst = 0.20;
+                            if (str_contains($namaBahan, 'jagung') || str_contains($namaBahan, 'menir') || str_contains($namaBahan, 'sorgum')) {
+                                $porsiEst = 0.50;
+                            } elseif (str_contains($namaBahan, 'konsentrat') || str_contains($namaBahan, 'kedelai') || str_contains($namaBahan, 'ikan')) {
+                                $porsiEst = 0.30;
+                            } elseif (str_contains($namaBahan, 'dedak') || str_contains($namaBahan, 'bekatul') || str_contains($namaBahan, 'polard')) {
+                                $porsiEst = 0.20;
+                            } elseif (str_contains($namaBahan, 'kapur') || str_contains($namaBahan, 'kerang') || str_contains($namaBahan, 'grit') || str_contains($namaBahan, 'premix')) {
+                                $porsiEst = 0.07;
+                            }
+                            $kebutuhanHarian = max(0.5, round(($pakanHarianKg ?? 22.0) * $porsiEst, 2));
+                            $safetyBuffer = round($kebutuhanHarian * 3, 1);
+
+                            $isHabis = $stok <= 0.05;
+                            $isMenipis = ! $isHabis && $stok <= $safetyBuffer;
+                            $isAman = ! $isHabis && ! $isMenipis;
+
+                            // Jika stok habis di gudang, jangan aktifkan otomatis
+                            $isAktif = $isHabis ? false : (bool) old("bahan.{$fi->id}.aktif", $fi->aktif);
                         @endphp
-                        <div class="rounded-2xl border p-3.5 space-y-3 transition-all duration-200 {{ $isAktif ? 'bg-white border-brand/30 shadow-2xs ring-1 ring-brand/10' : 'bg-surface/40 border-line/60 opacity-60' }}" 
+                        <div class="rounded-2xl border p-3.5 space-y-3 transition-all duration-200 {{ $isAktif ? 'bg-white border-brand/30 shadow-2xs ring-1 ring-brand/10' : ($isHabis ? 'bg-rose-50/30 border-rose-200/60 opacity-75' : 'bg-surface/40 border-line/60 opacity-60') }}" 
                              data-racik-item 
                              data-bahan-nama="{{ strtolower($fi->ingredient->nama) }}">
                             
@@ -79,39 +101,69 @@
                                     @endif
                                 </label>
                                 <span class="text-[11px] font-semibold {{ $fi->hargaUsang() ? 'text-danger font-bold' : 'text-muted' }}">
-                                    {{ $fi->harga_updated_at ? 'diperbarui '.$fi->harga_updated_at->diffForHumans() : 'belum pernah diperbarui' }}
+                                    {{ $fi->harga_updated_at ? 'diperbarui '.$fi->harga_updated_at->diffForHumans() : 'harga acuan baku' }}
                                 </span>
                             </div>
 
-                            {{-- Input Harga & Stok --}}
-                            <div class="grid grid-cols-2 gap-3 pt-1">
-                                <div>
-                                    <label class="lbl text-[11px]" for="h{{ $fi->id }}">Harga Satuan</label>
-                                    <div class="relative flex items-center">
-                                        <span class="absolute left-3 text-xs font-bold text-muted pointer-events-none select-none">Rp</span>
-                                        <input id="h{{ $fi->id }}" 
-                                               name="bahan[{{ $fi->id }}][harga]" 
-                                               type="number" 
-                                               min="0" 
-                                               step="50" 
-                                               inputmode="numeric" 
-                                               class="field !pl-9 font-semibold text-ink" 
-                                               value="{{ old("bahan.{$fi->id}.harga", $fi->harga) }}">
+                            {{-- Grid: Ketersediaan Stok Gudang (Read-Only) & Harga Beli Satuan --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                {{-- Kolom 1: Ketersediaan Stok Gudang (Read-Only Status Box) --}}
+                                <div class="rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between {{ $isHabis ? 'bg-rose-50/80 border-rose-200' : ($isMenipis ? 'bg-amber-50/80 border-amber-200' : 'bg-surface-2/60 border-line/70') }}">
+                                    <div class="flex items-center justify-between gap-1 mb-1">
+                                        <span class="text-[10px] uppercase font-bold tracking-wider text-muted">Stok Gudang</span>
+                                        @if ($isHabis)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                                <span>Habis</span>
+                                            </span>
+                                        @elseif ($isMenipis)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                                                <span>Menipis</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                <span>Tersedia</span>
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div class="text-sm sm:text-base font-extrabold text-ink tabular-nums">
+                                            {{ Fmt::num($stok, 1) }} <span class="text-xs font-semibold text-muted">kg</span>
+                                        </div>
+                                        <span class="text-[10px] text-muted block mt-0.5 truncate">
+                                            @if ($isHabis)
+                                                Persediaan kosong · Tambah di menu Stok Gudang
+                                            @elseif ($isMenipis)
+                                                Mendekati batas aman 3 hari kandang
+                                            @else
+                                                Mencukupi kebutuhan adukan racikan
+                                            @endif
+                                        </span>
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="lbl text-[11px]" for="s{{ $fi->id }}">Batas Stok (Maksimal)</label>
-                                    <div class="relative flex items-center">
-                                        <input id="s{{ $fi->id }}" 
-                                               name="bahan[{{ $fi->id }}][stok]" 
-                                               type="number" 
-                                               min="0" 
-                                               step="0.5" 
-                                               inputmode="decimal" 
-                                               class="field !pr-10 font-semibold text-ink" 
-                                               value="{{ old("bahan.{$fi->id}.stok", (float) $fi->stok_kg) }}">
-                                        <span class="absolute right-3 text-xs font-bold text-muted pointer-events-none select-none">kg</span>
+
+                                {{-- Kolom 2: Harga Beli Satuan (Terkini) --}}
+                                <div class="flex flex-col justify-between">
+                                    <div>
+                                        <label class="lbl text-[11px]" for="h{{ $fi->id }}">Harga Beli Satuan (Terkini)</label>
+                                        <div class="relative flex items-center">
+                                            <span class="absolute left-3 text-xs font-bold text-muted pointer-events-none select-none">Rp</span>
+                                            <input id="h{{ $fi->id }}" 
+                                                   name="bahan[{{ $fi->id }}][harga]" 
+                                                   type="number" 
+                                                   min="0" 
+                                                   step="50" 
+                                                   inputmode="numeric" 
+                                                   class="field !pl-9 font-bold text-ink" 
+                                                   value="{{ old("bahan.{$fi->id}.harga", $fi->harga) }}">
+                                            <span class="absolute right-3 text-xs font-normal text-muted pointer-events-none select-none">/ kg</span>
+                                        </div>
                                     </div>
+                                    <span class="text-[10px] text-muted block mt-1">
+                                        Dapat disesuaikan jika harga beli saat ini berubah.
+                                    </span>
                                 </div>
                             </div>
 

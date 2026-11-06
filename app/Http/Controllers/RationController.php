@@ -32,8 +32,9 @@ class RationController extends Controller
         $recommendedStandardId = $recommendedStandard?->id;
         $defaultStandardId = $recommendedStandard?->id ?? ($standards->where('verified', true)->first()?->id ?? ($standards->first()?->id ?? 0));
         $konsumsi = $farm->konsumsi_per_ekor;
+        $pakanHarianKg = (float) max(1.0, ($farm->jumlah_ayam * ($farm->konsumsi_per_ekor ?: 0.11)));
 
-        return view('ransum.create', compact('farm', 'fis', 'standards', 'konsumsi', 'recommendedStandardId', 'defaultStandardId', 'recommendedStandard'));
+        return view('ransum.create', compact('farm', 'fis', 'standards', 'konsumsi', 'pakanHarianKg', 'recommendedStandardId', 'defaultStandardId', 'recommendedStandard'));
     }
 
     public function store(Request $r, RationCalculator $calc)
@@ -60,7 +61,7 @@ class RationController extends Controller
 
         $std = $farm->standards()->findOrFail($data['standard_id']);
 
-        // Simpan harga & stok yang diisi peternak. harga_updated_at hanya berubah bila harga berubah.
+        // Simpan harga & batasan nutrisi yang diisi peternak. Stok gudang tidak diubah di form racik ini.
         $aktif = 0;
         foreach ($farm->farmIngredients()->get() as $fi) {
             $in = $data['bahan'][$fi->id] ?? null;
@@ -69,7 +70,6 @@ class RationController extends Controller
             }
             $harga = (int) round((float) ($in['harga'] ?? $fi->harga));
             $upd = [
-                'stok_kg' => (float) ($in['stok'] ?? $fi->stok_kg),
                 'min_persen' => isset($in['min_persen']) && $in['min_persen'] !== '' ? (float) $in['min_persen'] : $fi->min_persen,
                 'max_persen' => isset($in['max_persen']) && $in['max_persen'] !== '' ? (float) $in['max_persen'] : $fi->max_persen,
                 'aktif' => ! empty($in['aktif']),
