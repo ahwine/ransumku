@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi 3D Maket Kandang Pintar RansumKu (360° All Angles)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f8fafc; overflow: hidden; height: 100vh; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+        
+        /* Top Navigation Bar */
+        .top-bar {
+            position: absolute; top: 16px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            pointer-events: none; z-index: 10;
+        }
+        .brand-pill {
+            pointer-events: auto; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px);
+            padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15);
+            display: flex; items-center; gap: 10px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+        }
+        .brand-dot { width: 10px; height: 10px; border-radius: 999px; background: #10b981; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+        .brand-title { font-size: 13px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
+        .brand-sub { font-size: 11px; color: #94a3b8; font-weight: 600; }
+
+        /* Floating View Switcher (Bottom-Center) */
+        .view-controls {
+            position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(16px);
+            padding: 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.6); z-index: 20;
+        }
+        .btn-view {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            color: #cbd5e1; padding: 9px 16px; border-radius: 999px; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-view:hover { background: rgba(255,255,255,0.15); color: #fff; transform: translateY(-1px); }
+        .btn-view.active { background: #059669; border-color: #10b981; color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,0.35); }
+
+        /* Side Info Overlay Card */
+        .info-card {
+            position: absolute; top: 80px; left: 20px; width: 320px;
+            background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.14); border-radius: 20px; padding: 18px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4); z-index: 10; pointer-events: auto;
+        }
+        .info-card h2 { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .info-card p { font-size: 11px; color: #94a3b8; line-height: 1.5; margin-bottom: 12px; }
+        .part-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+        .part-list::-webkit-scrollbar { width: 4px; }
+        .part-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .part-item {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; padding: 8px 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .part-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+        /* Screenshot & Hint Badge */
+        .hint-badge {
+            position: absolute; top: 80px; right: 20px;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px);
+            padding: 10px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12);
+            font-size: 11px; color: #cbd5e1; display: flex; flex-direction: column; gap: 6px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3); z-index: 10;
+        }
+        .btn-capture {
+            background: #2563eb; color: #fff; border: none; padding: 8px 12px; border-radius: 8px;
+            font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-capture:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="brand-pill">
+            <div class="brand-dot"></div>
+            <div>
+                <div class="brand-title">Maket 3D Interaktif · Kandang Ayam Petelur Pintar</div>
+                <div class="brand-sub">Prototipe 1 Kandang Tunggal Lengkap dengan 13 Komponen IoT</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Legend Card -->
+    <div class="info-card">
+        <h2 id="view-title">Sudut Isometrik (Bebas Putar 360°)</h2>
+        <p id="view-desc">Gunakan klik & geser mouse untuk memutar sudut bebas, scroll untuk zoom in/out.</p>
+        <div class="part-list">
+            <div class="part-item"><span>1. ESP32 + Expansion Shield</span><span class="part-badge">Console</span></div>
+            <div class="part-item"><span>2. Baterai 3x 18650 (12V)</span><span class="part-badge">Power</span></div>
+            <div class="part-item"><span>3. Sakelar Rocker ON/OFF</span><span class="part-badge">Switch</span></div>
+            <div class="part-item"><span>4. Step-Down LM2596 (5V)</span><span class="part-badge">Regulator</span></div>
+            <div class="part-item"><span>5. Layar OLED 0.96" I2C</span><span class="part-badge">Display</span></div>
+            <div class="part-item"><span>6. Sensor Suhu DHT22</span><span class="part-badge">Dalam</span></div>
+            <div class="part-item"><span>7. Driver Motor L298N</span><span class="part-badge">Pakan</span></div>
+            <div class="part-item"><span>8. Motor DC Kuning + Kereta</span><span class="part-badge">Rel Atas</span></div>
+            <div class="part-item"><span>9. 2x Micro Limit Switch</span><span class="part-badge">Ujung Rel</span></div>
+            <div class="part-item"><span>10. Relay 2-Channel 5V</span><span class="part-badge">Aktuator</span></div>
+            <div class="part-item"><span>11. Kipas DC 4x4 cm</span><span class="part-badge">Belakang</span></div>
+            <div class="part-item"><span>12. Pompa Celup + Selang</span><span class="part-badge">Misting</span></div>
+            <div class="part-item"><span>13. 2x Nipple Drinker Merah</span><span class="part-badge">Minum</span></div>
+        </div>
+    </div>
+
+    <!-- Right Screenshot Helper -->
+    <div class="hint-badge">
+        <div>💡 <em>Klik tombol di bawah untuk ganti sudut kamera otomatis</em></div>
+        <button class="btn-capture" onclick="takeSnapshot()">📸 Simpan Foto Sudut Ini (PNG)</button>
+    </div>
+
+    <!-- Bottom View Controls -->
+    <div class="view-controls">
+        <button class="btn-view active" onclick="setCameraView('iso')">🔄 Isometrik 3D</button>
+        <button class="btn-view" onclick="setCameraView('depan')">👁️ Depan</button>
+        <button class="btn-view" onclick="setCameraView('samping')">📐 Samping (Telur & Talang)</button>
+        <button class="btn-view" onclick="setCameraView('belakang')">💨 Belakang (Kipas)</button>
+        <button class="btn-view" onclick="setCameraView('atas')">🛰️ Atas (Layout Rel)</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // Setup Three.js Scene
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0f172a);
+        scene.fog = new THREE.FogExp2(0x0f172a, 0.008);
+
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.05; // don't go below ground
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfff5e6, 0.9);
+        dirLight.position.set(40, 70, 50);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 10;
+        dirLight.shadow.camera.far = 160;
+        dirLight.shadow.camera.left = -40;
+        dirLight.shadow.camera.right = 40;
+        dirLight.shadow.camera.top = 40;
+        dirLight.shadow.camera.bottom = -40;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.4);
+        fillLight.position.set(-40, 30, -30);
+        scene.add(fillLight);
+
+        // Materials Palette
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0xc89666, roughness: 0.6, metalness: 0.05 }); // Papan alas
+        const stickMat = new THREE.MeshStandardMaterial({ color: 0xdeb887, roughness: 0.7, metalness: 0.0 }); // Stik es krim
+        const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0xa07855, roughness: 0.7 });
+        const wireMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, wireframe: true, roughness: 0.3, metalness: 0.8 });
+        const eggMat = new THREE.MeshStandardMaterial({ color: 0xc68b59, roughness: 0.4 }); // Telur cokelat
+        const troughMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3 }); // Talang kuning
+        const cartMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3 }); // Kereta biru
+        const motorMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5 }); // Motor DC kuning
+        const fanMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 }); // Kipas hitam
+        const pcbBlack = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+        const pcbRed = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 });
+        const pcbBlue = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.5 });
+        const oledScreen = new THREE.MeshBasicMaterial({ color: 0x0ea5e9 }); // OLED glow
+        const nippleRed = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2 });
+        const pipeWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+
+        // 1. BASEBOARD (Alas Papan Kayu 50 x 30 cm)
+        const baseGeom = new THREE.BoxGeometry(50, 1.2, 30);
+        const baseMesh = new THREE.Mesh(baseGeom, woodMat);
+        baseMesh.position.y = -0.6;
+        baseMesh.receiveShadow = true;
+        scene.add(baseMesh);
+
+        // Grid Lines on Table
+        const gridHelper = new THREE.GridHelper(90, 30, 0x334155, 0x1e293b);
+        gridHelper.position.y = -1.25;
+        scene.add(gridHelper);
+
+        // 2. KANDANG AYAM (Panjang 36 cm, Lebar 16 cm, Tinggi 24 cm)
+        // Ditempatkan di area belakang (Z = -4)
+        const cageGroup = new THREE.Group();
+        cageGroup.position.set(0, 0, -4);
+        scene.add(cageGroup);
+
+        // Rangka Tiang Stik Es Krim (6 tiang: 3 depan, 3 belakang)
+        const postGeom = new THREE.BoxGeometry(0.8, 16, 0.8);
+        const postPositions = [
+            [-17.5, 8, 7.5], [0, 8, 7.5], [17.5, 8, 7.5], // depan
+            [-17.5, 8, -7.5], [0, 8, -7.5], [17.5, 8, -7.5] // belakang
+        ];
+        postPositions.forEach(p => {
+            const m = new THREE.Mesh(postGeom, stickMat);
+            m.position.set(...p);
+            m.castShadow = true;
+            cageGroup.add(m);
+        });
+
+        // Balok Horizontal Panjang (Bawah & Atas)
+        const beamXGeom = new THREE.BoxGeometry(36, 0.8, 0.8);
+        [-7.5, 7.5].forEach(z => {
+            const bBottom = new THREE.Mesh(beamXGeom, stickMat);
+            bBottom.position.set(0, 1, z);
+            cageGroup.add(bBottom);
+
+            const bTop = new THREE.Mesh(beamXGeom, stickMat);
+            bTop.position.set(0, 16, z);
+            cageGroup.add(bTop);
+        });
+
+        // Balok Horizontal Lebar
+        const beamZGeom = new THREE.BoxGeometry(0.8, 0.8, 16);
+        [-17.5, 0, 17.5].forEach(x => {
+            const b = new THREE.Mesh(beamZGeom, stickMat);
+            b.position.set(x, 16, 0);
+            cageGroup.add(b);
+        });
+
+        // Kuda-Kuda Atap Segitiga (Truss Atap Pelana)
+        [-17.5, 0, 17.5].forEach(x => {
+            const trussLeft = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 11), stickMat);
+            trussLeft.position.set(x, 19, -4);
+            trussLeft.rotation.x = Math.PI / 5.5;
+            cageGroup.add(trussLeft);
+
+            const trussRight = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 11), stickMat);
+            trussRight.position.set(x, 19, 4);
+            trussRight.rotation.x = -Math.PI / 5.5;
+            cageGroup.add(trussRight);
+        });
+
+        // Balok Bubungan Atap Teratas (Ridge Beam)
+        const ridgeBeam = new THREE.Mesh(new THREE.BoxGeometry(36, 0.6, 0.6), stickMat);
+        ridgeBeam.position.set(0, 22.5, 0);
+        cageGroup.add(ridgeBeam);
+
+        // Atap Transparan Sebagian (Mika Tipis)
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35, roughness: 0.1 });
+        const roofLeft = new THREE.Mesh(new THREE.BoxGeometry(36, 0.2, 11), roofMat);
+        roofLeft.position.set(0, 19.2, -4);
+        roofLeft.rotation.x = Math.PI / 5.5;
+        cageGroup.add(roofLeft);
+
+        // 3. SANGKAR KAWAT RAM DENGAN LANTAI MIRING (7 Derajat ke Depan)
+        // Lantai Kawat Miring
+        const floorGeom = new THREE.BoxGeometry(34, 0.2, 17);
+        const slopedFloor = new THREE.Mesh(floorGeom, wireMat);
+        slopedFloor.position.set(0, 3.2, 1.5);
+        slopedFloor.rotation.x = 0.12; // 7 derajat miring ke depan
+        cageGroup.add(slopedFloor);
+
+        // Bibir Cekungan Penampung Telur (Egg Tray Lip di Depan)
+        const eggTrayLip = new THREE.Mesh(new THREE.BoxGeometry(34, 1.2, 0.4), wireMat);
+        eggTrayLip.position.set(0, 2.7, 9.8);
+        cageGroup.add(eggTrayLip);
+
+        // Dinding Kawat Sangkar Baterai
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(34, 10, 0.2), wireMat);
+        backWall.position.set(0, 9, -6.8);
+        cageGroup.add(backWall);
+
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 10, 14), wireMat);
+        leftWall.position.set(-16.8, 9, 0);
+        cageGroup.add(leftWall);
+
+        const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 10, 14), wireMat);
+        rightWall.position.set(16.8, 9, 0);
+        cageGroup.add(rightWall);
+
+        // Sekat Pemisah Kawat Tengah (Membagi jadi 2 kompartemen)
+        const centerWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 10, 14), wireMat);
+        centerWall.position.set(0, 9, 0);
+        cageGroup.add(centerWall);
+
+        // Telur-Telur yang Menggelinding di Cekungan Depan
+        const eggGeom = new THREE.SphereGeometry(0.7, 16, 12);
+        eggGeom.scale(1, 1.25, 1);
+        [-12, -7, -2, 4, 9, 13].forEach(ex => {
+            const egg = new THREE.Mesh(eggGeom, eggMat);
+            egg.position.set(ex, 2.4, 9.2);
+            egg.rotation.z = Math.PI / 2;
+            egg.castShadow = true;
+            cageGroup.add(egg);
+        });
+
+        // 4. TALANG PAKAN KUNING & REL KERETA PAKAN (Posisi di atas cekungan telur)
+        // Talang Pakan Kuning U-Shape
+        const troughGeom = new THREE.BoxGeometry(34, 1.8, 2.2);
+        const trough = new THREE.Mesh(troughGeom, troughMat);
+        trough.position.set(0, 6.5, 8.5);
+        trough.castShadow = true;
+        cageGroup.add(trough);
+
+        // Rel Stik Es Krim di atas Talang
+        const railGeom = new THREE.BoxGeometry(34, 0.3, 0.5);
+        [-0.8, 0.8].forEach(rz => {
+            const rail = new THREE.Mesh(railGeom, stickMat);
+            rail.position.set(0, 7.5, 8.5 + rz);
+            cageGroup.add(rail);
+        });
+
+        // Kereta Pakan Biru (Feeder Hopper Shuttle)
+        const cartGeom = new THREE.BoxGeometry(4.5, 3.2, 3);
+        const feederCart = new THREE.Mesh(cartGeom, cartMat);
+        feederCart.position.set(-4, 9.2, 8.5);
+        feederCart.castShadow = true;
+        cageGroup.add(feederCart);
+
+        // Motor DC Kuning (di Ujung Kanan Rel)
+        const motorMesh = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.2, 3.5), motorMat);
+        motorMesh.position.set(16.2, 7.8, 8.5);
+        motorMesh.castShadow = true;
+        cageGroup.add(motorMesh);
+
+        // 2x Micro Limit Switch (Ujung A di kiri, Ujung B di kanan)
+        const limitGeom = new THREE.BoxGeometry(0.6, 0.8, 1.2);
+        const limitA = new THREE.Mesh(limitGeom, fanMat);
+        limitA.position.set(-16.2, 8.0, 8.5);
+        cageGroup.add(limitA);
+
+        const limitB = new THREE.Mesh(limitGeom, fanMat);
+        limitB.position.set(14.2, 8.0, 8.5);
+        cageGroup.add(limitB);
+
+        // 5. PERALATAN DI DALAM KANDANG (Nipple Drinker & Sensor DHT22)
+        // Pipa Air Minum Putih Melintang
+        const pipeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 34), pipeWhite);
+        pipeMesh.rotation.z = Math.PI / 2;
+        pipeMesh.position.set(0, 11, -1);
+        cageGroup.add(pipeMesh);
+
+        // 2x Nipple Drinker Merah (Menghadap Bawah)
+        [-8, 8].forEach(nx => {
+            const nipple = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.4, 1.2, 12), nippleRed);
+            nipple.position.set(nx, 10.2, -1);
+            cageGroup.add(nipple);
+        });
+
+        // Sensor DHT22 Putih di Tengah
+        const dhtMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.2, 0.8), pipeWhite);
+        dhtMesh.position.set(0, 11, -6.2);
+        cageGroup.add(dhtMesh);
+
+        // 6. PERALATAN BELAKANG (Kipas DC 4x4 cm & Pompa Celup)
+        // Dinding Kayu Belakang dengan Lubang Kipas
+        const backWallWood = new THREE.Mesh(new THREE.BoxGeometry(36, 6, 0.4), stickMat);
+        backWallWood.position.set(0, 13, -7.5);
+        cageGroup.add(backWallWood);
+
+        // Kipas DC 4x4 cm (Hitam)
+        const fanGeom = new THREE.BoxGeometry(4, 4, 1.2);
+        const fanMesh = new THREE.Mesh(fanGeom, fanMat);
+        fanMesh.position.set(0, 13, -7.8);
+        fanMesh.castShadow = true;
+        cageGroup.add(fanMesh);
+
+        // Wadah Toples Kaca Air + Pompa Celup di Samping Kiri Belakang
+        const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45, roughness: 0.1 });
+        const jarMesh = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 4.5, 16), glassMat);
+        jarMesh.position.set(-21, 2.2, -8);
+        scene.add(jarMesh);
+
+        // Pompa Celup Hitam di dalam Jar
+        const pumpMesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 1.8), fanMat);
+        pumpMesh.position.set(-21, 1.0, -8);
+        scene.add(pumpMesh);
+
+        // Selang Misting Bening Naik ke Atap
+        const tubeCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-21, 2.5, -8),
+            new THREE.Vector3(-21, 14, -8),
+            new THREE.Vector3(-18, 22.5, -4),
+            new THREE.Vector3(0, 22.5, -4),
+            new THREE.Vector3(16, 22.5, -4)
+        ]);
+        const tubeGeom = new THREE.TubeGeometry(tubeCurve, 30, 0.2, 8, false);
+        const tubeMesh = new THREE.Mesh(tubeGeom, glassMat);
+        scene.add(tubeMesh);
+
+        // 7. CONSOLE MEJA KONTROLER OPERATOR DI DEPAN (Miring 20 Derajat)
+        const consoleGroup = new THREE.Group();
+        consoleGroup.position.set(0, 1.2, 9.5);
+        consoleGroup.rotation.x = -0.35; // miring menghadap juri
+        scene.add(consoleGroup);
+
+        // Papan Kayu Console Stik Es Krim
+        const consoleBoard = new THREE.Mesh(new THREE.BoxGeometry(44, 0.6, 9.5), darkWoodMat);
+        consoleBoard.receiveShadow = true;
+        consoleGroup.add(consoleBoard);
+
+        // Komponen 3: Saklar Rocker Merah
+        const switchBase = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 2.4), fanMat);
+        switchBase.position.set(-18.5, 0.6, 0);
+        consoleGroup.add(switchBase);
+        const switchBtn = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 1.8), pcbRed);
+        switchBtn.position.set(-18.5, 1.0, 0);
+        consoleGroup.add(switchBtn);
+
+        // Komponen 2: Baterai Pack 3x 18650
+        const battHolder = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.4, 4.5), fanMat);
+        battHolder.position.set(-13.5, 0.8, 0);
+        consoleGroup.add(battHolder);
+        const cellGeom = new THREE.CylinderGeometry(0.7, 0.7, 5.8, 12);
+        cellGeom.rotateZ(Math.PI / 2);
+        [-1.3, 0, 1.3].forEach(bz => {
+            const cell = new THREE.Mesh(cellGeom, cartMat); // biru 18650
+            cell.position.set(-13.5, 1.4, bz);
+            consoleGroup.add(cell);
+        });
+
+        // Komponen 4: Step-Down LM2596 (Biru dengan Trimmer Kuningan)
+        const lmMesh = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.8, 2.4), pcbBlue);
+        lmMesh.position.set(-7.5, 0.6, 0);
+        consoleGroup.add(lmMesh);
+
+        // Komponen 1: ESP32 + Expansion Shield (Hitam)
+        const espMesh = new THREE.Mesh(new THREE.BoxGeometry(6.5, 1.2, 5.2), pcbBlack);
+        espMesh.position.set(-1.2, 0.8, 0);
+        consoleGroup.add(espMesh);
+
+        // Komponen 7: Driver Motor L298N (Merah dengan Heatsink Hitam)
+        const l298Mesh = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.8, 4.4), pcbRed);
+        l298Mesh.position.set(5.5, 0.6, 0);
+        consoleGroup.add(l298Mesh);
+        const heatsink = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 3.2), fanMat);
+        heatsink.position.set(5.5, 1.8, 0);
+        consoleGroup.add(heatsink);
+
+        // Komponen 10: Relay 2-Channel (Biru Kotak)
+        const relayMesh = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.6, 3.6), pcbBlue);
+        relayMesh.position.set(11.5, 1.0, 0);
+        consoleGroup.add(relayMesh);
+
+        // Komponen 5: Layar OLED 0.96" I2C
+        const oledFrame = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.5, 3.2), pcbBlack);
+        oledFrame.position.set(17.2, 0.6, 0);
+        consoleGroup.add(oledFrame);
+        const oledGlass = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.2, 2.0), oledScreen);
+        oledGlass.position.set(17.2, 0.9, 0);
+        consoleGroup.add(oledGlass);
+
+        // Camera Views Preset
+        const views = {
+            iso: {
+                pos: [32, 28, 38],
+                target: [0, 8, 2],
+                title: "Sudut Isometrik (Bebas Putar 360°)",
+                desc: "Gunakan klik & drag mouse untuk memutar model secara bebas, scroll roda mouse untuk zoom in/out."
+            },
+            depan: {
+                pos: [0, 11, 46],
+                target: [0, 8, 4],
+                title: "Tampak Depan (Front View)",
+                desc: "Memperlihatkan Console Kontroler IoT miring di depan, deretan telur di luar kandang, serta talang pakan kuning dan kereta pakan."
+            },
+            samping: {
+                pos: [48, 10, -3],
+                target: [0, 8, -3],
+                title: "Tampak Samping (Side Cross-Section)",
+                desc: "Memperlihatkan sudut kemiringan lantai kawat 7° ke depan, telur menggelinding ke cekungan luar, talang pakan tepat di atasnya, dan kipas belakang."
+            },
+            belakang: {
+                pos: [0, 15, -46],
+                target: [0, 10, -4],
+                title: "Tampak Belakang (Rear View)",
+                desc: "Memperlihatkan dinding stik es krim belakang, Kipas DC Exhaust 4x4 cm pembuang hawa panas, dan toples air pompa celup."
+            },
+            atas: {
+                pos: [0, 52, 2],
+                target: [0, 5, 2],
+                title: "Tampak Atas (Top-Down Layout)",
+                desc: "Memperlihatkan denah jalur rel kereta pakan, Motor DC kuning di kanan, 2 limit switch, pipa nipple drinker, dan tata letak kontroler."
+            }
+        };
+
+        let currentTween = null;
+        function setCameraView(viewKey) {
+            document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
+            event?.target?.classList.add('active');
+
+            const v = views[viewKey];
+            if (!v) return;
+
+            document.getElementById('view-title').textContent = v.title;
+            document.getElementById('view-desc').textContent = v.desc;
+
+            // Smooth Camera Transition
+            const startPos = camera.position.clone();
+            const endPos = new THREE.Vector3(...v.pos);
+            const startTarget = controls.target.clone();
+            const endTarget = new THREE.Vector3(...v.target);
+
+            let t = 0;
+            if (currentTween) cancelAnimationFrame(currentTween);
+
+            function animateTransition() {
+                t += 0.04;
+                if (t <= 1) {
+                    camera.position.lerpVectors(startPos, endPos, easeInOutCubic(t));
+                    controls.target.lerpVectors(startTarget, endTarget, easeInOutCubic(t));
+                    controls.update();
+                    currentTween = requestAnimationFrame(animateTransition);
+                } else {
+                    camera.position.copy(endPos);
+                    controls.target.copy(endTarget);
+                    controls.update();
+                }
+            }
+            animateTransition();
+        }
+
+        function easeInOutCubic(x) {
+            return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+        }
+
+        // Initialize at Iso
+        camera.position.set(32, 28, 38);
+        controls.target.set(0, 8, 2);
+        controls.update();
+
+        // Animation Loop
+        let clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // Sedikit animasikan kereta pakan bolak-balik perlahan sebagai simulasi
+            const time = clock.getElapsedTime() * 0.8;
+            feederCart.position.x = Math.sin(time) * 10;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Responsive Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Screenshot snapshot
+        function takeSnapshot() {
+            renderer.render(scene, camera);
+            const dataURL = renderer.domElement.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.download = 'Maket_Kandang_RansumKu_' + Date.now() + '.png';
+            a.href = dataURL;
+            a.click();
+        }
+    </script>
+</body>
+</html>
+
