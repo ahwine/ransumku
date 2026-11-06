@@ -262,16 +262,16 @@
                     @foreach ($masterCatalog as $key => $item)
                         @php $alreadyIn = in_array($item['nama'], $existingNames, true); @endphp
                         <option value="{{ $key }}" 
-                                data-kategori="{{ $item['kategori'] }}"
-                                data-protein="{{ $item['protein'] }}"
-                                data-energi="{{ $item['energi'] }}"
-                                data-kalsium="{{ $item['kalsium'] }}"
-                                data-fosfor="{{ $item['fosfor'] }}"
-                                data-serat="{{ $item['serat'] }}"
-                                data-harga="{{ $item['harga_default'] }}"
-                                data-deskripsi="{{ $item['deskripsi'] }}"
+                                data-kategori="{{ $item['kategori'] ?? '' }}"
+                                data-protein="{{ $item['protein'] ?? 0 }}"
+                                data-energi="{{ $item['energi'] ?? 0 }}"
+                                data-kalsium="{{ $item['kalsium'] ?? 0 }}"
+                                data-fosfor="{{ $item['fosfor'] ?? 0 }}"
+                                data-serat="{{ $item['serat'] ?? 0 }}"
+                                data-harga="{{ $item['harga_default'] ?? 0 }}"
+                                data-deskripsi="{{ $item['deskripsi'] ?? $item['catatan_keamanan'] ?? '' }}"
                                 {{ $alreadyIn ? 'class=text-muted' : '' }}>
-                            {{ $item['label'] }} ({{ $item['kategori'] }}) {{ $alreadyIn ? '— [Sudah Ada di Gudang]' : '' }}
+                            {{ $item['label'] ?? $item['nama'] }} ({{ $item['kategori'] ?? '' }}) {{ $alreadyIn ? '— [Sudah Ada di Gudang]' : '' }}
                         </option>
                     @endforeach
                 </select>

@@ -522,16 +522,16 @@
                     <tbody class="divide-y divide-line bg-white">
                         @foreach ($asFed['items'] ?? $baris as $b)
                             <tr>
-                                <td class="py-2 px-3 font-semibold text-ink">{{ $b['nama'] }}</td>
+                                <td class="py-2 px-3 font-semibold text-ink">{{ $b['nama'] ?? '' }}</td>
                                 <td class="py-2 px-3 text-right font-black text-brand tabular-nums">
-                                    {{ Fmt::num($b['as_fed_kg'] ?? $b['kg'], 2) }} kg
+                                    {{ Fmt::num($b['kg_as_fed'] ?? $b['kg'] ?? 0, 2) }} kg
                                 </td>
                             </tr>
                         @endforeach
                         <tr class="bg-surface-2/60 font-black">
                             <td class="py-2.5 px-3 text-ink">Total Pakan Segar:</td>
                             <td class="py-2.5 px-3 text-right text-brand tabular-nums text-sm">
-                                {{ Fmt::num($totalSegarKg ?? $ration->total_kg, 2) }} kg
+                                {{ Fmt::num($asFed['total_as_fed_kg'] ?? $ration->total_kg, 2) }} kg
                             </td>
                         </tr>
                     </tbody>

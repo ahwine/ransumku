@@ -57,6 +57,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 65.0,
                 'catatan_keamanan' => 'Batas wajar 50-65% untuk menjaga variasi sumber asam amino.',
+                'deskripsi' => 'Batas wajar 50-65% untuk menjaga variasi sumber asam amino.',
             ],
             'Dedak' => [
                 'nama' => 'Dedak',
@@ -72,6 +73,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 30.0,
                 'catatan_keamanan' => 'Maksimal 25-30% pada ayam petelur agar serat kasar dan asam fitat tidak berlebih.',
+                'deskripsi' => 'Maksimal 25-30% pada ayam petelur agar serat kasar dan asam fitat tidak berlebih.',
             ],
             'Konsentrat' => [
                 'nama' => 'Konsentrat',
@@ -87,6 +89,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 40.0,
                 'catatan_keamanan' => 'Konsentrat komersial umumnya dirancang 30-35% dalam ransum layer.',
+                'deskripsi' => 'Konsentrat komersial umumnya dirancang 30-35% dalam ransum layer.',
             ],
             'Kapur' => [
                 'nama' => 'Kapur',
@@ -102,6 +105,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 10.0,
                 'catatan_keamanan' => 'Maksimal 8-10% sebagai sumber kalsium utama pembentukan kerabang telur.',
+                'deskripsi' => 'Maksimal 8-10% sebagai sumber kalsium utama pembentukan kerabang telur.',
             ],
             'Bungkil kedelai' => [
                 'nama' => 'Bungkil kedelai',
@@ -117,6 +121,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 30.0,
                 'catatan_keamanan' => 'Sumber protein nabati bermutu tinggi, batas aman 25-30%.',
+                'deskripsi' => 'Sumber protein nabati bermutu tinggi, batas aman 25-30%.',
             ],
             'Menir' => [
                 'nama' => 'Menir',
@@ -132,6 +137,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 35.0,
                 'catatan_keamanan' => 'Sumber energi pengganti jagung, aman hingga 30-35%.',
+                'deskripsi' => 'Sumber energi pengganti jagung, aman hingga 30-35%.',
             ],
             'Tepung ikan' => [
                 'nama' => 'Tepung ikan',
@@ -147,6 +153,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 8.0,
                 'catatan_keamanan' => 'Sumber protein hewani & metionin. Batasi 5-8% agar telur tidak berbau amis.',
+                'deskripsi' => 'Sumber protein hewani & metionin. Batasi 5-8% agar telur tidak berbau amis.',
             ],
             'Minyak sawit' => [
                 'nama' => 'Minyak sawit',
@@ -162,6 +169,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 3.0,
                 'catatan_keamanan' => 'Maksimal 2-3% sebagai booster energi metabolis padat dan perekat debu pakan.',
+                'deskripsi' => 'Maksimal 2-3% sebagai booster energi metabolis padat dan perekat debu pakan.',
             ],
             'Tepung kulit kerang' => [
                 'nama' => 'Tepung kulit kerang',
@@ -177,6 +185,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 10.0,
                 'catatan_keamanan' => 'Partikel kalsium kasar pelepasan lambat, efektif untuk kalsifikasi kerabang malam hari.',
+                'deskripsi' => 'Partikel kalsium kasar pelepasan lambat, efektif untuk kalsifikasi kerabang malam hari.',
             ],
             'Polard gandum' => [
                 'nama' => 'Polard gandum',
@@ -192,6 +201,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 20.0,
                 'catatan_keamanan' => 'Batas toleransi 10-20% sebagai sumber serat mudah cerna dan pemacu nafsu makan.',
+                'deskripsi' => 'Batas toleransi 10-20% sebagai sumber serat mudah cerna dan pemacu nafsu makan.',
             ],
             'Bungkil kelapa' => [
                 'nama' => 'Bungkil kelapa',
@@ -207,6 +217,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 15.0,
                 'catatan_keamanan' => 'Maksimal 10-15% dalam ransum karena tinggi serat kasar dan mudah tengik.',
+                'deskripsi' => 'Maksimal 10-15% dalam ransum karena tinggi serat kasar dan mudah tengik.',
             ],
             'Premix layer' => [
                 'nama' => 'Premix layer',
@@ -222,6 +233,7 @@ class FarmBootstrap
                 'min_persen' => 0.0,
                 'max_persen' => 2.0,
                 'catatan_keamanan' => 'Campuran mikromineral & vitamin esensial. Gunakan 0.5-2% untuk daya tahan tubuh.',
+                'deskripsi' => 'Campuran mikromineral & vitamin esensial. Gunakan 0.5-2% untuk daya tahan tubuh.',
             ],
         ];
     }
