@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\RationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StandardController;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +56,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/catatan', [LogController::class, 'store'])->name('catatan.store');
         Route::delete('/catatan/{log}', [LogController::class, 'destroy'])->name('catatan.destroy');
         Route::post('/pembelian', [LogController::class, 'simpanPembelian'])->name('pembelian.store');
+
+        // Modul Laporan Sistem Terpadu
+        Route::get('/laporan', [ReportController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/unduh-pdf', [ReportController::class, 'unduhPdf'])->name('laporan.pdf');
+        Route::get('/laporan/unduh-excel', [ReportController::class, 'unduhExcel'])->name('laporan.excel');
+        Route::get('/laporan/unduh-csv', [ReportController::class, 'unduhCsv'])->name('laporan.csv');
 
         // Modul C: Asisten
         Route::get('/asisten', [AssistantController::class, 'index'])->name('asisten.index');

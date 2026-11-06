@@ -29,9 +29,28 @@
 
             {{-- Grid Menu Tambahan --}}
             <div class="space-y-3">
-                <span class="text-[10px] font-extrabold tracking-wider uppercase text-muted px-1 block">FITUR IOT & KONTROLER</span>
+                <span class="text-[10px] font-extrabold tracking-wider uppercase text-muted px-1 block">LAPORAN & MONITORING IOT</span>
 
-                {{-- Featured Card: Kontroler & 3D Digital Twin --}}
+                {{-- Featured Card 1: Laporan Sistem Terpadu --}}
+                <a href="{{ route('laporan.index') }}" class="p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 {{ request()->routeIs('laporan.*') ? 'bg-brand/10 border-brand/40 shadow-xs' : 'bg-gradient-to-r from-emerald-50/80 via-teal-50/40 to-white hover:bg-surface border-emerald-200 shadow-2xs' }}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl {{ request()->routeIs('laporan.*') ? 'bg-brand text-white' : 'bg-emerald-100 text-brand' }} grid place-items-center shrink-0 shadow-2xs">
+                            <span class="material-symbols-outlined text-[22px]">assessment</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-xs font-black text-ink block">Laporan Sistem</span>
+                                <span class="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase">
+                                    Menyeluruh
+                                </span>
+                            </div>
+                            <span class="text-[10px] text-muted">Rekap produksi, keuangan, ransum, stok, IoT & cetak A4</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-brand text-[20px] shrink-0">chevron_right</span>
+                </a>
+
+                {{-- Featured Card 2: Kontroler & 3D Digital Twin --}}
                 <a href="{{ route('kontroler.index') }}" class="p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 {{ request()->routeIs('kontroler.*') ? 'bg-purple-50 border-purple-300 shadow-xs' : 'bg-gradient-to-r from-purple-50/70 via-indigo-50/40 to-white hover:bg-surface border-purple-200 shadow-2xs' }}">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl {{ request()->routeIs('kontroler.*') ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700' }} grid place-items-center shrink-0 shadow-2xs">

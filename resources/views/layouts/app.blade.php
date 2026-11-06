@@ -62,6 +62,10 @@
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('ransum.*') ? 'text-brand' : '' }}">calculate</span>
                 <span>Peracik Ransum</span>
             </a>
+            <a href="{{ route('laporan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('laporan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('laporan.*') ? 'text-brand' : '' }}">assessment</span>
+                <span>Laporan Sistem</span>
+            </a>
             <a href="{{ route('asisten.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('asisten.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('asisten.*') ? 'text-brand' : '' }}">psychology</span>

@@ -268,7 +268,13 @@ class AssistantController extends Controller
         }
 
         $artisanPath = base_path('artisan');
-        $phpBinary = PHP_BINARY ?: 'php';
+        $phpBinary = PHP_BINARY ?: '';
+
+        if ($phpBinary === '' && is_file(base_path('frankenphp'))) {
+            $phpBinary = base_path('frankenphp');
+        } elseif ($phpBinary === '') {
+            $phpBinary = 'php';
+        }
 
         if (str_ends_with(strtolower($phpBinary), 'php-cgi.exe')) {
             $phpBinary = str_ireplace('php-cgi.exe', 'php.exe', $phpBinary);
@@ -356,6 +362,7 @@ class AssistantController extends Controller
 
         if ($r->wantsJson() || $r->ajax()) {
             $unreadCount = $farm->alerts()->where('dibaca', false)->count();
+
             return response()->json(['success' => true, 'unread_count' => $unreadCount]);
         }
 

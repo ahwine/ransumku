@@ -14,6 +14,21 @@ class Purchase extends Model
         return ['tanggal' => 'date'];
     }
 
-    public function farm(): BelongsTo { return $this->belongsTo(Farm::class); }
-    public function ingredient(): BelongsTo { return $this->belongsTo(Ingredient::class); }
+    public function farm(): BelongsTo
+    {
+        return $this->belongsTo(Farm::class);
+    }
+
+    public function ingredient(): BelongsTo
+    {
+        return $this->belongsTo(Ingredient::class);
+    }
+
+    /**
+     * Menghitung selisih total belanja nyata terhadap harga acuan formulasi (Rp).
+     */
+    public function selisih(): float
+    {
+        return (float) (($this->harga_nyata - $this->harga_estimasi) * $this->kg);
+    }
 }

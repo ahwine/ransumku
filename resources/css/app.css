@@ -312,7 +312,7 @@
 }
 
 /* ============================================================
-   Gaya Cetak Laporan Resmi A4 / PDF (Buku Kandang)
+   Gaya Cetak Laporan Resmi A4 / PDF (Laporan Sistem & Buku Kandang)
    ============================================================ */
 @media print {
     @page {
@@ -320,7 +320,7 @@
         margin: 10mm 12mm 12mm 12mm;
     }
 
-    /* Sembunyikan elemen navigasi dan kontrol aplikasi */
+    /* Sembunyikan seluruh elemen layar aplikasi di luar lembar dokumen resmi */
     aside,
     header,
     nav,
@@ -330,9 +330,15 @@
     #live-preview-box,
     form,
     [data-buku-grafik-container],
+    .laporan-screen-only,
     .no-print,
     .modal-toolbar,
-    .modal-backdrop-blur {
+    .modal-backdrop-blur,
+    #toast-container,
+    #modal-konfirmasi-universal,
+    #modal-catat-harian,
+    #modal-menu-mobile,
+    #modal-pilih-kandang-mobile {
         display: none !important;
     }
 
@@ -340,18 +346,22 @@
         background: #ffffff !important;
         color: #0f172a !important;
         font-family: 'Plus Jakarta Sans', Arial, sans-serif !important;
-        font-size: 10.5pt !important;
-        line-height: 1.4 !important;
+        font-size: 9.5pt !important;
+        line-height: 1.38 !important;
         margin: 0 !important;
         padding: 0 !important;
+        overflow: visible !important;
+        height: auto !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
-    main {
+    main,
+    main > div {
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
     }
 
     /* Tampilkan modal sebagai halaman cetak normal */
@@ -389,7 +399,7 @@
     .print-table {
         width: 100% !important;
         border-collapse: collapse !important;
-        font-size: 8.5pt !important;
+        font-size: 8.2pt !important;
         font-variant-numeric: tabular-nums !important;
     }
 
@@ -404,24 +414,35 @@
     .print-table th,
     .print-table td {
         border: 1px solid #cbd5e1 !important;
-        padding: 4px 6px !important;
+        padding: 3.5px 6px !important;
     }
 
     .print-table th {
-        background-color: #f1f5f9 !important;
-        color: #0f172a !important;
-        font-weight: 700 !important;
+        background-color: #ecfdf5 !important;
+        color: #064e3b !important;
+        font-weight: 800 !important;
+    }
+
+    .print-table th.text-left {
+        text-align: left !important;
+    }
+
+    .print-table th.text-right {
+        text-align: right !important;
+    }
+
+    .print-table th.text-center {
         text-align: center !important;
     }
 
-    .print-table tr:nth-child(even) td {
+    .print-table tbody tr:nth-child(even) td {
         background-color: #f8fafc !important;
     }
 
     .print-table tfoot td {
         background-color: #f1f5f9 !important;
         font-weight: 800 !important;
-        border-top: 2px solid #334155 !important;
+        border-top: 1.5px solid #0f766e !important;
     }
 
     .page-break-avoid {

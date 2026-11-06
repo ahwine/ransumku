@@ -3,38 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyLog;
-use App\Models\Purchase;
 use App\Services\AnomalyDetector;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class LogController extends Controller
 {
-    public function index(Request $r)
+    public function index(Request $r): View|RedirectResponse
     {
+        if ($r->query('tab') === 'dashboard') {
+            return redirect()->route('laporan.index', $r->only('rentang'));
+        }
+
         $farm = $this->farm();
-        $rentang = $r->query('rentang') === 'bulan' ? 30 : 7;
         $harga = $farm->hargaPakanPerKg();
 
-        $logs = $farm->logs()->where('tanggal', '>=', now()->subDays($rentang - 1)->toDateString())
-            ->orderBy('tanggal')->get();
-
-        $labels = $logs->map(fn ($l) => $l->tanggal->format('j/n'))->all();
-        $laporan = $this->laporanPeriodik($farm, $harga, $rentang);
-
-        $rataPakan = $laporan['ini']['hari'] ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 1) : 0;
-        $rataTelur = round($laporan['ini']['rata_telur']);
-        $rataBiaya = $laporan['ini']['hari'] ? round($laporan['ini']['biaya_pakan'] / $laporan['ini']['hari']) : 0;
-        $rataEfisiensi = round($laporan['ini']['biaya_kg_telur']);
-
-        $grafik = [
-            'pakan' => $this->chart('bar', $labels, 'Pakan (kg)', $logs->pluck('pakan_kg')->map(fn ($v) => (float) $v)->all(), '#c97a1e', $rataPakan),
-            'telur' => $this->chart('line', $labels, 'Telur (butir)', $logs->pluck('telur_butir')->all(), '#116a3a', $rataTelur),
-            'biaya' => $this->chart('line', $labels, 'Biaya pakan (Rp, estimasi)', $logs->map(fn ($l) => round($l->pakan_kg * $harga))->all(), '#0e7490', $rataBiaya),
-            'efisiensi' => $this->chart('line', $labels, 'Biaya pakan per kg telur (Rp, estimasi)', $logs->map(fn ($l) => $l->telurKgEfektif() > 0 ? round($l->pakan_kg * $harga / $l->telurKgEfektif()) : 0)->all(), '#7c3aed', $rataEfisiensi),
-        ];
-
         $selectedDate = $r->query('tanggal', today()->toDateString());
-        $form = $farm->logs()->whereDate('tanggal', $selectedDate)->first() ?? new DailyLog(['tanggal' => \Illuminate\Support\Carbon::parse($selectedDate)]);
+        $form = $farm->logs()->whereDate('tanggal', $selectedDate)->first() ?? new DailyLog(['tanggal' => Carbon::parse($selectedDate)]);
         $isEdit = $farm->logs()->whereDate('tanggal', $selectedDate)->exists();
 
         $filterPeriode = $r->query('periode', 'semua');
@@ -77,10 +64,10 @@ class LogController extends Controller
         $bahan = $farm->ingredients()->orderBy('nama')->get();
         $selisihTotal = $beli->sum(fn ($p) => ($p->harga_nyata - $p->harga_estimasi) * $p->kg);
 
-        return view('catatan.index', compact('farm', 'rentang', 'logs', 'grafik', 'laporan', 'form', 'isEdit', 'riwayat', 'allLogs', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam', 'filterPeriode', 'cariTanggal'));
+        return view('catatan.index', compact('farm', 'form', 'isEdit', 'riwayat', 'allLogs', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam', 'filterPeriode', 'cariTanggal'));
     }
 
-    public function store(Request $r, AnomalyDetector $detector)
+    public function store(Request $r, AnomalyDetector $detector): RedirectResponse
     {
         $data = $r->validate([
             'tanggal' => 'required|date|before_or_equal:today',
@@ -106,14 +93,14 @@ class LogController extends Controller
         return redirect()->route('catatan.index', ['tab' => 'form'])->with('ok', 'Catatan harian berhasil disimpan!');
     }
 
-    public function destroy(DailyLog $log)
+    public function destroy(DailyLog $log): RedirectResponse
     {
         $this->own($log)->delete();
 
         return redirect()->route('catatan.index')->with('ok', 'Catatan dihapus.');
     }
 
-    public function simpanPembelian(Request $r)
+    public function simpanPembelian(Request $r): RedirectResponse
     {
         $data = $r->validate([
             'ingredient_id' => 'required|integer',
@@ -149,108 +136,5 @@ class LogController extends Controller
         }
 
         return redirect()->route('catatan.index', ['tab' => 'beli'])->with('ok', $msg);
-    }
-
-    private function chart(string $type, array $labels, string $label, array $data, string $warna, ?float $rataRata = null): array
-    {
-        $n = count($data);
-        $pointRadius = $type === 'line' ? array_fill(0, $n, 0) : 0;
-        if ($type === 'line' && $n > 0) {
-            $pointRadius[$n - 1] = 4;
-        }
-        $pointHoverRadius = $type === 'line' ? array_fill(0, $n, 4) : 0;
-        if ($type === 'line' && $n > 0) {
-            $pointHoverRadius[$n - 1] = 6;
-        }
-
-        $fillColor = match ($warna) {
-            '#116a3a' => 'rgba(17, 106, 58, 0.12)',
-            '#0e7490' => 'rgba(14, 116, 144, 0.12)',
-            '#7c3aed' => 'rgba(124, 58, 237, 0.12)',
-            default => $type === 'bar' ? $warna : $warna.'22',
-        };
-
-        $datasets = [
-            [
-                'label' => $label,
-                'type' => $type,
-                'data' => $data,
-                'borderColor' => $warna,
-                'backgroundColor' => $type === 'bar' ? $warna : $fillColor,
-                'fill' => $type === 'line',
-                'tension' => .35,
-                'borderWidth' => 2.5,
-                'pointRadius' => $pointRadius,
-                'pointHoverRadius' => $pointHoverRadius,
-                'pointBackgroundColor' => '#FFFFFF',
-                'pointBorderColor' => $warna,
-                'pointBorderWidth' => 2,
-                'borderRadius' => $type === 'bar' ? 4 : 0,
-                'maxBarThickness' => 24,
-            ],
-        ];
-
-        if ($rataRata !== null && $n > 0) {
-            $datasets[] = [
-                'label' => 'Rata-rata',
-                'type' => 'line',
-                'data' => array_fill(0, $n, round($rataRata, 2)),
-                'borderColor' => '#64748b',
-                'borderWidth' => 1.5,
-                'borderDash' => [4, 4],
-                'pointRadius' => 0,
-                'pointHoverRadius' => 0,
-                'fill' => false,
-            ];
-        }
-
-        return [
-            'type' => $type,
-            'labels' => $labels,
-            'datasets' => $datasets,
-            'zero' => false,
-        ];
-    }
-
-    private function laporanPeriodik($farm, float $harga, int $rentang = 7): array
-    {
-        $days = max(1, $rentang - 1);
-        $ini = $farm->logs()->where('tanggal', '>=', now()->subDays($days)->toDateString())->get();
-        $lalu = $farm->logs()->whereBetween('tanggal', [
-            now()->subDays($days * 2 + 1)->toDateString(),
-            now()->subDays($days + 1)->toDateString(),
-        ])->get();
-
-        $hitung = function ($c) use ($harga) {
-            $n = max(1, $c->count());
-            $telurKg = $c->sum(fn ($l) => $l->telurKgEfektif());
-            $pakan = (float) $c->sum('pakan_kg');
-            $hargaTelurKg = (int) config('ransumku.harga_telur_default', 26000);
-            $pendapatanTelur = (int) round($telurKg * $hargaTelurKg);
-            $biayaPakan = (int) round($pakan * $harga);
-            $marginKotor = $pendapatanTelur - $biayaPakan;
-
-            return [
-                'hari' => $c->count(),
-                'pakan' => $pakan,
-                'telur' => (int) $c->sum('telur_butir'),
-                'telur_kg' => (float) round($telurKg, 2),
-                'mati' => (int) $c->sum('ayam_mati'),
-                'biaya_pakan' => $biayaPakan,
-                'pendapatan_telur' => $pendapatanTelur,
-                'margin_kotor' => $marginKotor,
-                'biaya_lain' => (int) $c->sum('biaya_lain'),
-                'biaya_kg_telur' => $telurKg > 0 ? $biayaPakan / $telurKg : 0,
-                'rasio' => $c->sum('telur_butir') > 0 ? $pakan * 1000 / $c->sum('telur_butir') : 0, // gram pakan per butir
-                'rata_telur' => $c->sum('telur_butir') / $n,
-            ];
-        };
-
-        return ['ini' => $hitung($ini), 'lalu' => $hitung($lalu)];
-    }
-
-    private function laporanMingguan($farm, float $harga): array
-    {
-        return $this->laporanPeriodik($farm, $harga, 7);
     }
 }
