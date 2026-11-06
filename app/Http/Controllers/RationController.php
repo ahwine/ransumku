@@ -24,17 +24,24 @@ class RationController extends Controller
     public function create(Request $r)
     {
         $farm = $this->farm();
-        $fis = $farm->farmIngredients()->with('ingredient')->get()->sortByDesc('aktif')->values();
-        
+        // Hanya ambil bahan-bahan yang ada di gudang peternak (aktif)
+        $fis = $farm->farmIngredients()
+            ->with('ingredient')
+            ->where('aktif', true)
+            ->get()
+            ->sortByDesc('stok_kg')
+            ->values();
+
         $stdService = app(NutrientStandardService::class);
         $recommendedStandard = $stdService->getRecommendedStandard($farm);
         $standards = $farm->standards()->orderByDesc('verified')->orderBy('id')->get();
-        $recommendedStandardId = $recommendedStandard?->id;
-        $defaultStandardId = $recommendedStandard?->id ?? ($standards->where('verified', true)->first()?->id ?? ($standards->first()?->id ?? 0));
+        $targetStandard = $recommendedStandard ?? ($standards->where('verified', true)->first() ?? ($standards->first() ?? null));
+        $defaultStandardId = $targetStandard?->id ?? 0;
+
         $konsumsi = $farm->konsumsi_per_ekor;
         $pakanHarianKg = (float) max(1.0, ($farm->jumlah_ayam * ($farm->konsumsi_per_ekor ?: 0.11)));
 
-        return view('ransum.create', compact('farm', 'fis', 'standards', 'konsumsi', 'pakanHarianKg', 'recommendedStandardId', 'defaultStandardId', 'recommendedStandard'));
+        return view('ransum.create', compact('farm', 'fis', 'targetStandard', 'standards', 'konsumsi', 'pakanHarianKg', 'defaultStandardId'));
     }
 
     public function store(Request $r, RationCalculator $calc)

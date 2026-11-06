@@ -97,25 +97,16 @@
                         </div>
                     </a>
 
-                    {{-- 3. Acuan Gizi (SNI) --}}
-                    <a href="{{ route('acuan.index') }}" class="p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 {{ request()->routeIs('acuan.*') ? 'bg-brand/10 border-brand/40 shadow-xs' : 'bg-white hover:bg-surface border-line' }}">
-                        <div class="w-9 h-9 rounded-xl {{ request()->routeIs('acuan.*') ? 'bg-brand text-white' : 'bg-surface text-ink' }} grid place-items-center">
-                            <span class="material-symbols-outlined text-[20px]">verified</span>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-ink block">Acuan Gizi (SNI)</span>
-                            <span class="text-[10px] text-muted line-clamp-1">Standar Nutrisi Petelur</span>
-                        </div>
-                    </a>
-
-                    {{-- 4. Tentang RansumKu --}}
-                    <a href="{{ route('tentang') }}" class="p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 {{ request()->routeIs('tentang') ? 'bg-brand/10 border-brand/40 shadow-xs' : 'bg-white hover:bg-surface border-line' }}">
-                        <div class="w-9 h-9 rounded-xl {{ request()->routeIs('tentang') ? 'bg-brand text-white' : 'bg-surface text-ink' }} grid place-items-center">
-                            <span class="material-symbols-outlined text-[20px]">info</span>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-ink block">Tentang Sistem</span>
-                            <span class="text-[10px] text-muted line-clamp-1">Panduan Smart Poultry</span>
+                    {{-- 3. Tentang RansumKu --}}
+                    <a href="{{ route('tentang') }}" class="p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 col-span-2 {{ request()->routeIs('tentang') ? 'bg-brand/10 border-brand/40 shadow-xs' : 'bg-white hover:bg-surface border-line' }}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl {{ request()->routeIs('tentang') ? 'bg-brand text-white' : 'bg-surface text-ink' }} grid place-items-center shrink-0">
+                                <span class="material-symbols-outlined text-[20px]">info</span>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-ink block">Tentang RansumKu</span>
+                                <span class="text-[10px] text-muted line-clamp-1">Panduan Smart Poultry System Fapet UGM</span>
+                            </div>
                         </div>
                     </a>
                 </div>

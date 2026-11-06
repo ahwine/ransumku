@@ -19,8 +19,15 @@
             <input id="umur_awal_minggu" name="umur_awal_minggu" type="number" min="1" max="120" value="{{ old('umur_awal_minggu', 18) }}" class="field font-semibold text-center" required>
         </div>
         <div>
-            <label class="lbl" for="strain_ayam">Strain / Jenis Bibit</label>
-            <input id="strain_ayam" name="strain_ayam" value="{{ old('strain_ayam', 'Lohmann Brown') }}" class="field font-semibold text-center">
+            <label class="lbl" for="strain_ayam">Strain / Jenis Bibit Petelur</label>
+            <select id="strain_ayam" name="strain_ayam" class="field font-semibold text-xs sm:text-sm bg-white cursor-pointer">
+                <option value="Lohmann Brown" {{ old('strain_ayam', 'Lohmann Brown') === 'Lohmann Brown' ? 'selected' : '' }}>Lohmann Brown</option>
+                <option value="Isa Brown" {{ old('strain_ayam') === 'Isa Brown' ? 'selected' : '' }}>Isa Brown</option>
+                <option value="Hy-Line Brown" {{ old('strain_ayam') === 'Hy-Line Brown' ? 'selected' : '' }}>Hy-Line Brown</option>
+                <option value="Novogen Brown" {{ old('strain_ayam') === 'Novogen Brown' ? 'selected' : '' }}>Novogen Brown</option>
+                <option value="H&N Brown Nick" {{ old('strain_ayam') === 'H&N Brown Nick' ? 'selected' : '' }}>H&N Brown Nick</option>
+                <option value="Ayam Arab / KUB Petelur" {{ old('strain_ayam') === 'Ayam Arab / KUB Petelur' ? 'selected' : '' }}>Ayam Arab / KUB Petelur</option>
+            </select>
         </div>
     </div>
     <input type="hidden" name="fase" value="produksi">

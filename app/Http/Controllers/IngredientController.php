@@ -10,39 +10,17 @@ use Illuminate\Http\Request;
 
 class IngredientController extends Controller
 {
-    private function rules(): array
-    {
-        return [
-            'nama' => 'required|string|max:80',
-            'protein' => 'required|numeric|min:0|max:100',
-            'kalsium' => 'required|numeric|min:0|max:100',
-            'fosfor' => 'required|numeric|min:0|max:100',
-            'serat' => 'required|numeric|min:0|max:100',
-            'energi' => 'required|integer|min:0|max:10000',
-            'harga_default' => 'required|integer|min:0',
-            'bk' => 'nullable|numeric|min:1|max:100',
-            'min_persen' => 'nullable|numeric|min:0|max:100',
-            'max_persen' => 'nullable|numeric|min:0|max:100',
-            'catatan_keamanan' => 'nullable|string|max:255',
-            'sumber' => 'nullable|string|max:255',
-            'catatan' => 'nullable|string|max:1000',
-        ];
-    }
-
     public function index(Request $r)
     {
         $farm = $this->farm();
         (new FarmBootstrap)->setupFarm($farm, false);
 
         $q = trim((string) $r->query('q'));
-        $tab = $r->query('tab', 'stok');
 
-        $bahan = $farm->ingredients()
-            ->when($q !== '', fn ($x) => $x->where('nama', 'like', "%{$q}%"))
-            ->orderBy('nama')->get();
-
+        // Ambil bahan-bahan yang ada di gudang kandang ini (aktif)
         $farmIngredients = $farm->farmIngredients()
             ->with('ingredient')
+            ->where('aktif', true)
             ->get()
             ->when($q !== '', fn ($col) => $col->filter(fn ($fi) => str_contains(strtolower($fi->ingredient->nama ?? ''), strtolower($q))))
             ->values();
@@ -100,9 +78,84 @@ class IngredientController extends Controller
         $totalNilaiRp = $stokGudangData->sum(fn ($d) => $d['stok_kg'] * $d['harga']);
         $kritisCount = $stokGudangData->whereIn('status', ['habis', 'menipis'])->count();
 
-        return view('bahan.index', compact('farm', 'bahan', 'q', 'tab', 'stokGudangData', 'totalStokKg', 'totalNilaiRp', 'kritisCount', 'pakanHarianKg'));
+        // Katalog Master untuk Dropdown Tambah Bahan
+        $masterCatalog = FarmBootstrap::getMasterBahanCatalog();
+
+        // Daftar nama bahan yang sudah ada di gudang agar ditandai
+        $existingNames = $farmIngredients->pluck('ingredient.nama')->toArray();
+
+        return view('bahan.index', compact(
+            'farm',
+            'q',
+            'stokGudangData',
+            'totalStokKg',
+            'totalNilaiRp',
+            'kritisCount',
+            'pakanHarianKg',
+            'masterCatalog',
+            'existingNames'
+        ));
     }
 
+    /**
+     * Tambah bahan ke gudang menggunakan acuan nutrisi paten dari Master Catalog.
+     */
+    public function store(Request $r): RedirectResponse
+    {
+        $data = $r->validate([
+            'nama_template' => 'required|string',
+            'stok_kg' => 'required|numeric|min:0|max:100000',
+            'harga' => 'required|integer|min:0',
+        ], [
+            'nama_template.required' => 'Pilih bahan pakan dari daftar resmi.',
+            'stok_kg.required' => 'Masukkan jumlah stok pakan (kg).',
+            'harga.required' => 'Masukkan harga beli pakan per kg.',
+        ]);
+
+        $farm = $this->farm();
+        $catalog = FarmBootstrap::getMasterBahanCatalog();
+
+        if (! isset($catalog[$data['nama_template']])) {
+            return back()->withInput()->withErrors(['nama_template' => 'Bahan pakan yang dipilih tidak valid.']);
+        }
+
+        $tpl = $catalog[$data['nama_template']];
+
+        // Buat atau temukan Ingredient untuk farm ini dengan nutrisi paten
+        $ing = $farm->ingredients()->firstOrCreate(
+            ['nama' => $tpl['nama']],
+            [
+                'protein' => $tpl['protein'],
+                'kalsium' => $tpl['kalsium'],
+                'fosfor' => $tpl['fosfor'],
+                'serat' => $tpl['serat'],
+                'energi' => $tpl['energi'],
+                'bk' => $tpl['bk'],
+                'harga_default' => $data['harga'] ?: $tpl['harga_default'],
+                'min_persen' => $tpl['min_persen'],
+                'max_persen' => $tpl['max_persen'],
+                'catatan_keamanan' => $tpl['catatan_keamanan'],
+                'sumber' => FarmBootstrap::SUMBER,
+                'catatan' => FarmBootstrap::CATATAN,
+            ]
+        );
+
+        // Sambungkan ke FarmIngredient (Gudang Farm)
+        $fi = $farm->farmIngredients()->firstOrNew(['ingredient_id' => $ing->id]);
+        $fi->stok_kg = (float) $data['stok_kg'];
+        $fi->harga = (int) $data['harga'];
+        $fi->aktif = true;
+        $fi->min_persen = $fi->min_persen ?? $tpl['min_persen'];
+        $fi->max_persen = $fi->max_persen ?? $tpl['max_persen'];
+        $fi->harga_updated_at = now();
+        $fi->save();
+
+        return redirect()->route('bahan.index')->with('ok', "Bahan \"{$tpl['label']}\" berhasil ditambahkan ke gudang pakan!");
+    }
+
+    /**
+     * Memperbarui stok dan harga bahan yang sudah ada di gudang.
+     */
     public function updateStok(Request $r): RedirectResponse
     {
         $data = $r->validate([
@@ -114,7 +167,7 @@ class IngredientController extends Controller
         $farm = $this->farm();
         $fi = $farm->farmIngredients()->findOrFail($data['farm_ingredient_id']);
 
-        $update = ['stok_kg' => (float) $data['stok_kg']];
+        $update = ['stok_kg' => (float) $data['stok_kg'], 'aktif' => true];
         if (isset($data['harga'])) {
             $update['harga'] = (int) $data['harga'];
             $update['harga_updated_at'] = now();
@@ -125,48 +178,19 @@ class IngredientController extends Controller
         return back()->with('ok', "Stok bahan {$fi->ingredient->nama} berhasil diperbarui menjadi {$data['stok_kg']} kg!");
     }
 
-    public function create()
+    /**
+     * Menghapus bahan dari gudang kandang aktif.
+     */
+    public function hapusDariGudang(FarmIngredient $farmIngredient): RedirectResponse
     {
-        return redirect()->route('bahan.index')->with('info', 'Seluruh bahan baku standar pakan ayam petelur telah terdaftar lengkap pada katalog.');
-    }
-
-    public function store(Request $r)
-    {
-        $data = $r->validate($this->rules());
         $farm = $this->farm();
-        $ing = $farm->ingredients()->create($data + ['sumber' => $data['sumber'] ?? 'Input peternak']);
+        if ($farmIngredient->farm_id !== $farm->id) {
+            abort(403);
+        }
 
-        // Langsung masuk daftar bahan kandang (stok 0, nonaktif sampai dipilih di form ransum)
-        FarmIngredient::create([
-            'farm_id' => $farm->id,
-            'ingredient_id' => $ing->id,
-            'harga' => $ing->harga_default,
-            'stok_kg' => 0,
-            'min_persen' => $ing->min_persen,
-            'max_persen' => $ing->max_persen,
-            'aktif' => false,
-            'harga_updated_at' => now(),
-        ]);
+        $nama = $farmIngredient->ingredient->nama ?? 'Bahan pakan';
+        $farmIngredient->delete();
 
-        return redirect()->route('bahan.index')->with('ok', 'Bahan ditambahkan. Isi stoknya di halaman Racik Ransum.');
-    }
-
-    public function edit(Ingredient $ingredient)
-    {
-        return redirect()->route('bahan.index')->with('info', 'Nutrisi bahan baku pakan terstandarisasi dan dikunci sesuai acuan ilmiah resmi.');
-    }
-
-    public function update(Request $r, Ingredient $ingredient)
-    {
-        $this->own($ingredient)->update($r->validate($this->rules()));
-
-        return redirect()->route('bahan.index')->with('ok', 'Bahan diperbarui. Hitung ulang ransum agar perubahan dipakai.');
-    }
-
-    public function destroy(Ingredient $ingredient)
-    {
-        $this->own($ingredient)->delete();
-
-        return redirect()->route('bahan.index')->with('ok', 'Bahan dihapus.');
+        return redirect()->route('bahan.index')->with('ok', "Bahan \"{$nama}\" berhasil dihapus dari gudang pakan.");
     }
 }

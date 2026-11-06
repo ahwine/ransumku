@@ -99,10 +99,6 @@
                     </span>
                 @endif
             </a>
-            <a href="{{ route('acuan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('acuan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('acuan.*') ? 'text-brand' : '' }}">verified</span>
-                <span>Acuan Gizi (SNI)</span>
-            </a>
             <a href="{{ route('tentang') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('tentang') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('tentang') ? 'text-brand' : '' }}">info</span>
                 <span>Tentang RansumKu</span>

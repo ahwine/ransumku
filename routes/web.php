@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/ransum/{ration}', [RationController::class, 'destroy'])->name('ransum.destroy');
 
         Route::post('/bahan/stok/update', [IngredientController::class, 'updateStok'])->name('bahan.stok.update');
+        Route::delete('/bahan/gudang/{farmIngredient}', [IngredientController::class, 'hapusDariGudang'])->name('bahan.gudang.destroy');
         Route::resource('bahan', IngredientController::class)->parameters(['bahan' => 'ingredient'])->except('show');
         Route::post('/acuan/sync', [StandardController::class, 'sync'])->name('acuan.sync');
         Route::post('/acuan/terapkan-preset', [StandardController::class, 'terapkanPreset'])->name('acuan.terapkan-preset');

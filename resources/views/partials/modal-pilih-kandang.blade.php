@@ -128,8 +128,15 @@
                     <input type="number" name="jumlah_ayam" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: 200" required>
                 </div>
                 <div>
-                    <label class="lbl">Strain / Jenis Bibit</label>
-                    <input type="text" name="strain_ayam" value="Lohmann Brown" class="field !min-h-10 text-xs font-medium" placeholder="Misal: Lohmann Brown">
+                    <label class="lbl">Strain / Jenis Bibit Petelur</label>
+                    <select name="strain_ayam" class="field !min-h-10 text-xs font-semibold bg-white cursor-pointer">
+                        <option value="Lohmann Brown" {{ old('strain_ayam') === 'Lohmann Brown' ? 'selected' : '' }}>Lohmann Brown</option>
+                        <option value="Isa Brown" {{ old('strain_ayam') === 'Isa Brown' ? 'selected' : '' }}>Isa Brown</option>
+                        <option value="Hy-Line Brown" {{ old('strain_ayam') === 'Hy-Line Brown' ? 'selected' : '' }}>Hy-Line Brown</option>
+                        <option value="Novogen Brown" {{ old('strain_ayam') === 'Novogen Brown' ? 'selected' : '' }}>Novogen Brown</option>
+                        <option value="H&N Brown Nick" {{ old('strain_ayam') === 'H&N Brown Nick' ? 'selected' : '' }}>H&N Brown Nick</option>
+                        <option value="Ayam Arab / KUB Petelur" {{ old('strain_ayam') === 'Ayam Arab / KUB Petelur' ? 'selected' : '' }}>Ayam Arab / KUB Petelur</option>
+                    </select>
                 </div>
             </div>
 
@@ -199,8 +206,12 @@
                         <input type="number" name="jumlah_ayam" value="{{ $f->jumlah_ayam }}" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" required>
                     </div>
                     <div>
-                        <label class="lbl">Strain / Jenis Bibit</label>
-                        <input type="text" name="strain_ayam" value="{{ $f->strain_ayam ?? 'Lohmann Brown' }}" class="field !min-h-10 text-xs font-medium">
+                        <label class="lbl">Strain / Jenis Bibit Petelur</label>
+                        <select name="strain_ayam" class="field !min-h-10 text-xs font-semibold bg-white cursor-pointer">
+                            @foreach(['Lohmann Brown', 'Isa Brown', 'Hy-Line Brown', 'Novogen Brown', 'H&N Brown Nick', 'Ayam Arab / KUB Petelur'] as $st)
+                                <option value="{{ $st }}" {{ ($f->strain_ayam ?? 'Lohmann Brown') === $st ? 'selected' : '' }}>{{ $st }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
