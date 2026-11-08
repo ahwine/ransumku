@@ -5,9 +5,13 @@
     $presetKota = \App\Services\WeatherService::PRESET_KOTA;
     $unreadAlertsCount = 0;
     $modalAlerts = collect();
+    $stokGudangNav = ['total_kg' => 0, 'kritis_count' => 0, 'kritis_items' => []];
+    $kritisStokCount = 0;
     if ($farmNav) {
         $unreadAlertsCount = $farmNav->alerts()->where('dibaca', false)->count();
         $modalAlerts = $farmNav->alerts()->latest('id')->limit(8)->get();
+        $stokGudangNav = $farmNav->ringkasanStokGudang();
+        $kritisStokCount = $stokGudangNav['kritis_count'] ?? 0;
     }
 @endphp
 <!DOCTYPE html>
@@ -84,13 +88,16 @@
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('kandang.*') ? 'text-brand' : '' }}">warehouse</span>
                 <span>Kelola Kandang</span>
             </a>
-            <a href="{{ route('bahan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('bahan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('bahan.*') ? 'text-brand' : '' }}">grain</span>
-                <span>Bahan Pakan</span>
-            </a>
-            <a href="{{ route('acuan.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('acuan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
-                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('acuan.*') ? 'text-brand' : '' }}">verified</span>
-                <span>Acuan Gizi (SNI)</span>
+            <a href="{{ route('bahan.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('bahan.*') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('bahan.*') ? 'text-brand' : '' }}">inventory_2</span>
+                    <span>Stok Pakan Gudang</span>
+                </div>
+                @if ($kritisStokCount > 0)
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white leading-tight shadow-2xs" title="{{ $kritisStokCount }} bahan di bawah safety stock">
+                        {{ $kritisStokCount }}
+                    </span>
+                @endif
             </a>
             <a href="{{ route('tentang') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition {{ request()->routeIs('tentang') ? 'bg-surface text-ink font-bold' : 'text-muted hover:bg-surface hover:text-ink' }}">
                 <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('tentang') ? 'text-brand' : '' }}">info</span>

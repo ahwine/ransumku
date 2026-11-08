@@ -165,4 +165,48 @@ class Farm extends Model
         $min = $this->farmIngredients()->where('aktif', true)->min('harga_updated_at');
         return $min ? \Illuminate\Support\Carbon::parse($min) : null;
     }
+
+    /**
+     * Ringkasan stok gudang pakan dan deteksi bahan di bawah safety stock (kebutuhan 3 hari).
+     *
+     * @return array{total_kg: float, kritis_count: int, kritis_items: array<string>}
+     */
+    public function ringkasanStokGudang(): array
+    {
+        $pakanHarianKg = (float) max(1.0, ($this->jumlah_ayam * ($this->konsumsi_per_ekor ?: 0.11)));
+        $farmIngredients = $this->farmIngredients()->with('ingredient')->where('aktif', true)->get();
+
+        $totalKg = 0.0;
+        $kritisItems = [];
+
+        foreach ($farmIngredients as $fi) {
+            $stok = (float) $fi->stok_kg;
+            $totalKg += $stok;
+            $nama = strtolower($fi->ingredient->nama ?? '');
+
+            $porsiEst = 0.20;
+            if (str_contains($nama, 'jagung') || str_contains($nama, 'menir') || str_contains($nama, 'sorgum')) {
+                $porsiEst = 0.50;
+            } elseif (str_contains($nama, 'konsentrat') || str_contains($nama, 'kedelai') || str_contains($nama, 'ikan')) {
+                $porsiEst = 0.30;
+            } elseif (str_contains($nama, 'dedak') || str_contains($nama, 'bekatul') || str_contains($nama, 'polard')) {
+                $porsiEst = 0.20;
+            } elseif (str_contains($nama, 'kapur') || str_contains($nama, 'kerang') || str_contains($nama, 'grit') || str_contains($nama, 'premix')) {
+                $porsiEst = 0.07;
+            }
+
+            $kebutuhanHarian = max(0.5, round($pakanHarianKg * $porsiEst, 2));
+            $safetyBuffer3Hari = round($kebutuhanHarian * 3, 1);
+
+            if ($stok <= $safetyBuffer3Hari) {
+                $kritisItems[] = $fi->ingredient->nama ?? 'Bahan';
+            }
+        }
+
+        return [
+            'total_kg' => round($totalKg, 2),
+            'kritis_count' => count($kritisItems),
+            'kritis_items' => $kritisItems,
+        ];
+    }
 }

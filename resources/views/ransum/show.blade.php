@@ -57,7 +57,78 @@
 @endif
 
 @if ($ration->layak())
-    {{-- 1. Baris 3 KPI Minimalis Sejajar (Menggantikan Kartu Raksasa) --}}
+    {{-- 1. Hero Action Banner: Status Penerapan & Potong Stok Gudang --}}
+    @php
+        $stokDipakai = !empty($ration->hasil['stok_dipotong']);
+        $tglDiterapkan = $stokDipakai && !empty($ration->hasil['applied_at']) 
+            ? \Carbon\Carbon::parse($ration->hasil['applied_at'])->translatedFormat('d F Y, H:i') 
+            : null;
+        $totalSegarKg = $asFed['total_as_fed_kg'] ?? $ration->total_kg;
+    @endphp
+
+    @if (! $stokDipakai)
+        <div class="mt-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-white border-2 border-amber-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <span class="material-symbols-outlined text-[24px]">blender</span>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                            📋 Status: Simulasi Racikan
+                        </span>
+                        <span class="text-xs font-bold text-amber-900">Belum Mengurangi Stok Gudang</span>
+                    </div>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Formulasi ini siap dipakai. Jika Anda sudah menimbang & mengaduk pakan sebesar <strong class="text-ink font-bold">{{ Fmt::num($totalSegarKg, 1) }} kg</strong> di mixer kandang, terapkan ke gudang agar stok berkurang otomatis.
+                    </p>
+                </div>
+            </div>
+
+            <div class="shrink-0 pt-2 md:pt-0">
+                <button type="button" 
+                        onclick="bukaModal('modalKonfirmasiTerapkan')"
+                        class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black text-white bg-brand hover:bg-brand-dark transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">inventory_2</span>
+                    <span>Campur Pakan & Potong Stok</span>
+                </button>
+            </div>
+        </div>
+    @else
+        <div class="mt-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-white border-2 border-emerald-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <span class="material-symbols-outlined text-[24px]">check_circle</span>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
+                            ✅ Telah Diterapkan ke Gudang
+                        </span>
+                        <span class="text-xs font-bold text-emerald-900">{{ $tglDiterapkan ? "Tercatat pada {$tglDiterapkan} WIB" : 'Stok Terpotong' }}</span>
+                    </div>
+                    <p class="text-xs text-muted leading-relaxed">
+                        Stok bahan baku di gudang telah otomatis dipotong sebesar <strong class="text-ink font-bold">{{ Fmt::num($totalSegarKg, 1) }} kg segar</strong> sesuai takaran timbangan nyata.
+                    </p>
+                </div>
+            </div>
+
+            <div class="shrink-0 pt-2 md:pt-0">
+                <form method="POST" action="{{ route('ransum.batal-terapkan', $ration) }}" 
+                      data-confirm="Batalkan pemotongan stok untuk racikan ini? Jumlah kilogram bahan akan dikembalikan utuh ke stok gudang pakan Anda." 
+                      data-confirm-title="Batalkan Penerapan Racikan" 
+                      data-confirm-btn="Ya, Kembalikan Stok">
+                    @csrf
+                    <button type="submit" class="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-rose-700 hover:text-rose-800 bg-white hover:bg-rose-50 border border-rose-300 transition shadow-2xs active:scale-95 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">undo</span>
+                        <span>Batalkan Pemotongan Stok</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    {{-- 2. Baris 3 KPI Minimalis Sejajar (Total Biaya, Harga/kg, Kelayakan) --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-4">
         {{-- KPI 1: Total Biaya Campuran --}}
         <div class="card p-4 sm:p-5 space-y-1 border border-line shadow-2xs">
@@ -408,6 +479,83 @@
         <span class="material-symbols-outlined text-[18px]">edit</span>
         <span>Ubah harga/stok</span>
     </a>
+</div>
+
+{{-- MODAL KONFIRMASI CAMPUR PAKAN & POTONG STOK GUDANG (CENTERED) --}}
+<div id="modalKonfirmasiTerapkan" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0 pointer-events-none" role="dialog" aria-modal="true">
+    <div class="absolute inset-0" onclick="tutupModal('modalKonfirmasiTerapkan')"></div>
+    <div data-modal-card class="relative z-10 w-full max-w-lg bg-white rounded-2xl p-5 sm:p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-line">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-brand/10 text-brand grid place-items-center shrink-0">
+                    <span class="material-symbols-outlined text-[22px]">blender</span>
+                </div>
+                <div>
+                    <h3 class="text-sm sm:text-base font-bold text-ink">Konfirmasi Campur Pakan</h3>
+                    <p class="text-[11px] text-muted">Pemotongan stok fisik di gudang pakan.</p>
+                </div>
+            </div>
+            <button type="button" onclick="tutupModal('modalKonfirmasiTerapkan')" class="p-1 rounded-lg text-muted hover:text-ink hover:bg-surface cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+            <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 leading-relaxed space-y-1">
+                <strong class="font-bold block flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px] text-amber-700">info</span>
+                    <span>Apakah pakan ini sudah selesai diaduk di mixer?</span>
+                </strong>
+                <p class="text-[11px] text-amber-800">
+                    Stok bahan baku di gudang Anda akan otomatis dipotong sesuai timbangan riil pakan segar di bawah ini:
+                </p>
+            </div>
+
+            {{-- Tabel Rincian Potongan Stok --}}
+            <div class="rounded-xl border border-line overflow-hidden">
+                <table class="w-full text-left text-xs divide-y divide-line">
+                    <thead class="bg-surface font-bold text-muted">
+                        <tr>
+                            <th class="py-2.5 px-3">Bahan Pakan</th>
+                            <th class="py-2.5 px-3 text-right">Takaran Potong</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line bg-white">
+                        @foreach ($asFed['items'] ?? $baris as $b)
+                            <tr>
+                                <td class="py-2 px-3 font-semibold text-ink">{{ $b['nama'] ?? '' }}</td>
+                                <td class="py-2 px-3 text-right font-black text-brand tabular-nums">
+                                    {{ Fmt::num($b['kg_as_fed'] ?? $b['kg'] ?? 0, 2) }} kg
+                                </td>
+                            </tr>
+                        @endforeach
+                        <tr class="bg-surface-2/60 font-black">
+                            <td class="py-2.5 px-3 text-ink">Total Pakan Segar:</td>
+                            <td class="py-2.5 px-3 text-right text-brand tabular-nums text-sm">
+                                {{ Fmt::num($asFed['total_as_fed_kg'] ?? $ration->total_kg, 2) }} kg
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('ransum.terapkan', $ration) }}">
+            @csrf
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-line">
+                <button type="button" 
+                        onclick="tutupModal('modalKonfirmasiTerapkan')" 
+                        class="px-4 py-2 rounded-full text-xs font-semibold text-ink bg-white hover:bg-surface border border-line transition shadow-2xs cursor-pointer">
+                    Batal / Nanti Dulu
+                </button>
+                <button type="submit" 
+                        class="px-5 py-2.5 rounded-full text-xs font-black text-white bg-brand hover:bg-brand-dark transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                    <span>Ya, Pakan Sudah Diaduk (Potong Stok)</span>
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>

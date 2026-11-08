@@ -11,7 +11,7 @@
     </a>
     <div class="space-y-0.5 min-w-0">
         <h1 class="text-h-lg font-black tracking-tight text-ink truncate">Racik Formulasi Ransum</h1>
-        <p class="text-xs text-muted">Sesuaikan harga dan stok bahan di gudang untuk menghasilkan pakan berkualitas dengan biaya terendah.</p>
+        <p class="text-xs text-muted">Pilih bahan pakan yang tersedia di gudang untuk menghasilkan formulasi ransum berkualitas dengan biaya terendah.</p>
     </div>
 </div>
 
@@ -52,11 +52,33 @@
 
                 {{-- Daftar Kartu Bahan --}}
                 <div class="space-y-3">
-                    @foreach ($fis as $fi)
+                    @forelse ($fis as $fi)
                         @php
-                            $isAktif = (bool) old("bahan.{$fi->id}.aktif", $fi->aktif);
+                            $stok = (float) $fi->stok_kg;
+                            $namaBahan = strtolower($fi->ingredient->nama ?? '');
+
+                            // Ambang batas buffer safety stock 3 hari
+                            $porsiEst = 0.20;
+                            if (str_contains($namaBahan, 'jagung') || str_contains($namaBahan, 'menir') || str_contains($namaBahan, 'sorgum')) {
+                                $porsiEst = 0.50;
+                            } elseif (str_contains($namaBahan, 'konsentrat') || str_contains($namaBahan, 'kedelai') || str_contains($namaBahan, 'ikan')) {
+                                $porsiEst = 0.30;
+                            } elseif (str_contains($namaBahan, 'dedak') || str_contains($namaBahan, 'bekatul') || str_contains($namaBahan, 'polard')) {
+                                $porsiEst = 0.20;
+                            } elseif (str_contains($namaBahan, 'kapur') || str_contains($namaBahan, 'kerang') || str_contains($namaBahan, 'grit') || str_contains($namaBahan, 'premix')) {
+                                $porsiEst = 0.07;
+                            }
+                            $kebutuhanHarian = max(0.5, round(($pakanHarianKg ?? 22.0) * $porsiEst, 2));
+                            $safetyBuffer = round($kebutuhanHarian * 3, 1);
+
+                            $isHabis = $stok <= 0.05;
+                            $isMenipis = ! $isHabis && $stok <= $safetyBuffer;
+                            $isAman = ! $isHabis && ! $isMenipis;
+
+                            // Jika stok habis di gudang, jangan aktifkan otomatis
+                            $isAktif = $isHabis ? false : (bool) old("bahan.{$fi->id}.aktif", $fi->aktif);
                         @endphp
-                        <div class="rounded-2xl border p-3.5 space-y-3 transition-all duration-200 {{ $isAktif ? 'bg-white border-brand/30 shadow-2xs ring-1 ring-brand/10' : 'bg-surface/40 border-line/60 opacity-60' }}" 
+                        <div class="rounded-2xl border p-3.5 space-y-3 transition-all duration-200 {{ $isAktif ? 'bg-white border-brand/30 shadow-2xs ring-1 ring-brand/10' : ($isHabis ? 'bg-rose-50/30 border-rose-200/60 opacity-75' : 'bg-surface/40 border-line/60 opacity-60') }}" 
                              data-racik-item 
                              data-bahan-nama="{{ strtolower($fi->ingredient->nama) }}">
                             
@@ -79,39 +101,69 @@
                                     @endif
                                 </label>
                                 <span class="text-[11px] font-semibold {{ $fi->hargaUsang() ? 'text-danger font-bold' : 'text-muted' }}">
-                                    {{ $fi->harga_updated_at ? 'diperbarui '.$fi->harga_updated_at->diffForHumans() : 'belum pernah diperbarui' }}
+                                    {{ $fi->harga_updated_at ? 'diperbarui '.$fi->harga_updated_at->diffForHumans() : 'harga acuan baku' }}
                                 </span>
                             </div>
 
-                            {{-- Input Harga & Stok --}}
-                            <div class="grid grid-cols-2 gap-3 pt-1">
-                                <div>
-                                    <label class="lbl text-[11px]" for="h{{ $fi->id }}">Harga Satuan</label>
-                                    <div class="relative flex items-center">
-                                        <span class="absolute left-3 text-xs font-bold text-muted pointer-events-none select-none">Rp</span>
-                                        <input id="h{{ $fi->id }}" 
-                                               name="bahan[{{ $fi->id }}][harga]" 
-                                               type="number" 
-                                               min="0" 
-                                               step="50" 
-                                               inputmode="numeric" 
-                                               class="field !pl-9 font-semibold text-ink" 
-                                               value="{{ old("bahan.{$fi->id}.harga", $fi->harga) }}">
+                            {{-- Grid: Ketersediaan Stok Gudang (Read-Only) & Harga Beli Satuan --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                {{-- Kolom 1: Ketersediaan Stok Gudang (Read-Only Status Box) --}}
+                                <div class="rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between {{ $isHabis ? 'bg-rose-50/80 border-rose-200' : ($isMenipis ? 'bg-amber-50/80 border-amber-200' : 'bg-surface-2/60 border-line/70') }}">
+                                    <div class="flex items-center justify-between gap-1 mb-1">
+                                        <span class="text-[10px] uppercase font-bold tracking-wider text-muted">Stok Gudang</span>
+                                        @if ($isHabis)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                                <span>Habis</span>
+                                            </span>
+                                        @elseif ($isMenipis)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                                                <span>Menipis</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                <span>Tersedia</span>
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div class="text-sm sm:text-base font-extrabold text-ink tabular-nums">
+                                            {{ Fmt::num($stok, 1) }} <span class="text-xs font-semibold text-muted">kg</span>
+                                        </div>
+                                        <span class="text-[10px] text-muted block mt-0.5 truncate">
+                                            @if ($isHabis)
+                                                Persediaan kosong · Tambah di menu Stok Gudang
+                                            @elseif ($isMenipis)
+                                                Mendekati batas aman 3 hari kandang
+                                            @else
+                                                Mencukupi kebutuhan adukan racikan
+                                            @endif
+                                        </span>
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="lbl text-[11px]" for="s{{ $fi->id }}">Batas Stok (Maksimal)</label>
-                                    <div class="relative flex items-center">
-                                        <input id="s{{ $fi->id }}" 
-                                               name="bahan[{{ $fi->id }}][stok]" 
-                                               type="number" 
-                                               min="0" 
-                                               step="0.5" 
-                                               inputmode="decimal" 
-                                               class="field !pr-10 font-semibold text-ink" 
-                                               value="{{ old("bahan.{$fi->id}.stok", (float) $fi->stok_kg) }}">
-                                        <span class="absolute right-3 text-xs font-bold text-muted pointer-events-none select-none">kg</span>
+
+                                {{-- Kolom 2: Harga Beli Satuan (Terkini) --}}
+                                <div class="flex flex-col justify-between">
+                                    <div>
+                                        <label class="lbl text-[11px]" for="h{{ $fi->id }}">Harga Beli Satuan (Terkini)</label>
+                                        <div class="relative flex items-center">
+                                            <span class="absolute left-3 text-xs font-bold text-muted pointer-events-none select-none">Rp</span>
+                                            <input id="h{{ $fi->id }}" 
+                                                   name="bahan[{{ $fi->id }}][harga]" 
+                                                   type="number" 
+                                                   min="0" 
+                                                   step="50" 
+                                                   inputmode="numeric" 
+                                                   class="field !pl-9 font-bold text-ink" 
+                                                   value="{{ old("bahan.{$fi->id}.harga", $fi->harga) }}">
+                                            <span class="absolute right-3 text-xs font-normal text-muted pointer-events-none select-none">/ kg</span>
+                                        </div>
                                     </div>
+                                    <span class="text-[10px] text-muted block mt-1">
+                                        Dapat disesuaikan jika harga beli saat ini berubah.
+                                    </span>
                                 </div>
                             </div>
 
@@ -159,7 +211,21 @@
                                 @endif
                             </details>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="p-8 rounded-2xl border border-dashed border-amber-300 bg-amber-50/50 text-center space-y-3">
+                            <span class="material-symbols-outlined text-[36px] text-amber-600 block">inventory_2</span>
+                            <div class="space-y-1">
+                                <h3 class="text-sm font-bold text-amber-950">Gudang Pakan Masih Kosong</h3>
+                                <p class="text-xs text-amber-800 max-w-sm mx-auto">
+                                    Anda belum memiliki bahan pakan yang aktif di gudang kandang ini. Tambahkan bahan pakan yang Anda miliki terlebih dahulu untuk mulai meracik formula ransum.
+                                </p>
+                            </div>
+                            <a href="{{ route('bahan.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-2xs">
+                                <span class="material-symbols-outlined text-[16px]">add</span>
+                                <span>Buka Gudang & Tambah Bahan</span>
+                            </a>
+                        </div>
+                    @endforelse
                 </div>
 
                 {{-- Live Filter Empty State --}}
@@ -169,9 +235,9 @@
                     <p class="text-xs text-muted">Bahan tersebut belum ada di gudang pakan Anda. Tambahkan bahan baru melalui tautan di bawah.</p>
                 </div>
 
-                <a href="{{ route('bahan.create') }}" class="w-full py-3 px-4 rounded-full border border-dashed border-brand/40 hover:border-brand bg-brand/5 hover:bg-brand/10 text-brand text-xs font-bold transition-all flex items-center justify-center gap-2">
+                <a href="{{ route('bahan.index') }}" class="w-full py-3 px-4 rounded-full border border-dashed border-brand/40 hover:border-brand bg-brand/5 hover:bg-brand/10 text-brand text-xs font-bold transition-all flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-[18px]">add_circle</span>
-                    <span>Tambah Master Bahan Pakan Baru</span>
+                    <span>Kelola & Tambah Bahan di Gudang Pakan</span>
                 </a>
             </section>
         </div>
@@ -266,59 +332,48 @@
                 </div>
             </section>
 
-            {{-- 2. Acuan Gizi Target --}}
-            <section class="card space-y-3.5 p-4 sm:p-5">
+            {{-- 2. Acuan Gizi Standar Resmi (Terkunci Otomatis) --}}
+            <input type="hidden" name="standard_id" value="{{ $defaultStandardId }}">
+            <section class="card space-y-3 p-4 sm:p-5 border border-line shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-h-sm font-bold text-ink">Acuan Gizi Target</h2>
-                    @if (isset($recommendedStandard))
-                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                            <span class="material-symbols-outlined text-[13px]">auto_awesome</span>
-                            <span>Auto-Match Fase</span>
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 grid place-items-center shrink-0">
+                            <span class="material-symbols-outlined text-[18px]">verified</span>
                         </span>
-                    @endif
+                        <div>
+                            <h2 class="text-xs font-black uppercase tracking-wider text-ink">Standar Nutrisi Target</h2>
+                            <p class="text-[11px] text-muted">Baku Mutu Nasional Ayam Petelur Fapet UGM / SNI</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                        Otomatis
+                    </span>
                 </div>
 
-                @include('partials.dropdown-pilih-standar', [
-                    'standards' => $standards, 
-                    'value' => old('standard_id', $defaultStandardId ?? $recommendedStandardId ?? null),
-                    'recommendedStandardId' => $recommendedStandardId ?? null
-                ])
+                @if ($targetStandard)
+                    <div class="bg-surface/60 rounded-xl p-3 border border-line/60 space-y-2 text-xs">
+                        <div class="flex justify-between items-center text-muted">
+                            <span>Protein Kasar (PK):</span>
+                            <strong class="text-ink font-bold">{{ $targetStandard->formatProtein() }}</strong>
+                        </div>
+                        <div class="flex justify-between items-center text-muted">
+                            <span>Energi Metabolis (EM):</span>
+                            <strong class="text-ink font-bold">{{ $targetStandard->formatEnergi() }}</strong>
+                        </div>
+                        <div class="flex justify-between items-center text-muted">
+                            <span>Kalsium (Ca):</span>
+                            <strong class="text-ink font-bold">{{ $targetStandard->formatKalsium() }}</strong>
+                        </div>
+                        <div class="flex justify-between items-center text-muted">
+                            <span>Fosfor Tersedia (P):</span>
+                            <strong class="text-ink font-bold">{{ $targetStandard->formatFosfor() }}</strong>
+                        </div>
+                    </div>
+                @endif
 
-                @php
-                    $selectedStandardId = (int) old('standard_id', $defaultStandardId ?? $recommendedStandardId ?? ($standards->first()?->id ?? 0));
-                @endphp
-
-                <div class="space-y-1.5 pt-1" id="panel-rincian-standar">
-                    @foreach ($standards as $s)
-                        <details data-standard-detail="{{ $s->id }}"
-                                 class="text-xs text-muted rounded-xl bg-surface/50 border {{ $s->verified ? 'border-line/60' : 'border-amber-300' }} p-2.5 group {{ $selectedStandardId === (int) $s->id ? '' : 'hidden' }}"
-                                 open>
-                            <summary class="cursor-pointer font-bold text-ink hover:text-brand flex items-center justify-between select-none py-0.5 gap-2">
-                                <span class="truncate pr-1">Rincian: {{ $s->nama }}</span>
-                                <span class="material-symbols-outlined text-[16px] text-muted group-open:rotate-180 transition-transform shrink-0">expand_more</span>
-                            </summary>
-                            <ul class="mt-2 space-y-1 border-t border-line/50 pt-2 text-[11px]">
-                                @if (! $s->verified)
-                                    <li class="mb-1.5 px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-300 font-bold text-[10px]">
-                                        {{ $s->isSumberSekunder() ? 'Sumber sekunder (belum terverifikasi) — cek dokumen primer sebelum dipakai' : 'Belum terverifikasi — periksa atau lengkapi angka acuan sebelum dipakai' }}
-                                    </li>
-                                @endif
-                                <li class="flex justify-between gap-2"><span>Protein kasar (PK):</span> <strong class="text-ink">{{ $s->formatProtein() }}</strong></li>
-                                <li class="flex justify-between gap-2"><span>Kalsium (Ca):</span> <strong class="text-ink">{{ $s->formatKalsium() }}</strong></li>
-                                <li class="flex justify-between gap-2"><span>Fosfor (P):</span> <strong class="text-ink">{{ $s->formatFosfor() }}</strong></li>
-                                <li class="flex justify-between gap-2"><span>Energi Metabolis (EM):</span> <strong class="text-ink">{{ $s->formatEnergi() }}</strong></li>
-                                <li class="flex justify-between gap-2"><span>Serat kasar:</span> <strong class="text-ink">{{ $s->formatSerat() }}</strong></li>
-                                <li class="flex justify-between gap-2 pt-1 border-t border-line/40 text-[10px] text-muted"><span>Edisi:</span> <span>{{ $s->edition_year ?? '—' }}</span></li>
-                                <li class="pt-0.5 text-[10px] text-muted leading-snug"><span class="font-semibold text-ink">Sumber:</span> {{ $s->source ?? $s->sumber ?? '—' }}</li>
-                            </ul>
-                        </details>
-                    @endforeach
-                </div>
-
-                <a href="{{ route('acuan.index') }}" class="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink font-bold hover:underline pt-1">
-                    <span>Kelola pustaka acuan gizi</span>
-                    <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-                </a>
+                <p class="text-[11px] text-muted leading-relaxed">
+                    Sistem otomatis mengoptimasi formulasi ransum agar memenuhi seluruh kebutuhan nutrisi baku ayam petelur fase aktif kandang Anda tanpa perlu memilih manual.
+                </p>
             </section>
 
             {{-- 3. Tombol Hitung Ransum (Murni tanpa card / background tambahan) --}}
