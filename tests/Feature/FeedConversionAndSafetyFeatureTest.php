@@ -78,27 +78,17 @@ class FeedConversionAndSafetyFeatureTest extends TestCase
         $this->actingAs($user);
 
         $response = $this->post(route('bahan.store'), [
-            'nama' => 'Bungkil Sawit',
-            'protein' => 16.0,
-            'energi' => 2100,
-            'kalsium' => 0.35,
-            'fosfor' => 0.65,
-            'serat' => 16.0,
-            'harga_default' => 3000,
-            'bk' => 90.0,
-            'min_persen' => 0.0,
-            'max_persen' => 20.0,
-            'catatan_keamanan' => 'Maksimal 15-20% karena serat tinggi dan kecernaan rendah.',
-            'sumber' => 'Uji Lab Pakan',
-            'catatan' => 'Pakan alternatif',
+            'nama_template' => 'Bungkil kedelai',
+            'stok_kg' => 25.0,
+            'harga' => 9500,
         ]);
 
         $response->assertRedirect(route('bahan.index'));
         $this->assertDatabaseHas('ingredients', [
-            'nama' => 'Bungkil Sawit',
-            'bk' => 90.0,
-            'max_persen' => 20.0,
-            'catatan_keamanan' => 'Maksimal 15-20% karena serat tinggi dan kecernaan rendah.',
+            'nama' => 'Bungkil kedelai',
+            'bk' => 89.0,
+            'max_persen' => 30.0,
+            'catatan_keamanan' => 'Sumber protein nabati bermutu tinggi, batas aman 25-30%.',
         ]);
     }
 
