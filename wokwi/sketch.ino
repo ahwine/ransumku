@@ -1,18 +1,21 @@
 /**
  * =========================================================================
- * SIMULASI WOKWI: MAKET KANDANG STIK ES KRIM & IoT (RANSUMKU)
+ * SIMULASI WOKWI LENGKAP: MAKET KANDANG STIK ES KRIM & IoT (RANSUMKU)
  * Inovator: Aditya Ramadhani (SMKN 2 Surabaya)
- * Platform: RansumKu - Lomba Inovasi Peternakan Nasional
  *
- * SELURUH KOMPONEN SINKRON 1:1 DENGAN MAKET FISIK & WEB RANSUMKU:
- * 1. Sakelar Utama ON/OFF (Titik 1 - GPIO 26): Memutus/menyalakan sistem.
- * 2. Sensor DHT22 (GPIO 15): Mengukur Suhu & Kelembaban (% RH) tanpa sensor bau.
- * 3. Layar OLED 0.96" I2C (GPIO 21, 22): Menampilkan Suhu, RH, THI, & Status Alat.
- * 4. Motor Katrol Kereta Pakan (GPIO 18) + Limit Switch A (33) & B (32).
- * 5. Relay Ch-1 Kipas Plafon (GPIO 12): Aktif saat Suhu >= 31C atau THI >= 78.
- * 6. Relay Ch-2 Pompa Sprinkler Luar Atap (GPIO 14): Aktif saat THI >= 80,
- *    LENGKAP Proteksi Sekam Kering (otomatis KUNCI MATI bila RH >= 75%!).
- * 7. Lampu LED Hangat Fotoperiode (GPIO 27): Pencahayaan kandang ayam petelur.
+ * Pin SAMA dengan firmware fisik (ransumku_esp32.ino):
+ *   DHT22 = 15 | OLED SDA/SCL = 21/22 | L298N IN1/IN2 = 18/19 | ENA = 5
+ *   Relay Kipas = 12 | Relay Sprinkler = 14 | Lampu = 27
+ *   Limit A = 33 | Limit B = 32 | Sakelar Utama = 26 | LED biru = 2
+ *
+ * Wokwi tidak punya L298N + motor DC, jadi:
+ *   - LED hijau (IN1) & oranye (IN2) = arah putar motor (maju/mundur)
+ *   - Servo (GPIO 5 = ENA) = gerak visual kereta pakan
+ *
+ * Logika:
+ *   Kipas     ON bila Suhu >= 31C atau THI >= 78
+ *   Sprinkler ON bila THI >= 80, KUNCI OFF bila RH >= 75%
+ *   Pakan     A->B (berhenti di limit B) -> jeda 2 dtk -> B->A (limit A) -> jeda
  * =========================================================================
  */
 
@@ -26,247 +29,330 @@
 #define SCREEN_HEIGHT 64
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// --- PEMETAAN PIN ESP32 (SAMA PERSIS DENGAN MAKET FISIK) ---
-const int PIN_DHT               = 15; // Sensor DHT22 Suhu & Kelembaban
-const int PIN_MOTOR_PAKAN       = 18; // Simulasi Motor Katrol Pakan (L298N + Motor Kuning)
-const int PIN_RELAY_KIPAS       = 12; // Relay Ch-1: Kipas Sirkulasi Plafon
-const int PIN_RELAY_SPRINKLER   = 14; // Relay Ch-2: Pompa Sprinkler Luar Atap
-const int PIN_LED_LAMPU         = 27; // Lampu LED Hangat Fotoperiode
-const int PIN_SAKELAR_UTAMA     = 26; // Sakelar Utama ON/OFF di Titik 1
-const int PIN_LIMIT_PANGKAL_A   = 33; // Micro Limit Switch Pangkal Rel (Titik A)
-const int PIN_LIMIT_UJUNG_B     = 32; // Micro Limit Switch Ujung Rel (Titik B)
+const int PIN_DHT             = 15;
+const int PIN_MOTOR_IN1       = 18;
+const int PIN_MOTOR_IN2       = 19;
+const int PIN_MOTOR_ENA       = 5;
+const int PIN_RELAY_KIPAS     = 12;
+const int PIN_RELAY_SPRINKLER = 14;
+const int PIN_LED_LAMPU       = 27;
+const int PIN_SAKELAR_UTAMA   = 26;
+const int PIN_LIMIT_A         = 33;
+const int PIN_LIMIT_B         = 32;
+const int PIN_LED_BIRU        = 2;
+
+// Modul relay Wokwi aktif HIGH (di maket fisik umumnya aktif LOW)
+const bool RELAY_ACTIVE_LOW = false;
 
 DHTesp dhtSensor;
-Servo motorPenarikPakan;
+Servo servoKereta;
 
-enum FeederState { FEEDER_IDLE, FEEDER_FORWARD, FEEDER_BACKWARD, FEEDER_PAUSE_END, FEEDER_PAUSE_START };
-FeederState statePakan = FEEDER_FORWARD;
+const unsigned char LOGO_RANSUMKU_56[] PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x01, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xF0, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x03, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x78, 0x7F, 0x00, 0x00, 0x00, 0x01, 0xFE, 0x00, 0x1F, 0x80, 0x00, 0x00, 0xEF, 0xFF, 0x00, 0x07,
+  0x80, 0x00, 0x03, 0x9F, 0xE7, 0x00, 0x01, 0xC0, 0x00, 0x0E, 0x3F, 0x87, 0x80, 0x7C, 0xC0, 0x00,
+  0x18, 0x18, 0xEF, 0xF3, 0xFF, 0x00, 0x00, 0x30, 0x03, 0xFF, 0xE7, 0xFF, 0x80, 0x00, 0x60, 0x00,
+  0x3F, 0xCF, 0xE1, 0x80, 0x01, 0xC0, 0x00, 0xE7, 0x9F, 0xE0, 0xF0, 0x01, 0xC0, 0x00, 0xE0, 0x3F,
+  0xF1, 0xF8, 0x03, 0xE0, 0x00, 0xE0, 0x7F, 0xFF, 0xFC, 0x07, 0xE0, 0x00, 0xE0, 0x7F, 0xFF, 0x78,
+  0x07, 0xF0, 0x1C, 0xE0, 0xFF, 0xFE, 0x00, 0x0D, 0xF0, 0x1C, 0xE1, 0xFF, 0xFC, 0x00, 0x0C, 0xF0,
+  0x1C, 0xC1, 0xFF, 0xFC, 0x00, 0x1E, 0x71, 0x9C, 0x03, 0xFF, 0xFC, 0x70, 0x1F, 0xB3, 0x98, 0x07,
+  0xFF, 0xFC, 0xE0, 0x17, 0xD7, 0x80, 0x1F, 0xFF, 0xFD, 0x80, 0x37, 0xC7, 0x80, 0x7F, 0xFF, 0xFE,
+  0x00, 0x23, 0xEF, 0x03, 0xFF, 0xFF, 0xFF, 0x00, 0x21, 0xEF, 0xBC, 0x07, 0xFF, 0xFF, 0x80, 0x60,
+  0xED, 0xFE, 0x00, 0xFF, 0xFF, 0xC0, 0x70, 0x77, 0xCC, 0x08, 0x3F, 0xE7, 0xE0, 0x7C, 0x37, 0x00,
+  0xFF, 0x9F, 0xF1, 0xF0, 0x7F, 0x82, 0x03, 0xFF, 0xE7, 0xD8, 0xF0, 0x7F, 0xFC, 0x07, 0xFF, 0xF3,
+  0xCF, 0x78, 0x5D, 0xFF, 0x8D, 0xFF, 0xF9, 0xC7, 0xBC, 0x7F, 0xFF, 0xE8, 0xFF, 0xEC, 0xC7, 0xFC,
+  0x68, 0xFF, 0xF8, 0x7F, 0xF6, 0xC3, 0xFE, 0x68, 0x3F, 0xFC, 0x3F, 0xFF, 0x03, 0xFE, 0x64, 0x0F,
+  0xFE, 0x3F, 0xFF, 0x01, 0xBF, 0x22, 0x03, 0xFF, 0x1F, 0xFF, 0x81, 0xBF, 0x21, 0x00, 0x7D, 0x8F,
+  0xFF, 0xC1, 0xFF, 0x30, 0x80, 0x1E, 0xC7, 0xFF, 0xC1, 0xDF, 0x30, 0x40, 0x0F, 0x43, 0xFF, 0xE1,
+  0xDF, 0x10, 0x00, 0x03, 0xA1, 0xFF, 0x93, 0xDF, 0x18, 0x00, 0x00, 0xE0, 0xFF, 0x93, 0x9F, 0x08,
+  0x00, 0x08, 0x10, 0x7E, 0x17, 0x9E, 0x0C, 0x0F, 0xC4, 0x00, 0x00, 0x1F, 0xBE, 0x04, 0x1F, 0xE2,
+  0x08, 0x00, 0x3F, 0x3E, 0x06, 0x1F, 0xE1, 0x08, 0x00, 0x1E, 0x3C, 0x03, 0x00, 0xF0, 0x08, 0x00,
+  0x3C, 0x78, 0x01, 0x80, 0x10, 0x8C, 0x00, 0x7C, 0x70, 0x00, 0x80, 0x08, 0x0C, 0x03, 0xC0, 0x60,
+  0x00, 0x60, 0x00, 0x4F, 0xBC, 0x00, 0xC0, 0x00, 0x30, 0x00, 0x0F, 0xF0, 0x01, 0x80, 0x00, 0x10,
+  0x00, 0x0F, 0x80, 0x03, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
 
-int motorAngle = 90;
-int motorDir   = 1;
-unsigned long waktuMulaiJalan = 0;
-unsigned long waktuJeda       = 0;
-const unsigned long DURASI_JALAN_MS = 5000;
-const unsigned long JEDA_PARKIR_MS  = 2000;
+const unsigned char LOGO_RANSUMKU_64[] PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0xC0, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x8F, 0xF8, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x07, 0xE3, 0xFC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xC0, 0xFE, 0x00,
+  0x00, 0x00, 0x00, 0x3F, 0xF0, 0x00, 0x3F, 0x00, 0x00, 0x00, 0x39, 0xFF, 0xF0, 0x00, 0x0F, 0x80,
+  0x00, 0x00, 0xE7, 0xFE, 0x78, 0x00, 0x03, 0x80, 0x00, 0x03, 0x8F, 0xF8, 0x7C, 0x01, 0xF1, 0x80,
+  0x00, 0x07, 0x0F, 0x86, 0x7F, 0x0F, 0xFC, 0x00, 0x00, 0x0C, 0x00, 0x3F, 0xFF, 0x9F, 0xFE, 0x00,
+  0x00, 0x18, 0x00, 0x3F, 0xFF, 0x3F, 0xE3, 0x00, 0x00, 0xF0, 0x00, 0x06, 0xFE, 0x7F, 0x83, 0x80,
+  0x00, 0xE0, 0x00, 0x1E, 0x7C, 0xFF, 0xC3, 0xF0, 0x00, 0xE0, 0x00, 0x1E, 0x01, 0xFF, 0xE3, 0xF8,
+  0x01, 0xF0, 0x00, 0x1E, 0x03, 0xFF, 0xFF, 0xFC, 0x03, 0xF8, 0x00, 0x1E, 0x07, 0xFF, 0xFE, 0xF8,
+  0x03, 0xF8, 0x03, 0xDE, 0x07, 0xFF, 0xFC, 0x40, 0x06, 0xFC, 0x03, 0xDE, 0x0F, 0xFF, 0xF8, 0x00,
+  0x0C, 0xFC, 0x03, 0xDE, 0x1F, 0xFF, 0xF0, 0x00, 0x0E, 0x7C, 0x23, 0xD8, 0x1F, 0xFF, 0xF0, 0x20,
+  0x0F, 0xBC, 0x63, 0x80, 0x3F, 0xFF, 0xF0, 0xE0, 0x1F, 0xD8, 0xE2, 0x00, 0x7F, 0xFF, 0xF1, 0xE0,
+  0x13, 0xE9, 0xE0, 0x01, 0xFF, 0xFF, 0xFB, 0x00, 0x33, 0xF3, 0xE0, 0x07, 0xFF, 0xFF, 0xF9, 0x00,
+  0x33, 0xF3, 0xE0, 0x7F, 0xFF, 0xFF, 0xFC, 0x00, 0x31, 0xF3, 0xC3, 0x01, 0xFF, 0xFF, 0xFE, 0x00,
+  0x20, 0xFB, 0x3F, 0x80, 0x1F, 0xFF, 0xFF, 0x00, 0x20, 0x7B, 0x7F, 0xC0, 0x07, 0xFF, 0xFF, 0x80,
+  0x78, 0x3B, 0xF0, 0x01, 0xC1, 0xFF, 0xCF, 0xC0, 0x7E, 0x0C, 0xC0, 0x17, 0xF8, 0xFF, 0xE7, 0xE0,
+  0x7F, 0xC5, 0x80, 0x7F, 0xFE, 0x3F, 0x71, 0xF0, 0x7F, 0xFC, 0x00, 0xFF, 0xFF, 0x9F, 0x38, 0xF8,
+  0x7D, 0xFF, 0xC0, 0xBF, 0xFF, 0xCF, 0x1F, 0x78, 0x7F, 0xFF, 0xF9, 0x9F, 0xFF, 0x67, 0x1F, 0xBC,
+  0x6D, 0xFF, 0xFE, 0x0F, 0xFF, 0x33, 0x0F, 0xFC, 0x6C, 0x3F, 0xFF, 0x87, 0xFF, 0x99, 0x07, 0xFE,
+  0x64, 0x07, 0xFF, 0x87, 0xFF, 0xF8, 0x07, 0xFE, 0x22, 0x03, 0xFF, 0xC3, 0xFF, 0xFC, 0x07, 0x7F,
+  0x23, 0x00, 0xFE, 0xF1, 0xFF, 0xFE, 0x03, 0x7F, 0x31, 0x80, 0x1F, 0xB0, 0xFF, 0xFE, 0x03, 0xBF,
+  0x30, 0xC0, 0x07, 0xD8, 0x7F, 0xFF, 0x8B, 0xBF, 0x10, 0x20, 0x03, 0xEC, 0x7F, 0xFF, 0x83, 0xBF,
+  0x18, 0x10, 0x00, 0xF4, 0x3F, 0xFE, 0x17, 0xBF, 0x18, 0x00, 0x08, 0x3A, 0x1F, 0xFE, 0x47, 0x3F,
+  0x08, 0x00, 0x00, 0x0E, 0x07, 0xFC, 0x4F, 0x3F, 0x0C, 0x00, 0x01, 0x01, 0x03, 0xF8, 0x5F, 0x3E,
+  0x04, 0x03, 0xF0, 0x81, 0x00, 0x00, 0x5E, 0x3E, 0x06, 0x0F, 0xFC, 0x40, 0x00, 0x00, 0xFE, 0x7C,
+  0x03, 0x0F, 0xFC, 0x20, 0x80, 0x00, 0x7C, 0x7C, 0x01, 0x00, 0x7C, 0x00, 0x80, 0x00, 0x78, 0x78,
+  0x01, 0x80, 0x0E, 0x10, 0xC0, 0x00, 0xF0, 0xF0, 0x00, 0xC0, 0x02, 0x08, 0xC0, 0x03, 0xC0, 0xF0,
+  0x00, 0x60, 0x01, 0x08, 0xE3, 0x1E, 0x01, 0xE0, 0x00, 0x30, 0x00, 0x04, 0xFF, 0xE0, 0x03, 0x80,
+  0x00, 0x18, 0x00, 0x04, 0xFF, 0x80, 0x03, 0x00, 0x00, 0x0C, 0x00, 0x00, 0xFC, 0x00, 0x06, 0x00,
+  0x00, 0x00, 0x00, 0x02, 0xF0, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0xC0, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
 
-bool sistemAktif     = true;
-bool statusKipas     = true;
-bool statusSprinkler = true;
-bool statusLampu     = true;
-bool kunciLembabRH   = false;
+void playBootAnimation() {
+  for (int revealH = 8; revealH <= 64; revealH += 8) {
+    display.clearDisplay();
+    int yTop = 64 - revealH;
+    display.drawBitmap(32, 0, LOGO_RANSUMKU_64, 64, 64, SSD1306_WHITE);
+    if (yTop > 0) {
+      display.fillRect(0, 0, 128, yTop, SSD1306_BLACK);
+      display.drawLine(24, yTop, 104, yTop, SSD1306_WHITE);
+    }
+    display.display();
+    delay(25);
+  }
+  for (int pct = 0; pct <= 100; pct += 20) {
+    display.clearDisplay();
+    display.drawBitmap(2, 4, LOGO_RANSUMKU_56, 56, 56, SSD1306_WHITE);
+    display.setTextColor(SSD1306_WHITE);
+    display.setTextSize(1);
+    display.setCursor(62, 8);
+    display.print("RANSUMKU");
+    display.drawLine(62, 19, 124, 19, SSD1306_WHITE);
+    display.setCursor(62, 24);
+    display.print("SMART FARM");
+    display.setCursor(62, 35);
+    display.print("SMKN 2 SBY");
+    display.drawRect(62, 49, 63, 8, SSD1306_WHITE);
+    int fillW = (pct * 59) / 100;
+    if (fillW > 0) display.fillRect(64, 51, fillW, 4, SSD1306_WHITE);
+    display.display();
+    delay(55);
+  }
+}
 
-float curSuhu = 33.5;
-float curRH   = 68.0;
-float curTHI  = 86.2;
+enum FeederState { F_MAJU, F_JEDA_B, F_MUNDUR, F_JEDA_A };
+FeederState feeder = F_MAJU;
+float posisiKereta = 0.0f;                    // 0.0 = titik A, 1.0 = titik B
+const unsigned long WAKTU_TEMPUH_MS = 8000;   // pengaman bila limit tidak ditekan
+const unsigned long JEDA_MS = 2000;
+unsigned long feederTerakhir = 0;
+unsigned long jedaMulai = 0;
 
-unsigned long lastSensorRead    = 0;
-unsigned long lastDisplayUpdate = 0;
+bool sistemAktif = true;
+bool statusKipas = false;
+bool statusSprinkler = false;
+bool kunciRH = false;
 
-void matikanSemuaAlat() {
-  digitalWrite(PIN_RELAY_KIPAS, LOW);
-  digitalWrite(PIN_RELAY_SPRINKLER, LOW);
+float curSuhu = 33.5, curRH = 68.0, curTHI = 0.0;
+unsigned long lastSensor = 0, lastDisplay = 0;
+
+void setRelay(int pin, bool on) {
+  bool level = RELAY_ACTIVE_LOW ? !on : on;
+  digitalWrite(pin, level ? HIGH : LOW);
+}
+
+void motorMaju()   { digitalWrite(PIN_MOTOR_IN1, HIGH); digitalWrite(PIN_MOTOR_IN2, LOW); }
+void motorMundur() { digitalWrite(PIN_MOTOR_IN1, LOW);  digitalWrite(PIN_MOTOR_IN2, HIGH); }
+void motorStop()   { digitalWrite(PIN_MOTOR_IN1, LOW);  digitalWrite(PIN_MOTOR_IN2, LOW); }
+
+float hitungTHI(float t, float rh) {
+  return (0.8f * t) + ((rh / 100.0f) * (t - 14.4f)) + 46.4f;
+}
+
+void tulisServo() {
+  servoKereta.write((int)(10 + posisiKereta * 160));
+}
+
+void matikanSemua() {
+  setRelay(PIN_RELAY_KIPAS, false);
+  setRelay(PIN_RELAY_SPRINKLER, false);
   digitalWrite(PIN_LED_LAMPU, LOW);
-  motorPenarikPakan.write(90);
+  digitalWrite(PIN_LED_BIRU, LOW);
+  motorStop();
 }
 
-void jalanFeederMaju() {
-  statePakan = FEEDER_FORWARD;
-  waktuMulaiJalan = millis();
-  Serial.println(F(">> [PAKAN]: Motor katrol menarik kereta MAJU (Pangkal A -> Ujung B)..."));
+void mulaiMaju() {
+  feeder = F_MAJU;
+  feederTerakhir = millis();
+  motorMaju();
+  Serial.println(F(">> [PAKAN] MAJU A -> B"));
 }
 
-void jalanFeederMundur() {
-  statePakan = FEEDER_BACKWARD;
-  waktuMulaiJalan = millis();
-  Serial.println(F(">> [PAKAN]: Motor katrol menarik kereta MUNDUR (Ujung B -> Pangkal A)..."));
+void mulaiMundur() {
+  feeder = F_MUNDUR;
+  feederTerakhir = millis();
+  motorMundur();
+  Serial.println(F(">> [PAKAN] MUNDUR B -> A"));
 }
 
 void renderDisplay() {
   display.clearDisplay();
-
   if (!sistemAktif) {
-    // Saat Sakelar Utama di Titik 1 dimatikan (OFF), layar OLED ikut padam
     display.display();
     return;
   }
-
   display.setTextColor(SSD1306_WHITE);
   display.setTextSize(1);
   display.setCursor(8, 0);
   display.print("RANSUMKU - SMART FARM");
   display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
 
-  // Suhu & RH
   display.setCursor(0, 14);
   display.printf("Suhu:%.1fC", curSuhu);
   display.setCursor(70, 14);
   display.printf("RH:%d%%", (int)curRH);
 
-  // Indeks THI Unggas (Zulovich & DeShazer, 1990)
-  const char* labelTHI = "NYAMAN";
-  if (curTHI >= 84.0)      labelTHI = "BAHAYA";
-  else if (curTHI >= 78.0) labelTHI = "KRITIS";
-  else if (curTHI >= 72.0) labelTHI = "WASPADA";
-
+  const char* label = "NYAMAN";
+  if (curTHI >= 84.0f)      label = "BAHAYA";
+  else if (curTHI >= 78.0f) label = "KRITIS";
+  else if (curTHI >= 72.0f) label = "WASPADA";
   display.setCursor(0, 25);
-  display.printf("THI :%.1f (%s)", curTHI, labelTHI);
+  display.printf("THI :%.1f (%s)", curTHI, label);
 
-  // Status Kipas, Sprinkler Atap, & Lampu
   display.setCursor(0, 36);
-  if (kunciLembabRH) {
+  if (kunciRH) {
     display.printf("Kps:%s Atp:LOCK-RH!", statusKipas ? "ON" : "OF");
   } else {
-    display.printf("Kps:%s Atp:%s Lmp:%s",
-                   statusKipas ? "ON" : "OF",
-                   statusSprinkler ? "ON" : "OF",
-                   statusLampu ? "ON" : "OF");
+    display.printf("Kps:%s Atp:%s Lmp:ON", statusKipas ? "ON" : "OF", statusSprinkler ? "ON" : "OF");
   }
-
   display.drawLine(0, 47, 127, 47, SSD1306_WHITE);
 
-  // Status Kereta Pakan 2 Tingkat
   display.setCursor(0, 52);
-  if (statePakan == FEEDER_FORWARD)       display.print("PAKAN: >> MAJU (A->B)");
-  else if (statePakan == FEEDER_BACKWARD) display.print("PAKAN: << MUNDUR(B->A)");
-  else if (statePakan == FEEDER_PAUSE_END) display.print("PAKAN: JEDA DI UJUNG B");
-  else                                    display.print("PAKAN: JEDA PANGKAL A");
-
+  if (feeder == F_MAJU)        display.print("PAKAN: >> MAJU (A->B)");
+  else if (feeder == F_MUNDUR) display.print("PAKAN: << MUNDUR(B->A)");
+  else if (feeder == F_JEDA_B) display.print("PAKAN: JEDA DI UJUNG B");
+  else                         display.print("PAKAN: JEDA PANGKAL A");
   display.display();
 }
 
 void setup() {
   Serial.begin(115200);
   delay(300);
-
-  Serial.println(F("=========================================================="));
-  Serial.println(F("  SIMULASI MAKET IoT KANDANG STIK ES KRIM - RANSUMKU      "));
-  Serial.println(F("  Inovator: Aditya Ramadhani (SMKN 2 Surabaya)            "));
-  Serial.println(F("=========================================================="));
+  Serial.println(F("=== SIMULASI LENGKAP MAKET IoT RANSUMKU ==="));
 
   pinMode(PIN_RELAY_KIPAS, OUTPUT);
   pinMode(PIN_RELAY_SPRINKLER, OUTPUT);
   pinMode(PIN_LED_LAMPU, OUTPUT);
+  pinMode(PIN_LED_BIRU, OUTPUT);
+  pinMode(PIN_MOTOR_IN1, OUTPUT);
+  pinMode(PIN_MOTOR_IN2, OUTPUT);
 
   pinMode(PIN_SAKELAR_UTAMA, INPUT_PULLUP);
-  pinMode(PIN_LIMIT_PANGKAL_A, INPUT_PULLUP);
-  pinMode(PIN_LIMIT_UJUNG_B, INPUT_PULLUP);
+  pinMode(PIN_LIMIT_A, INPUT_PULLUP);
+  pinMode(PIN_LIMIT_B, INPUT_PULLUP);
 
-  motorPenarikPakan.attach(PIN_MOTOR_PAKAN);
+  servoKereta.attach(PIN_MOTOR_ENA);
+  tulisServo();
   dhtSensor.setup(PIN_DHT, DHTesp::DHT22);
 
   if (display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(15, 20);
-    display.println("RANSUMKU IoT 4.0");
-    display.setCursor(10, 35);
-    display.println("SMKN 2 SURABAYA");
-    display.display();
-    delay(800);
+    playBootAnimation();
   }
 
-  digitalWrite(PIN_RELAY_KIPAS, HIGH);
-  digitalWrite(PIN_RELAY_SPRINKLER, HIGH);
+  setRelay(PIN_RELAY_KIPAS, false);
+  setRelay(PIN_RELAY_SPRINKLER, false);
   digitalWrite(PIN_LED_LAMPU, HIGH);
-  waktuMulaiJalan = millis();
+  digitalWrite(PIN_LED_BIRU, HIGH);
+  mulaiMaju();
 }
 
 void loop() {
   unsigned long now = millis();
 
-  // 0. CEK SAKELAR UTAMA ON/OFF DI TITIK 1
+  // 0. Sakelar utama (Titik 1)
   bool sakelarOn = (digitalRead(PIN_SAKELAR_UTAMA) == LOW);
   if (!sakelarOn) {
     if (sistemAktif) {
       sistemAktif = false;
-      matikanSemuaAlat();
+      statusKipas = statusSprinkler = false;
+      matikanSemua();
       renderDisplay();
-      Serial.println(F("[SAKELAR UTAMA OFF]: Seluruh daya maket diputus dari Titik 1."));
+      Serial.println(F("[SAKELAR UTAMA OFF] semua alat mati"));
     }
     delay(50);
     return;
   } else if (!sistemAktif) {
     sistemAktif = true;
-    digitalWrite(PIN_LED_LAMPU, statusLampu ? HIGH : LOW);
-    jalanFeederMaju();
-    Serial.println(F("[SAKELAR UTAMA ON]: Daya maket aktif kembali!"));
+    digitalWrite(PIN_LED_LAMPU, HIGH);
+    digitalWrite(PIN_LED_BIRU, HIGH);
+    mulaiMaju();
+    Serial.println(F("[SAKELAR UTAMA ON] sistem menyala"));
   }
 
-  // 1. SIKLUS MOTOR KATROL KERETA PAKAN 2 TINGKAT
-  if (statePakan == FEEDER_FORWARD) {
-    motorAngle += 14 * motorDir;
-    if (motorAngle >= 170) { motorAngle = 170; motorDir = -1; }
-    else if (motorAngle <= 10) { motorAngle = 10; motorDir = 1; }
-    motorPenarikPakan.write(motorAngle);
+  // 1. Sensor + otomasi THI
+  if (now - lastSensor >= 1500) {
+    lastSensor = now;
+    TempAndHumidity d = dhtSensor.getTempAndHumidity();
+    if (!isnan(d.temperature) && !isnan(d.humidity)) {
+      curSuhu = d.temperature;
+      curRH = d.humidity;
+      curTHI = hitungTHI(curSuhu, curRH);
 
-    if (now - waktuMulaiJalan >= DURASI_JALAN_MS) {
-      statePakan = FEEDER_PAUSE_END;
-      waktuJeda = now;
-      Serial.println(F(">> [PAKAN]: Sampai di Ujung B, jeda 2 detik..."));
-    }
-  } else if (statePakan == FEEDER_PAUSE_END) {
-    if (now - waktuJeda >= JEDA_PARKIR_MS) {
-      jalanFeederMundur();
-    }
-  } else if (statePakan == FEEDER_BACKWARD) {
-    motorAngle -= 14 * motorDir;
-    if (motorAngle <= 10) { motorAngle = 10; motorDir = -1; }
-    else if (motorAngle >= 170) { motorAngle = 170; motorDir = 1; }
-    motorPenarikPakan.write(motorAngle);
+      statusKipas = (curSuhu >= 31.0f || curTHI >= 78.0f);
+      setRelay(PIN_RELAY_KIPAS, statusKipas);
 
-    if (now - waktuMulaiJalan >= DURASI_JALAN_MS) {
-      statePakan = FEEDER_PAUSE_START;
-      waktuJeda = now;
-      Serial.println(F(">> [PAKAN]: Kembali di Pangkal A, jeda 2 detik..."));
-    }
-  } else if (statePakan == FEEDER_PAUSE_START) {
-    if (now - waktuJeda >= JEDA_PARKIR_MS) {
-      jalanFeederMaju();
-    }
-  }
-
-  // 2. BACA SENSOR DHT22 & EVALUASI OTOMATISASI THI + PROTEKSI RH >= 75%
-  if (now - lastSensorRead >= 1500) {
-    lastSensorRead = now;
-    TempAndHumidity data = dhtSensor.getTempAndHumidity();
-    if (!isnan(data.temperature) && !isnan(data.humidity)) {
-      curSuhu = data.temperature;
-      curRH   = data.humidity;
-      curTHI  = (0.8 * curSuhu) + ((curRH / 100.0) * (curSuhu - 14.4)) + 46.4;
-
-      // A. Kipas Sirkulasi Plafon (Nyala jika Suhu >= 31C atau THI >= 78)
-      statusKipas = (curSuhu >= 31.0 || curTHI >= 78.0);
-      digitalWrite(PIN_RELAY_KIPAS, statusKipas ? HIGH : LOW);
-
-      // B. Pompa Sprinkler Luar Atap + Safety Interlock RH >= 75% (Cegah Kotoran Lembap/Bau!)
-      if (curRH >= 75.0) {
+      if (curRH >= 75.0f) {
+        kunciRH = true;
         statusSprinkler = false;
-        kunciLembabRH   = true;
       } else {
-        kunciLembabRH   = false;
-        statusSprinkler = (curTHI >= 80.0);
+        kunciRH = false;
+        statusSprinkler = (curTHI >= 80.0f);
       }
-      digitalWrite(PIN_RELAY_SPRINKLER, statusSprinkler ? HIGH : LOW);
-      digitalWrite(PIN_LED_LAMPU, statusLampu ? HIGH : LOW);
+      setRelay(PIN_RELAY_SPRINKLER, statusSprinkler);
+
+      Serial.printf("T=%.1fC RH=%d%% THI=%.1f | Kipas=%s Sprinkler=%s%s\n",
+                    curSuhu, (int)curRH, curTHI,
+                    statusKipas ? "ON" : "OFF",
+                    statusSprinkler ? "ON" : "OFF",
+                    kunciRH ? " (KUNCI RH)" : "");
     }
   }
 
-  // 3. DETEKSI MICRO LIMIT SWITCH PANGKAL A & UJUNG B
-  if (digitalRead(PIN_LIMIT_UJUNG_B) == LOW && statePakan == FEEDER_FORWARD) {
-    statePakan = FEEDER_PAUSE_END;
-    waktuJeda = now;
-    Serial.println(F(">> [LIMIT SWITCH B TERSENTUH]: Kereta berhenti aman di Ujung B!"));
-  }
-  if (digitalRead(PIN_LIMIT_PANGKAL_A) == LOW && statePakan == FEEDER_BACKWARD) {
-    statePakan = FEEDER_PAUSE_START;
-    waktuJeda = now;
-    Serial.println(F(">> [LIMIT SWITCH A TERSENTUH]: Kereta berhenti aman di Pangkal A!"));
+  // 2. Kereta pakan berbasis limit switch
+  unsigned long dt = now - feederTerakhir;
+  feederTerakhir = now;
+
+  if (feeder == F_MAJU) {
+    posisiKereta += (float)dt / WAKTU_TEMPUH_MS;
+    if (posisiKereta > 1.0f) posisiKereta = 1.0f;
+    tulisServo();
+    if (digitalRead(PIN_LIMIT_B) == LOW || posisiKereta >= 1.0f) {
+      motorStop();
+      feeder = F_JEDA_B;
+      jedaMulai = now;
+      Serial.println(F(">> [LIMIT B] kereta berhenti, jeda 2 detik"));
+    }
+  } else if (feeder == F_JEDA_B) {
+    if (now - jedaMulai >= JEDA_MS) mulaiMundur();
+  } else if (feeder == F_MUNDUR) {
+    posisiKereta -= (float)dt / WAKTU_TEMPUH_MS;
+    if (posisiKereta < 0.0f) posisiKereta = 0.0f;
+    tulisServo();
+    if (digitalRead(PIN_LIMIT_A) == LOW || posisiKereta <= 0.0f) {
+      motorStop();
+      feeder = F_JEDA_A;
+      jedaMulai = now;
+      Serial.println(F(">> [LIMIT A] kereta kembali, jeda 2 detik"));
+    }
+  } else if (feeder == F_JEDA_A) {
+    if (now - jedaMulai >= JEDA_MS) mulaiMaju();
   }
 
-  // 4. UPDATE LAYAR OLED TIAP 250 MS
-  if (now - lastDisplayUpdate >= 250) {
-    lastDisplayUpdate = now;
+  // 3. OLED
+  if (now - lastDisplay >= 250) {
+    lastDisplay = now;
     renderDisplay();
   }
 }

@@ -1,3 +1,16 @@
+<IfModule mod_mime.c>
+    AddType model/gltf-binary .glb
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript application/json image/svg+xml model/gltf-binary application/octet-stream
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType model/gltf-binary "access plus 1 year"
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

@@ -1659,7 +1659,7 @@ window.showToast = function (pesan, tipe = 'success', judul = null) {
         titleClass = 'text-sky-800 dark:text-sky-300';
     }
 
-    toast.classList.add(borderClass);
+    toast.classList.add(...borderClass.trim().split(/\s+/));
     toast.innerHTML = `
         <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${iconClass} flex items-center justify-center shrink-0 shadow-2xs">
             <span class="material-symbols-outlined icon-fill text-[20px] sm:text-[22px]">${icon}</span>

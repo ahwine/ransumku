@@ -364,5 +364,179 @@ class WeatherAndIotFeatureTest extends TestCase
         $this->assertEquals(72.0, $saved['misting']['rh_maksimal']);
         $this->assertEquals('04:30', $saved['lampu']['jam_pagi_mulai']);
     }
+
+    public function test_esp32_baru_dicolokkan_otomatis_mereset_sakelar_manual_ke_mati(): void
+    {
+        $user = User::factory()->create();
+        $farm = Farm::create([
+            'user_id' => $user->id,
+            'nama' => 'Kandang Boot Reset',
+            'lokasi_kota' => 'Surabaya',
+            'controller_siap' => true,
+            'relay_kipas' => true,
+            'relay_misting' => true,
+            'relay_lampu' => true,
+            'relay_pakan' => true,
+            'sensor_updated_at' => now()->subSeconds(5),
+        ]);
+
+        // 1. Saat ESP32 baru nyala (boot = true), semua sakelar manual wajib direset ke OFF
+        $res = $this->postJson(route('api.kandang.sensor', $farm), [
+            'suhu' => 29.5,
+            'kelembaban' => 62.0,
+            'boot' => true,
+        ]);
+
+        $res->assertStatus(200);
+        $res->assertJson([
+            'ok' => true,
+            'kontrol' => [
+                'relay_kipas' => false,
+                'relay_misting' => false,
+                'relay_lampu' => false,
+                'relay_pakan' => false,
+            ],
+        ]);
+
+        // 2. Saat sakelar manual dinyalakan lalu ada jeda WiFi Hotspot 25 detik (tanpa boot), sakelar TIDAK boleh mati sendiri
+        $farm->refresh()->update([
+            'relay_kipas' => true,
+            'relay_misting' => true,
+            'sensor_updated_at' => now()->subSeconds(25),
+        ]);
+
+        $resWifiJitter = $this->postJson(route('api.kandang.sensor', $farm), [
+            'suhu' => 29.5,
+            'kelembaban' => 62.0,
+        ]);
+
+        $resWifiJitter->assertStatus(200);
+        $resWifiJitter->assertJson([
+            'ok' => true,
+            'kontrol' => [
+                'relay_kipas' => true,
+                'relay_misting' => true,
+            ],
+        ]);
+    }
+
+    public function test_klik_sakelar_manual_otomatis_mematikan_otomatisasi_agar_tidak_ditimpa_sensor(): void
+    {
+        $user = User::factory()->create();
+        $farm = Farm::create([
+            'user_id' => $user->id,
+            'nama' => 'Kandang Anti Konflik Otomasi',
+            'lokasi_kota' => 'Surabaya',
+            'controller_siap' => true,
+            'relay_kipas' => false,
+            'relay_misting' => false,
+            'sensor_suhu' => 36.3,
+            'sensor_kelembaban' => 54.9,
+            'sensor_updated_at' => now(),
+            'controller_settings' => [
+                'kipas' => ['otomatis' => true, 'suhu_nyala' => 37.0, 'thi_nyala' => 90.0],
+                'misting' => ['otomatis' => true, 'thi_nyala' => 90.0, 'rh_maksimal' => 61.0],
+                'lampu' => ['otomatis' => false, 'jam_pagi_mulai' => '04:00', 'jam_pagi_selesai' => '07:00', 'jam_sore_mulai' => '18:00', 'jam_sore_selesai' => '21:00'],
+                'pakan' => ['otomatis' => false, 'mode' => 'shuttle', 'durasi_detik' => 4, 'jam_pagi' => '07:00', 'jam_sore' => '15:30'],
+            ],
+        ]);
+
+        // 1. Klik manual ON saat suhu (36.3) di bawah ambang otomatis (37.0) -> otomatis dimatikan & alat tetap ON saat ESP32 melapor
+        $this->postJson(route('api.kandang.kontrol.sakelar', $farm), [
+            'alat' => 'kipas',
+            'status' => true,
+        ])->assertOk()->assertJsonPath('kontrol.relay_kipas', true)->assertJsonPath('kontrol.settings.kipas.otomatis', false);
+
+        $this->postJson(route('api.kandang.kontrol.sakelar', $farm), [
+            'alat' => 'misting',
+            'status' => true,
+        ])->assertOk()->assertJsonPath('kontrol.relay_misting', true)->assertJsonPath('kontrol.settings.misting.otomatis', false);
+
+        $resEsp = $this->postJson(route('api.kandang.sensor', $farm), [
+            'suhu' => 36.3,
+            'kelembaban' => 54.9,
+        ]);
+        $resEsp->assertOk()
+            ->assertJsonPath('kontrol.relay_kipas', true)
+            ->assertJsonPath('kontrol.relay_misting', true);
+
+        // 2. Sebaliknya: jika otomatisasi aktif menahan alat ON (suhu 36.3 >= 31.0), klik manual OFF wajib mematikan alat secara paten
+        $settings = $farm->fresh()->getSettingsKontroler();
+        $settings['kipas']['otomatis'] = true;
+        $settings['kipas']['suhu_nyala'] = 31.0;
+        $farm->update(['controller_settings' => $settings, 'relay_kipas' => true]);
+
+        $this->postJson(route('api.kandang.kontrol.sakelar', $farm), [
+            'alat' => 'kipas',
+            'status' => false,
+        ])->assertOk()->assertJsonPath('kontrol.relay_kipas', false)->assertJsonPath('kontrol.settings.kipas.otomatis', false);
+
+        $resEspOff = $this->postJson(route('api.kandang.sensor', $farm), [
+            'suhu' => 36.3,
+            'kelembaban' => 54.9,
+        ]);
+        $resEspOff->assertOk()->assertJsonPath('kontrol.relay_kipas', false);
+    }
+
+    public function test_lampu_fotoperiode_sinkron_manual_dan_jadwal_otomatis_ke_esp32(): void
+    {
+        $user = User::factory()->create();
+        $farm = Farm::create([
+            'user_id' => $user->id,
+            'nama' => 'Kandang Lampu Fotoperiode',
+            'lokasi_kota' => 'Surabaya',
+            'controller_siap' => false,
+            'relay_lampu' => false,
+            'sensor_suhu' => 29.0,
+            'sensor_kelembaban' => 65.0,
+            'sensor_updated_at' => now(),
+        ]);
+
+        // 1. Sakelar Manual Lampu Fotoperiode ON -> terkirim true ke ESP32 dan tidak mati sendiri
+        $this->postJson(route('api.kandang.kontrol.sakelar', $farm), [
+            'alat' => 'lampu',
+            'status' => true,
+        ])->assertOk()->assertJsonPath('kontrol.relay_lampu', true);
+
+        $this->postJson(route('api.kandang.sensor', $farm), [
+            'suhu' => 29.0,
+            'kelembaban' => 65.0,
+        ])->assertOk()->assertJsonPath('kontrol.relay_lampu', true);
+
+        // 2. Jadwal Otomatisasi Cerdas Fotoperiode (termasuk rentang lintas tengah malam 22:00 - 02:00)
+        \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::create(2026, 11, 8, 23, 15, 0, 'Asia/Jakarta'));
+
+        $farm->refresh()->update([
+            'sensor_updated_at' => now(),
+            'controller_settings' => [
+                'kipas' => ['otomatis' => false, 'suhu_nyala' => 31.0, 'thi_nyala' => 78.0],
+                'misting' => ['otomatis' => false, 'thi_nyala' => 80.0, 'rh_maksimal' => 75.0],
+                'lampu' => [
+                    'otomatis' => true,
+                    'jam_pagi_mulai' => '04:00',
+                    'jam_pagi_selesai' => '07:00',
+                    'jam_sore_mulai' => '22:00',
+                    'jam_sore_selesai' => '02:00',
+                ],
+                'pakan' => ['otomatis' => false, 'mode' => 'shuttle', 'durasi_detik' => 4, 'jam_pagi' => '07:00', 'jam_sore' => '15:30'],
+            ],
+            'relay_lampu' => false,
+        ]);
+
+        $this->postJson(route('api.kandang.sensor', $farm), [
+            'suhu' => 29.0,
+            'kelembaban' => 65.0,
+        ])->assertOk()->assertJsonPath('kontrol.relay_lampu', true);
+
+        // 3. Klik Sakelar Manual OFF saat jadwal otomatis sedang aktif -> otomatisasi lampu dimatikan & lampu tetap OFF
+        $this->postJson(route('api.kandang.kontrol.sakelar', $farm), [
+            'alat' => 'lampu',
+            'status' => false,
+        ])->assertOk()
+            ->assertJsonPath('kontrol.relay_lampu', false)
+            ->assertJsonPath('kontrol.settings.lampu.otomatis', false);
+
+        \Illuminate\Support\Carbon::setTestNow();
+    }
 }
 

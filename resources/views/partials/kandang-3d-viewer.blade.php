@@ -50,7 +50,7 @@
                     <span id="hud-hen-model-text">Memuat model ayam 3D...</span>
                 </div>
 
-                <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[10px] font-semibold text-slate-300">
+                <div class="inline-flex flex-wrap items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[10px] font-semibold text-slate-300">
                     <span class="flex items-center gap-1" id="badge-kipas-3d">
                         <span class="material-symbols-outlined text-[13px] text-slate-400" id="icon-fan-3d">mode_fan</span>
                         <span id="text-fan-3d">Kipas OFF</span>
@@ -99,23 +99,23 @@
     {{-- ================================================================= --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
         
-        {{-- Sektor 1: Tombol Aksi Simulasi Fisik (Primary Action Buttons) --}}
-        <div class="grid grid-cols-2 gap-2.5 w-full md:w-auto md:flex md:items-center">
-            {{-- Tombol 1: Kereta Pakan Katrol Rel (Auto-Shuttle) --}}
-            <button type="button" onclick="toggleSimulasiGerakPakan()" id="btn-trigger-pakan-3d" class="px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-700/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30" title="Jalankan / Hentikan Kereta Pakan Otomatis (Auto-Shuttle)">
+        {{-- Sektor 1: Tombol Aksi Simulasi Fisik (Primary Action Buttons — Sinkron Aktuator Fisik) --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full md:w-auto md:flex md:flex-wrap md:items-center">
+            {{-- Tombol 1: Kereta Pakan Motor Kuning L298N (GPIO 18, 19) --}}
+            <button type="button" onclick="toggleSimulasiGerakPakan()" id="btn-trigger-pakan-3d" class="px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-700/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30" title="Jalankan / Hentikan Motor Kereta Pakan L298N (D18/D19)">
                 <span class="material-symbols-outlined text-[18px]">play_arrow</span>
                 <div class="text-left">
                     <span class="block leading-tight font-extrabold" id="text-feeder-btn">Jalankan Kereta 3D</span>
-                    <span class="block text-[9px] text-emerald-100 font-normal leading-tight hidden sm:block" id="subtext-feeder-btn">Auto-Shuttle Bolak-Balik</span>
+                    <span class="block text-[9px] text-emerald-100 font-normal leading-tight hidden sm:block" id="subtext-feeder-btn">Motor L298N · D18/D19</span>
                 </div>
             </button>
 
-            {{-- Tombol 2: Uji Cuaca Panas (Trigger Blower & Misting) --}}
-            <button type="button" onclick="toggleUjiCuacaPanas3D()" id="btn-cuaca-3d" class="px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer" title="Simulasikan cuaca panas ekstrim untuk memicu Kipas & Sprinkler Atap">
+            {{-- Tombol 2: Uji Cuaca Panas (Kipas 12V D26 & Pompa 5V D14) --}}
+            <button type="button" onclick="toggleUjiCuacaPanas3D()" id="btn-cuaca-3d" class="px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer" title="Simulasikan Kipas DC 12V (D26) & Pompa Celup 5V (D14)">
                 <span class="material-symbols-outlined text-[18px]" id="icon-cuaca-btn">thermostat</span>
                 <div class="text-left">
                     <span class="block leading-tight font-extrabold" id="text-cuaca-btn">Uji Cuaca Panas</span>
-                    <span class="block text-[9px] text-amber-200/80 font-normal leading-tight hidden sm:block" id="subtext-cuaca-btn">Blower & Sprinkler</span>
+                    <span class="block text-[9px] text-amber-200/80 font-normal leading-tight hidden sm:block" id="subtext-cuaca-btn">Kipas D26 &amp; Pompa D14</span>
                 </div>
             </button>
         </div>
@@ -257,11 +257,13 @@ const FEEDER_LIMIT_A = -7.0;
 const FEEDER_LIMIT_B = 7.0;
 let isFanSpinning3D = false;
 let isSprinklerActive3D = false;
+let isLampOn3D = false;
 let chickenBobTime = 0;
 
 // Flag simulasi mandiri (agar tidak ditimpa oleh background poller setiap 3 detik)
 let isManualSimulationHot = false;
 let isManualFeederActive = false;
+let isManualLampActive3D = false;
 let feederPauseUntil = 0;
 
 // Siklus hidup scene (disposal), lingkungan peternakan, & registri talang pakan
@@ -413,6 +415,14 @@ function initThreeJSKandang() {
     buildKandang3DScene();
     calibrateAllChickens();
     loadHenModel();
+
+    // Sinkronkan kondisi awal Digital Twin 3D dengan status aktual di Database
+    syncKandang3DState({
+        kipas: {{ !empty($farm?->relay_kipas) ? 'true' : 'false' }},
+        misting: {{ !empty($farm?->relay_misting) ? 'true' : 'false' }},
+        lampu: {{ !empty($farm?->relay_lampu) ? 'true' : 'false' }},
+        pakan: {{ !empty($farm?->relay_pakan) ? 'true' : 'false' }}
+    });
 
     // 7. Event Resize
     window.addEventListener('resize', onWindowResize3D);
@@ -2682,38 +2692,38 @@ function fixFanRendering() {
 // ---------------------------------------------------------------------
 const IOT_PIN_INFO = {
     'Panel ESP32 & Relay': {
-        short: 'ESP32',
-        name: 'ESP32 + Expansion Shield & Relay 2-Channel',
-        fungsi: 'Otak sistem: membaca sensor DHT22, mengatur relay kipas plafon, pompa celup sprinkler, OLED 0.96", dan driver L298N.',
+        short: 'ESP32 & Relay',
+        name: 'ESP32 30-Pin + Step-Down LM2596 (5.0V) & Relay CW-021',
+        fungsi: 'Otak sistem: membaca sensor DHT22 (D15), OLED 0.96" (D21/D22), mengendalikan Relay K1 Kipas 12V (D26), K2 Pompa 5V (D14), dan driver L298N.',
         nilai: () => 'Online · menerima data'
     },
     'Motor & Driver L298N': {
-        short: 'Motor L298N',
-        name: 'Motor Gearbox Kuning + Driver L298N',
-        fungsi: 'Menggerakkan katrol rel agar kereta pakan bergerak bolak-balik mengisi talang 2 tingkat.',
+        short: 'L298N (Motor & LED)',
+        name: 'Motor Gearbox Kuning (OUT1/OUT2) & LED Strip 5V (OUT3) · L298N',
+        fungsi: 'Menggerakkan katrol kereta pakan via D18/D19 (IN1/IN2) dan menyalakan LED Strip DC 5V via D27 (IN3 → OUT3).',
         nilai: () => (document.getElementById('status-feeder-3d') || {}).textContent || '-'
     },
     'Limit Switch A': {
-        short: 'Limit A',
-        name: 'Micro Limit Switch KW12 (Pangkal A)',
-        fungsi: 'Menghentikan motor saat kereta pakan menyentuh batas pangkal lorong kandang.',
+        short: 'Limit A (D33)',
+        name: 'Micro Limit Switch Merah KW12 (Pin D33 · Pangkal A)',
+        fungsi: 'Menghentikan motor kereta pakan saat menyentuh batas pangkal lorong kandang (titik A).',
         nilai: () => (feederPositionX <= FEEDER_LIMIT_A + 0.1 ? 'TERTEKAN (kereta di A)' : 'Terbuka')
     },
     'Limit Switch B': {
-        short: 'Limit B',
-        name: 'Micro Limit Switch KW12 (Ujung B)',
-        fungsi: 'Menghentikan motor saat kereta pakan menyentuh batas ujung lorong kandang.',
+        short: 'Limit B (D32)',
+        name: 'Micro Limit Switch Hitam V-156 (Pin D32 · Ujung B)',
+        fungsi: 'Membalik arah motor kereta pakan saat menyentuh batas ujung lorong kandang (titik B).',
         nilai: () => (feederPositionX >= FEEDER_LIMIT_B - 0.1 ? 'TERTEKAN (kereta di B)' : 'Terbuka')
     },
     'Tandon & Pompa Sprinkler': {
-        short: 'Tandon & Pompa',
-        name: 'Tandon Air & Pompa Celup Mini 3V–5V',
-        fungsi: 'Menyuplai air ke selang sprinkler atap luar untuk mendinginkan seng/mika tanpa membasahi ayam.',
+        short: 'Pompa 5V (D14)',
+        name: 'Tandon Air & Pompa Celup Putih 5V (Pin D14 · Relay K2)',
+        fungsi: 'Menyuplai air 5V ke selang sprinkler atap luar untuk mendinginkan seng/mika tanpa membasahi ayam.',
         nilai: () => (isSprinklerActive3D ? 'Pompa ON (menyemprot atap)' : 'Pompa OFF')
     },
     'Sensor DHT22 Suhu': {
-        short: 'DHT22',
-        name: 'Sensor DHT22 (Suhu & RH Kandang)',
+        short: 'DHT22 (D15)',
+        name: 'Sensor DHT22 PCB Hitam 3-Pin (Pin D15)',
         fungsi: 'Mengukur suhu & kelembaban udara setinggi ayam untuk evaluasi THI & proteksi anti-bau (Lock RH ≥ 75%).',
         nilai: () => {
             const t = window.kandangTelemetry;
@@ -2721,9 +2731,9 @@ const IOT_PIN_INFO = {
         }
     },
     'Kipas Sirkulasi Plafon 4x4': {
-        short: 'Kipas Plafon',
-        name: 'Kipas Sirkulasi Plafon DC (4x4 cm)',
-        fungsi: 'Membuang kubah hawa panas di bawah atap agar sirkulasi udara kandang tetap sejuk.',
+        short: 'Kipas 12V (D26)',
+        name: 'Kipas Sirkulasi DC 12V Stiker Pink (Pin D26 · Relay K1)',
+        fungsi: 'Membuang kubah hawa panas di bawah atap dengan suplai 12V langsung melalui NO1 Relay agar sirkulasi udara tetap sejuk.',
         nilai: () => (isFanSpinning3D ? 'ON (berputar)' : 'OFF')
     }
 };
@@ -4930,9 +4940,9 @@ function buildKandang3DScene() {
     const l298Group = new THREE.Group();
     l298Group.position.set(-8.5, 2.45, -0.32);
 
-    // PCB Biru
+    // PCB Merah L298N
     const pcb = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.02, 0.18),
-        new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+        new THREE.MeshStandardMaterial({ color: 0xb91c1c }));
     l298Group.add(pcb);
 
     // Heatsink Aluminium Merah khas L298N
@@ -5802,8 +5812,14 @@ function toggleLabelsIoT3D() {
     }
 }
 
-// Pemicu Gerak Kereta 3D Langsung dari Tombol (Toggle ON/OFF)
+// Pemicu Gerak Kereta 3D & Motor Fisik L298N (Sinkron 2 Arah dengan Kartu Kereta Pakan Rel)
 function toggleSimulasiGerakPakan() {
+    if (typeof window.ubahSakelar === 'function') {
+        isManualFeederActive = false;
+        window.ubahSakelar('pakan', !isFeederRunning3D);
+        return;
+    }
+
     isManualFeederActive = !isManualFeederActive;
     isFeederRunning3D = isManualFeederActive;
 
@@ -5845,7 +5861,7 @@ function updateFeederButtonUI(isRunning) {
             iconEl.className = 'material-symbols-outlined text-[18px] animate-pulse';
         }
         if (textEl) textEl.textContent = 'Hentikan Kereta';
-        if (subTextEl) subTextEl.textContent = 'Jeda di Rel (Pause)';
+        if (subTextEl) subTextEl.textContent = 'Jeda L298N (Pause)';
     } else {
         btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-700/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30';
         if (iconEl) {
@@ -5853,7 +5869,7 @@ function updateFeederButtonUI(isRunning) {
             iconEl.className = 'material-symbols-outlined text-[18px]';
         }
         if (textEl) textEl.textContent = 'Jalankan Kereta 3D';
-        if (subTextEl) subTextEl.textContent = 'Auto-Shuttle Bolak-Balik';
+        if (subTextEl) subTextEl.textContent = 'Motor L298N · D18/D19';
     }
 }
 
@@ -5866,7 +5882,7 @@ function updateStatusFeederText(teks) {
     if (el) el.textContent = teks;
 }
 
-// Simulasi Uji Cuaca Panas (Trigger Kipas & Sprinkler 3D - Mandiri dari poller sensor)
+// Simulasi Uji Cuaca Panas (Trigger Kipas 12V D26 & Pompa 5V D14 - Mandiri dari poller sensor)
 function toggleUjiCuacaPanas3D() {
     isManualSimulationHot = !isManualSimulationHot;
     isFanSpinning3D = isManualSimulationHot;
@@ -5878,9 +5894,9 @@ function toggleUjiCuacaPanas3D() {
 
     if (typeof window.showToast === 'function') {
         if (isManualSimulationHot) {
-            window.showToast('Simulasi cuaca panas aktif: Blower berputar cepat & Pompa Misting menyemprot embun atap.', 'warning', 'Simulasi Cuaca Panas ON');
+            window.showToast('Simulasi cuaca panas aktif: Kipas DC 12V (D26) berputar & Pompa Celup 5V (D14) menyemprot atap.', 'warning', 'Simulasi Cuaca Panas ON');
         } else {
-            window.showToast('Simulasi cuaca panas dimatikan. Blower & misting kembali ke status normal.', 'info', 'Simulasi Cuaca Panas OFF');
+            window.showToast('Simulasi cuaca panas dimatikan. Kipas & pompa kembali ke status normal.', 'info', 'Simulasi Cuaca Panas OFF');
         }
     }
 }
@@ -5902,7 +5918,7 @@ function updateCuacaButtonUI(isHot) {
             iconEl.className = 'material-symbols-outlined text-[18px] animate-spin';
         }
         if (textEl) textEl.textContent = 'Cuaca Panas Aktif';
-        if (subTextEl) subTextEl.textContent = 'Blower & Misting ON';
+        if (subTextEl) subTextEl.textContent = 'Kipas & Pompa 3D ON';
     } else {
         btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer';
         if (iconEl) {
@@ -5910,7 +5926,66 @@ function updateCuacaButtonUI(isHot) {
             iconEl.className = 'material-symbols-outlined text-[18px]';
         }
         if (textEl) textEl.textContent = 'Uji Cuaca Panas';
-        if (subTextEl) subTextEl.textContent = 'Blower & Sprinkler';
+        if (subTextEl) subTextEl.textContent = 'Kipas D26 & Pompa D14';
+    }
+}
+
+// Kendali & Simulasi Lampu LED Strip 5V (Sinkron 2 Arah dengan Tab Lampu Fotoperiode & Fisik ESP32 D27)
+function toggleLampu3D() {
+    if (typeof window.ubahSakelar === 'function') {
+        isManualLampActive3D = false;
+        window.ubahSakelar('lampu', !isLampOn3D);
+        return;
+    }
+
+    isManualLampActive3D = !isManualLampActive3D;
+    isLampOn3D = isManualLampActive3D;
+
+    applyLampu3DVisual(isLampOn3D);
+    updateBadgeLampu3D(isLampOn3D);
+    updateLampButtonUI(isLampOn3D);
+
+    if (typeof window.showToast === 'function') {
+        if (isLampOn3D) {
+            window.showToast('Simulasi LED Strip DC 5V aktif: pencahayaan fotoperiode kandang 3D menyala terang.', 'success', 'Uji LED Strip 5V ON');
+        } else {
+            window.showToast('Simulasi LED Strip DC 5V dimatikan. Lampu kembali mengikuti status Web.', 'info', 'Uji LED Strip 5V OFF');
+        }
+    }
+}
+
+window.toggleLampu3D = toggleLampu3D;
+
+function applyLampu3DVisual(isAktif) {
+    ceilingLights.forEach((pl) => { pl.intensity = isAktif ? 0.62 : 0.14; });
+    if (coopBulbMat) {
+        coopBulbMat.emissiveIntensity = isAktif ? 1.2 : 0.12;
+    }
+}
+
+function updateLampButtonUI(isAktif) {
+    const btn = document.getElementById('btn-lampu-3d');
+    const textEl = document.getElementById('text-lampu-btn');
+    const subTextEl = document.getElementById('subtext-lampu-btn');
+    const iconEl = document.getElementById('icon-lampu-btn');
+    if (!btn) return;
+
+    if (isAktif) {
+        btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-yellow-400 hover:bg-yellow-300 text-slate-950 shadow-md shadow-yellow-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-yellow-200';
+        if (iconEl) {
+            iconEl.textContent = 'light_mode';
+            iconEl.className = 'material-symbols-outlined text-[18px] animate-pulse';
+        }
+        if (textEl) textEl.textContent = 'LED Strip ON';
+        if (subTextEl) subTextEl.textContent = 'Fotoperiode Terang';
+    } else {
+        btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-yellow-200 border border-slate-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer';
+        if (iconEl) {
+            iconEl.textContent = 'lightbulb';
+            iconEl.className = 'material-symbols-outlined text-[18px]';
+        }
+        if (textEl) textEl.textContent = 'Uji LED Strip 5V';
+        if (subTextEl) subTextEl.textContent = 'L298N IN3/OUT3 · D27';
     }
 }
 
@@ -5928,37 +6003,50 @@ function updateBadgeSprinkler3D(isAktif) {
     if (roofIcon) roofIcon.className = isAktif ? 'material-symbols-outlined text-[13px] text-cyan-300 animate-bounce' : 'material-symbols-outlined text-[13px] text-slate-400';
 }
 
+function updateBadgeLampu3D(isAktif) {
+    const lampText = document.getElementById('text-lamp-3d');
+    const lampIcon = document.getElementById('icon-lamp-3d');
+    if (lampText) lampText.textContent = isAktif ? 'Lampu ON (Terang)' : 'Lampu OFF';
+    if (lampIcon) lampIcon.className = isAktif ? 'material-symbols-outlined text-[13px] text-yellow-300 animate-pulse' : 'material-symbols-outlined text-[13px] text-slate-400';
+}
+
 // Sinkronisasi Status dari Luar (Misal dari Widget Kontroler Sakelar atau Telemetri IoT)
 window.syncKandang3DState = function(state) {
     if (!state) return;
 
+    const kipasVal = state.kipas !== undefined ? state.kipas : state.relay_kipas;
+    const mistingVal = state.misting !== undefined ? state.misting : state.relay_misting;
+    const lampuVal = state.lampu !== undefined ? state.lampu : state.relay_lampu;
+    const pakanVal = state.pakan !== undefined ? state.pakan : state.relay_pakan;
+
     // Hanya override kipas & sprinkler jika pengguna TIDAK sedang mengaktifkan mode simulasi cuaca panas manual
     if (!isManualSimulationHot) {
-        if (state.kipas !== undefined) {
-            isFanSpinning3D = Boolean(state.kipas);
+        if (kipasVal !== undefined) {
+            isFanSpinning3D = Boolean(kipasVal);
             updateBadgeKipas3D(isFanSpinning3D);
         }
-        if (state.misting !== undefined) {
-            isSprinklerActive3D = Boolean(state.misting);
+        if (mistingVal !== undefined) {
+            isSprinklerActive3D = Boolean(mistingVal);
             updateBadgeSprinkler3D(isSprinklerActive3D);
         }
     }
 
-    if (state.lampu !== undefined) {
-        ceilingLights.forEach((pl) => { pl.intensity = state.lampu ? 0.62 : 0.14; });
-        if (coopBulbMat) {
-            coopBulbMat.emissiveIntensity = state.lampu ? 1.2 : 0.12;
-        }
+    // Sinkronkan lampu 3D & tombol Uji LED Strip 5V dengan Tab Lampu Fotoperiode
+    if (!isManualLampActive3D && lampuVal !== undefined) {
+        isLampOn3D = Boolean(lampuVal);
+        applyLampu3DVisual(isLampOn3D);
+        updateBadgeLampu3D(isLampOn3D);
+        updateLampButtonUI(isLampOn3D);
     }
 
     // Hanya override kereta pakan jika pengguna TIDAK sedang mengaktifkan gerak simulasi manual
     if (!isManualFeederActive) {
-        if (state.pakan !== undefined) {
-            if (Boolean(state.pakan) && !isFeederRunning3D) {
+        if (pakanVal !== undefined) {
+            if (Boolean(pakanVal) && !isFeederRunning3D) {
                 isFeederRunning3D = true;
                 updateStatusFeederText(feederDirection3D === 1 ? 'Meluncur MAJU (A ➔ B)' : 'Meluncur MUNDUR (B ➔ A)');
                 updateFeederButtonUI(true);
-            } else if (!Boolean(state.pakan) && isFeederRunning3D) {
+            } else if (!Boolean(pakanVal) && isFeederRunning3D) {
                 isFeederRunning3D = false;
                 setFeedParticlesVisible(false);
                 updateFeederButtonUI(false);

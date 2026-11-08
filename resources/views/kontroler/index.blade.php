@@ -145,17 +145,17 @@
                     </div>
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
-                            <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">GPIO 12</span>
-                            <span class="font-bold text-ink">Relay Kipas Sirkulasi</span>
+                            <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">GPIO 26</span>
+                            <span class="font-bold text-ink">Relay K1 Kipas Sirkulasi</span>
                         </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Kipas DC 4x4 Plafon (Sirkulasi Panas)</span>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Kipas DC 12V Plafon (Via IN1 / NO1 CW-021)</span>
                     </div>
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200">GPIO 14</span>
-                            <span class="font-bold text-ink">Relay Pompa Sprinkler</span>
+                            <span class="font-bold text-ink">Relay K2 Pompa Sprinkler</span>
                         </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Pompa Celup Mini (Pendingin Atap)</span>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Pompa Celup Putih 5V (Via IN2 / NO2 CW-021)</span>
                     </div>
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
@@ -167,30 +167,23 @@
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">GPIO 18, 19</span>
-                            <span class="font-bold text-ink">Driver Motor L298N</span>
+                            <span class="font-bold text-ink">Driver Motor L298N (IN1/IN2)</span>
                         </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Penggerak Kereta Pakan (Maju/Mundur)</span>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Motor Gearbox Kuning OUT1/OUT2 (Kereta Pakan)</span>
                     </div>
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200">GPIO 21, 22</span>
                             <span class="font-bold text-ink">OLED 0.96" SSD1306</span>
                         </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">I2C Bus (SDA / SCL Display Depan)</span>
-                    </div>
-                    <div class="py-2 flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">GPIO 27</span>
-                            <span class="font-bold text-ink">LED Fotoperiode</span>
-                        </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Lampu Kuning Hangat (16 Jam/Hari)</span>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">I2C Bus (SDA D21 / SCL D22)</span>
                     </div>
                     <div class="py-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">GPIO 32, 33</span>
-                            <span class="font-bold text-ink">Micro Limit Switch</span>
+                            <span class="font-bold text-ink">Micro Limit Switch A & B</span>
                         </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Sensor Pembatas Ujung & Pangkal Rel</span>
+                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Limit Merah Pangkal A (D33) & Hitam Ujung B (D32)</span>
                     </div>
                 </div>
             </div>
@@ -218,7 +211,7 @@
                     {{-- Payload info --}}
                     <div class="text-[11px] text-muted">
                         <strong class="text-ink">Payload Real-Time:</strong> ESP32 mem-post suhu & kelembaban, server merespons instruksi:
-                        <code class="font-mono text-[10px] text-brand bg-white px-1.5 py-0.5 rounded border border-line block mt-1">{"siap": true, "relay_kipas": true, "relay_misting": false}</code>
+                        <code class="font-mono text-[10px] text-brand bg-white px-1.5 py-0.5 rounded border border-line block mt-1 overflow-x-auto">{"siap": true, "relay_kipas": true, "relay_misting": false, "relay_lampu": true, "relay_pakan": false}</code>
                     </div>
 
                     {{-- Safety interlock alert --}}

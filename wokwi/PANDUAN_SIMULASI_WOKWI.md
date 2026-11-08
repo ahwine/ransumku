@@ -1,44 +1,35 @@
-# Panduan Simulasi Wokwi: Maket Stik Es Krim & IoT RansumKu
+# Panduan Simulasi Wokwi Lengkap: Maket Stik Es Krim & IoT RansumKu
 
-Simulasi ini sudah **disamakan 1:1** dengan rancangan final maket stik es krim (termasuk **Sakelar Utama di Titik 1**, **Lampu LED Hangat**, **Proteksi Kelembaban `RH >= 75%`**, dan **tanpa sensor bau/buzzer**).
+Simulasi memakai **pin yang sama** dengan firmware fisik `ransumku_esp32/ransumku_esp32.ino`.
 
----
+## 1. Komponen di Wokwi dan Padanannya di Maket
 
-## 1. Perbandingan Alat Fisik di Maket vs Perwakilan di Wokwi
-
-Karena Wokwi adalah simulator elektronik di browser, komponen mekanik/air diwakili oleh modul elektronik pada **nomor pin GPIO ESP32 yang 100% sama**:
-
-| Alat di Maket Stik Es Krim | Wujud di Wokwi (`diagram.json`) | Pin ESP32 | Cara Coba di Wokwi |
+| Alat di Maket | Wujud di Wokwi | Pin ESP32 | Cara coba |
 | :--- | :--- | :--- | :--- |
-| **Sakelar Rocker Merah `ON/OFF` (Titik 1)** | `Slide Switch` (`Sakelar Utama ON/OFF`) | `GPIO 26` | Geser sakelar untuk mematikan/menyalakan seluruh maket & layar OLED. |
-| **Sensor Suhu & RH `DHT22`** | `DHT22` Putih | `GPIO 15` | Klik sensor lalu geser *slider* Suhu (`°C`) dan Humidity (`% RH`). |
-| **Layar `OLED 0.96"` I2C** | `OLED SSD1306 128x64` | `SDA 21`, `SCL 22` | Otomatis menampilkan Suhu, RH, `THI`, status alat, & arah pakan. |
-| **Driver `L298N` + Motor Kuning Katrol** | `Servo Motor` (`Motor Katrol Pakan`) | `GPIO 18` | Lengan motor berputar bolak-balik menarik kereta `A -> B` & `B -> A`. |
-| **2× Micro Limit Switch (`A` & `B`)** | 2× `Pushbutton` (Hijau = `A`, Merah = `B`) | `A: 33`, `B: 32` | Klik tombol saat motor jalan untuk menghentikan kereta seketika. |
-| **Relay Ch-1 + Kipas Plafon** | `Relay Module` + `LED Cyan` | `GPIO 12` | Menyala otomatis saat `Suhu >= 31°C` atau `THI >= 78`. |
-| **Relay Ch-2 + Pompa Sprinkler Atap** | `Relay Module` + `LED Biru` | `GPIO 14` | Menyala saat `THI >= 80`, dan **otomatis terkunci OFF bila `RH >= 75%`**. |
-| **Lampu LED Hangat Fotoperiode** | `LED Kuning` (`Lampu LED Hangat`) | `GPIO 27` | Menyala selama sistem aktif (fotoperiode ayam petelur). |
-| **Pipa & *Nipple Drinker* Ayam** | *(Tidak ada di Wokwi)* | Tanpa Listrik | Murni sistem gravitasi air (*fail-safe* 24 jam tanpa kabel). |
+| Sakelar rocker merah (Titik 1) | `Slide Switch` | GPIO 26 | Geser untuk mematikan/menyalakan semua alat dan OLED |
+| Sensor DHT22 | `DHT22` | GPIO 15 | Klik sensor, geser slider suhu dan kelembaban |
+| OLED 0.96" | `SSD1306` | SDA 21, SCL 22 | Tampil suhu, RH, THI, status alat dan pakan |
+| L298N + motor TT kuning | `Servo` (gerak kereta) + LED hijau IN1 (maju) + LED oranye IN2 (mundur) | IN1 18, IN2 19, ENA 5 | Lihat servo bergerak dan LED arah bergantian |
+| Limit switch A (pangkal) | `Pushbutton` hijau | GPIO 33 | Tekan saat kereta mundur |
+| Limit switch B (ujung) | `Pushbutton` merah | GPIO 32 | Tekan saat kereta maju |
+| Relay Ch-1 + kipas plafon | `Relay` + LED cyan | GPIO 12 | ON bila Suhu >= 31 C atau THI >= 78 |
+| Relay Ch-2 + pompa sprinkler | `Relay` + LED biru | GPIO 14 | ON bila THI >= 80, terkunci OFF bila RH >= 75% |
+| LED hangat fotoperiode | LED kuning + resistor 220 ohm | GPIO 27 | Menyala selama sistem aktif |
+| Nipple drinker | (tidak disimulasikan) | tanpa listrik | sistem gravitasi |
 
----
+Yang **tidak ada** di Wokwi: baterai 18650, LM2596, L298N asli, dan koneksi WiFi ke web RansumKu. Bagian itu hanya bisa diuji pada rangkaian fisik.
 
-## 2. Cara Membuka & Menjalankan di Wokwi (1 Menit)
+## 2. Cara Menjalankan
+1. Buka https://wokwi.com/projects/new/esp32
+2. Tab `diagram.json`: ganti isinya dengan `wokwi/diagram.json`.
+3. Tab `sketch.ino`: ganti isinya dengan `wokwi/sketch.ino`.
+4. Library Manager: tambahkan 4 library dari `wokwi/libraries.txt`.
+5. Klik Play.
 
-1. Buka **[https://wokwi.com/projects/new/esp32](https://wokwi.com/projects/new/esp32)** di browser.
-2. Pada tab **`diagram.json`**, hapus isinya lalu *paste* seluruh isi file `wokwi/diagram.json`.
-3. Pada tab **`sketch.ino`**, hapus isinya lalu *paste* seluruh isi file `wokwi/sketch.ino`.
-4. Pada tab **Library Manager** (ikon tumpukan buku), pastikan 4 library sesuai `wokwi/libraries.txt` sudah ditambahkan:
-   - `DHT sensor library for ESPx`
-   - `Adafruit SSD1306`
-   - `Adafruit GFX Library`
-   - `ESP32Servo`
-5. Klik tombol hijau **Play ▶**!
+Kabel di `diagram.json` berupa garis lurus tanpa belokan, jadi tampilannya bisa saling silang. Geser komponen dengan mouse bila ingin dirapikan. Sambungan pin-nya tetap benar.
 
----
-
-## 3. Empat Pengujian Interaktif di Wokwi
-
-1. **Tes Sakelar Utama Titik 1:** Klik `Sakelar Utama ON/OFF` di kiri tengah -> layar OLED langsung padam dan semua relay/motor berhenti. Klik lagi -> sistem menyala kembali.
-2. **Tes Cuaca Sejuk vs Panas:** Klik `DHT22`, turunkan suhu ke `28°C` -> Kipas & Pompa Sprinkler otomatis **OFF**. Naikkan ke `34°C` (`RH 65%`) -> Kipas & Pompa Sprinkler otomatis **ON**.
-3. **Tes Kunci Pengaman Lembap (`RH >= 75%`):** Pada suhu `34°C`, naikkan slider *Humidity* `DHT22` ke `80%` -> LED Biru `Pompa Sprinkler Atap` langsung **MATI** dan layar OLED menulis `Atp:LOCK-RH!` supaya kotoran ayam tidak basah/bau, sementara `Kipas Plafon` tetap **ON** mengeringkan udara!
-4. **Tes Limit Switch Rel Kereta Pakan:** Saat status pakan `MAJU (A->B)`, tekan tombol merah `Limit Switch Ujung B` -> motor langsung berhenti aman, jeda `2 detik`, lalu berbalik `MUNDUR (B->A)`.
+## 3. Empat Pengujian
+1. **Sakelar utama:** geser sakelar, OLED padam dan semua LED mati. Geser lagi, sistem menyala.
+2. **Suhu:** set DHT22 ke 28 C, kipas dan sprinkler OFF. Set 34 C dengan RH 65%, keduanya ON.
+3. **Kunci kelembapan:** pada 34 C, naikkan RH ke 80%. LED sprinkler mati dan OLED menulis `Atp:LOCK-RH!`, sedangkan kipas tetap ON.
+4. **Limit switch:** saat `MAJU`, tekan tombol merah (B), kereta berhenti, jeda 2 detik, lalu mundur. Saat `MUNDUR`, tekan tombol hijau (A). Tanpa ditekan, kereta berhenti otomatis setelah 8 detik sebagai pengaman.

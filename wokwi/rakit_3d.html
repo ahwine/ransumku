@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panduan Rakit 3D Bertahap &amp; Rapi (Anti-Tabrak) — IoT RansumKu</title>
+<style>
+  :root {
+    --brand: #0d9488;
+    --brand-dark: #065f46;
+    --ink: #0f172a;
+    --muted: #475569;
+    --line: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #1a130d;
+    overflow: hidden;
+  }
+  #app { display: flex; height: 100vh; width: 100vw; }
+
+  /* VIEWPORT 3D */
+  #viewport {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+    background: radial-gradient(circle at 50% 45%, #38291d 0%, #140e09 100%);
+    overflow: hidden;
+  }
+  #viewport canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  #viewport canvas:active { cursor: grabbing; }
+  #labels-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 10; }
+
+  /* HUD ATAS */
+  #hud-top {
+    position: absolute;
+    top: 10px; left: 10px; right: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 20;
+    flex-wrap: wrap;
+  }
+  .hud-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    pointer-events: auto;
+    background: rgba(15, 23, 42, 0.90);
+    backdrop-filter: blur(10px);
+    padding: 6px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.42);
+  }
+  .cam-btn {
+    background: rgba(255,255,255,0.09);
+    color: #f1f5f9;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 11.2px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cam-btn:hover { background: rgba(255,255,255,0.2); }
+  .cam-btn.active { background: #10b981; color: #022c22; border-color: #34d399; }
+  .cam-btn.warn { background: rgba(245, 158, 11, 0.22); color: #fde68a; border-color: rgba(245, 158, 11, 0.5); }
+  .cam-btn.warn.active { background: #f59e0b; color: #1c1917; }
+
+  /* KARTU INSPEKSI KLIK 3D */
+  #inspect-card {
+    position: absolute;
+    top: 58px; left: 10px;
+    width: 355px;
+    max-width: calc(100% - 20px);
+    background: rgba(15, 23, 42, 0.96);
+    color: #f8fafc;
+    border: 2px solid #10b981;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.5);
+    z-index: 25;
+    display: none;
+  }
+  #inspect-card h4 { margin: 0 0 5px; font-size: 13.5px; color: #34d399; padding-right: 24px; }
+  #inspect-card p { margin: 0; font-size: 12px; color: #e2e8f0; line-height: 1.5; }
+  #inspect-close {
+    position: absolute; top: 8px; right: 8px;
+    width: 22px; height: 22px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,0.16); color: #fff;
+    font-weight: 800; cursor: pointer;
+  }
+
+  /* BAR SIMULASI BAWAH */
+  #sim-bar {
+    position: absolute;
+    bottom: 10px; left: 10px; right: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    pointer-events: none;
+    z-index: 20;
+  }
+  .hint-pill {
+    background: rgba(15, 23, 42, 0.90);
+    color: #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 11.2px;
+    border: 1px solid rgba(255,255,255,0.18);
+    pointer-events: auto;
+  }
+  .hint-pill b { color: #34d399; }
+
+  /* LABEL 3D */
+  .lbl-mod {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: rgba(15, 23, 42, 0.90);
+    color: #f8fafc;
+    padding: 2.5px 7px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    white-space: nowrap;
+    border: 1.5px solid #38bdf8;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .lbl-mod:hover { border-color: #34d399; transform: translate(-50%, -108%) scale(1.05); }
+  .lbl-mod.hub { border-color: #f59e0b; background: rgba(69, 26, 3, 0.92); color: #fef3c7; }
+  .lbl-pin {
+    position: absolute;
+    transform: translate(-50%, -130%);
+    background: #fef08a;
+    color: #0f172a;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 900;
+    font-family: 'Consolas', monospace;
+    white-space: nowrap;
+    border: 2px solid #ca8a04;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+    pointer-events: none;
+    z-index: 15;
+  }
+
+  /* SIDEBAR PANDUAN RINCI BERTAHAP */
+  #sidebar {
+    width: 495px;
+    max-width: 48vw;
+    background: #ffffff;
+    border-left: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    z-index: 30;
+    box-shadow: -8px 0 28px rgba(0,0,0,0.32);
+  }
+  #sb-head {
+    padding: 12px 16px 10px;
+    background: linear-gradient(135deg, #064e3b 0%, #0f766e 100%);
+    color: #fff;
+  }
+  .head-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .badge-top {
+    display: inline-block;
+    background: rgba(254, 240, 138, 0.22);
+    color: #fef08a;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  #prog-text { font-size: 11px; font-weight: 800; color: #a7f3d0; }
+  #sb-head h1 { margin: 0; font-size: 15.5px; line-height: 1.25; }
+  .prog-bar-bg {
+    margin-top: 7px; height: 6px; border-radius: 999px;
+    background: rgba(255,255,255,0.2); overflow: hidden;
+  }
+  #prog-bar-fill {
+    height: 100%; width: 0%; background: #34d399; transition: width 0.25s ease;
+  }
+
+  /* TOMBOL 13 TAHAP */
+  #step-pills {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 3px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--line);
+  }
+  .st-pill {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    border-radius: 6px;
+    padding: 5px 0;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .st-pill.done { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
+  .st-pill.active { background: #0f766e; border-color: #0f766e; color: #fff; transform: scale(1.06); }
+
+  /* ISI SIDEBAR */
+  #sb-body { flex: 1; overflow-y: auto; padding: 12px 16px 18px; }
+  .step-tag {
+    display: inline-block;
+    font-size: 10.5px; font-weight: 900; color: #0f766e;
+    background: #ccfbf1; padding: 2px 8px; border-radius: 999px;
+    text-transform: uppercase;
+  }
+  #st-title { margin: 6px 0 5px; font-size: 15.8px; color: #0f172a; line-height: 1.3; }
+  #st-goal {
+    margin: 0 0 10px; padding: 8px 10px;
+    background: #f8fafc; border-left: 3.5px solid #0d9488;
+    border-radius: 0 8px 8px 0;
+    font-size: 12px; color: #334155; line-height: 1.45;
+  }
+
+  /* KOTAK TATA CARA KERJA BERNOMOR */
+  .proc-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .proc-title {
+    font-size: 11.5px; font-weight: 900; color: #065f46;
+    text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;
+  }
+  .proc-list {
+    margin: 0; padding-left: 18px;
+    font-size: 12px; color: #14532d; line-height: 1.52;
+  }
+  .proc-list li { margin-bottom: 5px; }
+  .proc-list li:last-child { margin-bottom: 0; }
+  .proc-list code {
+    font-family: 'Consolas', monospace; font-weight: 800;
+    background: #dcfce7; padding: 1px 4px; border-radius: 4px; color: #064e3b;
+  }
+
+  /* KARTU KABEL DENGAN CHECKBOX */
+  .wire-section-title {
+    font-size: 11.5px; font-weight: 800; color: #0f172a;
+    margin: 10px 0 6px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .wire-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 9px 10px;
+    margin-bottom: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.14s;
+  }
+  .wire-card:hover { border-color: #14b8a6; background: #f0fdfa; }
+  .wire-card.selected { border-color: #0d9488; background: #ecfdf5; box-shadow: 0 0 0 2px rgba(16,185,129,0.22); }
+  .wire-card.checked { border-color: #86efac; background: #f8fafc; }
+  .wc-top { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+  .wc-check {
+    width: 16px; height: 16px; accent-color: #0d9488; cursor: pointer; flex-shrink: 0;
+  }
+  .wc-num {
+    font-size: 10px; font-weight: 900; background: #0f172a; color: #fff;
+    padding: 1px 5px; border-radius: 4px; font-family: 'Consolas', monospace;
+  }
+  .wc-swatch { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.25); flex-shrink: 0; }
+  .wc-name { font-size: 12px; font-weight: 800; color: #0f172a; flex: 1; }
+  .wc-zoom { font-size: 10px; font-weight: 800; color: #0f766e; background: #ccfbf1; padding: 2px 7px; border-radius: 999px; }
+  .wc-route {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .pin-box small { display: block; font-size: 9.8px; color: #64748b; font-weight: 700; }
+  .pin-box code {
+    font-family: 'Consolas', monospace;
+    font-size: 10.8px; font-weight: 900; color: #0f172a;
+    background: #fef9c3; padding: 1px 4px; border-radius: 4px; border: 1px solid #fde047;
+  }
+  .route-arrow { font-weight: 900; color: #0d9488; font-size: 14px; }
+  .wc-note { margin-top: 5px; font-size: 11.2px; color: #475569; line-height: 1.42; }
+
+  .tip-box {
+    margin-top: 10px; padding: 10px 12px; border-radius: 10px;
+    background: #fffbeb; border: 1px solid #fcd34d;
+    font-size: 11.6px; color: #78350f; line-height: 1.48;
+  }
+  .check-gate {
+    margin-top: 8px; padding: 9px 11px; border-radius: 10px;
+    background: #eff6ff; border: 1px solid #93c5fd;
+    font-size: 11.5px; color: #1e3a8a; line-height: 1.45;
+  }
+
+  #sb-foot {
+    padding: 10px 16px; border-top: 1px solid var(--line);
+    display: flex; gap: 8px; background: #f8fafc;
+  }
+  .nav-btn {
+    flex: 1; padding: 9px 12px; border-radius: 9px;
+    border: 1px solid #cbd5e1; background: #fff; color: #0f172a;
+    font-weight: 800; font-size: 12.2px; cursor: pointer;
+  }
+  .nav-btn.primary { background: #0f766e; border-color: #0f766e; color: #fff; }
+  .nav-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  @media (max-width: 980px) {
+    #app { flex-direction: column; }
+    #viewport { height: 50vh; }
+    #sidebar { width: 100%; max-width: 100%; height: 50vh; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="viewport">
+    <div id="hud-top">
+      <div class="hud-group" id="cam-presets">
+        <button class="cam-btn active" data-cam="all">Meja Utuh</button>
+        <button class="cam-btn" data-cam="esp32">ESP32 30-Pin</button>
+        <button class="cam-btn" data-cam="power">Baterai, Sakelar &amp; LM2596</button>
+        <button class="cam-btn" data-cam="dht_oled">DHT22 &amp; OLED</button>
+        <button class="cam-btn" data-cam="l298n">L298N &amp; Motor</button>
+        <button class="cam-btn" data-cam="led_strip">LED Strip 5V</button>
+        <button class="cam-btn" data-cam="limits">Limit Merah &amp; Hitam</button>
+        <button class="cam-btn" data-cam="relay_fan">Relay &amp; Kipas 12V</button>
+        <button class="cam-btn" data-cam="pump">Pompa Putih 5V</button>
+      </div>
+      <div class="hud-group">
+        <button class="cam-btn active" id="btn-focus-mode">Sorot Tahap Ini</button>
+        <button class="cam-btn" id="btn-toggle-labels">Label: ON</button>
+      </div>
+    </div>
+
+    <div id="inspect-card">
+      <button id="inspect-close" title="Tutup">×</button>
+      <h4 id="inspect-title">Detail Titik Sambung</h4>
+      <p id="inspect-body"></p>
+    </div>
+
+    <div id="labels-layer"></div>
+
+    <div id="sim-bar">
+      <div class="hint-pill">
+        <b>Jalur Kabel Siku-Siku Anti-Tabrak:</b> Klik kartu kabel di kanan untuk <b>Zoom ke Pin</b> &amp; centang bila sudah dipasang.
+      </div>
+      <div class="hud-group" id="sim-controls">
+        <button class="cam-btn warn active" data-sim="power">Sakelar 12V: ON</button>
+        <button class="cam-btn" data-sim="fan">Uji Kipas 12V</button>
+        <button class="cam-btn" data-sim="pump">Uji Pompa Putih</button>
+        <button class="cam-btn" data-sim="motor">Uji Motor Kuning</button>
+        <button class="cam-btn" data-sim="lamp">Uji Lampu Strip 5V</button>
+      </div>
+    </div>
+  </div>
+
+  <aside id="sidebar">
+    <div id="sb-head">
+      <div class="head-row">
+        <span class="badge-top">13 Tahap Rinci &bull; 100% Sesuai Foto Asli</span>
+        <span id="prog-text">0 / 36 Kabel Dicentang</span>
+      </div>
+      <h1>Tata Cara Rakit IoT RansumKu (Bahan Asli)</h1>
+      <div class="prog-bar-bg"><div id="prog-bar-fill"></div></div>
+    </div>
+
+    <div id="step-pills"></div>
+
+    <div id="sb-body">
+      <span class="step-tag" id="st-tag">TAHAP 1 DARI 13</span>
+      <h2 id="st-title">Memuat...</h2>
+      <p id="st-goal"></p>
+
+      <div class="proc-box">
+        <div class="proc-title">Tata Cara Pengerjaan Tahap Ini:</div>
+        <ol class="proc-list" id="st-proc"></ol>
+      </div>
+
+      <div class="wire-section-title">
+        <span>Daftar Kabel yang Dipasang (Klik = Zoom)</span>
+        <small style="color:#0f766e;font-weight:800;">Centang jika selesai</small>
+      </div>
+      <div id="wire-list"></div>
+
+      <div class="check-gate" id="st-check"></div>
+      <div class="tip-box" id="st-tip"></div>
+    </div>
+
+    <div id="sb-foot">
+      <button class="nav-btn" id="btn-prev">&larr; Tahap Sebelumnya</button>
+      <button class="nav-btn primary" id="btn-next">Lanjut Tahap Berikutnya &rarr;</button>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const viewport = document.getElementById('viewport');
+  const labelsLayer = document.getElementById('labels-layer');
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x19120c);
+
+  const camera = new THREE.PerspectiveCamera(42, viewport.clientWidth / viewport.clientHeight, 0.1, 320);
+  camera.position.set(0, 38, 24);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  viewport.appendChild(renderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 0.5, 0.5);
+  controls.maxPolarAngle = Math.PI * 0.48;
+  controls.minDistance = 4.0;
+  controls.maxDistance = 76;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.84));
+  const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.85);
+  dirLight.position.set(14, 40, 20);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.set(2048, 2048);
+  dirLight.shadow.camera.left = -32;
+  dirLight.shadow.camera.right = 32;
+  dirLight.shadow.camera.top = 22;
+  dirLight.shadow.camera.bottom = -22;
+  scene.add(dirLight);
+
+  // MEJA TRIPLEKS KAYU DENGAN JALUR LORONG KABEL HALUS
+  (function buildTable() {
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = 768;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#8c6e53';
+    ctx.fillRect(0, 0, c.width, c.height);
+    for (let x = 0; x < c.width; x += 3) {
+      const sh = Math.sin(x * 0.04) * 10 + ((x * 17) % 9 - 4) * 1.5;
+      ctx.fillStyle = `rgba(${sh > 0 ? 255 : 25}, ${sh > 0 ? 235 : 18}, ${sh > 0 ? 210 : 10}, ${Math.abs(sh) / 145})`;
+      ctx.fillRect(x, 0, 3, c.height);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(16, 16, c.width - 32, c.height - 32);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.anisotropy = 4;
+    const table = new THREE.Mesh(
+      new THREE.BoxGeometry(56, 0.6, 36),
+      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.88, metalness: 0.02 })
+    );
+    table.position.set(0.5, -0.31, 0);
+    table.receiveShadow = true;
+    scene.add(table);
+  })();
+
+  const PINS = {};
+  const OBSTACLES = [];
+  const CLICKABLES = [];
+  const MODULE_LABELS = [];
+  const ACTIVE_PIN_RINGS = [];
+  const ANIM_REFS = { fanBlades: null, motorShaft: null, espBlueLed: null, pumpBody: null, ledChips: [], ledPointLight: null };
+
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.78, roughness: 0.24 });
+  const silverMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.82, roughness: 0.22 });
+  const blackPcbMat = new THREE.MeshStandardMaterial({ color: 0x161b22, roughness: 0.5 });
+  const darkPlasticMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.6 });
+
+  function addObstacle(name, minX, maxX, minY, maxY, minZ, maxZ) {
+    OBSTACLES.push({ name, minX, maxX, minY, maxY, minZ, maxZ });
+  }
+
+  function makeTextTexture(text, opts = {}) {
+    const fontSize = opts.fontSize || 42;
+    const padX = opts.padX || 14;
+    const padY = opts.padY || 9;
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    ctx.font = `900 ${fontSize}px Consolas, "Segoe UI", monospace`;
+    const w = Math.max(56, Math.ceil(ctx.measureText(text).width + padX * 2));
+    const h = Math.max(30, Math.ceil(fontSize + padY * 2));
+    c.width = w; c.height = h;
+    ctx.font = `900 ${fontSize}px Consolas, "Segoe UI", monospace`;
+    if (opts.bg) { ctx.fillStyle = opts.bg; ctx.fillRect(0, 0, w, h); }
+    ctx.fillStyle = opts.color || '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, w / 2, h / 2 + 1);
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    tex.anisotropy = 4;
+    return { tex, aspect: w / h };
+  }
+
+  function addSilkLabel(parent, text, x, y, z, heightWorld, opts = {}) {
+    const { tex, aspect } = makeTextTexture(text, opts);
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(heightWorld * aspect, heightWorld),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: !opts.bg, side: THREE.DoubleSide })
+    );
+    m.rotation.x = -Math.PI / 2;
+    if (opts.rotZ) { m.rotation.z = opts.rotZ; }
+    m.position.set(x, y, z);
+    parent.add(m);
+    return m;
+  }
+
+  function registerPin(id, worldPos, label, moduleName, detail) {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.16, 0.30, 24),
+      new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0 })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(worldPos.x, worldPos.y + 0.05, worldPos.z);
+    scene.add(ring);
+
+    const hit = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.24, 0.65, 12),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hit.position.copy(worldPos);
+    hit.userData = { title: `${moduleName} — ${label}`, body: detail };
+    scene.add(hit);
+    CLICKABLES.push(hit);
+
+    PINS[id] = { id, pos: worldPos.clone(), label, moduleName, ring };
+    ACTIVE_PIN_RINGS.push(PINS[id]);
+    return PINS[id];
+  }
+
+  function registerModule(group, title, body, labelOffsetY, camOffset, extraClass) {
+    group.traverse((ch) => {
+      if (ch.isMesh && !ch.userData.title) {
+        ch.castShadow = true;
+        ch.receiveShadow = true;
+        ch.userData = { title, body };
+        CLICKABLES.push(ch);
+      }
+    });
+    const el = document.createElement('div');
+    el.className = 'lbl-mod' + (extraClass ? ` ${extraClass}` : '');
+    el.textContent = title;
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showInspect(title, body);
+      const p = group.position;
+      const off = camOffset || new THREE.Vector3(0, 10, 7.5);
+      flyCamera(new THREE.Vector3(p.x + off.x, p.y + off.y, p.z + off.z), p.clone());
+    });
+    labelsLayer.appendChild(el);
+    MODULE_LABELS.push({ el, pos: group.position.clone().add(new THREE.Vector3(0, labelOffsetY || 1.7, 0)) });
+  }
+
+  // TANPA KOMPONEN TAMBAHAN — MURNI KOMPONEN SESUAI FOTO MEJA TRIPLEKS ANDA!
+
+  // =========================================================================
+  // 1. ESP32 30-PIN TYPE-C HITAM (TENGAH: x=0.0, z=3.0)
+  // =========================================================================
+  (function buildEsp32() {
+    const gx = 0.0, gz = 3.0;
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle('ESP32 30-Pin', gx - 4.45, gx + 4.45, 0, 1.05, gz - 2.18, gz + 2.18);
+
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.28, 4.3), blackPcbMat);
+    pcb.position.y = 0.52;
+    g.add(pcb);
+
+    [[-4.05, -1.82], [4.05, -1.82], [-4.05, 1.82], [4.05, 1.82]].forEach(([hx, hz]) => {
+      const hole = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.22, 16), goldMat);
+      hole.rotation.x = -Math.PI / 2;
+      hole.position.set(hx, 0.67, hz);
+      g.add(hole);
+    });
+
+    const usbc = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.36, 1.25), silverMat);
+    usbc.position.set(-4.1, 0.82, 0);
+    g.add(usbc);
+    addSilkLabel(g, '◀ USB-C KIRI', -3.55, 1.04, 0, 0.25, { bg: '#0284c7', color: '#fff' });
+
+    [-0.95, 0.95].forEach((bz, bi) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.2, 0.42), silverMat);
+      b.position.set(-3.45, 0.74, bz);
+      g.add(b);
+      addSilkLabel(g, bi === 0 ? 'EN' : 'BOOT', -2.95, 0.68, bz, 0.19, { color: '#cbd5e1' });
+    });
+
+    const wroom = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.28, 2.45), silverMat);
+    wroom.position.set(1.85, 0.78, 0);
+    g.add(wroom);
+    addSilkLabel(g, 'ESP-WROOM-32', 1.85, 0.94, 0, 0.25, { color: '#0f172a' });
+
+    const ant = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.29, 2.45), new THREE.MeshStandardMaterial({ color: 0x0b0f17 }));
+    ant.position.set(3.68, 0.54, 0);
+    g.add(ant);
+
+    const blueLed = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 12, 12),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 1.0 })
+    );
+    blueLed.position.set(-2.5, 0.72, -0.55);
+    g.add(blueLed);
+    ANIM_REFS.espBlueLed = blueLed;
+
+    const TOP_NAMES = ['VIN', 'GND', 'D13', 'D12', 'D14', 'D27', 'D26', 'D25', 'D33', 'D32', 'D35', 'D34', 'VN', 'VP', 'EN'];
+    const BOT_NAMES = ['3V3', 'GND', 'D15', 'D2', 'D4', 'D16', 'D17', 'D5', 'D18', 'D19', 'D21', 'RX0', 'TX0', 'D22', 'D23'];
+    const USED = new Set(['VIN', '3V3', 'GND', 'D27', 'D26', 'D14', 'D33', 'D32', 'D15', 'D18', 'D19', 'D21', 'D22']);
+
+    const startX = -3.36;
+    const pitch = 0.48;
+
+    function createRow(names, zLocal, tag) {
+      names.forEach((nm, i) => {
+        const px = startX + i * pitch;
+        const col = i + 1;
+        const isUsed = USED.has(nm);
+
+        const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.34, 12), goldMat);
+        pad.position.set(px, 0.52, zLocal);
+        g.add(pad);
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.52, 8), goldMat);
+        leg.position.set(px, 0.26, zLocal);
+        g.add(leg);
+
+        const labelZIn = zLocal < 0 ? zLocal + 0.46 : zLocal - 0.46;
+        addSilkLabel(g, nm, px, 0.68, labelZIn, 0.21, {
+          bg: isUsed ? '#fef08a' : null,
+          color: isUsed ? '#0f172a' : '#e2e8f0',
+          rotZ: Math.PI / 2
+        });
+
+        const labelZOut = zLocal < 0 ? zLocal - 0.56 : zLocal + 0.56;
+        if (isUsed) {
+          addSilkLabel(g, `#${col}:${nm}`, px, 0.05, labelZOut, 0.23, {
+            bg: '#065f46', color: '#ecfdf5', rotZ: Math.PI / 2
+          });
+        }
+
+        const sideLabel = tag === 'TOP' ? 'Atas' : 'Bawah';
+        registerPin(
+          `ESP_${tag}_${nm}`,
+          new THREE.Vector3(gx + px, 0.72, gz + zLocal),
+          `${nm} (Deret ${sideLabel} Pin #${col} dari USB-C)`,
+          'ESP32 30-Pin',
+          `Posisikan USB-C di kiri, lalu hitung ke kanan pada Deret ${sideLabel}: pin ke-${col} bertuliskan "${nm}".`
+        );
+      });
+    }
+    createRow(TOP_NAMES, -1.86, 'TOP');
+    createRow(BOT_NAMES,  1.86, 'BOT');
+
+    registerModule(g, 'ESP32 30-Pin Type-C', 'Otak utama WiFi (15 pin atas & 15 pin bawah). Selalu hadapkan colokan USB-C ke KIRI saat menghitung nomor urutan pin!', 1.55, new THREE.Vector3(0, 9.5, 5.8));
+  })();
+
+  // =========================================================================
+  // 2. HOLDER 3x BATERAI ULTRAFIRE 18650 (KIRI: x=-18.5, z=4.5)
+  // =========================================================================
+  (function buildBattery() {
+    const gx = -18.5, gz = 4.5;
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle('Holder Baterai 18650', gx - 2.85, gx + 2.85, 0, 1.85, gz - 3.45, gz + 3.45);
+
+    const box = new THREE.Mesh(new THREE.BoxGeometry(5.5, 1.35, 6.8), darkPlasticMat);
+    box.position.y = 0.68;
+    g.add(box);
+
+    [-1.65, 0, 1.65].forEach((cx) => {
+      const cell = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.68, 0.68, 5.9, 20),
+        new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.32, metalness: 0.25 })
+      );
+      cell.rotation.x = Math.PI / 2;
+      cell.position.set(cx, 1.15, 0);
+      g.add(cell);
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.69, 0.69, 1.45, 20), silverMat);
+      band.rotation.x = Math.PI / 2;
+      band.position.set(cx, 1.15, 1.2);
+      g.add(band);
+    });
+    addSilkLabel(g, '3x UltraFire 18650 (~12V)', 0, 1.9, 0, 0.34, { bg: '#7f1d1d', color: '#fff' });
+
+    registerPin('BAT_NEG', new THREE.Vector3(gx + 1.45, 0.85, gz - 3.55), 'Kabel Hitam (-) Baterai', 'Baterai 3x UltraFire', 'Kabel hitam negatif yang keluar dari atas holder baterai menuju lubang IN- modul LM2596.');
+    registerPin('BAT_POS', new THREE.Vector3(gx + 2.15, 0.85, gz - 3.55), 'Kabel Merah (+) Baterai', 'Baterai 3x UltraFire', 'Kabel merah positif yang keluar dari atas holder baterai melengkung ke Kaki 1 (Perak Atas) Sakelar Rocker.');
+
+    registerModule(g, 'Baterai 3x UltraFire 18650', 'Sumber daya ~12V untuk memutar Motor Kuning, Kipas 12V, dan masuk ke penurun tegangan LM2596.', 2.3);
+  })();
+
+  // =========================================================================
+  // 3. SAKELAR ROCKER 3-KAKI (BAWAH KIRI: x=-10.8, z=11.6)
+  // =========================================================================
+  (function buildSwitch() {
+    const gx = -10.8, gz = 11.6;
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle('Sakelar Rocker 3-Kaki', gx - 1.35, gx + 1.45, 0, 1.5, gz - 1.55, gz + 1.55);
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.35, 2.9), darkPlasticMat);
+    body.position.y = 0.68;
+    g.add(body);
+
+    const cap = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.95, 2.1),
+      new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.45 })
+    );
+    cap.position.set(-1.1, 0.72, 0);
+    g.add(cap);
+
+    const legs = [
+      { id: 'SW_IN',   lbl: '1:PERAK ATAS (IN+)',    z: -0.85, mat: silverMat, bg: '#dc2626', desc: 'Kaki perak atas: sudah tersolder kabel Merah (+) dari Holder Baterai UltraFire.' },
+      { id: 'SW_OUT',  lbl: '2:PERAK TENGAH (OUT+)', z:  0.00, mat: silverMat, bg: '#16a34a', desc: 'Kaki perak tengah: keluar listrik +12V langsung menuju lubang IN+ LM2596.' },
+      { id: 'SW_GOLD', lbl: '3:EMAS BAWAH (KOSONG)', z:  0.85, mat: goldMat,   bg: '#78350f', desc: 'Kaki warna emas/kuningan paling bawah: WAJIB DIKOSONGKAN tanpa kabel agar tidak korslet!' }
+    ];
+    legs.forEach((lg) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.14, 0.24), lg.mat);
+      m.position.set(1.4, 0.56, lg.z);
+      g.add(m);
+      addSilkLabel(g, lg.lbl, 3.1, 0.05, lg.z, 0.21, { bg: lg.bg, color: '#fff' });
+      registerPin(lg.id, new THREE.Vector3(gx + 1.9, 0.56, gz + lg.z), lg.lbl, 'Sakelar Rocker 3-Kaki', lg.desc);
+    });
+
+    registerModule(g, 'Sakelar Rocker 3-Kaki', 'Hanya pakai 2 kaki perak (Atas = Masuk dari Baterai, Tengah = Keluar +12V). Kaki ke-3 warna emas paling bawah dibiarkan kosong!', 1.8);
+  })();
+
+  // =========================================================================
+  // 4. STEP-DOWN LM2596 BIRU INDUKTOR 470 (TENGAH ATAS: x=-3.6, z=-4.5)
+  // =========================================================================
+  (function buildLm2596() {
+    const gx = -3.6, gz = -4.5;
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle('Step-Down LM2596', gx - 2.75, gx + 2.75, 0, 1.15, gz - 1.5, gz + 1.5);
+
+    const pcb = new THREE.Mesh(
+      new THREE.BoxGeometry(5.4, 0.26, 2.9),
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.45 })
+    );
+    pcb.position.y = 0.13;
+    g.add(pcb);
+
+    [-2.0, 2.0].forEach((cx, idx) => {
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.85, 16), silverMat);
+      cap.position.set(cx, 0.68, idx === 0 ? 0.1 : 0.25);
+      g.add(cap);
+    });
+
+    const ind = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.68, 1.18), darkPlasticMat);
+    ind.position.set(0.75, 0.58, 0.45);
+    g.add(ind);
+    addSilkLabel(g, '470', 0.75, 0.94, 0.45, 0.27, { color: '#cbd5e1' });
+
+    const pot = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.72, 0.65), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+    pot.position.set(0.95, 0.62, -0.82);
+    g.add(pot);
+    const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.14, 12), goldMat);
+    screw.position.set(1.42, 1.0, -0.82);
+    g.add(screw);
+    addSilkLabel(g, 'SETEL 5.0V', 0.95, 1.02, -0.82, 0.22, { bg: '#fef08a', color: '#0f172a' });
+
+    const pads = [
+      { id: 'BUCK_IN_POS',  lbl: 'IN+',  x: -2.42, z: -1.12, bg: '#dc2626', desc: 'Lubang kiri-atas IN+: Masuk +12V dari Kaki 2 (Perak Tengah) Sakelar, sekaligus estafet +12V ke sekrup COM1 Relay (Kipas 12V).' },
+      { id: 'BUCK_IN_NEG',  lbl: 'IN-',  x: -2.42, z:  1.12, bg: '#1e293b', desc: 'Lubang kiri-bawah IN-: Masuk kabel Hitam (-) dari Holder Baterai UltraFire.' },
+      { id: 'BUCK_OUT_POS', lbl: 'OUT+', x:  2.42, z: -1.12, bg: '#16a34a', desc: 'Lubang kanan-atas OUT+ (+5.0V): Wajib disetel ke 5.0V dulu! Lalu keluar langsung ke ESP32 VIN, Relay VCC, dan sekrup Relay COM2 (Pompa 5V).' },
+      { id: 'BUCK_OUT_NEG', lbl: 'OUT-', x:  2.42, z:  1.12, bg: '#1e293b', desc: 'Lubang kanan-bawah OUT- (GND): Titik negatif keluar langsung menuju ESP32 GND, Sekrup GND L298N, Limit Switch, dan Relay GND.' }
+    ];
+    pads.forEach((p) => {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.18, 16), silverMat);
+      m.position.set(p.x, 0.28, p.z);
+      g.add(m);
+      addSilkLabel(g, p.lbl, p.x, 0.05, p.z + (p.z < 0 ? -0.52 : 0.52), 0.24, { bg: p.bg, color: '#fff' });
+      registerPin(p.id, new THREE.Vector3(gx + p.x, 0.38, gz + p.z), `Pad ${p.lbl}`, 'Step-Down LM2596', p.desc);
+    });
+
+    registerModule(g, 'Step-Down LM2596 (5.0V)', 'Penurun tegangan baterai ~12V menjadi 5.0V stabil. Ukur dengan multimeter di OUT+ & OUT- sambil memutar sekrup kuningan kecil sampai tepat 5.0V.', 1.6);
+  })();
+
+  // =========================================================================
+  // 5. RELAY 2-CHANNEL HITAM CW-021 (KIRI ATAS: x=-16.5, z=-12.0)
+  // =========================================================================
+  (function buildRelay() {
+    const gx = -16.5, gz = -12.0;
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle('Relay 2-Ch CW-021', gx - 3.05, gx + 3.05, 0, 1.8, gz - 2.65, gz + 2.65);
+
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.28, 5.2), blackPcbMat);
+    pcb.position.y = 0.14;
+    g.add(pcb);
+    addSilkLabel(g, 'CW-021', 0.35, 0.3, 2.25, 0.23, { color: '#cbd5e1' });
+
+    [-1.05, 1.05].forEach((rz, idx) => {
+      const cube = new THREE.Mesh(
+        new THREE.BoxGeometry(2.8, 1.45, 1.85),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.35 })
+      );
+      cube.position.set(0.1, 0.98, rz);
+      g.add(cube);
+      addSilkLabel(g, idx === 0 ? 'K1: KIPAS 12V' : 'K2: POMPA 5V', 0.1, 1.73, rz, 0.24, { bg: '#0f172a', color: '#fef08a' });
+    });
+
+    const jmp = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.58, 0.68), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    jmp.position.set(-2.5, 0.56, -1.35);
+    g.add(jmp);
+    addSilkLabel(g, 'JD-VCC ON', -2.4, 0.92, -1.35, 0.19, { bg: '#fde047', color: '#0f172a' });
+
+    const ctrl = [
+      { id: 'REL_GND', lbl: '1:GND', z: 0.42, bg: '#334155', desc: 'Pin ke-1 (paling atas di deret 4-pin kiri-bawah): GND -> sambung langsung ke lubang OUT- (GND) modul LM2596.' },
+      { id: 'REL_IN1', lbl: '2:IN1', z: 0.96, bg: '#06b6d4', desc: 'Pin ke-2 (IN1 - Kipas 12V): sambung ke pin D26 ESP32 (Deret Atas Pin #7 dari USB-C).' },
+      { id: 'REL_IN2', lbl: '3:IN2', z: 1.50, bg: '#3b82f6', desc: 'Pin ke-3 (IN2 - Pompa 5V): sambung ke pin D14 ESP32 (Deret Atas Pin #5 dari USB-C).' },
+      { id: 'REL_VCC', lbl: '4:VCC', z: 2.04, bg: '#16a34a', desc: 'Pin ke-4 (paling bawah): VCC -> sambung langsung ke lubang OUT+ (+5.0V) modul LM2596.' }
+    ];
+    ctrl.forEach((c) => {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.56, 10), goldMat);
+      p.position.set(-2.5, 0.55, c.z);
+      g.add(p);
+      addSilkLabel(g, c.lbl, -3.55, 0.05, c.z, 0.22, { bg: c.bg, color: '#fff' });
+      registerPin(c.id, new THREE.Vector3(gx - 2.5, 0.82, gz + c.z), `Pin Kiri ${c.lbl}`, 'Relay CW-021', c.desc);
+    });
+
+    const blueBlk = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.0, 4.55), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+    blueBlk.position.set(2.2, 0.76, 0);
+    g.add(blueBlk);
+
+    const screws = [
+      { id: 'REL_NC1',  lbl: '#1:NC1(X)',      z: -1.85, bg: '#475569', desc: 'Sekrup #1 paling atas/kiri (NC1 - Normally Closed): WAJIB KOSONG agar kipas tidak terbalik nyala saat OFF!' },
+      { id: 'REL_COM1', lbl: '#2:COM1(+12V)',  z: -1.12, bg: '#dc2626', desc: 'Sekrup #2 tengah K1 (COM1): Masuk +12V langsung dari cabang IN+ LM2596.' },
+      { id: 'REL_NO1',  lbl: '#3:NO1(Kipas+)', z: -0.38, bg: '#ec4899', desc: 'Sekrup #3 ke-3 dari atas/kiri (NO1 - Normally Open): Keluar menuju Kabel (+) Kipas DC 12V.' },
+      { id: 'REL_NC2',  lbl: '#4:NC2(X)',      z:  0.38, bg: '#475569', desc: 'Sekrup #4 ke-4 dari atas/kiri (NC2 - Normally Closed): WAJIB KOSONG agar pompa tidak terbalik nyala saat OFF!' },
+      { id: 'REL_COM2', lbl: '#5:COM2(+5V)',   z:  1.12, bg: '#16a34a', desc: 'Sekrup #5 tengah K2 (COM2): Masuk +5.0V langsung dari cabang OUT+ LM2596 (JANGAN disatukan ke 12V!).' },
+      { id: 'REL_NO2',  lbl: '#6:NO2(Pompa+)', z:  1.85, bg: '#0ea5e9', desc: 'Sekrup #6 paling bawah/kanan (NO2 - Normally Open): Keluar menuju isi Kabel (+) Pompa Celup Putih 5V.' }
+    ];
+    screws.forEach((s) => {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.14, 14), silverMat);
+      m.position.set(2.2, 1.3, s.z);
+      g.add(m);
+      addSilkLabel(g, s.lbl, 3.85, 0.05, s.z, 0.21, { bg: s.bg, color: '#fff' });
+      registerPin(s.id, new THREE.Vector3(gx + 2.55, 1.15, gz + s.z), `Sekrup Kanan ${s.lbl}`, 'Relay CW-021', s.desc);
+    });
+
+    registerModule(g, 'Relay 2-Ch Hitam CW-021', '4 jarum di kiri-bawah ke ESP32, 6 sekrup biru di kanan memisahkan jalur Kipas 12V (atas) dan Pompa 5V (bawah).', 2.2);
+  })();
+
+  // =========================================================================
+  // 6. 2x LIMIT SWITCH MERAH & HITAM V-156-1C25 (ATAS TENGAH: z=-12.2)
+  // =========================================================================
+  function buildLimit(gx, gz, bodyColor, sideDir, codeKey, titleText, gpioPinName) {
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle(titleText, gx - 1.75, gx + 1.75, 0, 1.05, gz - 1.5, gz + 1.05);
+
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 0.85, 1.85),
+      new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.45 })
+    );
+    body.position.y = 0.45;
+    g.add(body);
+    addSilkLabel(g, codeKey === 'LIMA' ? 'SWITCH MERAH (A)' : 'V-156-1C25 (B)', 0, 0.9, 0, 0.23, { bg: '#0f172a', color: '#fff' });
+
+    const lever = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.1, 0.24), silverMat);
+    lever.position.set(-sideDir * 0.2, 0.72, -1.22);
+    lever.rotation.y = sideDir * 0.22;
+    g.add(lever);
+    const roller = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.24, 16), silverMat);
+    roller.position.set(-sideDir * 1.65, 0.72, -1.55);
+    g.add(roller);
+
+    const comLeg = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.12, 0.22), silverMat);
+    comLeg.position.set(0.15 * sideDir, 0.35, 1.25);
+    g.add(comLeg);
+    addSilkLabel(g, 'COM (GND)', 0.15 * sideDir, 0.05, 1.72, 0.21, { bg: '#1e293b', color: '#fff' });
+    registerPin(`${codeKey}_COM`, new THREE.Vector3(gx + 0.15 * sideDir, 0.38, gz + 1.42), 'Kaki Bawah Bengkok (COM)', titleText, 'Kaki tunggal di bagian bawah bodi limit switch -> sambungkan ke jalur negatif GND (OUT- LM2596 & estafet antar-COM limit switch).');
+
+    const noLeg = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, 0.2), silverMat);
+    noLeg.position.set(sideDir * 1.95, 0.42, 0.35);
+    g.add(noLeg);
+    addSilkLabel(g, `NO (${gpioPinName})`, sideDir * 2.85, 0.05, 0.45, 0.21, { bg: '#16a34a', color: '#fff' });
+    registerPin(`${codeKey}_NO`, new THREE.Vector3(gx + sideDir * 2.35, 0.42, gz + 0.35), `Kaki Samping Bawah (NO -> ${gpioPinName})`, titleText, `Kaki lurus samping yang jauh dari roda -> sambungkan ke pin ${gpioPinName} ESP32.`);
+
+    const ncLeg = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, 0.2), silverMat);
+    ncLeg.position.set(sideDir * 1.95, 0.42, -0.42);
+    g.add(ncLeg);
+    addSilkLabel(g, 'NC (X)', sideDir * 2.75, 0.05, -0.45, 0.2, { bg: '#7f1d1d', color: '#fff' });
+
+    registerModule(g, titleText, `1 kaki bengkok di bawah = COM (ke GND). Kaki samping jauh dari roda = NO (ke ${gpioPinName}). Kaki samping dekat roda = NC (kosongkan).`, 1.5);
+  }
+  buildLimit(-5.5, -12.2, 0xdc2626,  1, 'LIMA', 'Limit Switch Merah (A - D33)', 'D33');
+  buildLimit( 3.6, -12.2, 0x1e293b, -1, 'LIMB', 'Limit Switch Hitam (B - D32)', 'D32');
+
+  // =========================================================================
+  // 7. AXIAL FAN DC 12V STIKER PINK (KANAN ATAS: x=14.8, z=-12.2)
+  // =========================================================================
+  (function buildFan12V() {
+    const gx = 14.8, gz = -12.2;
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle('Axial Fan DC 12V', gx - 2.2, gx + 2.2, 0, 1.25, gz - 2.2, gz + 2.2);
+
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.95, 4.2), darkPlasticMat);
+    frame.position.y = 0.48;
+    g.add(frame);
+
+    const rotor = new THREE.Group();
+    rotor.position.set(0, 0.98, 0);
+    g.add(rotor);
+    rotor.add(new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.92, 0.12, 24), new THREE.MeshStandardMaterial({ color: 0xf8fafc })));
+    rotor.add(new THREE.Mesh(new THREE.CylinderGeometry(0.76, 0.76, 0.14, 24), new THREE.MeshStandardMaterial({ color: 0xdb2777 })));
+    for (let i = 0; i < 7; i++) {
+      const bl = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.08, 0.4), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+      const a = (i / 7) * Math.PI * 2;
+      bl.position.set(Math.cos(a) * 1.08, -0.05, Math.sin(a) * 1.08);
+      bl.rotation.y = -a;
+      rotor.add(bl);
+    }
+    ANIM_REFS.fanBlades = rotor;
+    addSilkLabel(g, 'DC 12V!', 0, 1.12, 0, 0.26, { bg: '#be185d', color: '#fff' });
+
+    // Konektor Putih 2-Pin di kanan kipas (di luar kotak bodi kipas)
+    const jst = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.4, 0.85), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+    jst.position.set(2.75, 0.35, 0);
+    g.add(jst);
+
+    registerPin('FAN_POS', new THREE.Vector3(gx + 3.1, 0.38, gz - 0.28), 'Kabel Merah (+) Kipas 12V', 'Axial Fan DC 12V', 'Kabel merah kipas 12V menuju Sekrup #1 paling atas (NO1) pada Relay CW-021.');
+    registerPin('FAN_NEG', new THREE.Vector3(gx + 3.1, 0.38, gz + 0.28), 'Kabel Hitam (-) Kipas 12V', 'Axial Fan DC 12V', 'Kabel hitam kipas 12V dijepit bersama di Sekrup Tengah (GND) modul L298N.');
+
+    registerModule(g, 'Axial Fan DC 12V (Stiker Pink)', 'Bekerja di tegangan 12V. Kabel Merah (+) ke sekrup #1 NO1 Relay (yang disuplai +12V di COM1), Kabel Hitam (-) dijepit ke sekrup GND L298N.', 1.7);
+  })();
+
+  // =========================================================================
+  // 8. OLED 0.96" HITAM TAB HIJAU (KANAN ESP32: x=9.8, z=3.0)
+  // =========================================================================
+  (function buildOled() {
+    const gx = 9.8, gz = 3.0;
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle('OLED 0.96 Hitam', gx - 1.98, gx + 2.25, 0, 0.9, gz - 1.82, gz + 1.82);
+
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.26, 3.5), blackPcbMat);
+    pcb.position.y = 0.13;
+    g.add(pcb);
+
+    const greenTab = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.8), new THREE.MeshStandardMaterial({ color: 0x15803d }));
+    greenTab.position.set(2.05, 0.28, -0.35);
+    g.add(greenTab);
+
+    const scrC = document.createElement('canvas');
+    scrC.width = 256; scrC.height = 128;
+    const sctx = scrC.getContext('2d');
+    sctx.fillStyle = '#05080f'; sctx.fillRect(0, 0, 256, 128);
+    sctx.fillStyle = '#fde047'; sctx.font = 'bold 18px Consolas, monospace';
+    sctx.fillText('RANSUMKU - SMART FARM', 12, 22);
+    sctx.fillStyle = '#38bdf8'; sctx.font = 'bold 19px Consolas, monospace';
+    sctx.fillText('Suhu: 29.4C  RH:64%', 12, 56);
+    sctx.fillText('THI : 79.5 KRITIS', 12, 84);
+    sctx.fillText('SERVER: TERVALIDASI', 12, 112);
+
+    const glass = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.35, 2.05),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(scrC) })
+    );
+    glass.rotation.x = -Math.PI / 2;
+    glass.position.set(0, 0.28, 0.35);
+    g.add(glass);
+
+    const opins = [
+      { id: 'OLED_GND', lbl: 'GND', x: -1.02, bg: '#334155', desc: 'Pin #1 kiri OLED: GND -> ke GND ESP32 (Deret Bawah Pin #2).' },
+      { id: 'OLED_VCC', lbl: 'VCC', x: -0.34, bg: '#fb7185', desc: 'Pin #2 OLED: VCC -> ke 3V3 ESP32 (Deret Bawah Pin #1).' },
+      { id: 'OLED_SCL', lbl: 'SCL', x:  0.34, bg: '#38bdf8', desc: 'Pin #3 OLED: SCL -> ke D22 ESP32 (Deret Bawah Pin #14).' },
+      { id: 'OLED_SDA', lbl: 'SDA', x:  1.02, bg: '#22c55e', desc: 'Pin #4 kanan OLED: SDA -> ke D21 ESP32 (Deret Bawah Pin #11).' }
+    ];
+    opins.forEach((op) => {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.52, 10), goldMat);
+      p.position.set(op.x, 0.5, -1.42);
+      g.add(p);
+      addSilkLabel(g, op.lbl, op.x, 0.28, -1.02, 0.22, { bg: op.bg, color: '#0f172a' });
+      registerPin(op.id, new THREE.Vector3(gx + op.x, 0.75, gz - 1.42), `Pin ${op.lbl}`, 'OLED 0.96" Hitam', op.desc);
+    });
+
+    registerModule(g, 'OLED 0.96" Hitam (I2C)', 'Urutan 4 pin atas dari kiri ke kanan sesuai foto Anda: GND, VCC, SCL, SDA.', 1.45);
+  })();
+
+  // =========================================================================
+  // 9. MODUL DHT22 PCB HITAM 3-PIN (BAWAH TENGAH: x=0.8, z=11.6)
+  // =========================================================================
+  (function buildDht22() {
+    const gx = 0.8, gz = 11.6;
+    const g = new THREE.Group();
+    g.position.set(gx, 0, gz);
+    scene.add(g);
+    addObstacle('Modul DHT22 PCB Hitam', gx - 2.55, gx + 2.55, 0, 1.05, gz - 1.3, gz + 1.3);
+
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.24, 2.3), blackPcbMat);
+    pcb.position.set(-1.35, 0.14, 0);
+    g.add(pcb);
+
+    const whiteBody = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 0.92, 2.45),
+      new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.42 })
+    );
+    whiteBody.position.set(0.85, 0.52, 0);
+    g.add(whiteBody);
+    addSilkLabel(g, 'DHT22 + PCB 3-PIN', 0.85, 1.0, 0, 0.24, { bg: '#0f172a', color: '#38bdf8' });
+
+    const dpins = [
+      { id: 'DHT_VCC',  lbl: '+ (VCC)',   z: -0.65, bg: '#fb7185', desc: 'Jarum atas (+) di PCB hitam DHT22 -> ke pin 3V3 ESP32 (Bawah Pin #1).' },
+      { id: 'DHT_DATA', lbl: 'OUT (D15)', z:  0.00, bg: '#eab308', desc: 'Jarum tengah (OUT) -> ke pin D15 ESP32 (Bawah Pin #3).' },
+      { id: 'DHT_GND',  lbl: '- (GND)',   z:  0.65, bg: '#334155', desc: 'Jarum bawah (-) -> ke pin GND ESP32 (Bawah Pin #2).' }
+    ];
+    dpins.forEach((dp) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.1, 0.1), silverMat);
+      leg.position.set(-2.75, 0.34, dp.z);
+      g.add(leg);
+      addSilkLabel(g, dp.lbl, -3.85, 0.05, dp.z, 0.21, { bg: dp.bg, color: dp.bg === '#eab308' ? '#0f172a' : '#fff' });
+      registerPin(dp.id, new THREE.Vector3(gx - 3.2, 0.36, gz + dp.z), `Jarum ${dp.lbl}`, 'Modul DHT22', dp.desc);
+    });
+
+    registerModule(g, 'DHT22 + PCB Hitam 3-Pin', 'Saat 3 jarum menghadap kiri: Jarum Atas = (+), Jarum Tengah = OUT (ke D15), Jarum Bawah = (-).', 1.55);
+  })();
+
+  // =========================================================================
+  // 10. MOTOR KUNING + L298N MERAH + POMPA CELUP PUTIH BEBAS TABRAKAN!
+  // =========================================================================
+  (function buildMotorL298Pump() {
+    // A. MOTOR GEARBOX KUNING (x=17.6, z=-3.8)
+    const mx = 17.6, mz = -3.8;
+    const mg = new THREE.Group();
+    mg.position.set(mx, 0, mz);
+    scene.add(mg);
+    addObstacle('Motor Gearbox Kuning', mx - 2.25, mx + 3.45, 0, 1.65, mz - 1.7, mz + 1.7);
+
+    const gbox = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.5, 2.0), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }));
+    gbox.position.y = 0.82;
+    mg.add(gbox);
+
+    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 3.2, 16), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+    sh.rotation.x = Math.PI / 2;
+    sh.position.set(-1.1, 0.82, 0);
+    mg.add(sh);
+    ANIM_REFS.motorShaft = sh;
+
+    const mcan = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 1.75, 18), silverMat);
+    mcan.rotation.z = Math.PI / 2;
+    mcan.position.set(2.55, 0.82, 0);
+    mg.add(mcan);
+
+    registerPin('MOT_A', new THREE.Vector3(mx + 3.55, 0.78, mz - 0.32), 'Kabel Merah Motor Kuning', 'Motor Gearbox Kuning', 'Kabel merah dari ujung kanan motor -> masuk ke Sekrup Kiri OUT1 L298N.');
+    registerPin('MOT_B', new THREE.Vector3(mx + 3.55, 0.78, mz + 0.32), 'Kabel Hitam Motor Kuning', 'Motor Gearbox Kuning', 'Kabel hitam dari ujung kanan motor -> masuk ke Sekrup Kiri OUT2 L298N.');
+    registerModule(mg, 'Motor Gearbox Kuning', 'Penggerak katrol pakan. Kabel merah & hitam di kanannya masuk ke sekrup biru OUT1 dan OUT2 L298N.', 2.0);
+
+    // B. DRIVER MOTOR L298N MERAH (x=18.0, z=4.6)
+    const lx = 18.0, lz = 4.6;
+    const lg = new THREE.Group();
+    lg.position.set(lx, 0, lz);
+    scene.add(lg);
+    addObstacle('Driver L298N Merah', lx - 2.65, lx + 2.65, 0, 2.2, lz - 2.65, lz + 2.65);
+
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.28, 5.2), new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.48 }));
+    pcb.position.y = 0.14;
+    lg.add(pcb);
+
+    const sink = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.0, 1.3), darkPlasticMat);
+    sink.position.set(0.3, 1.14, -1.0);
+    lg.add(sink);
+
+    const outBlk = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.0, 1.85), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+    outBlk.position.set(-2.05, 0.75, 0.25);
+    lg.add(outBlk);
+    [-0.22, 0.72].forEach((oz, idx) => {
+      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.14, 14), silverMat);
+      s.position.set(-2.05, 1.3, oz);
+      lg.add(s);
+      const code = idx === 0 ? 'OUT1' : 'OUT2';
+      addSilkLabel(lg, code, -3.2, 0.05, oz, 0.21, { bg: '#0284c7', color: '#fff' });
+      registerPin(`L298_${code}`, new THREE.Vector3(lx - 2.55, 0.95, lz + oz), `Sekrup Kiri ${code}`, 'Driver L298N', `Sekrup biru kiri ${code} menuju kabel Motor Gearbox Kuning.`);
+    });
+
+    // Blok Sekrup Biru Kanan L298N (OUT3 & OUT4 -> Penggerak Daya LED Strip DC 5V!)
+    const outBlkR = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.0, 1.85), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+    outBlkR.position.set(2.05, 0.75, 0.25);
+    lg.add(outBlkR);
+    [-0.22, 0.72].forEach((oz, idx) => {
+      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.14, 14), silverMat);
+      s.position.set(2.05, 1.3, oz);
+      lg.add(s);
+      const code = idx === 0 ? 'OUT4' : 'OUT3';
+      const lbl = idx === 0 ? 'OUT4(X)' : 'OUT3(LED+)';
+      const bg = idx === 0 ? '#475569' : '#d97706';
+      const desc = idx === 0
+        ? 'Sekrup biru kanan atas dekat heatsink (OUT4 pada papan HW-095): BIARKAN KOSONG.'
+        : 'Sekrup biru kanan bawah dekat tulisan HW-095 / ENB (OUT3): mengeluarkan daya +5V terkendali dari Pin D27 (IN3) menuju Pad Positif (+) LED Strip DC 5V!';
+      addSilkLabel(lg, lbl, 3.35, 0.05, oz, 0.2, { bg, color: '#fff' });
+      registerPin(`L298_${code}`, new THREE.Vector3(lx + 2.55, 0.95, lz + oz), `Sekrup Kanan ${lbl}`, 'Driver L298N', desc);
+    });
+
+    // 2 Kapasitor Elko Hitam-Perak + IC Regulator 78M05 + LED Merah (Persis Foto Asli L298N)
+    [[-0.55, 0.32], [0.42, 1.15]].forEach(([cx, cz]) => {
+      const capBody = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.78, 16), darkPlasticMat);
+      capBody.position.set(cx, 0.65, cz);
+      lg.add(capBody);
+      const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.04, 16), silverMat);
+      capTop.position.set(cx, 1.05, cz);
+      lg.add(capTop);
+    });
+    const pwrLed = new THREE.Mesh(
+      new THREE.SphereGeometry(0.10, 10, 10),
+      new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.2 })
+    );
+    pwrLed.position.set(-1.15, 0.34, 0.95);
+    lg.add(pwrLed);
+
+    // 2 Jarum 5V-EN di belakang blok daya (Topi jumpernya dilepas & dipindah ke ENA!)
+    [-1.62, -1.36].forEach((jx) => {
+      const jp = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.48, 8), goldMat);
+      jp.position.set(jx, 0.48, 1.25);
+      lg.add(jp);
+    });
+    addSilkLabel(lg, '5V-EN LEPAS', -1.48, 0.82, 1.22, 0.16, { bg: '#7f1d1d', color: '#fef08a' });
+
+    // Blok 3 Sekrup Biru Bawah L298N — Tulisan Asli Papan: Kiri = "12V", Tengah = "GND", Paling Kanan = "+5V"
+    const pwrBlk = new THREE.Mesh(new THREE.BoxGeometry(2.55, 1.0, 0.95), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+    pwrBlk.position.set(-0.75, 0.75, 2.05);
+    lg.add(pwrBlk);
+    [
+      { id: 'L298_12V', lbl: '12V', x: -1.55, bg: '#dc2626', desc: 'Sekrup bawah kiri bertuliskan "12V" (jalur daya beban VMS 5V-35V): WAJIB diisi +5.0V dari OUT+ LM2596 (JANGAN diisi 12V baterai agar LED Strip DC 5V di OUT3 tidak gosong!), lalu dijembatani kabel pendek ke sekrup kanan "+5V".' },
+      { id: 'L298_GND', lbl: 'GND', x: -0.75, bg: '#1e293b', desc: 'Sekrup bawah tengah bertuliskan "GND": masuk kabel hitam dari OUT- LM2596, sekaligus menjepit negatif (-) Kipas 12V, Pompa Putih, dan LED Strip DC 5V!' },
+      { id: 'L298_5V',  lbl: '+5V', x:  0.05, bg: '#ea580c', desc: 'Sekrup bawah paling kanan bertuliskan "+5V" (daya otak chip L298N): setelah topi 5V-EN dicabut ke ENA, hubungkan jembatan pendek ~3 cm dari sekrup kiri ("12V" yang sudah berisi +5.0V LM2596) ke sekrup "+5V" ini!' }
+    ].forEach((p) => {
+      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.14, 14), silverMat);
+      s.position.set(p.x, 1.3, 2.05);
+      lg.add(s);
+      addSilkLabel(lg, p.lbl, p.x, 0.05, 3.0, 0.22, { bg: p.bg, color: '#fff', rotZ: Math.PI / 2 });
+      registerPin(p.id, new THREE.Vector3(lx + p.x, 0.95, lz + 2.58), `Sekrup Bawah "${p.lbl}"`, 'Driver L298N', p.desc);
+    });
+
+    // Topi Jumper ENA (Mengaktifkan Motor Kuning di OUT1/OUT2)
+    const enaCap = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.55, 0.42), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    enaCap.position.set(0.68, 0.55, 2.1);
+    lg.add(enaCap);
+    addSilkLabel(lg, 'ENA', 0.68, 0.9, 2.1, 0.16, { bg: '#fde047', color: '#0f172a' });
+
+    // Topi Jumper ENB (Mengaktifkan LED Strip DC 5V di OUT3)
+    const enbCap = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.55, 0.42), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    enbCap.position.set(2.34, 0.55, 2.1);
+    lg.add(enbCap);
+    addSilkLabel(lg, 'ENB', 2.34, 0.9, 2.1, 0.16, { bg: '#fde047', color: '#0f172a' });
+
+    [
+      { id: 'L298_IN1', lbl: 'IN1',    x: 1.04, bg: '#f97316', desc: 'Jarum IN1 L298N (sebelah kanan ENA) -> sambungkan ke pin D18 ESP32 (Bawah Pin #9).' },
+      { id: 'L298_IN2', lbl: 'IN2',    x: 1.36, bg: '#a855f7', desc: 'Jarum IN2 L298N -> sambungkan ke pin D19 ESP32 (Bawah Pin #10).' },
+      { id: 'L298_IN3', lbl: 'IN3',    x: 1.68, bg: '#eab308', desc: 'Jarum IN3 L298N -> sambungkan ke pin D27 ESP32 (Atas Pin #6 dari USB-C) untuk menyalakan/mematikan LED Strip DC 5V dari Website!' },
+      { id: 'L298_IN4', lbl: 'IN4(X)', x: 2.00, bg: '#475569', desc: 'Jarum IN4 L298N: BIARKAN KOSONG (tidak perlu kabel karena OUT4 dikosongkan).' }
+    ].forEach((cp) => {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.55, 10), goldMat);
+      p.position.set(cp.x, 0.54, 2.1);
+      lg.add(p);
+      addSilkLabel(lg, cp.lbl, cp.x, 0.05, 3.0, 0.19, { bg: cp.bg, color: cp.bg === '#eab308' ? '#0f172a' : '#fff', rotZ: Math.PI / 2 });
+      registerPin(cp.id, new THREE.Vector3(lx + cp.x, 0.82, lz + 2.1), `Pin ${cp.lbl}`, 'Driver L298N', cp.desc);
+    });
+
+    registerModule(lg, 'Driver Motor & Lampu L298N', 'Jalur Kiri (ENA, IN1->D18, IN2->D19, OUT1/OUT2) memutar Motor Kuning. Jalur Kanan (ENB, IN3->D27, OUT3) menyalakan LED Strip DC 5V tanpa perlu beli relay tambahan!', 2.4);
+
+    // C. POMPA CELUP PUTIH SILINDER TIDUR + EKOR KABEL HITAM RAPI (x=12.6, z=12.0)
+    // Diberi Obstacle Box ketat agar TIDAK ADA SATU PUN KABEL LAIN yang boleh menembus bodinya!
+    const px = 12.6, pz = 12.0;
+    const pg = new THREE.Group();
+    pg.position.set(px, 0, pz);
+    scene.add(pg);
+    addObstacle('Pompa Celup Putih 5V', px - 2.35, px + 3.45, 0, 2.05, pz - 1.35, pz + 1.35);
+
+    const cyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.95, 0.95, 3.6, 24),
+      new THREE.MeshStandardMaterial({ color: 0xf5f5f4, roughness: 0.35 })
+    );
+    cyl.rotation.z = Math.PI / 2;
+    cyl.position.y = 0.95;
+    pg.add(cyl);
+
+    // Tutup Kepala Hisap & Pipa Keluar Air di Kiri Pompa
+    const capLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 0.98, 0.35, 24), new THREE.MeshStandardMaterial({ color: 0xe7e5e4 }));
+    capLeft.rotation.z = Math.PI / 2;
+    capLeft.position.set(-1.85, 0.95, 0);
+    pg.add(capLeft);
+
+    const noz = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 1.15, 14), new THREE.MeshStandardMaterial({ color: 0xe7e5e4 }));
+    noz.rotation.x = 0.65;
+    noz.position.set(-1.55, 0.65, 0.85);
+    pg.add(noz);
+
+    // Karet Pelindung Kabel (Strain Relief) & Selubung Kabel Bulat Hitam Keluar dari TENGAH BELAKANG KANAN
+    const boot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.45, 14), darkPlasticMat);
+    boot.rotation.z = Math.PI / 2;
+    boot.position.set(1.98, 0.62, 0);
+    pg.add(boot);
+
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.5, 12), darkPlasticMat);
+    cord.rotation.z = Math.PI / 2;
+    cord.position.set(2.85, 0.62, 0);
+    pg.add(cord);
+
+    // 2 Pigtail Kupasan Isi Kabel Keluar Rapi dari Ujung Selubung Hitam (x = px + 3.85)
+    const pigPos = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.45, 10), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+    pigPos.rotation.z = Math.PI / 2;
+    pigPos.position.set(3.75, 0.62, -0.22);
+    pg.add(pigPos);
+
+    const pigNeg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.45, 10), darkPlasticMat);
+    pigNeg.rotation.z = Math.PI / 2;
+    pigNeg.position.set(3.75, 0.62, 0.22);
+    pg.add(pigNeg);
+
+    addSilkLabel(pg, 'ISI MERAH (+5V)', 4.55, 0.05, -0.35, 0.2, { bg: '#0ea5e9', color: '#fff' });
+    addSilkLabel(pg, 'ISI HITAM (GND)', 4.55, 0.05,  0.35, 0.2, { bg: '#334155', color: '#fff' });
+
+    registerPin('PUMP_POS', new THREE.Vector3(px + 3.98, 0.62, pz - 0.22), 'Ujung Isi Kabel Merah (+) Pompa', 'Pompa Celup Putih (5V)', 'Kupas sedikit selubung kabel bulat hitam di ekor kanan pompa: isi kabel Merah/Cokelat (+) disambung ke Sekrup #4 ke-4 dari atas (NO2) Relay CW-021.');
+    registerPin('PUMP_NEG', new THREE.Vector3(px + 3.98, 0.62, pz + 0.22), 'Ujung Isi Kabel Hitam/Putih (-) Pompa', 'Pompa Celup Putih (5V)', 'Isi kabel kedua (-) di ekor kanan pompa dijepit langsung ke Sekrup Tengah (GND) modul L298N di atasnya.');
+
+    registerModule(pg, 'Pompa Celup Putih (3V-5V)', 'Kabel keluar murni dari ekor karet hitam di sisi kanan silinder putih (tanpa ada kabel lain yang melintas/menembus bodinya).', 2.15, new THREE.Vector3(0, 9.5, 6.5));
+  })();
+
+  // =========================================================================
+  // 11. LAMPU LED STRIP PUTIH DC 5V (+ DC5V -) SESUAI FOTO ASLI (x=25.0, z=4.2)
+  // =========================================================================
+  (function buildLedStrip5V() {
+    const sx = 25.0, sz = 4.2;
+    const sg = new THREE.Group();
+    sg.position.set(sx, 0, sz);
+    scene.add(sg);
+    addObstacle('LED Strip DC 5V', sx - 0.72, sx + 0.72, 0, 0.55, sz - 6.35, sz + 6.35);
+
+    // Pita fleksibel putih FPCB memanjang (8 segmen @ 1.5 unit = 12.6 unit)
+    const ribbon = new THREE.Mesh(
+      new THREE.BoxGeometry(1.18, 0.08, 12.6),
+      new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.36, metalness: 0.05 })
+    );
+    ribbon.position.y = 0.06;
+    ribbon.receiveShadow = true;
+    sg.add(ribbon);
+
+    // Garis potong tipis antar segmen + 8 segmen SMD 2835 + Resistor hitam + Pad tembaga "+ DC5V -"
+    const padMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.28, metalness: 0.82 });
+    const ledHousingMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.35 });
+
+    for (let i = 0; i < 8; i++) {
+      const zc = -5.25 + i * 1.5;
+
+      // 2 Pad solder tembaga lonjong (+ di kiri, - di kanan) pada bagian bawah tiap segmen
+      const padPlus = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.025, 14), padMat);
+      padPlus.scale.set(0.85, 1, 1.45);
+      padPlus.position.set(-0.32, 0.11, zc + 0.52);
+      sg.add(padPlus);
+
+      const padMinus = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.025, 14), padMat);
+      padMinus.scale.set(0.85, 1, 1.45);
+      padMinus.position.set(0.32, 0.11, zc + 0.52);
+      sg.add(padMinus);
+
+      addSilkLabel(sg, '+ DC5V -', 0, 0.115, zc + 0.52, 0.13, { color: '#334155' });
+
+      // Cangkang putih SMD 2835 + fosfor kuning LED (menyala terang saat tombol Uji Lampu Strip 5V aktif!)
+      const pkg = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.09, 0.34), ledHousingMat);
+      pkg.position.set(0, 0.13, zc - 0.06);
+      sg.add(pkg);
+
+      const ledMat = new THREE.MeshStandardMaterial({
+        color: 0xfacc15,
+        emissive: 0xfef08a,
+        emissiveIntensity: 0.06,
+        roughness: 0.25
+      });
+      const phosphor = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.04, 0.24), ledMat);
+      phosphor.position.set(0, 0.165, zc - 0.06);
+      sg.add(phosphor);
+      ANIM_REFS.ledChips.push(phosphor);
+
+      // Resistor SMD hitam kecil di atas tiap LED (persis foto asli Anda)
+      const smdRes = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.06, 0.13), darkPlasticMat);
+      smdRes.position.set(0, 0.125, zc - 0.44);
+      sg.add(smdRes);
+    }
+
+    // Cahaya hangat menyinari papan maket saat LED Strip menyala
+    const pLight = new THREE.PointLight(0xfef08a, 0, 14);
+    pLight.position.set(sx, 2.2, sz);
+    scene.add(pLight);
+    ANIM_REFS.ledPointLight = pLight;
+
+    // Pigtail solder ujung bawah strip (+ DC5V di kiri & - GND di kanan, di luar obstacle box z <= 10.55)
+    const solderPos = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), silverMat);
+    solderPos.position.set(-0.32, 0.14, 6.02);
+    sg.add(solderPos);
+    const tailPos = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.62, 10), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
+    tailPos.rotation.x = Math.PI / 2;
+    tailPos.position.set(-0.32, 0.18, 6.34);
+    sg.add(tailPos);
+
+    const solderNeg = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), silverMat);
+    solderNeg.position.set(0.32, 0.14, 6.02);
+    sg.add(solderNeg);
+    const tailNeg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.62, 10), darkPlasticMat);
+    tailNeg.rotation.x = Math.PI / 2;
+    tailNeg.position.set(0.32, 0.18, 6.34);
+    sg.add(tailNeg);
+
+    addSilkLabel(sg, 'PAD + (DC5V)', -1.45, 0.05, 6.35, 0.19, { bg: '#d97706', color: '#fff' });
+    addSilkLabel(sg, 'PAD - (GND)',   1.45, 0.05, 6.35, 0.19, { bg: '#334155', color: '#fff' });
+
+    registerPin(
+      'LED_POS',
+      new THREE.Vector3(sx - 0.32, 0.24, sz + 6.65),
+      'Pad Tembaga + (DC5V)',
+      'LED Strip Putih DC 5V',
+      'Solder kabel positif ke pad tembaga bertanda (+) DC5V di ujung LED Strip, lalu masukkan ujung satunya ke Sekrup Kanan Atas OUT3 pada L298N (JANGAN ke 12V!).'
+    );
+    registerPin(
+      'LED_NEG',
+      new THREE.Vector3(sx + 0.32, 0.24, sz + 6.65),
+      'Pad Tembaga - (GND)',
+      'LED Strip Putih DC 5V',
+      'Solder kabel hitam negatif ke pad tembaga bertanda (-) di ujung LED Strip, lalu jepit ujung satunya bersama kabel GND di Sekrup Tengah (GND) L298N.'
+    );
+
+    registerModule(
+      sg,
+      'LED Strip Putih DC 5V (+ DC5V -)',
+      'Sesuai foto Anda: pita LED SMD 2835 bertuliskan "+ DC5V -" (WAJIB 5V, dilarang ke 12V!). Dikendalikan dari Website lewat Pin D27 -> IN3 & OUT3 L298N tanpa perlu beli modul relay tambahan!',
+      0.85,
+      new THREE.Vector3(-4.5, 11.5, 8.5)
+    );
+  })();
+  // =========================================================================
+  // GENERATOR JALUR KABEL SIKU-SIKU HALUS (TANPA BULGE / TANPA TEMBUS MODUL!)
+  // =========================================================================
+  function buildCleanCurvePath(rawPts, cornerRadius) {
+    const pts = rawPts.map((p) => (p instanceof THREE.Vector3 ? p.clone() : new THREE.Vector3(p[0], p[1], p[2])));
+    const path = new THREE.CurvePath();
+    if (pts.length < 2) { return path; }
+    if (pts.length === 2) {
+      path.add(new THREE.LineCurve3(pts[0], pts[1]));
+      return path;
+    }
+
+    const rDefault = cornerRadius || 0.24;
+    let curStart = pts[0];
+
+    for (let i = 1; i < pts.length - 1; i++) {
+      const prev = pts[i - 1];
+      const curr = pts[i];
+      const next = pts[i + 1];
+
+      const vIn = curr.clone().sub(prev);
+      const vOut = next.clone().sub(curr);
+      const lenIn = vIn.length();
+      const lenOut = vOut.length();
+
+      if (lenIn < 0.02 || lenOut < 0.02) { continue; }
+      const r = Math.min(rDefault, lenIn * 0.42, lenOut * 0.42);
+
+      const pBefore = curr.clone().sub(vIn.normalize().multiplyScalar(r));
+      const pAfter = curr.clone().add(vOut.normalize().multiplyScalar(r));
+
+      if (curStart.distanceTo(pBefore) > 0.005) {
+        path.add(new THREE.LineCurve3(curStart, pBefore));
+      }
+      path.add(new THREE.QuadraticBezierCurve3(pBefore, curr, pAfter));
+      curStart = pAfter;
+    }
+
+    const last = pts[pts.length - 1];
+    if (curStart.distanceTo(last) > 0.005) {
+      path.add(new THREE.LineCurve3(curStart, last));
+    }
+    return path;
+  }
+
+  // =========================================================================
+  // 32 KABEL MURNI DARI KOMPONEN KE KOMPONEN (TANPA BLOK TITIK GABUNG TAMBAHAN)
+  // =========================================================================
+  const WIRE_DEFS = [
+    // TAHAP 1: BATERAI ULTRAFIRE & SAKELAR ROCKER 3-KAKI (SESUAI FOTO ASLI)
+    {
+      id: 'w1', num: 1, step: 1, color: '#ef4444',
+      name: 'Kabel Merah (+) Baterai ke Kaki 1 (Perak Atas) Sakelar',
+      from: 'BAT_POS', to: 'SW_IN',
+      waypoints: [[-16.35, 0.85, 0.45], [-13.6, 0.44, 0.45], [-13.6, 0.44, 9.5], [-8.2, 0.44, 9.5], [-8.2, 0.56, 10.75]],
+      note: 'Persis seperti di foto Anda: kabel merah dari atas holder baterai melengkung turun ke Kaki 1 (Perak Atas) sakelar.'
+    },
+    {
+      id: 'w2', num: 2, step: 1, color: '#1e293b',
+      name: 'Kabel Hitam (-) Baterai ke Lubang Kiri-Bawah IN- LM2596',
+      from: 'BAT_NEG', to: 'BUCK_IN_NEG',
+      waypoints: [[-17.05, 0.85, 0.1], [-12.8, 0.40, 0.1], [-12.8, 0.40, -3.38], [-6.6, 0.38, -3.38]],
+      note: 'Persis seperti di foto Anda: kabel hitam dari atas holder baterai masuk ke lubang kiri-bawah bertuliskan IN- pada LM2596.'
+    },
+
+    // TAHAP 2: MASUK +12V DARI SAKELAR KE LM2596 & KALIBRASI WAJIB 5.0V
+    {
+      id: 'w3', num: 3, step: 2, color: '#dc2626',
+      name: 'Kaki 2 (Perak Tengah) Sakelar ke Lubang Kiri-Atas IN+ LM2596',
+      from: 'SW_OUT', to: 'BUCK_IN_POS',
+      waypoints: [[-8.0, 0.56, 11.6], [-8.0, 0.42, -5.62], [-6.6, 0.38, -5.62]],
+      note: 'Pasang kabel merah langsung dari Kaki Tengah Sakelar ke lubang IN+ LM2596, lalu nyalakan sakelar & setel sekrup kuningan LM2596 sampai OUT+ tepat 5.0V!'
+    },
+
+    // TAHAP 3: MENGHIDUPKAN OTAK ESP32 LANGSUNG DARI LM2596 (VIN & GND)
+    {
+      id: 'w4', num: 4, step: 3, color: '#f97316',
+      name: 'Lubang Kanan-Atas OUT+ LM2596 (+5.0V) ke Pin VIN ESP32 (Atas #1)',
+      from: 'BUCK_OUT_POS', to: 'ESP_TOP_VIN',
+      waypoints: [[-0.4, 0.38, -5.62], [-0.4, 0.45, -0.3], [-3.36, 0.45, -0.3], [-3.36, 1.25, 0.65], [-3.36, 1.25, 1.14]],
+      note: 'Tarik langsung dari lubang OUT+ LM2596 (yang sudah disetel 5.0V) ke pin pojok kiri-atas ESP32 bertuliskan VIN.'
+    },
+    {
+      id: 'w5', num: 5, step: 3, color: '#334155',
+      name: 'Lubang Kanan-Bawah OUT- LM2596 (GND) ke Pin GND ESP32 (Atas #2)',
+      from: 'BUCK_OUT_NEG', to: 'ESP_TOP_GND',
+      waypoints: [[-0.1, 0.38, -3.38], [-0.1, 0.45, -0.6], [-2.88, 0.45, -0.6], [-2.88, 1.25, 0.65], [-2.88, 1.25, 1.14]],
+      note: 'Tarik langsung dari lubang OUT- LM2596 ke pin ke-2 dari kiri-atas ESP32 bertuliskan GND (sebelah kanan VIN).'
+    },
+
+    // TAHAP 4: SENSOR SUHU & KELEMBABAN DHT22 PCB HITAM (D15)
+    {
+      id: 'w6', num: 6, step: 4, color: '#fb7185',
+      name: 'Pin 3V3 ESP32 (Bawah Pin #1) ke Jarum Atas (+) DHT22',
+      from: 'ESP_BOT_3V3', to: 'DHT_VCC',
+      waypoints: [[-3.36, 1.25, 4.86], [-3.36, 1.25, 5.4], [-3.36, 0.38, 10.95]],
+      note: 'Pin pojok kiri-bawah ESP32 (3V3) langsung masuk ke jarum paling atas bertanda (+) pada PCB hitam DHT22.'
+    },
+    {
+      id: 'w7', num: 7, step: 4, color: '#eab308',
+      name: 'Pin D15 ESP32 (Bawah Pin #3) ke Jarum Tengah (OUT) DHT22',
+      from: 'ESP_BOT_D15', to: 'DHT_DATA',
+      waypoints: [[-2.40, 1.25, 4.86], [-2.40, 1.25, 5.4], [-2.40, 0.42, 8.2], [-3.75, 0.42, 8.2], [-3.75, 0.36, 11.6]],
+      note: 'Hitung 3 pin dari kiri-bawah ESP32 (3V3, GND, D15) -> colok langsung ke jarum tengah (OUT) DHT22.'
+    },
+    {
+      id: 'w8', num: 8, step: 4, color: '#334155',
+      name: 'Pin GND ESP32 (Bawah Pin #2) ke Jarum Bawah (-) DHT22',
+      from: 'ESP_BOT_GND', to: 'DHT_GND',
+      waypoints: [[-2.88, 1.25, 4.86], [-2.88, 1.25, 5.4], [-2.88, 0.38, 7.9], [-4.15, 0.38, 7.9], [-4.15, 0.36, 12.25]],
+      note: 'Pin ke-2 dari kiri-bawah ESP32 (GND) colok langsung ke jarum paling bawah (-) DHT22.'
+    },
+
+    // TAHAP 5: LAYAR OLED 0.96" HITAM (GND - VCC - SCL - SDA)
+    {
+      id: 'w9', num: 9, step: 5, color: '#334155',
+      name: 'Cabang Jalur GND (Bawah Pin #2 ESP32) ke Pin #1 Kiri (GND) OLED',
+      from: 'ESP_BOT_GND', to: 'OLED_GND',
+      waypoints: [[-2.88, 1.32, 4.86], [-2.88, 1.32, 5.5], [-2.88, 0.48, 8.5], [6.1, 0.48, 8.5], [6.1, 0.48, 0.2], [8.78, 0.48, 0.2], [8.78, 1.15, 1.0], [8.78, 1.15, 1.58]],
+      note: 'Kupas sedikit kulit tengah kabel jumper GND milik DHT22 lalu pelintirkan cabang kabel menuju pin paling kiri (GND) OLED (tutup isolasi).'
+    },
+    {
+      id: 'w10', num: 10, step: 5, color: '#fb7185',
+      name: 'Cabang Jalur 3V3 (Bawah Pin #1 ESP32) ke Pin #2 (VCC) OLED',
+      from: 'ESP_BOT_3V3', to: 'OLED_VCC',
+      waypoints: [[-3.36, 1.32, 4.86], [-3.36, 1.32, 5.5], [-3.36, 0.52, 8.8], [6.4, 0.52, 8.8], [6.4, 0.52, -0.1], [9.46, 0.52, -0.1], [9.46, 1.15, 1.0], [9.46, 1.15, 1.58]],
+      note: 'Sama seperti GND: kupas sedikit kulit tengah kabel jumper 3V3 milik DHT22 lalu pelintirkan cabang menuju pin ke-2 (VCC) OLED.'
+    },
+    {
+      id: 'w11', num: 11, step: 5, color: '#38bdf8',
+      name: 'Pin D22 ESP32 (Bawah Pin #14) ke Pin #3 (SCL) OLED',
+      from: 'ESP_BOT_D22', to: 'OLED_SCL',
+      waypoints: [[2.88, 1.25, 4.86], [2.88, 1.25, 5.5], [2.88, 0.45, 7.6], [6.7, 0.45, 7.6], [6.7, 0.45, -0.4], [10.14, 0.45, -0.4], [10.14, 1.15, 1.0], [10.14, 1.15, 1.58]],
+      note: 'D22 adalah pin ke-2 dari pojok kanan-bawah ESP32 (sebelah kiri D23) -> colok langsung ke SCL OLED.'
+    },
+    {
+      id: 'w12', num: 12, step: 5, color: '#22c55e',
+      name: 'Pin D21 ESP32 (Bawah Pin #11) ke Pin #4 Kanan (SDA) OLED',
+      from: 'ESP_BOT_D21', to: 'OLED_SDA',
+      waypoints: [[1.44, 1.25, 4.86], [1.44, 1.25, 5.5], [1.44, 0.45, 7.9], [7.0, 0.45, 7.9], [7.0, 0.45, -0.7], [10.82, 0.45, -0.7], [10.82, 1.15, 1.0], [10.82, 1.15, 1.58]],
+      note: 'D21 terletak di sebelah kanan D19 pada deret bawah ESP32 -> colok langsung ke pin paling kanan (SDA) OLED.'
+    },
+
+    // TAHAP 6: SUPLAI DAYA DRIVER MOTOR & LAMPU L298N (URUTAN ASLI: 12V — GND — +5V)
+    {
+      id: 'w13', num: 13, step: 6, color: '#f97316',
+      name: 'Lubang OUT+ LM2596 (+5.0V) ke Sekrup Kiri Bertuliskan "12V" pada L298N',
+      from: 'BUCK_OUT_POS', to: 'L298_12V',
+      waypoints: [[-0.4, 0.44, -5.62], [-0.4, 0.44, -1.8], [13.5, 0.44, -1.8], [13.5, 0.44, 9.1], [16.45, 0.44, 9.1]],
+      note: 'PENTING: Walau tulisan di pabrik pada sekrup kiri adalah "12V", lubang ini menerima 5V–35V untuk disalurkan ke Motor Kuning & LED Strip DC 5V. Jadi WAJIB isi +5.0V dari OUT+ LM2596 (JANGAN beri 12V baterai agar LED Strip 5V tidak putus)!'
+    },
+    {
+      id: 'w13b', num: 14, step: 6, color: '#ea580c',
+      name: 'Jembatan Pendek ~3 cm: Sekrup Kiri ("12V") ke Sekrup Paling Kanan ("+5V") L298N',
+      from: 'L298_12V', to: 'L298_5V',
+      waypoints: [[16.45, 0.95, 7.65], [18.05, 0.95, 7.65]],
+      note: 'Cabut topi hitam 5V-EN (pindahkan ke ENA), lalu pasang kabel pendek ~3 cm dari sekrup kiri ("12V" yang berisi +5.0V LM2596) ke sekrup paling kanan ("+5V") agar otak chip L298N mendapat 5.0V utuh!'
+    },
+    {
+      id: 'w14', num: 15, step: 6, color: '#475569',
+      name: 'Lubang OUT- LM2596 (GND) ke Sekrup Tengah Bertuliskan "GND" pada L298N',
+      from: 'BUCK_OUT_NEG', to: 'L298_GND',
+      waypoints: [[-0.3, 0.38, -3.38], [-0.3, 0.46, -2.0], [13.5, 0.46, -2.0], [13.5, 0.46, 8.8], [17.25, 0.46, 8.8], [17.25, 0.95, 7.6]],
+      note: 'Tarik kabel hitam dari lubang OUT- LM2596 ke sekrup tengah ("GND") L298N sebagai titik kumpul negatif Kipas, Pompa, dan LED Strip.'
+    },
+
+    // TAHAP 7: SINYAL IN1/IN2 L298N & MOTOR GEARBOX KUNING
+    {
+      id: 'w15', num: 16, step: 7, color: '#fb923c', groupSim: 'motor',
+      name: 'Pin D18 ESP32 (Bawah Pin #9) ke Jarum IN1 L298N',
+      from: 'ESP_BOT_D18', to: 'L298_IN1',
+      waypoints: [[0.48, 1.35, 4.86], [0.48, 1.35, 5.6], [0.48, 0.52, 8.2], [19.04, 0.52, 8.2], [19.04, 0.82, 7.38]],
+      note: 'Pastikan topi plastik hitam ENA di sebelah kiri IN1 sudah terpasang! Colok D18 ke jarum IN1.'
+    },
+    {
+      id: 'w16', num: 17, step: 7, color: '#c084fc', groupSim: 'motor',
+      name: 'Pin D19 ESP32 (Bawah Pin #10) ke Jarum IN2 L298N',
+      from: 'ESP_BOT_D19', to: 'L298_IN2',
+      waypoints: [[0.96, 1.35, 4.86], [0.96, 1.35, 5.6], [0.96, 0.56, 8.5], [19.36, 0.56, 8.5], [19.36, 0.82, 7.38]],
+      note: 'Pin D19 (sebelah kanan D18) dicolok ke jarum IN2 L298N.'
+    },
+    {
+      id: 'w17', num: 18, step: 7, color: '#ef4444', groupSim: 'motor',
+      name: 'Sekrup Kiri OUT1 L298N ke Kabel Merah Motor Kuning',
+      from: 'L298_OUT1', to: 'MOT_A',
+      waypoints: [[14.2, 0.95, 4.38], [14.2, 0.5, -1.2], [22.0, 0.5, -1.2], [22.0, 0.78, -4.12]],
+      note: 'Kendurkan sekrup biru OUT1 di sisi kiri L298N, masukkan tembaga kabel merah motor kuning, lalu kencangkan.'
+    },
+    {
+      id: 'w18', num: 19, step: 7, color: '#1e293b', groupSim: 'motor',
+      name: 'Sekrup Kiri OUT2 L298N ke Kabel Hitam Motor Kuning',
+      from: 'L298_OUT2', to: 'MOT_B',
+      waypoints: [[13.9, 0.95, 5.32], [13.9, 0.5, -0.8], [22.4, 0.5, -0.8], [22.4, 0.78, -3.48]],
+      note: 'Masukkan tembaga kabel hitam motor kuning ke sekrup biru OUT2. Bila putaran katrol terbalik, cukup tukar OUT1 & OUT2!'
+    },
+
+    // TAHAP 8: LIMIT SWITCH MERAH (PANGKAL REL A — PIN D33)
+    {
+      id: 'w19', num: 20, step: 8, color: '#334155',
+      name: 'Lubang OUT- LM2596 (GND) ke Kaki Bawah Bengkok (COM) Switch Merah',
+      from: 'BUCK_OUT_NEG', to: 'LIMA_COM',
+      waypoints: [[0.2, 0.38, -3.38], [0.2, 0.42, -7.2], [-5.35, 0.42, -7.2], [-5.35, 0.38, -10.4]],
+      note: 'Tarik kabel negatif langsung dari lubang OUT- LM2596 ke kaki bengkok tunggal di sisi bawah Switch Merah (COM).'
+    },
+    {
+      id: 'w20', num: 21, step: 8, color: '#14b8a6',
+      name: 'Pin D33 ESP32 (Atas Pin #9) ke Kaki Samping NO Switch Merah',
+      from: 'ESP_TOP_D33', to: 'LIMA_NO',
+      waypoints: [[0.48, 1.35, 1.14], [0.48, 1.35, 0.3], [0.48, 0.45, -1.2], [0.8, 0.45, -1.2], [0.8, 0.45, -7.6], [-2.5, 0.45, -7.6], [-2.5, 0.42, -11.85]],
+      note: 'Pilih kaki lurus samping kanan yang JAUH dari roda (NO) -> ke D33! Kaki samping dekat roda (NC) biarkan kosong.'
+    },
+
+    // TAHAP 9: LIMIT SWITCH HITAM V-156-1C25 (UJUNG REL B — PIN D32)
+    {
+      id: 'w21', num: 22, step: 9, color: '#334155',
+      name: 'Estafet Kaki Bawah (COM) Switch Merah ke Kaki Bawah (COM) Switch Hitam',
+      from: 'LIMA_COM', to: 'LIMB_COM',
+      waypoints: [[-5.35, 0.42, -9.6], [3.45, 0.42, -9.6]],
+      note: 'Sambung kabel pendek estafet negatif (GND) langsung dari kaki bawah COM Switch Merah ke kaki bawah COM Switch Hitam di sebelahnya!'
+    },
+    {
+      id: 'w22', num: 23, step: 9, color: '#a3e635',
+      name: 'Pin D32 ESP32 (Atas Pin #10) ke Kaki Samping NO Switch Hitam',
+      from: 'ESP_TOP_D32', to: 'LIMB_NO',
+      waypoints: [[0.96, 1.35, 1.14], [0.96, 1.35, 0.3], [0.96, 0.58, -8.2], [0.96, 0.58, -11.85], [1.25, 0.42, -11.85]],
+      note: 'Pilih kaki lurus samping kiri yang JAUH dari roda (NO) -> ke D32 (sebelah kanan D33)! Kaki dekat roda kosongkan.'
+    },
+
+    // TAHAP 10: KONTROL OTAK KE MODUL RELAY HITAM CW-021 (GND, IN1, IN2, VCC)
+    {
+      id: 'w23', num: 24, step: 10, color: '#334155',
+      name: 'Lubang OUT- LM2596 (GND) ke Pin Kiri #1 (GND) Relay CW-021',
+      from: 'BUCK_OUT_NEG', to: 'REL_GND',
+      waypoints: [[0.5, 0.38, -3.38], [0.5, 0.42, -8.4], [-20.4, 0.42, -8.4], [-20.4, 0.92, -11.58], [-19.0, 0.92, -11.58]],
+      note: 'Dari lubang OUT- LM2596 tarik ke deret 4-pin kiri-bawah Relay CW-021 pada jarum paling atas (#1 bertuliskan GND).'
+    },
+    {
+      id: 'w24', num: 25, step: 10, color: '#06b6d4', groupSim: 'fan',
+      name: 'Pin D26 ESP32 (Atas Pin #7) ke Pin Kiri #2 (IN1) Relay',
+      from: 'ESP_TOP_D26', to: 'REL_IN1',
+      waypoints: [[-0.48, 1.35, 1.14], [-0.48, 1.35, 0.3], [-0.48, 0.46, -0.9], [-8.6, 0.46, -0.9], [-8.6, 0.46, -8.7], [-20.8, 0.46, -8.7], [-20.8, 0.92, -11.04], [-19.0, 0.92, -11.04]],
+      note: 'Hitung 7 pin dari kiri-atas ESP32 (D26, sebelah kanan D27) -> dicolok ke jarum IN1 (pengendali Kipas 12V). Menggunakan D26 (bukan D12) agar ESP32 bebas gangguan strapping dan menyala stabil!'
+    },
+    {
+      id: 'w25', num: 26, step: 10, color: '#3b82f6', groupSim: 'pump',
+      name: 'Pin D14 ESP32 (Atas Pin #5) ke Pin Kiri #3 (IN2) Relay',
+      from: 'ESP_TOP_D14', to: 'REL_IN2',
+      waypoints: [[-1.44, 1.35, 1.14], [-1.44, 1.35, 0.3], [-1.44, 0.50, -0.6], [-9.0, 0.50, -0.6], [-9.0, 0.50, -9.0], [-21.2, 0.50, -9.0], [-21.2, 0.92, -10.50], [-19.0, 0.92, -10.50]],
+      note: 'Pin ke-5 dari kiri-atas ESP32 (D14, sebelah kanan D12) -> dicolok ke jarum IN2 (pengendali Pompa Putih).'
+    },
+    {
+      id: 'w26', num: 27, step: 10, color: '#f97316',
+      name: 'Lubang OUT+ LM2596 (+5.0V) ke Pin Kiri #4 Paling Bawah (VCC) Relay',
+      from: 'BUCK_OUT_POS', to: 'REL_VCC',
+      waypoints: [[-0.4, 0.45, -5.62], [-0.4, 0.45, -6.8], [-21.6, 0.45, -6.8], [-21.6, 0.92, -9.96], [-19.0, 0.92, -9.96]],
+      note: 'Tarik langsung dari lubang OUT+ (5.0V) LM2596 ke jarum paling bawah (#4 bertuliskan VCC) agar magnet relay kuat mengklik.'
+    },
+
+    // TAHAP 11: MERAKIT KIPAS DC 12V (STIKER PINK) KE RELAY ATAS K1
+    {
+      id: 'w27', num: 28, step: 11, color: '#dc2626', groupSim: 'fan',
+      name: 'Lubang IN+ LM2596 (+12V) ke Sekrup Kanan #2 (COM1 Tengah Atas) Relay',
+      from: 'BUCK_IN_POS', to: 'REL_COM1',
+      waypoints: [[-7.0, 0.42, -5.62], [-7.0, 0.42, -6.4], [-12.6, 0.42, -6.4], [-12.6, 1.15, -13.12]],
+      note: 'Ambil estafet +12V langsung dari lubang IN+ LM2596 masuk ke sekrup ke-2 dari atas (COM1) karena stiker kipas Anda DC 12V!'
+    },
+    {
+      id: 'w28', num: 29, step: 11, color: '#ec4899', groupSim: 'fan',
+      name: 'Sekrup Kanan #3 (NO1 - Sebelah COM1) Relay ke Kabel (+) Kipas 12V',
+      from: 'REL_NO1', to: 'FAN_POS',
+      waypoints: [[-12.2, 1.15, -12.38], [-12.2, 0.45, -15.6], [19.0, 0.45, -15.6], [19.0, 0.38, -12.48]],
+      note: 'Pada papan fisik CW-021 Anda, lubang #3 adalah NO1 (Normally Open): saat OFF mati aman, saat K1 ON listrik +12V keluar memutar Kipas DC 12V! (Lubang #1 NC1 wajib dikosongkan).'
+    },
+    {
+      id: 'w29', num: 30, step: 11, color: '#1e293b', groupSim: 'fan',
+      name: 'Sekrup Tengah (GND) L298N ke Kabel Hitam (-) Kipas 12V',
+      from: 'L298_GND', to: 'FAN_NEG',
+      waypoints: [[17.25, 0.95, 7.7], [17.25, 0.44, 9.2], [14.6, 0.44, 9.2], [14.6, 0.44, -8.2], [19.4, 0.44, -8.2], [19.4, 0.38, -11.92]],
+      note: 'Praktis tanpa solder: kendurkan sedikit Sekrup Tengah (GND) pada L298N, selipkan ujung tembaga hitam Kipas 12V bersama kabel GND yang sudah ada, lalu kencangkan!'
+    },
+
+    // TAHAP 12: MERAKIT POMPA CELUP PUTIH 5V KE RELAY BAWAH K2 (100% RAPI DI EKOR KANAN!)
+    {
+      id: 'w30', num: 31, step: 12, color: '#16a34a', groupSim: 'pump',
+      name: 'Lubang OUT+ LM2596 (+5.0V) ke Sekrup Kanan #5 (COM2 Tengah Bawah) Relay',
+      from: 'BUCK_OUT_POS', to: 'REL_COM2',
+      waypoints: [[-0.1, 0.48, -5.62], [-0.1, 0.48, -7.0], [-12.0, 0.48, -7.0], [-12.0, 1.15, -10.88]],
+      note: 'PENTING: Pompa putih bekerja di 5V! Tarik langsung dari lubang OUT+ (5.0V) LM2596 ke sekrup ke-5 (COM2). JANGAN disatukan ke COM1 (12V)!'
+    },
+    {
+      id: 'w31', num: 32, step: 12, color: '#0ea5e9', groupSim: 'pump',
+      name: 'Sekrup Kanan #6 Paling Ujung (NO2) Relay ke Ujung Isi (+) Ekor Pompa Putih',
+      from: 'REL_NO2', to: 'PUMP_POS',
+      waypoints: [[-11.6, 1.15, -10.15], [-11.6, 0.45, -7.9], [21.4, 0.45, -7.9], [21.4, 0.62, 11.78]],
+      note: 'Pada papan fisik CW-021 Anda, lubang #6 paling ujung adalah NO2 (Normally Open): saat OFF pompa mati aman, saat K2 ON listrik +5.0V menyalakan Pompa Putih! (Lubang #4 NC2 wajib dikosongkan).'
+    },
+    {
+      id: 'w32', num: 33, step: 12, color: '#334155', groupSim: 'pump',
+      name: 'Sekrup Tengah (GND) L298N ke Ujung Isi Hitam/Putih (-) Ekor Pompa Putih',
+      from: 'L298_GND', to: 'PUMP_NEG',
+      waypoints: [[17.25, 0.95, 7.7], [17.25, 0.48, 9.5], [21.8, 0.48, 9.5], [21.8, 0.62, 12.22]],
+      note: 'Sangat dekat & rapi tanpa melintasi bodi pompa: jepit ujung kabel negatif (-) dari ekor kanan Pompa Putih langsung ke Sekrup Tengah (GND) L298N tepat di atasnya!'
+    },
+
+    // TAHAP 13: MERAKIT LAMPU LED STRIP PUTIH DC 5V (+ DC5V -) KE PIN D27 & JALUR KANAN L298N (OUT3)
+    {
+      id: 'w34', num: 34, step: 13, color: '#eab308', groupSim: 'lamp',
+      name: 'Pin D27 ESP32 (Atas Pin #6 dari USB-C) ke Jarum IN3 L298N',
+      from: 'ESP_TOP_D27', to: 'L298_IN3',
+      waypoints: [[-0.96, 1.35, 1.14], [-0.96, 1.35, 0.3], [-0.96, 0.50, -1.5], [13.9, 0.50, -1.5], [13.9, 0.50, 8.85], [19.68, 0.50, 8.85], [19.68, 0.82, 7.38]],
+      note: 'Hitung 6 pin dari kiri-atas ESP32 (D27, di antara D14 dan D26) -> colok ke jarum IN3 L298N! Pastikan topi hitam ENB di ujung kanan tetap terpasang dan sketch terbaru (PIN_LAMPU_IN3 = 27) sudah di-upload ke ESP32.'
+    },
+    {
+      id: 'w35', num: 35, step: 13, color: '#f59e0b', groupSim: 'lamp',
+      name: 'Sekrup Kanan Bawah OUT3 (Dekat HW-095 / ENB) L298N ke Pad Tembaga + (DC5V) LED Strip',
+      from: 'L298_OUT3', to: 'LED_POS',
+      waypoints: [[21.15, 0.95, 5.32], [22.9, 0.54, 5.32], [22.9, 0.54, 11.45], [24.68, 0.54, 11.45], [24.68, 0.24, 11.15]],
+      note: 'Pada papan HW-095 Anda, lubang OUT3 berada di sisi yang dekat tulisan HW-095 / topi ENB! Sekrup OUT4 di sebelahnya (dekat heatsink) biarkan kosong.'
+    },
+    {
+      id: 'w36', num: 36, step: 13, color: '#334155', groupSim: 'lamp',
+      name: 'Sekrup Tengah (GND) L298N ke Pad Tembaga - (GND) LED Strip',
+      from: 'L298_GND', to: 'LED_NEG',
+      waypoints: [[17.25, 0.95, 7.7], [17.25, 0.44, 9.85], [22.4, 0.44, 9.85], [22.4, 0.44, 11.85], [25.32, 0.44, 11.85], [25.32, 0.24, 11.20]],
+      note: 'Jepit ujung kabel hitam negatif (-) dari pad tembaga (-) LED Strip bersama-sama di Sekrup Tengah (GND) L298N agar LED Strip DC 5V menyala terang dan adem!'
+    }
+  ];
+
+  const WIRE_OBJECTS = [];
+  WIRE_DEFS.forEach((wd) => {
+    const pA = PINS[wd.from];
+    const pB = PINS[wd.to];
+    if (!pA || !pB) { return; }
+
+    const allPts = [pA.pos.clone()];
+    (wd.waypoints || []).forEach((w) => allPts.push(new THREE.Vector3(w[0], w[1], w[2])));
+    allPts.push(pB.pos.clone());
+
+    const curve = buildCleanCurvePath(allPts, 0.24);
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(wd.color),
+      roughness: 0.35,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 1
+    });
+    const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.078, 10, false), mat);
+    mesh.castShadow = true;
+    mesh.userData = {
+      title: `Kabel #${wd.num} — ${wd.name}`,
+      body: `ASAL: ${pA.moduleName} [${pA.label}]  ➜  TUJUAN: ${pB.moduleName} [${pB.label}]. ${wd.note}`
+    };
+    scene.add(mesh);
+    CLICKABLES.push(mesh);
+
+    const capGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.26, 10);
+    const capA = new THREE.Mesh(capGeo, darkPlasticMat);
+    capA.position.copy(pA.pos).add(new THREE.Vector3(0, 0.1, 0));
+    scene.add(capA);
+    const capB = new THREE.Mesh(capGeo, darkPlasticMat);
+    capB.position.copy(pB.pos).add(new THREE.Vector3(0, 0.1, 0));
+    scene.add(capB);
+
+    const pulse = new THREE.Mesh(
+      new THREE.SphereGeometry(0.16, 12, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    scene.add(pulse);
+
+    WIRE_OBJECTS.push({ def: wd, pA, pB, curve, mesh, mat, capA, capB, pulse });
+  });
+
+  // =========================================================================
+  // 12 TAHAP PANDUAN RINCI, TERSTRUKTUR, & MURNI SESUAI FOTO ASLI ANDA
+  // =========================================================================
+  const STEPS = [
+    {
+      step: 1,
+      title: 'Tahap 1: Cek Baterai UltraFire & Sakelar Rocker (Sesuai Foto Anda)',
+      goal: 'Memastikan 2 kabel bawaan dari Holder 3x Baterai UltraFire terpasang persis seperti pada foto Anda, dalam kondisi sakelar OFF.',
+      proc: [
+        'Pastikan tombol merah Sakelar Rocker ditekan ke posisi <b>OFF</b> terlebih dahulu.',
+        'Periksa <b>Kabel Merah (+)</b> dari atas Holder Baterai UltraFire: sesuai foto Anda, kabel ini langsung masuk ke <code>Kaki 1 (Perak Pinggir Atas)</code> Sakelar Rocker.',
+        'Masukkan ujung tembaga <b>Kabel Hitam (-)</b> dari atas Holder Baterai langsung ke lubang pojok kiri-bawah bertuliskan <code>IN-</code> pada modul biru LM2596.',
+        '<b>PERINGATAN PENTING:</b> Biarkan <code>Kaki 3 (warna Emas/Kuningan paling bawah)</code> pada sakelar <b>KOSONG TANPA KABEL</b>!'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Di meja hanya ada murni bahan sesuai foto Anda (tanpa alat tambahan apa pun), kaki emas sakelar kosong, dan sakelar masih OFF.',
+      tip: 'Kaki ke-3 warna emas adalah ground lampu internal sakelar—dibiarkan kosong agar tidak mungkin terjadi salah sambung / korsleting baterai.',
+      cam: { pos: [-12.5, 18.5, 16.0], target: [-12.5, 0.5, 5.5] }
+    },
+    {
+      step: 2,
+      title: 'Tahap 2: Masuk +12V Sakelar ke LM2596 & Setel Wajib 5.0V',
+      goal: 'Menghubungkan keluaran sakelar langsung ke LM2596 lalu menyetel outputnya menjadi 5.0V stabil SEBELUM menyambung ESP32.',
+      proc: [
+        'Pasang 1 kabel merah langsung dari <code>Kaki 2 (Perak Tengah)</code> Sakelar Rocker menuju lubang pojok kiri-atas <code>IN+</code> pada modul biru LM2596.',
+        '<b>STOP! Jangan pasang kabel ke ESP32 dulu!</b> Tekan Sakelar Rocker ke <b>ON</b>.',
+        'Tempelkan jarum merah multimeter (mode Volt DC) ke lubang kanan-atas <code>OUT+</code> dan jarum hitam ke lubang kanan-bawah <code>OUT-</code> LM2596.',
+        'Putar <b>sekrup kuningan kecil</b> di atas kotak biru LM2596 pakai obeng kecil sampai layar multimeter menunjukkan tepat <b>5.0V – 5.1V</b>.',
+        'Setelah tepat 5.0V, matikan kembali Sakelar Rocker ke posisi <b>OFF</b>.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Tegangan di lubang <code>OUT+</code> LM2596 sudah terukur <b>5.0V</b> (bukan 11V–12V!) dan sakelar sudah OFF kembali.',
+      tip: 'Nanti saat ada kabel tambahan yang ikut mengambil daya dari OUT+ atau OUT- LM2596, cukup pelintir ujung tembaganya jadi satu di lubang solder LM2596 tersebut.',
+      cam: { pos: [-5.5, 16.5, 8.5], target: [-5.5, 0.5, 1.5] }
+    },
+    {
+      step: 3,
+      title: 'Tahap 3: Menghidupkan Otak ESP32 Langsung dari LM2596 (VIN & GND)',
+      goal: 'Menyalurkan daya bersih 5.0V langsung dari lubang OUT+ & OUT- LM2596 ke papan hitam ESP32 30-Pin.',
+      proc: [
+        'Letakkan papan hitam <b>ESP32 30-Pin</b> dengan <b>colokan USB-C menghadap KIRI</b> dan kaleng perak WiFi menghadap KANAN.',
+        'Hitung deret pin <b>ATAS dari kiri (arah USB-C)</b>: <code>Pin #1 = VIN</code> dan <code>Pin #2 = GND</code>.',
+        'Sambungkan kabel langsung dari lubang kanan-atas <code>OUT+ (5.0V)</code> LM2596 ke jarum <code>VIN (ESP32 Atas Pin #1)</code>.',
+        'Sambungkan kabel hitam langsung dari lubang kanan-bawah <code>OUT- (GND)</code> LM2596 ke jarum <code>GND (ESP32 Atas Pin #2)</code>.',
+        'Uji singkat 2 detik: tekan sakelar ke <b>ON</b>—lampu indikator di ESP32 harus menyala! Lalu matikan lagi ke <b>OFF</b>.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Lampu kecil di papan ESP32 menyala normal saat diuji, dan tidak ada bagian yang hangat.',
+      tip: 'Gunakan kabel jumper yang salah satu kepalanya dikupas (disolder ke lubang OUT+/OUT- LM2596) dan ujung soket Female-nya dicolok ke jarum VIN & GND ESP32.',
+      cam: { pos: [-1.5, 13.5, 6.5], target: [-1.5, 0.5, -1.0] }
+    },
+    {
+      step: 4,
+      title: 'Tahap 4: Merakit Sensor Suhu & Kelembaban DHT22 (Pin D15)',
+      goal: 'Menghubungkan modul DHT22 PCB hitam 3-pin langsung ke deret bawah ESP32.',
+      proc: [
+        'Letakkan <b>Modul DHT22</b> di bawah ESP32 dengan bodi putih menghadap atas dan <b>3 jarum logam menunjuk ke KIRI</b> (persis foto Anda).',
+        'Urutan 3 jarum DHT22 dari atas ke bawah adalah: <code>Jarum Atas = (+)</code>, <code>Jarum Tengah = OUT</code>, <code>Jarum Bawah = (-)</code>.',
+        'Hitung deret pin <b>BAWAH ESP32 dari kiri (USB-C)</b>: <code>Pin #1 = 3V3</code>, <code>Pin #2 = GND</code>, <code>Pin #3 = D15</code>.',
+        'Colok 3 kabel jumper Female-to-Female langsung: <code>3V3 (#1 Bawah) -> Jarum Atas (+)</code>, <code>D15 (#3 Bawah) -> Jarum Tengah (OUT)</code>, dan <code>GND (#2 Bawah) -> Jarum Bawah (-)</code>.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Ketiga pin pojok kiri-bawah ESP32 (<code>3V3, GND, D15</code>) sudah masuk rapi tanpa tertukar antara <code>(+)</code> dan <code>(-)</code>.',
+      tip: 'Modul DHT22 PCB hitam 3-pin Anda sudah memiliki resistor internal di papan hitamnya, jadi langsung colok 3 kabel saja tanpa resistor tambahan!',
+      cam: { pos: [-1.5, 13.5, 14.5], target: [-1.5, 0.5, 7.8] }
+    },
+    {
+      step: 5,
+      title: 'Tahap 5: Merakit Layar OLED 0.96" Hitam (SDA=D21, SCL=D22)',
+      goal: 'Menyambung layar OLED 4-pin langsung ke pin I2C ESP32 dan mencabang daya 3.3V dari kabel jumper DHT22.',
+      proc: [
+        'Letakkan <b>Layar OLED 0.96" Hitam</b> di kanan ESP32 (4 jarum berada di sisi ATAS, tab plastik hijau di kanan sesuai foto Anda).',
+        'Baca tulisan putih di atas layar dari kiri ke kanan: <code>GND</code> — <code>VCC</code> — <code>SCL</code> — <code>SDA</code>.',
+        '<b>Cara mencabang 3V3 & GND tanpa alat tambahan:</b> kupas sedikit kulit tengah kabel jumper <code>GND</code> & <code>3V3</code> milik DHT22 tadi, pelintirkan kabel cabang menuju <code>GND</code> dan <code>VCC</code> OLED, lalu bungkus rapat pakai lakban/isolasi hitam!',
+        'Colok <code>D22 (ESP32 Bawah Pin #14, nomor 2 dari kanan)</code> langsung ke jarum <code>SCL</code> OLED.',
+        'Colok <code>D21 (ESP32 Bawah Pin #11, sebelah kanan D19)</code> langsung ke jarum <code>SDA</code> OLED.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Puntiran cabang kabel <code>3V3</code> dan <code>GND</code> sudah tertutup isolasi agar tidak bersentuhan, <code>SCL</code> di <code>D22</code>, dan <code>SDA</code> di <code>D21</code>.',
+      tip: 'Cara tercepat menemukan D22: lihat pin paling pojok kanan-bawah ESP32 (D23), maka tepat 1 pin di kirinya adalah D22!',
+      cam: { pos: [4.5, 14.5, 11.5], target: [4.5, 0.5, 3.5] }
+    },
+    {
+      step: 6,
+      title: 'Tahap 6: Suplai Daya Driver L298N (Urutan Asli Papan: 12V — GND — +5V)',
+      goal: 'Menyesuaikan 100% dengan tulisan asli papan L298N (Kiri = 12V, Tengah = GND, Paling Kanan = +5V) agar Motor Kuning kuat berputar & LED Strip DC 5V aman dari gosong.',
+      proc: [
+        'Letakkan <b>Driver L298N Merah</b> dengan blok biru <b>3 lubang sekrup menghadap BAWAH</b>: perhatikan tulisan asli di papan dari kiri ke kanan adalah <code>12V</code> — <code>GND</code> — <code>+5V</code>.',
+        '<b>1) Pindahkan Topi <code>5V-EN</code> ke <code>ENA</code>:</b> cabut topi plastik hitam <code>5V-EN</code> (di belakang sekrup kiri <code>12V</code>), lalu tancapkan ke <b>2 jarum paling kiri <code>ENA</code></b> di deret kanan! Sekarang <code>ENA</code> dan <code>ENB</code> sama-sama bertopi.',
+        '<b>2) Lubang Kiri <code>12V</code> & Paling Kanan <code>+5V</code>:</b> walaupun sekrup kiri bertuliskan <code>12V</code>, lubang itu adalah jalur beban utama (menerima 5V–35V). Karena Motor Kuning & LED Strip Anda bertipe <b>5V</b>, tarik kabel dari <b><code>OUT+ (+5.0V)</code> LM2596</b> ke sekrup kiri <code>12V</code>, lalu pasang <b>kabel jembatan pendek ~3 cm</b> dari sekrup kiri <code>12V</code> ke sekrup paling kanan <code>+5V</code>! <i>(JANGAN beri 12V baterai ke L298N agar LED Strip DC 5V tidak putus!)</i>',
+        '<b>3) Lubang Tengah <code>GND</code>:</b> tarik kabel hitam dari lubang <code>OUT- (GND) LM2596</code> ke sekrup tengah <code>GND</code> L298N. <i>(Jangan dikencangkan mati dulu karena negatif Kipas, Pompa, & LED Strip ikut dijepit di sini!)</i>'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Topi <code>5V-EN</code> sudah pindah ke <code>ENA</code>, sekrup kiri <code>12V</code> & sekrup paling kanan <code>+5V</code> sama-sama mendapat <code>+5.0V</code> dari <code>OUT+</code> LM2596, dan sekrup tengah <code>GND</code> mendapat <code>OUT-</code> LM2596.',
+      tip: 'Kenapa motor Anda kemarin sempat belum bergerak? Karena jika kita memakai 5V dari Step-Down tanpa mencabut 5V-EN dan tanpa menjembatani ke sekrup kanan "+5V", tegangan 5V terpotong di regulator internal L298N menjadi ~3.2V sehingga chip L298N kekurangan daya!',
+      cam: { pos: [5.5, 19.5, 16.5], target: [5.5, 0.5, 6.5] }
+    },
+    {
+      step: 7,
+      title: 'Tahap 7: Kabel Sinyal L298N (D18, D19) & Motor Gearbox Kuning',
+      goal: 'Menghubungkan perintah maju-mundur kereta pakan dari ESP32 ke L298N dan menjepit kabel Motor Kuning.',
+      proc: [
+        'Lihat 6 slot jarum di kanan-bawah L298N urut dari kiri ke kanan: <code>[Topi ENA]</code> — <code>IN1</code> — <code>IN2</code> — <code>IN3</code> — <code>IN4</code> — <code>[Topi ENB]</code>.',
+        'Colok kabel jumper Female-to-Female dari <code>D18 (ESP32 Bawah Pin #9)</code> ke jarum <code>IN1</code> (tepat di kanan topi ENA), dan dari <code>D19 (ESP32 Bawah Pin #10)</code> ke jarum <code>IN2</code>.',
+        'Ambil ujung <b>Kabel Merah & Hitam dari Motor Gearbox Kuning</b> di atas L298N, masukkan ke 2 lubang sekrup biru di sisi kiri L298N (<code>OUT1</code> dan <code>OUT2</code>), lalu kencangkan bautnya.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Topi jumper <code>ENA</code> dan <code>ENB</code> terpasang di kedua ujung deret pin, <code>D18->IN1</code>, <code>D19->IN2</code>, dan kabel motor terjepit kuat di <code>OUT1</code> & <code>OUT2</code>.',
+      tip: 'Jika nanti arah tarikan benang pakan terbalik (harusnya maju malah mundur), Anda cukup menukar posisi 2 kabel motor di sekrup OUT1 dan OUT2.',
+      cam: { pos: [14.0, 17.5, 12.0], target: [14.0, 0.6, 1.5] }
+    },
+    {
+      step: 8,
+      title: 'Tahap 8: Merakit Limit Switch Merah (Pangkal Rel A — Pin D33)',
+      goal: 'Memasang sensor penghenti otomatis kereta pakan di pangkal rel A.',
+      proc: [
+        'Lihat <b>Limit Switch MERAH</b> di tengah-atas meja: ada <b>1 kaki bengkok di sisi bawah (<code>COM</code>)</b> dan <b>2 kaki lurus di ujung kanan</b>.',
+        'Tarik kabel hitam langsung dari lubang <code>OUT- (GND) LM2596</code> menuju <b>kaki bengkok bawah (<code>COM</code>)</b> Switch Merah.',
+        'Dari 2 kaki lurus di samping kanan, pilih <b>kaki bagian bawah yang JAUH dari engsel tuas roda (<code>NO</code>)</b>, lalu sambungkan langsung ke <code>D33 (ESP32 Atas Pin #9 dari USB-C)</code>.',
+        'Biarkan kaki samping atas yang dekat roda (<code>NC</code>) <b>KOSONG</b>.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Kaki bawah <code>COM</code> mendapat GND dari <code>OUT-</code> LM2596, dan kaki samping bawah <code>NO</code> masuk ke <code>D33</code>.',
+      tip: 'Saat memasang kabel ke kaki COM bawah Switch Merah, siapkan juga 1 ujung kabel pendek bersama-sama untuk diestafetkan ke Switch Hitam di sebelahnya pada Tahap 9!',
+      cam: { pos: [-2.0, 16.0, 2.5], target: [-2.0, 0.5, -6.5] }
+    },
+    {
+      step: 9,
+      title: 'Tahap 9: Merakit Limit Switch Hitam V-156-1C25 (Ujung B — Pin D32)',
+      goal: 'Memasang sensor pembalik arah otomatis di ujung rel B dengan estafet negatif langsung dari Switch Merah.',
+      proc: [
+        'Lihat <b>Limit Switch HITAM (V-156-1C25)</b> tepat di sebelah kanan Switch Merah.',
+        'Pasang 1 kabel hitam pendek <b>estafet langsung dari kaki bawah <code>COM</code> Switch Merah</b> ke <b>kaki bawah bengkok <code>COM</code> Switch Hitam</b>!',
+        'Dari 2 kaki lurus di samping kiri Switch Hitam, pilih <b>kaki bawah yang JAUH dari engsel tuas roda (<code>NO</code>)</b>, lalu sambungkan ke <code>D32 (ESP32 Atas Pin #10, tepat di kanan D33)</code>.',
+        'Biarkan kaki samping atas dekat roda (<code>NC</code>) <b>KOSONG</b>.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Kedua kaki bawah <code>COM</code> limit switch sudah saling terhubung ke GND, Switch Merah ke <code>D33</code>, dan Switch Hitam ke <code>D32</code>.',
+      tip: 'Estafet kabel GND antar kaki COM ini membuat rangkaian jauh lebih hemat kabel dan bersih tanpa perlu menarik 2 kabel panjang berulang kali.',
+      cam: { pos: [0.5, 15.0, 0.5], target: [0.5, 0.5, -8.5] }
+    },
+    {
+      step: 10,
+      title: 'Tahap 10: Kabel Kontrol ke Modul Relay Hitam CW-021 (GND, IN1, IN2, VCC)',
+      goal: 'Menghubungkan 4 pin kontrol di kiri-bawah Relay CW-021 langsung ke LM2596 dan ESP32.',
+      proc: [
+        'Perhatikan <b>Modul Relay Hitam CW-021</b> di kiri-atas meja: pastikan di kiri-atas, <b>topi jumper hitam tetap menancap di <code>JD-VCC</code> & <code>VCC</code></b>.',
+        'Lihat <b>4 jarum di kiri-bawah</b> urut dari atas ke bawah: <code>#1 = GND</code>, <code>#2 = IN1</code>, <code>#3 = IN2</code>, <code>#4 = VCC</code>.',
+        'Sambungkan <code>#1 GND</code> langsung ke lubang <code>OUT- (GND) LM2596</code>.',
+        'Colok <code>#2 IN1</code> ke <code>ESP32 D26 (Atas Pin #7)</code> dan <code>#3 IN2</code> ke <code>ESP32 D14 (Atas Pin #5)</code>.',
+        'Sambungkan <code>#4 VCC</code> (jarum paling bawah) langsung ke lubang <code>OUT+ (5.0V) LM2596</code>.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> Urutan 4 jarum kiri-bawah Relay dari atas ke bawah sudah tepat: <code>GND</code>, <code>IN1 (D26)</code>, <code>IN2 (D14)</code>, <code>VCC (+5.0V)</code>.',
+      tip: 'Gunakan Pin D26 (bukan D12) untuk IN1 Relay agar ESP32 bebas gangguan booting! Catatan: jika lampu merah kecil IN1/IN2 di Relay terus menyala walau tombol Web OFF, cabut topi JD-VCC lalu colok +5V LM2596 ke jarum JD-VCC dan colok 3V3 ESP32 ke jarum #4 VCC!',
+      cam: { pos: [-8.5, 18.5, 3.5], target: [-8.5, 0.5, -5.5] }
+    },
+    {
+      step: 11,
+      title: 'Tahap 11: Merakit Kipas DC 12V (Stiker Pink) ke Relay Atas K1',
+      goal: 'Menyambungkan Kipas DC 12V langsung ke sekrup atas Relay K1 (+12V) dan menjepit negatifnya di sekrup GND L298N.',
+      proc: [
+        'Lihat simbol garis sakelar putih pada <b>3 sekrup biru bagian K1</b> di Relay CW-021: <code>Sekrup #1 = NC1</code>, <code>Sekrup #2 (Tengah) = COM1</code>, <code>Sekrup #3 = NO1</code>.',
+        'Tarik 1 kabel estafet <b>+12V langsung dari cabang <code>IN+</code> LM2596</b> masuk ke <code>Sekrup #2 Tengah (COM1)</code> Relay, lalu kencangkan.',
+        'Masukkan ujung <b>Kabel (+) Kipas DC 12V</b> ke <code>Sekrup #3 (NO1)</code> Relay, lalu kencangkan. <b>Biarkan <code>Sekrup #1 (NC1)</code> kosong</b> agar fungsi ON/OFF tidak terbalik!',
+        'Masukkan ujung <b>Kabel (-) Kipas DC 12V</b> ke lubang <code>Sekrup Tengah (GND) L298N</code> di sisi kanan meja (bersama kabel GND yang sudah ada).'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> <code>#2 COM1</code> mendapat +12V dari <code>IN+</code> LM2596, <code>#3 NO1</code> ke Kipas (<code>#1 NC1</code> kosong), dan negatif Kipas masuk ke Sekrup Tengah <code>GND</code> L298N.',
+      tip: 'Jangan sampai tertukar mengambil dari OUT+ (5V) untuk Kipas, karena kipas Anda berstiker pink DC 12V sehingga butuh jalur IN+ (+12V) agar anginnya kencang!',
+      cam: { pos: [1.5, 22.0, 1.5], target: [1.5, 0.5, -8.5] }
+    },
+    {
+      step: 12,
+      title: 'Tahap 12: Merakit Pompa Celup Putih 5V ke Relay Bawah K2',
+      goal: 'Menyambungkan ekor kabel Pompa Celup Putih ke jalur khusus +5.0V (Relay K2) dan menjepit negatifnya bersama di Sekrup GND L298N.',
+      proc: [
+        'Kupas hati-hati ~1,5 cm kulit luar <b>kabel bulat hitam di ekor kanan Pompa Celup Putih</b> hingga terlihat 2 isi kabel kecilnya (<b>Merah/Cokelat = +</b> dan <b>Hitam/Putih = -</b>).',
+        'Lihat simbol garis sakelar putih pada <b>3 sekrup biru bagian K2</b> di Relay CW-021: <code>Sekrup #4 = NC2</code>, <code>Sekrup #5 (Tengah) = COM2</code>, <code>Sekrup #6 (Paling Ujung) = NO2</code>.',
+        'Tarik 1 kabel langsung dari cabang <b><code>OUT+ (+5.0V)</code> LM2596</b> ke <code>Sekrup #5 Tengah (COM2)</code> Relay. <b>JANGAN disatukan dengan COM1 (12V)!</b>',
+        'Tarik kabel rapi memutari tepi kanan meja dari <code>Sekrup #6 Paling Ujung (NO2)</code> ke <b>ujung isi Kabel (+) di ekor kanan Pompa Putih</b>. <b>Biarkan <code>Sekrup #4 (NC2)</code> kosong</b> agar fungsi ON/OFF tidak terbalik!',
+        'Masukkan <b>ujung isi Kabel (-) di ekor kanan Pompa Putih</b> ke <code>Sekrup Tengah (GND) L298N</code> tepat di atasnya.'
+      ],
+      check: '<b>Cek Sebelum Lanjut:</b> <code>#5 COM2</code> = 5V Pompa terpisah aman dari 12V, dan Pompa terhubung ke <code>Sekrup #6 Paling Ujung (NO2)</code> (<code>#4 NC2</code> kosong).',
+      tip: 'Jangan mengencangkan mati Sekrup Tengah (GND) L298N dulu, karena 1 kabel hitam negatif (-) dari LED Strip DC 5V pada Tahap 13 akan ikut dijepit bersama di sini!',
+      cam: { pos: [13.5, 13.5, 18.5], target: [13.5, 0.8, 11.5] }
+    },
+    {
+      step: 13,
+      title: 'Tahap 13: Merakit Lampu LED Strip Putih DC 5V (+ DC5V -) ke Pin D27 & L298N OUT3 — Uji Final!',
+      goal: 'Menyambungkan LED Strip Putih DC 5V ke jalur kanan Driver L298N (IN3 & OUT3) agar menyala terang & aman dari Website tanpa perlu beli relay tambahan dan tanpa perlu upload ulang kode ESP32!',
+      proc: [
+        '<b>PERINGATAN TEGANGAN KRITIS:</b> Sesuai foto asli Anda, pada pita LED tertulis jelas <b><code>+ DC5V -</code></b>! Artinya lampu strip ini <b>WAJIB 5V</b> (<b>DILARANG KERAS</b> disambung ke 12V karena akan langsung putus/gosong, dan jangan dicolok langsung ke pin ESP32 karena pin ESP32 tidak kuat mengangkat arus deretan LED!).',
+        'Kita memanfaatkan <b>Jalur Kanan modul L298N yang masih kosong</b> sebagai sakelar daya 5V otomatis: pastikan <b>topi plastik hitam <code>ENB</code> di ujung paling kanan deret jarum L298N sudah terpasang</b>!',
+        'Hitung <b>6 pin dari kiri-atas ESP32 (arah USB-C)</b> yaitu <code>Pin D27</code> (tepat di antara <code>D14</code> dan <code>D26</code>), lalu colok kabel jumper ke jarum <b><code>IN3</code> pada L298N</b> (jarum ke-2 dari kanan, sebelah kiri topi ENB). Biarkan jarum <code>IN4</code> kosong!',
+        'Solder kabel positif (kuning/merah) ke <b>pad tembaga lonjong bertanda <code>+</code> pada <code>+ DC5V -</code></b> di ujung LED Strip, lalu masukkan ujung satunya ke <b><code>Sekrup Biru Kanan Bawah dekat tulisan HW-095 / ENB (OUT3)</code> pada L298N</b> dan kencangkan! Biarkan sekrup <code>OUT4</code> di sebelahnya (dekat heatsink) kosong.',
+        'Solder kabel negatif hitam ke <b>pad tembaga lonjong bertanda <code>-</code></b> di ujung LED Strip, lalu jepit ujung satunya bersama kabel hitam lain di <b><code>Sekrup Tengah (GND)</code> L298N</b>, lalu kencangkan bautnya rapat-rapat!'
+      ],
+      check: '<b>CEK FINAL SEBELUM ON:</b> (1) <code>OUT+</code> LM2596 tepat <b>5.0V</b>, (2) Pad <code>+</code> LED Strip masuk ke <code>OUT3</code> L298N (5V, bukan 12V!) & Pad <code>-</code> ke <code>GND</code> L298N, (3) <code>Pin D27 -> IN3</code> & topi <code>ENB</code> terpasang, (4) Saat sakelar dinyalakan semua alat <b>Standby MATI</b> hingga tombol di Website diklik!',
+      tip: 'Pastikan sketch terbaru sketch_oct31a.ino sudah di-upload ke ESP32 (PIN_RELAY_KIPAS=26, PIN_LAMPU_IN3=27), topi ENA & ENB terpasang, 5V-EN dipindah ke ENA, serta sekrup 12V & +5V dijembatani! Klik tombol "Uji Lampu Strip 5V" di bawah layar 3D untuk melihat simulasinya!',
+      cam: { pos: [21.0, 15.5, 14.5], target: [21.5, 0.5, 5.5] }
+    }
+  ];
+
+  // =========================================================================
+  // INTERAKSI UI, CHECKLIST PENYIMPANAN PROGRES, & LOOP ANIMASI
+  // =========================================================================
+  let currentStep = 1;
+  let focusStepOnly = true;
+  let showLabels = true;
+  let selectedWireId = null;
+  const checkedWires = new Set();
+  const simState = { power: true, fan: false, pump: false, motor: false, lamp: false };
+  const pinFloatingEls = [];
+
+  function clearFloatingPinTags() {
+    while (pinFloatingEls.length) {
+      pinFloatingEls.pop().el.remove();
+    }
+  }
+
+  function addFloatingPinTag(pinObj, prefix) {
+    if (!pinObj) { return; }
+    const el = document.createElement('div');
+    el.className = 'lbl-pin';
+    el.textContent = `${prefix}: ${pinObj.label}`;
+    labelsLayer.appendChild(el);
+    pinFloatingEls.push({ el, pos: pinObj.pos.clone().add(new THREE.Vector3(0, 0.5, 0)) });
+  }
+
+  let camAnim = null;
+  function flyCamera(toPos, toTarget) {
+    camAnim = {
+      fromPos: camera.position.clone(),
+      toPos: toPos.clone(),
+      fromTarget: controls.target.clone(),
+      toTarget: toTarget.clone(),
+      t: 0
+    };
+  }
+
+  const inspectCard = document.getElementById('inspect-card');
+  const inspectTitle = document.getElementById('inspect-title');
+  const inspectBody = document.getElementById('inspect-body');
+  document.getElementById('inspect-close').addEventListener('click', () => {
+    inspectCard.style.display = 'none';
+  });
+  function showInspect(title, body) {
+    inspectTitle.textContent = title;
+    inspectBody.textContent = body;
+    inspectCard.style.display = 'block';
+  }
+
+  function updateProgressHeader() {
+    const done = checkedWires.size;
+    const total = WIRE_OBJECTS.length;
+    document.getElementById('prog-text').textContent = `${done} / ${total} Kabel Dicentang`;
+    document.getElementById('prog-bar-fill').style.width = `${Math.round((done / total) * 100)}%`;
+  }
+
+  function refreshSceneHighlight() {
+    clearFloatingPinTags();
+    ACTIVE_PIN_RINGS.forEach((p) => { p.ring.material.opacity = 0; });
+    const activePinSet = new Set();
+
+    WIRE_OBJECTS.forEach((wo) => {
+      const inHistory = wo.def.step <= currentStep;
+      const isThisStep = wo.def.step === currentStep;
+      const isSelected = selectedWireId && wo.def.id === selectedWireId;
+
+      wo.mesh.visible = inHistory;
+      wo.capA.visible = inHistory;
+      wo.capB.visible = inHistory;
+      if (!inHistory) {
+        wo.pulse.visible = false;
+        return;
+      }
+
+      if (selectedWireId) {
+        wo.mat.opacity = isSelected ? 1.0 : 0.14;
+        wo.pulse.visible = isSelected;
+      } else if (!focusStepOnly) {
+        wo.mat.opacity = 0.95;
+        const simOk = simState.power && (
+          !wo.def.groupSim ||
+          (wo.def.groupSim === 'fan' && simState.fan) ||
+          (wo.def.groupSim === 'pump' && simState.pump) ||
+          (wo.def.groupSim === 'motor' && simState.motor) ||
+          (wo.def.groupSim === 'lamp' && simState.lamp)
+        );
+        wo.pulse.visible = simOk;
+      } else {
+        wo.mat.opacity = isThisStep ? 1.0 : 0.22;
+        wo.pulse.visible = isThisStep;
+      }
+
+      if (isSelected || (!selectedWireId && isThisStep)) {
+        activePinSet.add(wo.pA);
+        activePinSet.add(wo.pB);
+      }
+    });
+
+    activePinSet.forEach((p) => { p.ring.material.opacity = 0.95; });
+
+    if (selectedWireId) {
+      const sel = WIRE_OBJECTS.find((w) => w.def.id === selectedWireId);
+      if (sel) {
+        addFloatingPinTag(sel.pA, 'ASAL');
+        addFloatingPinTag(sel.pB, 'TUJUAN');
+      }
+    }
+  }
+
+  const pillsWrap = document.getElementById('step-pills');
+  STEPS.forEach((st) => {
+    const b = document.createElement('button');
+    b.className = 'st-pill';
+    b.textContent = st.step;
+    b.title = st.title;
+    b.addEventListener('click', () => goToStep(st.step, true));
+    pillsWrap.appendChild(b);
+  });
+
+  function renderSidebar() {
+    const meta = STEPS[currentStep - 1];
+    document.getElementById('st-tag').textContent = `TAHAP ${currentStep} DARI ${STEPS.length}`;
+    document.getElementById('st-title').textContent = meta.title;
+    document.getElementById('st-goal').textContent = meta.goal;
+    document.getElementById('st-proc').innerHTML = meta.proc.map((li) => `<li>${li}</li>`).join('');
+    document.getElementById('st-check').innerHTML = meta.check;
+    document.getElementById('st-tip').innerHTML = `<b>Tips:</b> ${meta.tip}`;
+
+    Array.from(pillsWrap.children).forEach((btn, idx) => {
+      const n = idx + 1;
+      btn.className = 'st-pill' + (n === currentStep ? ' active' : (n < currentStep ? ' done' : ''));
+    });
+
+    const wireListEl = document.getElementById('wire-list');
+    wireListEl.innerHTML = '';
+
+    const list = WIRE_OBJECTS.filter((w) => w.def.step === currentStep);
+    list.forEach((wo) => {
+      const isChecked = checkedWires.has(wo.def.id);
+      const isSel = selectedWireId === wo.def.id;
+      const card = document.createElement('div');
+      card.className = 'wire-card' + (isSel ? ' selected' : '') + (isChecked ? ' checked' : '');
+      card.innerHTML = `
+        <div class="wc-top">
+          <input type="checkbox" class="wc-check" ${isChecked ? 'checked' : ''} title="Centang bila kabel ini sudah Anda pasang">
+          <span class="wc-num">#${wo.def.num}</span>
+          <span class="wc-swatch" style="background:${wo.def.color}"></span>
+          <span class="wc-name">${wo.def.name}</span>
+          <span class="wc-zoom">${isSel ? 'Reset' : 'Zoom Pin'}</span>
+        </div>
+        <div class="wc-route">
+          <div class="pin-box">
+            <small>${wo.pA.moduleName}</small>
+            <code>${wo.pA.label}</code>
+          </div>
+          <div class="route-arrow">&rarr;</div>
+          <div class="pin-box">
+            <small>${wo.pB.moduleName}</small>
+            <code>${wo.pB.label}</code>
+          </div>
+        </div>
+        <div class="wc-note">${wo.def.note}</div>
+      `;
+
+      const chk = card.querySelector('.wc-check');
+      chk.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (chk.checked) { checkedWires.add(wo.def.id); } else { checkedWires.delete(wo.def.id); }
+        updateProgressHeader();
+        card.classList.toggle('checked', chk.checked);
+      });
+
+      card.addEventListener('click', () => {
+        if (selectedWireId === wo.def.id) {
+          selectedWireId = null;
+          flyCamera(new THREE.Vector3(...meta.cam.pos), new THREE.Vector3(...meta.cam.target));
+        } else {
+          selectedWireId = wo.def.id;
+          const mid = wo.pA.pos.clone().lerp(wo.pB.pos, 0.5);
+          const dist = Math.max(7.5, wo.pA.pos.distanceTo(wo.pB.pos) * 0.85);
+          flyCamera(new THREE.Vector3(mid.x, dist * 0.95, mid.z + dist * 0.68), mid);
+          showInspect(`Kabel #${wo.def.num} — ${wo.def.name}`, `${wo.pA.moduleName} [${wo.pA.label}]  ➜  ${wo.pB.moduleName} [${wo.pB.label}]. ${wo.def.note}`);
+        }
+        renderSidebar();
+        refreshSceneHighlight();
+      });
+
+      wireListEl.appendChild(card);
+    });
+
+    document.getElementById('btn-prev').disabled = currentStep === 1;
+    document.getElementById('btn-next').disabled = currentStep === STEPS.length;
+    updateProgressHeader();
+  }
+
+  function goToStep(stepNum, moveCam) {
+    currentStep = Math.max(1, Math.min(STEPS.length, stepNum));
+    selectedWireId = null;
+    renderSidebar();
+    refreshSceneHighlight();
+    if (moveCam) {
+      const m = STEPS[currentStep - 1];
+      flyCamera(new THREE.Vector3(...m.cam.pos), new THREE.Vector3(...m.cam.target));
+    }
+  }
+
+  document.getElementById('btn-prev').addEventListener('click', () => goToStep(currentStep - 1, true));
+  document.getElementById('btn-next').addEventListener('click', () => goToStep(currentStep + 1, true));
+
+  const CAM_PRESETS = {
+    all:       { pos: [0, 38.0, 24.0],    target: [0, 0.5, 0.5] },
+    esp32:     { pos: [0.0, 11.2, 8.2],   target: [0.0, 0.6, 3.0] },
+    power:     { pos: [-9.5, 19.5, 15.0], target: [-9.5, 0.5, 3.5] },
+    dht_oled:  { pos: [4.8, 14.5, 13.5],  target: [4.8, 0.5, 6.5] },
+    l298n:     { pos: [17.5, 17.5, 12.5], target: [17.5, 0.6, 1.5] },
+    limits:    { pos: [-0.8, 13.5, -4.5], target: [-0.8, 0.5, -12.0] },
+    relay_fan: { pos: [-1.0, 21.0, -2.5], target: [-1.0, 0.5, -12.0] },
+    pump:      { pos: [13.5, 9.5, 18.5],  target: [13.5, 0.8, 12.0] },
+    led_strip: { pos: [21.5, 14.0, 13.5], target: [21.5, 0.5, 4.8] }
+  };
+  document.querySelectorAll('#cam-presets .cam-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#cam-presets .cam-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const p = CAM_PRESETS[btn.dataset.cam];
+      if (p) { flyCamera(new THREE.Vector3(...p.pos), new THREE.Vector3(...p.target)); }
+    });
+  });
+
+  const btnFocus = document.getElementById('btn-focus-mode');
+  btnFocus.addEventListener('click', () => {
+    focusStepOnly = !focusStepOnly;
+    btnFocus.classList.toggle('active', focusStepOnly);
+    btnFocus.textContent = focusStepOnly ? 'Sorot Tahap Ini' : 'Tampilkan Semua Kabel';
+    refreshSceneHighlight();
+  });
+
+  const btnLabels = document.getElementById('btn-toggle-labels');
+  btnLabels.addEventListener('click', () => {
+    showLabels = !showLabels;
+    labelsLayer.style.display = showLabels ? 'block' : 'none';
+    btnLabels.textContent = `Label: ${showLabels ? 'ON' : 'OFF'}`;
+  });
+
+  document.querySelectorAll('#sim-controls .cam-btn').forEach((btn) => {
+    const key = btn.dataset.sim;
+    btn.addEventListener('click', () => {
+      simState[key] = !simState[key];
+      btn.classList.toggle('active', simState[key]);
+      if (key === 'power') {
+        btn.textContent = `Sakelar 12V: ${simState.power ? 'ON' : 'OFF'}`;
+      }
+      if (key !== 'power' && simState[key]) {
+        focusStepOnly = false;
+        btnFocus.classList.remove('active');
+        btnFocus.textContent = 'Tampilkan Semua Kabel';
+        if (currentStep < STEPS.length) { goToStep(STEPS.length, false); }
+      }
+      refreshSceneHighlight();
+    });
+  });
+
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  let downXY = { x: 0, y: 0 };
+  renderer.domElement.addEventListener('pointerdown', (e) => { downXY = { x: e.clientX, y: e.clientY }; });
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    if (Math.hypot(e.clientX - downXY.x, e.clientY - downXY.y) > 5) { return; }
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(CLICKABLES, false);
+    if (hits.length > 0 && hits[0].object.userData && hits[0].object.userData.title) {
+      showInspect(hits[0].object.userData.title, hits[0].object.userData.body);
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = viewport.clientWidth / viewport.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+  });
+
+  function projectLabel(item) {
+    const v = item.pos.clone().project(camera);
+    if (v.z > 1) { item.el.style.display = 'none'; return; }
+    item.el.style.display = 'block';
+    item.el.style.left = `${(v.x * 0.5 + 0.5) * viewport.clientWidth}px`;
+    item.el.style.top = `${(-v.y * 0.5 + 0.5) * viewport.clientHeight}px`;
+  }
+
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    const elapsed = clock.getElapsedTime();
+
+    if (camAnim) {
+      camAnim.t = Math.min(1, camAnim.t + dt * 2.4);
+      const ease = 1 - Math.pow(1 - camAnim.t, 3);
+      camera.position.lerpVectors(camAnim.fromPos, camAnim.toPos, ease);
+      controls.target.lerpVectors(camAnim.fromTarget, camAnim.toTarget, ease);
+      if (camAnim.t >= 1) { camAnim = null; }
+    }
+    controls.update();
+
+    const pulseT = (elapsed * 0.55) % 1;
+    WIRE_OBJECTS.forEach((wo) => {
+      if (wo.pulse.visible) { wo.curve.getPointAt(pulseT, wo.pulse.position); }
+    });
+
+    const ringScale = 1 + Math.sin(elapsed * 5.5) * 0.2;
+    ACTIVE_PIN_RINGS.forEach((p) => {
+      if (p.ring.material.opacity > 0.1) { p.ring.scale.set(ringScale, ringScale, 1); }
+    });
+
+    if (ANIM_REFS.fanBlades && simState.power && simState.fan) {
+      ANIM_REFS.fanBlades.rotation.y += dt * 18;
+    }
+    if (ANIM_REFS.motorShaft && simState.power && simState.motor) {
+      ANIM_REFS.motorShaft.rotation.y += Math.sin(elapsed * 1.4) >= 0 ? dt * 10 : -dt * 10;
+    }
+    if (ANIM_REFS.espBlueLed) {
+      ANIM_REFS.espBlueLed.material.emissiveIntensity = simState.power ? 1.1 : 0.05;
+    }
+    if (ANIM_REFS.ledChips.length > 0) {
+      const lampGlow = simState.power && simState.lamp ? 2.4 : 0.06;
+      ANIM_REFS.ledChips.forEach((chip) => {
+        chip.material.emissiveIntensity = lampGlow;
+      });
+    }
+    if (ANIM_REFS.ledPointLight) {
+      ANIM_REFS.ledPointLight.intensity = simState.power && simState.lamp ? 1.8 : 0;
+    }
+
+    if (showLabels) {
+      MODULE_LABELS.forEach(projectLabel);
+      pinFloatingEls.forEach(projectLabel);
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  goToStep(1, false);
+  animate();
+})();
+</script>
+</body>
+</html>

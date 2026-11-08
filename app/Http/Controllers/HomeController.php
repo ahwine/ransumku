@@ -277,6 +277,7 @@ class HomeController extends Controller
             'suhu' => 'required|numeric|between:10,55',
             'kelembaban' => 'required|numeric|between:10,100',
             'token' => 'nullable|string',
+            'boot' => 'nullable|boolean',
         ]);
 
         if ($farm->iot_token && $request->input('token') !== $farm->iot_token) {
@@ -286,26 +287,71 @@ class HomeController extends Controller
             ], 403);
         }
 
-        $farm->update([
-            'sensor_suhu' => $data['suhu'],
-            'sensor_kelembaban' => $data['kelembaban'],
-            'sensor_updated_at' => now(),
-        ]);
+        $suhu = (float) $data['suhu'];
+        $kelembaban = (float) $data['kelembaban'];
 
-        Cache::forget("weather_farm_{$farm->id}_{$farm->lokasi_kota}");
-        $w = $weatherService->getWeather($farm);
-        $kontrol = $this->evaluasiLogikaKontroler($farm, (float) $w['suhu'], (float) $w['kelembaban'], (float) $w['thi']);
+        $baruMenyambung = $request->boolean('boot')
+            || $farm->sensor_updated_at === null
+            || Carbon::parse($farm->sensor_updated_at)->lt(now()->subSeconds(90));
+
+        $updatePayload = [
+            'sensor_suhu' => $suhu,
+            'sensor_kelembaban' => $kelembaban,
+            'sensor_updated_at' => now(),
+        ];
+
+        // Saat ESP32 baru dicolokkan / menyambung kembali setelah terputus, reset sakelar manual ke posisi aman MATI (OFF)
+        if ($baruMenyambung) {
+            $settings = $farm->getSettingsKontroler();
+            if (empty($settings['kipas']['otomatis'])) {
+                $updatePayload['relay_kipas'] = false;
+            }
+            if (empty($settings['misting']['otomatis'])) {
+                $updatePayload['relay_misting'] = false;
+            }
+            if (empty($settings['lampu']['otomatis'])) {
+                $updatePayload['relay_lampu'] = false;
+            }
+            if (empty($settings['pakan']['otomatis'])) {
+                $updatePayload['relay_pakan'] = false;
+            }
+            $updatePayload['controller_siap'] = (bool) (
+                ! empty($settings['kipas']['otomatis'])
+                || ! empty($settings['misting']['otomatis'])
+                || ! empty($settings['lampu']['otomatis'])
+                || ! empty($settings['pakan']['otomatis'])
+            );
+        }
+
+        $farm->update($updatePayload);
+
+        // Hitung THI secara instan langsung dari sensor (tanpa request outbound/lag)
+        $thi = round((0.8 * $suhu) + (($kelembaban / 100.0) * ($suhu - 14.4)) + 46.4, 1);
+        $kontrol = $this->evaluasiLogikaKontroler($farm, $suhu, $kelembaban, $thi);
         $kontrol['siap'] = (bool) $farm->controller_siap;
+
+        $kategori = 'Nyaman Optimal';
+        $level = 'safe';
+        if ($thi >= 84.0) {
+            $kategori = 'Bahaya Darurat Panas';
+            $level = 'danger';
+        } elseif ($thi >= 78.0) {
+            $kategori = 'Kritis Heat Stress';
+            $level = 'warning';
+        } elseif ($thi >= 72.0) {
+            $kategori = 'Waspada';
+            $level = 'caution';
+        }
 
         return response()->json([
             'ok' => true,
             'pesan' => 'Data sensor IoT suhu & kelembaban kandang berhasil dicatat.',
-            'suhu' => $w['suhu'],
-            'kelembaban' => $w['kelembaban'],
-            'thi' => $w['thi'],
-            'status' => $w['thi_kategori'],
-            'level' => $w['thi_level'],
-            'saran_manajemen' => $w['saran_manajemen'],
+            'suhu' => $suhu,
+            'kelembaban' => $kelembaban,
+            'thi' => $thi,
+            'status' => $kategori,
+            'level' => $level,
+            'saran_manajemen' => [],
             'kontrol' => $kontrol,
         ]);
     }
@@ -413,19 +459,37 @@ class HomeController extends Controller
             'status' => 'required|boolean',
         ]);
 
-        $kolom = 'relay_' . $data['alat'];
+        $farm->refresh();
+        $alat = $data['alat'];
+        $kolom = 'relay_' . $alat;
+        $settings = $farm->getSettingsKontroler();
+        $otomatisDinonaktifkan = false;
+
+        // Matikan mode otomatis pada alat yang diklik manual agar sensor tidak menimpa balik sakelar manual
+        if (! empty($settings[$alat]['otomatis'])) {
+            $settings[$alat]['otomatis'] = false;
+            $otomatisDinonaktifkan = true;
+        }
+
         $farm->update([
             $kolom => (bool) $data['status'],
+            'controller_settings' => $settings,
         ]);
         $farm->refresh();
+
         $adaAksi = (bool) ($farm->relay_kipas || $farm->relay_misting || $farm->relay_lampu || $farm->relay_pakan);
         $farm->update([
             'controller_siap' => $adaAksi,
         ]);
 
+        $pesan = ucfirst($alat) . ' berhasil di-' . ($data['status'] ? 'nyalakan' : 'matikan') . '.';
+        if ($otomatisDinonaktifkan) {
+            $pesan .= ' Mode Otomatisasi dinonaktifkan agar kendali manual tetap paten.';
+        }
+
         return response()->json([
             'ok' => true,
-            'pesan' => ucfirst($data['alat']) . ' berhasil di-' . ($data['status'] ? 'nyalakan' : 'matikan') . '.',
+            'pesan' => $pesan,
             'kontrol' => [
                 'siap' => $adaAksi,
                 'relay_kipas' => (bool) $farm->relay_kipas,
@@ -523,6 +587,7 @@ class HomeController extends Controller
      */
     public function evaluasiLogikaKontroler(Farm $farm, float $suhu, float $kelembaban, float $thi): array
     {
+        $farm->refresh();
         $settings = $farm->getSettingsKontroler();
         $updates = [];
 
@@ -542,15 +607,15 @@ class HomeController extends Controller
         }
 
         // 3. Lampu Fotoperiode:
-        if (!empty($settings['lampu']['otomatis'])) {
+        if (! empty($settings['lampu']['otomatis'])) {
             $jamMenit = Carbon::now('Asia/Jakarta')->format('H:i');
-            $pagiMulai   = $settings['lampu']['jam_pagi_mulai'] ?? '04:00';
-            $pagiSelesai = $settings['lampu']['jam_pagi_selesai'] ?? '07:00';
-            $soreMulai   = $settings['lampu']['jam_sore_mulai'] ?? '18:00';
-            $soreSelesai = $settings['lampu']['jam_sore_selesai'] ?? '21:00';
+            $pagiMulai = (string) ($settings['lampu']['jam_pagi_mulai'] ?? '04:00');
+            $pagiSelesai = (string) ($settings['lampu']['jam_pagi_selesai'] ?? '07:00');
+            $soreMulai = (string) ($settings['lampu']['jam_sore_mulai'] ?? '18:00');
+            $soreSelesai = (string) ($settings['lampu']['jam_sore_selesai'] ?? '21:00');
 
-            $isPagi = ($jamMenit >= $pagiMulai && $jamMenit < $pagiSelesai);
-            $isSore = ($jamMenit >= $soreMulai && $jamMenit < $soreSelesai);
+            $isPagi = $this->apakahDalamRentangJam($jamMenit, $pagiMulai, $pagiSelesai);
+            $isSore = $this->apakahDalamRentangJam($jamMenit, $soreMulai, $soreSelesai);
             $updates['relay_lampu'] = ($isPagi || $isSore);
         }
 
@@ -562,8 +627,16 @@ class HomeController extends Controller
             $updates['relay_pakan'] = ($jamMenit === $jamPagi || $jamMenit === $jamSore);
         }
 
-        if (!empty($updates)) {
-            $farm->update($updates);
+        $changedUpdates = [];
+        foreach ($updates as $kolom => $nilaiBaru) {
+            if ((bool) $farm->{$kolom} !== (bool) $nilaiBaru) {
+                $changedUpdates[$kolom] = (bool) $nilaiBaru;
+            }
+        }
+
+        if (! empty($changedUpdates)) {
+            $farm->update($changedUpdates);
+            $farm->refresh();
         }
 
         $aksi = [];
@@ -583,7 +656,6 @@ class HomeController extends Controller
             $aksi[] = 'Semua alat siaga (OFF)';
         }
 
-        $farm->refresh();
         $adaAksi = (bool) ($farm->relay_kipas || $farm->relay_misting || $farm->relay_lampu || $farm->relay_pakan);
 
         return [
@@ -596,6 +668,22 @@ class HomeController extends Controller
             'settings' => $settings,
             'keterangan_aksi' => implode(' • ', $aksi),
         ];
+    }
+
+    /**
+     * Mengecek apakah waktu saat ini (HH:MM) berada di dalam rentang mulai s.d. selesai (mendukung lintas tengah malam).
+     */
+    private function apakahDalamRentangJam(string $sekarang, string $mulai, string $selesai): bool
+    {
+        if ($mulai === $selesai) {
+            return false;
+        }
+
+        if ($mulai < $selesai) {
+            return $sekarang >= $mulai && $sekarang < $selesai;
+        }
+
+        return $sekarang >= $mulai || $sekarang < $selesai;
     }
 
     /**

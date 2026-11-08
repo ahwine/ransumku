@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagram Skematik Rangkaian IoT RansumKu (Revisi Lengkap)</title>
+<style>
+  :root {
+    --bg: #0b101b;
+    --card: #151e32;
+    --border: #334155;
+    --brand: #10b981;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  header {
+    background: #0f172a;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .title-group h1 {
+    margin: 0;
+    font-size: 18px;
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid #10b981;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .title-group p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    background: #1e293b;
+    color: #f1f5f9;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: #334155; border-color: #64748b; }
+  .btn.primary { background: #0f766e; border-color: #14b8a6; color: #fff; }
+  .btn.primary:hover { background: #0d9488; }
+
+  main {
+    flex: 1;
+    padding: 16px 20px 30px;
+    max-width: 1720px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* KARTU PERBAIKAN UTAMA */
+  .revision-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .rev-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .rev-card.orange { border-color: #f97316; }
+  .rev-card.red { border-color: #ef4444; }
+  .rev-card.green { border-color: #10b981; }
+  .rev-card h3 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rev-card.orange h3 { color: #fb923c; }
+  .rev-card.red h3 { color: #f87171; }
+  .rev-card.green h3 { color: #34d399; }
+  .rev-card p {
+    margin: 0;
+    font-size: 11.8px;
+    line-height: 1.5;
+    color: #cbd5e1;
+  }
+
+  /* CONTAINER GAMBAR */
+  .img-wrapper {
+    background: #070b13;
+    border: 2px solid #334155;
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    overflow: auto;
+    text-align: center;
+  }
+  .img-wrapper img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-group">
+    <h1>
+      Diagram Skematik Rangkaian IoT RansumKu
+      <span class="badge">REVISI RESMI L298N 5V</span>
+    </h1>
+    <p>Penyesuaian Akurat Berdasarkan Diagram Mas Anda &amp; Hardware Fisik Nyata di Meja</p>
+  </div>
+  <div class="actions">
+    <a href="rakit_3d.html" class="btn primary">Lihat Perakitan 3D Nyata &rarr;</a>
+    <button class="btn" onclick="window.print()">Cetak / Simpan PDF</button>
+  </div>
+</header>
+
+<main>
+  <div class="revision-summary">
+    <div class="rev-card orange">
+      <h3>1. L298N: Wajib Diberi 5V (Bukan 12V)</h3>
+      <p>Sesuai koreksi mas Anda: Terminal daya L298N (sekrup kiri) diberi <b>+5.0V dari OUT+ LM2596</b>. Motor TT kuning (3V–6V) berputar halus, tenang (~60 RPM), kuat, dan tidak liar untuk rel stik es krim.</p>
+    </div>
+    <div class="rev-card red">
+      <h3>2. Pompa Celup Putih: Wajib 5V (Jangan 12V!)</h3>
+      <p>Pompa fisik Anda adalah <b>Pompa Celup Mini 3V–5V</b>. Terminal COM2 Relay <b>wajib dihubungkan ke +5.0V</b>. Jika mengikuti tulisan "12V" di sketsa lama, dinamo pompa mini Anda akan langsung terbakar.</p>
+    </div>
+    <div class="rev-card green">
+      <h3>3. Pin Kipas Dipindah ke D26 (Bebas Strapping)</h3>
+      <p><b>Penting:</b> Pin D12 adalah *Strapping Pin* ESP32 yang memicu drop voltase Flash 1.8V saat terhubung ke relay sehingga sistem mati/bootloop. Memindahkan ke <b>Pin D26</b> membuat ESP32 menyala stabil 100%!</p>
+    </div>
+  </div>
+
+  <div class="img-wrapper">
+    <img src="diagram_rangkaian_revisi.png" alt="Diagram Rangkaian IoT RansumKu Revisi">
+  </div>
+</main>
+
+</body>
+</html>
+

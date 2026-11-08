@@ -1875,12 +1875,12 @@ function startIntro() {
         }
     });
 
-    /* Fallback jika CDN Three.js atau unduhan model tertahan lebih dari 5.5s */
+    /* Fallback jika CDN Three.js atau unduhan model tertahan lebih dari 30s */
     loadWatchdog = window.setTimeout(() => {
         if (!activeScene && !revealed) {
             revealForm(true);
         }
-    }, 5500);
+    }, 30000);
 
     loadThreeAndLoader()
         .then((THREE) => {
@@ -1888,13 +1888,17 @@ function startIntro() {
                 return;
             }
             return Promise.all([
-                loadGLTFModel(THREE, MODEL_URL, 3500),
-                loadGLTFModel(THREE, EGG_MODEL_URL, 3500),
+                loadGLTFModel(THREE, MODEL_URL, 26000),
+                loadGLTFModel(THREE, EGG_MODEL_URL, 26000),
             ]).then(([chickenGltf, eggGltf]) => {
                 if (loadWatchdog) {
                     window.clearTimeout(loadWatchdog);
                 }
                 if (revealed) {
+                    return;
+                }
+                if (!chickenGltf) {
+                    revealForm(true);
                     return;
                 }
                 activeScene = buildIntro(
