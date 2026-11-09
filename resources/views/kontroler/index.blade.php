@@ -178,13 +178,6 @@
                         </div>
                         <span class="text-muted text-right text-[10px] sm:text-[11px]">I2C Bus (SDA D21 / SCL D22)</span>
                     </div>
-                    <div class="py-2 flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">GPIO 32, 33</span>
-                            <span class="font-bold text-ink">Micro Limit Switch A & B</span>
-                        </div>
-                        <span class="text-muted text-right text-[10px] sm:text-[11px]">Limit Merah Pangkal A (D33) & Hitam Ujung B (D32)</span>
-                    </div>
                 </div>
             </div>
 

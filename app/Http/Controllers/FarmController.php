@@ -54,6 +54,12 @@ class FarmController extends Controller
             $validated['lokasi_kota'] = 'Surabaya';
         }
 
+        if (isset(WeatherService::PRESET_KOTA[$validated['lokasi_kota']])) {
+            $preset = WeatherService::PRESET_KOTA[$validated['lokasi_kota']];
+            $validated['latitude'] = $preset['lat'];
+            $validated['longitude'] = $preset['lon'];
+        }
+
         $farm = auth()->user()->farms()->create($validated);
         $boot->setupFarm($farm, false);
 
@@ -96,6 +102,9 @@ class FarmController extends Controller
         ]);
 
         $validated['fase'] = $validated['fase'] ?? 'produksi';
+
+        // Lokasi kota bersifat paten terikat hardware ESP32, tidak boleh diubah setelah pembuatan kandang
+        unset($validated['lokasi_kota'], $validated['latitude'], $validated['longitude']);
 
         $farm->update($validated);
 

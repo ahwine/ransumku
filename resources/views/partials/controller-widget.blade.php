@@ -209,7 +209,7 @@
                                 <h4 class="text-sm font-bold text-ink leading-tight">Kereta Pakan Rel</h4>
                                 <div class="flex items-center gap-1 mt-0.5">
                                     <span class="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface border border-line/80 text-muted">D18, D19 · L298N</span>
-                                    <span class="text-[10px] text-muted truncate">Motor · Lim D32/33</span>
+                                    <span class="text-[10px] text-muted truncate">Motor DC L298N</span>
                                 </div>
                             </div>
                         </div>
@@ -278,7 +278,7 @@
 
                             <div class="flex items-start gap-1.5 text-[10px] text-muted pt-2 border-t border-line/70 leading-relaxed">
                                 <span class="material-symbols-outlined text-[14px] text-emerald-700 shrink-0 mt-0.5">track_changes</span>
-                                <span><strong>Kapan Berhenti:</strong> Otomatis berhenti setelah mencapai ujung rel sesuai durasi atau saat menyentuh limit switch.</span>
+                                <span><strong>Kapan Berhenti:</strong> Otomatis berhenti setelah mencapai ujung rel sesuai durasi timer tempuh.</span>
                             </div>
                         </div>
                     </div>

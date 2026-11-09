@@ -244,7 +244,7 @@
                             </div>
 
                             {{-- Catatan Gejala / Kondisi (Desktop only) --}}
-                            <div class="hidden lg:block">
+                            <div class="hidden md:block">
                                 <label class="block text-xs font-bold text-[#0f3d26] mb-1.5" for="catatan">Catatan Kondisi Kandang / Gejala Ayam</label>
                                 <textarea id="catatan" name="catatan" rows="2" class="w-full rounded-xl bg-white p-3 text-xs font-medium text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" placeholder="Contoh: Cuaca panas terik, ayam minum lebih banyak dari biasanya...">{{ old('catatan', $form->catatan) }}</textarea>
                             </div>
@@ -964,9 +964,9 @@
     @endphp
     <section data-panel="beli" class="{{ $tabAktif === 'beli' ? '' : 'hidden' }} space-y-4">
         {{-- ======================================================== --}}
-        {{-- A. TAMPILAN MOBILE BELANJA PAKAN (lg:hidden)              --}}
+        {{-- A. TAMPILAN MOBILE BELANJA PAKAN (md:hidden)              --}}
         {{-- ======================================================== --}}
-        <div class="lg:hidden space-y-4">
+        <div class="md:hidden space-y-4">
             {{-- 1. Kartu Ringkasan Belanja (Image 2 style) --}}
         <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 border border-line/70 shadow-2xs space-y-3">
             <h2 class="text-xs font-black text-ink uppercase tracking-wider">RINGKASAN BELANJA</h2>
@@ -1184,9 +1184,9 @@
         </div>
 
         {{-- ======================================================== --}}
-        {{-- B. TAMPILAN DESKTOP BELANJA PAKAN (hidden lg:block)      --}}
+        {{-- B. TAMPILAN DESKTOP BELANJA PAKAN (hidden md:block)      --}}
         {{-- ======================================================== --}}
-        <div class="hidden lg:block space-y-5" id="beli-desktop-container">
+        <div class="hidden md:block space-y-5" id="beli-desktop-container">
             {{-- 1. Baris Ringkasan KPI Eksekutif --}}
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 {{-- Kartu 1: Selisih Biaya (Deviasi Ransum) --}}

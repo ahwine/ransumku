@@ -15,7 +15,7 @@
     {{-- ======================================================== --}}
     {{-- A. TAMPILAN MOBILE (Persis Sesuai Referensi Gambar 1)     --}}
     {{-- ======================================================== --}}
-    <div class="lg:hidden space-y-4" data-weather-widget data-live-url="{{ route('api.kandang.sensor.live', $farm ?? auth()->user()->farm) }}" data-current-suhu="{{ $weather['suhu'] ?? 27.0 }}" data-current-rh="{{ $weather['kelembaban'] ?? 80 }}">
+    <div class="md:hidden space-y-4" data-weather-widget data-live-url="{{ route('api.kandang.sensor.live', $farm ?? auth()->user()->farm) }}" data-current-suhu="{{ $weather['suhu'] ?? 27.0 }}" data-current-rh="{{ $weather['kelembaban'] ?? 80 }}">
         
         {{-- 1. Section Header: Ringkasan Hari Ini & Tanggal Aktif --}}
         <div class="flex items-center justify-between gap-2 px-1 pt-0.5">
@@ -424,10 +424,10 @@
     {{-- B. TAMPILAN DESKTOP (100% SAMA SEPERTI ASLINYA)          --}}
     {{-- ======================================================== --}}
     {{-- Card Utama Dashboard: Identitas Kandang, Cuaca Mikro, & 4-Kuadran Metrik --}}
-    <div class="hidden lg:block bg-white rounded-xl border border-line shadow-2xs overflow-hidden">
+    <div class="hidden md:block bg-white rounded-xl border border-line shadow-2xs overflow-hidden">
 
-        {{-- 1. Baris Atas: Identitas Kandang & Toolbar Metrik (Khusus Desktop lg+) --}}
-        <div data-dropdown-section class="hidden lg:block p-4 md:p-5 border-b border-line space-y-3 bg-white relative z-30">
+        {{-- 1. Baris Atas: Identitas Kandang & Toolbar Metrik (Khusus Desktop & Tablet md+) --}}
+        <div data-dropdown-section class="hidden md:block p-4 md:p-5 border-b border-line space-y-3 bg-white relative z-30">
             {{-- Header Baris Atas: Nama Kandang di Kiri & Tombol Aksi Sejajar Horizontal di Kanan --}}
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h1 class="text-lg md:text-xl font-extrabold text-ink tracking-tight whitespace-nowrap">
@@ -452,10 +452,17 @@
 
             {{-- Baris Bawah: 4 Badges Metadata Konteks & Status Kandang --}}
             <div class="flex flex-wrap items-center gap-2 text-xs relative z-40">
-                {{-- 1. Dropdown Pilih Sentra Peternakan --}}
-                @if (isset($presetKota))
-                    @include('partials.dropdown-lokasi', ['idSuffix' => 'topbar', 'btnClass' => 'bg-surface hover:bg-surface-2 border-line text-ink'])
-                @endif
+                {{-- 1. Sentra Lokasi Kandang Paten (Terhubung Hardware ESP32) --}}
+                @php
+                    $kotaInfo = $presetKota[$farm->lokasi_kota ?? 'Blitar'] ?? [
+                        'nama' => $farm->lokasi_kota ?: 'Blitar',
+                        'provinsi' => 'Jawa Timur',
+                    ];
+                @endphp
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-line/70 bg-surface/60 text-xs font-semibold text-ink cursor-default" title="Sentra Lokasi Kandang Paten (Terhubung Hardware ESP32)">
+                    <span class="material-symbols-outlined text-[15px] text-brand">location_on</span>
+                    <span>{{ $kotaInfo['nama'] }}, {{ $kotaInfo['provinsi'] }}</span>
+                </span>
 
                 {{-- 2. Badge Tanggal --}}
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-line/70 bg-surface/60 text-xs font-semibold text-ink cursor-default">
@@ -479,9 +486,9 @@
             </div>
         </div>
 
-        {{-- Widget Visual Cuaca Mikro & Indeks Stres Panas (THI) Kandang (Khusus Desktop lg+) --}}
+        {{-- Widget Visual Cuaca Mikro & Indeks Stres Panas (THI) Kandang (Khusus Desktop & Tablet md+) --}}
         @if (isset($weather))
-            <div class="hidden lg:block border-b border-line p-5 md:p-6 bg-white relative z-10">
+            <div class="hidden md:block border-b border-line p-5 md:p-6 bg-white relative z-10">
                 @include('partials.weather-widget')
             </div>
         @endif
@@ -776,9 +783,9 @@
 
     </div>
 
-    {{-- Banner Safety Stock Gudang Pakan (Desktop) --}}
+    {{-- Banner Safety Stock Gudang Pakan (Desktop & Tablet) --}}
     @if (!empty($stokGudang['kritis_count']))
-        <div class="hidden lg:flex items-center justify-between p-4 rounded-xl bg-amber-50 border border-amber-200/90 shadow-2xs gap-4">
+        <div class="hidden md:flex items-center justify-between p-4 rounded-xl bg-amber-50 border border-amber-200/90 shadow-2xs gap-4">
             <div class="flex items-center gap-3.5">
                 <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-[22px]">inventory_2</span>
@@ -802,9 +809,9 @@
         </div>
     @endif
 
-    {{-- Pusat Deteksi Dini & Anomali Kandang (Unified Anomaly Center - Khusus Desktop) --}}
+    {{-- Pusat Deteksi Dini & Anomali Kandang (Unified Anomaly Center - Khusus Desktop & Tablet) --}}
     @if ($alerts->count() > 0)
-        <div class="hidden lg:block bg-white rounded-xl border border-line shadow-2xs overflow-hidden">
+        <div class="hidden md:block bg-white rounded-xl border border-line shadow-2xs overflow-hidden">
             {{-- Header Anomaly Center --}}
             <div class="px-5 py-3.5 border-b border-line flex flex-wrap items-center justify-between gap-3 bg-white">
                 <div class="flex items-center gap-2">

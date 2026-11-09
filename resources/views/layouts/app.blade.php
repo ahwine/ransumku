@@ -33,7 +33,7 @@
 <body class="min-h-screen bg-[#f2f7f3] text-ink antialiased">
 
 {{-- 1. Sidebar Desktop --}}
-<aside class="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col bg-white border-r border-line p-5 z-40">
+<aside class="hidden md:flex fixed inset-y-0 left-0 w-64 flex-col bg-white border-r border-line p-5 z-40">
     {{-- Logo RansumKu --}}
     <a href="{{ route('beranda') }}" class="flex items-center gap-3 px-2 mb-6 group">
         <img src="{{ asset('images/logo.png') }}" alt="Logo RansumKu" class="w-11 h-11 object-contain rounded-full shadow-sm group-hover:scale-105 transition-transform shrink-0" />
@@ -119,7 +119,7 @@
 </aside>
 
 {{-- 2. Top Bar Desktop / Navbar (Solid White Navbar dengan Breadcrumb & Pill Badges) --}}
-<header class="hidden lg:flex fixed top-0 left-64 right-0 h-16 bg-white border-b border-line shadow-2xs z-50 px-8 items-center justify-between">
+<header class="hidden md:flex fixed top-0 left-64 right-0 h-16 bg-white border-b border-line shadow-2xs z-50 px-8 items-center justify-between">
     {{-- Sisi Kiri: Breadcrumb / Judul Halaman Aktif (Menggantikan searchbar) --}}
     <div class="flex items-center">
         <span class="text-sm font-extrabold text-ink tracking-tight">@yield('judul', 'Dashboard')</span>
@@ -140,7 +140,7 @@
 </header>
 
 {{-- 3. Header Mobile --}}
-<header class="lg:hidden fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-line">
+<header class="md:hidden fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-line">
     <div class="h-16 px-2.5 sm:px-4 flex items-center justify-between max-w-lg mx-auto">
         {{-- Sisi Kiri: Logo Ayam & Tab Kandang Aktif (Sesuai Gambar Referensi 2) --}}
         <div class="flex items-center gap-2 min-w-0 pr-1">
@@ -241,14 +241,14 @@
 </header>
 
 {{-- 4. Main Content Area --}}
-<main class="lg:ml-64 pt-20 lg:pt-20 {{ request()->routeIs('asisten.*') ? 'pb-24 lg:pb-2.5 lg:h-screen lg:max-h-screen lg:flex lg:flex-col lg:overflow-hidden box-border' : 'pb-28 lg:pb-12' }} px-2.5 sm:px-4 lg:px-8 @yield('main_class')">
-    <div class="w-full {{ request()->routeIs('asisten.*') ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : 'space-y-5' }} @yield('container_class')">
+<main class="md:ml-64 pt-20 md:pt-20 {{ request()->routeIs('asisten.*') ? 'pb-24 md:pb-2.5 md:h-screen md:max-h-screen md:flex md:flex-col md:overflow-hidden box-border' : 'pb-28 md:pb-12' }} px-2.5 sm:px-4 md:px-8 @yield('main_class')">
+    <div class="w-full {{ request()->routeIs('asisten.*') ? 'md:flex-1 md:min-h-0 md:flex md:flex-col' : 'space-y-5' }} @yield('container_class')">
         @yield('isi')
     </div>
 </main>
 
 {{-- 5. Floating Curved Bottom Navigation Bar (Mobile - Gojek Style with Symmetrical 3x3) --}}
-<nav id="mobile-bottom-nav" class="lg:hidden fixed bottom-2.5 inset-x-2.5 sm:inset-x-6 max-w-lg mx-auto z-40 select-none pointer-events-none transition-all duration-200 transform transform-gpu will-change-transform" style="bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));" aria-label="Navigasi Utama Mobile">
+<nav id="mobile-bottom-nav" class="md:hidden fixed bottom-2.5 inset-x-2.5 sm:inset-x-6 max-w-lg mx-auto z-40 select-none pointer-events-none transition-all duration-200 transform transform-gpu will-change-transform" style="bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));" aria-label="Navigasi Utama Mobile">
     <div class="relative w-full h-[64px] pointer-events-auto filter drop-shadow-[0_6px_16px_rgba(0,36,21,0.08)]">
         
         {{-- Background Layer with Seamless Center Notch --}}

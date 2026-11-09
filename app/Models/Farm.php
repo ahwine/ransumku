@@ -10,6 +10,13 @@ class Farm extends Model
 {
     protected $guarded = [];
 
+    /**
+     * Cache memori internal per siklus request untuk mencegah kueri ganda.
+     */
+    protected ?array $memoizedRingkasanStok = null;
+    protected ?Ration $memoizedLastRation = null;
+    protected bool $memoizedLastRationLoaded = false;
+
     protected function casts(): array
     {
         return [
@@ -147,10 +154,17 @@ class Farm extends Model
     public function chatSessions(): HasMany { return $this->hasMany(ChatSession::class); }
     public function chats(): HasMany { return $this->hasMany(ChatMessage::class); }
 
-    /** Ransum terakhir yang berhasil dihitung. */
+    /** Ransum terakhir yang berhasil dihitung (dengan memoization). */
     public function lastRation(): ?Ration
     {
-        return $this->rations()->where('status', 'layak')->latest('id')->first();
+        if ($this->memoizedLastRationLoaded) {
+            return $this->memoizedLastRation;
+        }
+
+        $this->memoizedLastRation = $this->rations()->where('status', 'layak')->latest('id')->first();
+        $this->memoizedLastRationLoaded = true;
+
+        return $this->memoizedLastRation;
     }
 
     /** Estimasi biaya pakan per kg: dari ransum terakhir, atau 0 bila belum ada. */
@@ -168,11 +182,16 @@ class Farm extends Model
 
     /**
      * Ringkasan stok gudang pakan dan deteksi bahan di bawah safety stock (kebutuhan 3 hari).
+     * Dilengkapi request-level memoization agar tidak dieksekusi berulang dalam satu halaman.
      *
      * @return array{total_kg: float, kritis_count: int, kritis_items: array<string>}
      */
     public function ringkasanStokGudang(): array
     {
+        if ($this->memoizedRingkasanStok !== null) {
+            return $this->memoizedRingkasanStok;
+        }
+
         $pakanHarianKg = (float) max(1.0, ($this->jumlah_ayam * ($this->konsumsi_per_ekor ?: 0.11)));
         $farmIngredients = $this->farmIngredients()->with('ingredient')->where('aktif', true)->get();
 
@@ -203,7 +222,7 @@ class Farm extends Model
             }
         }
 
-        return [
+        return $this->memoizedRingkasanStok = [
             'total_kg' => round($totalKg, 2),
             'kritis_count' => count($kritisItems),
             'kritis_items' => $kritisItems,

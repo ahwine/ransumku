@@ -44,7 +44,7 @@ class WeatherAndIotFeatureTest extends TestCase
         $res->assertSee('Stres Panas');
     }
 
-    public function test_peternak_bisa_mengubah_lokasi_kandang(): void
+    public function test_lokasi_sentra_kandang_paten_dan_tidak_dapat_diubah(): void
     {
         $user = User::factory()->create();
         $farm = Farm::create([
@@ -59,11 +59,11 @@ class WeatherAndIotFeatureTest extends TestCase
         ]);
 
         $res->assertRedirect();
+        $res->assertSessionHas('err');
+        // Lokasi tetap Blitar (tidak berubah karena paten terikat ESP32)
         $this->assertDatabaseHas('farms', [
             'id' => $farm->id,
-            'lokasi_kota' => 'Boyolali',
-            'latitude' => -7.5333,
-            'longitude' => 110.6000,
+            'lokasi_kota' => 'Blitar',
         ]);
     }
 

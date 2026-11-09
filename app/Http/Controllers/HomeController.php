@@ -229,35 +229,11 @@ class HomeController extends Controller
     }
 
     /**
-     * Memperbarui lokasi sentra kandang untuk sinkronisasi cuaca mikro Open-Meteo.
+     * Memperbarui lokasi sentra kandang (ditolak karena lokasi paten terikat hardware IoT/ESP32).
      */
     public function updateLokasi(Request $request): RedirectResponse
     {
-        $farm = $this->farm();
-
-        $data = $request->validate([
-            'kota' => 'required|string|max:50',
-        ]);
-
-        $kota = $data['kota'];
-        $preset = WeatherService::PRESET_KOTA[$kota] ?? null;
-
-        if ($preset) {
-            $farm->update([
-                'lokasi_kota' => $kota,
-                'latitude' => $preset['lat'],
-                'longitude' => $preset['lon'],
-            ]);
-        } else {
-            $farm->update([
-                'lokasi_kota' => $kota,
-            ]);
-        }
-
-        // Bersihkan cache cuaca lama
-        Cache::forget("weather_farm_{$farm->id}_{$kota}");
-
-        return back()->with('ok', "Lokasi cuaca kandang berhasil diperbarui ke {$farm->lokasi_kota}.");
+        return redirect()->back()->with('err', 'Lokasi sentra kandang bersifat paten dan tidak dapat diubah setelah kandang dibuat karena terhubung dengan hardware IoT/ESP32.');
     }
 
     /**

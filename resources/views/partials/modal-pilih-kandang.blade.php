@@ -142,8 +142,12 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="lbl">Sentra Lokasi / Kota</label>
+                    <label class="lbl flex items-center justify-between">
+                        <span>Sentra Lokasi / Kota</span>
+                        <span class="text-[10px] text-brand font-bold bg-brand/10 px-1.5 py-0.5 rounded">Paten ESP32</span>
+                    </label>
                     @include('partials.dropdown-pilih-kota', ['id' => 'kota-tambah-global', 'value' => old('lokasi_kota', 'Surabaya'), 'presetKota' => $presetKota])
+                    <p class="text-[10px] text-muted mt-1 leading-tight">Ditentukan 1x saat buat kandang untuk koordinat mikro & integrasi sensor IoT.</p>
                 </div>
                 <div>
                     <label class="lbl">Umur Masuk Ayam (Minggu) <span class="text-danger">*</span></label>
@@ -217,8 +221,26 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="lbl">Sentra Lokasi / Kota</label>
-                        @include('partials.dropdown-pilih-kota', ['id' => 'kota-edit-global-' . $f->id, 'value' => $f->lokasi_kota ?? 'Surabaya', 'presetKota' => $presetKota])
+                        <label class="lbl flex items-center justify-between">
+                            <span>Sentra Lokasi / Kota</span>
+                            <span class="text-[10px] text-slate-600 font-bold bg-slate-100 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                <span class="material-symbols-outlined text-[12px]">lock</span> Paten
+                            </span>
+                        </label>
+                        @php
+                            $presetKotaItem = $presetKota[$f->lokasi_kota ?? 'Blitar'] ?? null;
+                            $namaKotaLocked = $presetKotaItem['nama'] ?? ($f->lokasi_kota ?? 'Blitar');
+                            $provKotaLocked = $presetKotaItem['provinsi'] ?? 'Jawa Timur';
+                        @endphp
+                        <div class="field !min-h-10 text-xs font-semibold text-ink bg-slate-100/90 border border-slate-200 cursor-not-allowed flex items-center justify-between px-3">
+                            <div class="flex items-center gap-1.5 truncate">
+                                <span class="material-symbols-outlined text-[15px] text-muted">location_on</span>
+                                <span>{{ $namaKotaLocked }}, {{ $provKotaLocked }}</span>
+                            </div>
+                            <span class="material-symbols-outlined text-[14px] text-muted">lock</span>
+                        </div>
+                        <input type="hidden" name="lokasi_kota" value="{{ $f->lokasi_kota }}">
+                        <p class="text-[10px] text-muted mt-1 leading-tight">Lokasi fisik kandang bersifat permanen terikat hardware sensor ESP32.</p>
                     </div>
                     <div>
                         <label class="lbl">Umur Masuk Ayam (Minggu) <span class="text-danger">*</span></label>

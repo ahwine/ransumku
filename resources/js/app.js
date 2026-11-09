@@ -4,6 +4,9 @@ Chart.register(...registerables);
 Chart.defaults.font.family = "'Poppins', 'Plus Jakarta Sans', sans-serif";
 Chart.defaults.color = '#5C7A6D';
 
+// Expose Chart ke window secara universal
+window.Chart = Chart;
+
 // =========================================================================
 // UNIVERSAL PROGRESSIVE ANIMATION ENGINE UNTUK GRAFIK & STATISTIK
 // Menjamin konsistensi startup animasi di seluruh dashboard (Beranda & Buku Kandang)
@@ -13,9 +16,16 @@ const bukuSweepClipPlugin = {
     beforeInit(chart) {
         // Tahan kondisi awal agar tidak ada blip / flash sebelum animasi dimulai
         if (chart.config.type === 'line') {
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const isOrchestrated = chart.canvas && (
+                chart.canvas.closest('[data-buku-grafik-container]') ||
+                chart.canvas.closest('[data-beranda-grafik-container]')
+            );
+            if (isOrchestrated && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                 chart._isSweepActive = true;
                 chart._sweepProgress = 0;
+            } else {
+                chart._isSweepActive = false;
+                chart._sweepProgress = 1;
             }
         }
     },
@@ -459,19 +469,19 @@ function isElementVisible(el) {
 // Helper: Cek apakah canvas relevan dengan breakpoint layar aktif (mencegah inisialisasi ganda mobile vs desktop)
 function shouldInitCanvas(canvas) {
     if (!canvas) return false;
-    const isMobile = window.innerWidth < 1024;
+    const isMobile = window.innerWidth < 768;
 
-    // Jika desktop (>= 1024px), jangan inisialisasi canvas yang berada di kontainer khusus mobile
+    // Jika desktop & tablet (>= 768px), jangan inisialisasi canvas yang berada di kontainer khusus mobile smartphone
     if (!isMobile) {
-        const mobParent = canvas.closest('.lg\\:hidden, [class*="lg:hidden"]');
+        const mobParent = canvas.closest('.md\\:hidden, [class*="md:hidden"]');
         if (mobParent && window.getComputedStyle(mobParent).display === 'none') {
             return false;
         }
     }
 
-    // Jika mobile (< 1024px), jangan inisialisasi canvas yang berada di kontainer khusus desktop
+    // Jika mobile smartphone (< 768px), jangan inisialisasi canvas yang berada di kontainer khusus desktop & tablet
     if (isMobile) {
-        const deskParent = canvas.closest('.hidden.lg\\:block, .hidden.lg\\:flex, [class*="lg:block"]');
+        const deskParent = canvas.closest('.hidden.md\\:block, .hidden.md\\:flex, [class*="md:block"]');
         if (deskParent && window.getComputedStyle(deskParent).display === 'none') {
             return false;
         }
@@ -521,7 +531,7 @@ function triggerBukuKandangOrchestration() {
     const containers = document.querySelectorAll('[data-buku-grafik-container]');
     if (!containers || containers.length === 0) return;
 
-    const isMobile = window.innerWidth < 1024;
+    const isMobile = window.innerWidth < 768;
     const durasiLine = isMobile ? 700 : 1200;
     const durasiBar = isMobile ? 450 : 650;
 
@@ -563,7 +573,7 @@ function triggerBerandaOrchestration() {
     const containers = document.querySelectorAll('[data-beranda-grafik-container]');
     if (!containers || containers.length === 0) return;
 
-    const isMobile = window.innerWidth < 1024;
+    const isMobile = window.innerWidth < 768;
     const durasiLine = isMobile ? 650 : 1000;
     const durasiBar = isMobile ? 450 : 600;
 
@@ -594,6 +604,42 @@ function triggerBerandaOrchestration() {
 
 window.__triggerBukuKandangAnimation = triggerBukuKandangOrchestration;
 window.__triggerBerandaAnimation = triggerBerandaOrchestration;
+
+// Orkestrasi grafik di Halaman Laporan (Tren Harian)
+function triggerLaporanOrchestration() {
+    const trenView = document.getElementById('view-detail-tren_harian');
+    if (!trenView) return;
+    if (trenView.classList.contains('hidden') || window.getComputedStyle(trenView).display === 'none') return;
+
+    const isMobile = window.innerWidth < 768;
+    const durasiLine = isMobile ? 650 : 1000;
+    const durasiBar = isMobile ? 450 : 600;
+
+    const canvases = trenView.querySelectorAll('canvas[data-chart]');
+    canvases.forEach((canvas) => {
+        let chart = canvas._chartInstance;
+        if (!chart) {
+            chart = initSingleChart(canvas);
+        }
+        if (!chart) return;
+        chart.resize();
+
+        const chartName = canvas.dataset.chartName;
+        if (chartName === 'telur') {
+            animateBukuBar(chart, 40, durasiBar);
+        } else if (chartName === 'populasi') {
+            animateBukuLine(chart, 120, durasiLine);
+        } else if (chartName === 'pakan') {
+            animateBukuLine(chart, 200, durasiLine);
+        } else if (chartName === 'fcr') {
+            animateBukuLine(chart, 280, durasiLine);
+        }
+    });
+}
+
+window.__triggerLaporanAnimation = triggerLaporanOrchestration;
+window.createStandardChart = createStandardChart;
+window.initSingleChart = initSingleChart;
 
 // IntersectionObserver untuk Buku Kandang (Lazy Load & Stagger Animation)
 const bukuContainers = document.querySelectorAll('[data-buku-grafik-container]');
@@ -1996,7 +2042,7 @@ function initLiveSensorPoller() {
 
                 // Update THI Badge & Kategori
                 if (thiBadge && data.thi !== undefined) {
-                    const isCompact = thiBadge.dataset.thiCompact === 'true' || widget.classList.contains('lg:hidden') || widget.closest('.lg\\:hidden') !== null || window.innerWidth < 1024;
+                    const isCompact = thiBadge.dataset.thiCompact === 'true' || widget.classList.contains('md:hidden') || widget.closest('.md\\:hidden') !== null || window.innerWidth < 768;
                     if (isCompact) {
                         thiBadge.textContent = 'THI ' + data.thi;
                     } else {
@@ -2061,8 +2107,8 @@ function initLiveSensorPoller() {
 
     window.__refreshLiveSensor = pollSensor;
 
-    // Polling cerdas: 8 detik di mobile untuk menghemat baterai & CPU, 3.5 detik di desktop
-    const pollInterval = window.innerWidth < 1024 ? 8000 : 3500;
+    // Polling cerdas: 8 detik di mobile smartphone (<768px) untuk menghemat baterai & CPU, 3.5 detik di tablet & desktop
+    const pollInterval = window.innerWidth < 768 ? 8000 : 3500;
     setInterval(() => {
         if (!document.hidden) {
             pollSensor();
@@ -2137,9 +2183,9 @@ function initMobileKeyboardHandler() {
         updateMobileChatLayout(isOpen);
     };
 
-    // Event listener focusin: segera deteksi jika input/textarea diakses di mobile
+    // Event listener focusin: segera deteksi jika input/textarea diakses di mobile smartphone
     document.addEventListener('focusin', (e) => {
-        if (window.innerWidth >= 1024) return;
+        if (window.innerWidth >= 768) return;
         const target = e.target;
         if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
             if (keyboardTimeout) clearTimeout(keyboardTimeout);
@@ -2149,7 +2195,7 @@ function initMobileKeyboardHandler() {
 
     // Event listener focusout: kembalikan state setelah jeda kecil
     document.addEventListener('focusout', (e) => {
-        if (window.innerWidth >= 1024) return;
+        if (window.innerWidth >= 768) return;
         if (keyboardTimeout) clearTimeout(keyboardTimeout);
         keyboardTimeout = setTimeout(() => {
             const active = document.activeElement;
@@ -2163,7 +2209,7 @@ function initMobileKeyboardHandler() {
     // Event listener visualViewport: memastikan sinkron jika keyboard ditutup lewat gesture / tombol back
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
-            if (window.innerWidth >= 1024) return;
+            if (window.innerWidth >= 768) return;
             const heightDiff = window.innerHeight - window.visualViewport.height;
             if (heightDiff > 140) {
                 setKeyboardState(true);

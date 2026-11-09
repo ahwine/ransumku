@@ -8,6 +8,8 @@
 
 /* Token desain disesuaikan dengan AgriVision Tech (AgriVision Agritech Design System) */
 @theme {
+    --breakpoint-sm: 511px;
+    --breakpoint-md: 511px;
     --font-sans: 'Poppins', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
     --color-canvas: #f4f6f5;

@@ -103,11 +103,10 @@
             <div class="part-item"><span>6. Sensor Suhu DHT22</span><span class="part-badge">Dalam</span></div>
             <div class="part-item"><span>7. Driver Motor L298N</span><span class="part-badge">Pakan</span></div>
             <div class="part-item"><span>8. Motor DC Kuning + Kereta</span><span class="part-badge">Rel Atas</span></div>
-            <div class="part-item"><span>9. 2x Micro Limit Switch</span><span class="part-badge">Ujung Rel</span></div>
-            <div class="part-item"><span>10. Relay 2-Channel 5V</span><span class="part-badge">Aktuator</span></div>
-            <div class="part-item"><span>11. Kipas DC 4x4 cm</span><span class="part-badge">Belakang</span></div>
-            <div class="part-item"><span>12. Pompa Celup + Selang</span><span class="part-badge">Misting</span></div>
-            <div class="part-item"><span>13. 2x Nipple Drinker Merah</span><span class="part-badge">Minum</span></div>
+            <div class="part-item"><span>9. Relay 2-Channel 5V</span><span class="part-badge">Aktuator</span></div>
+            <div class="part-item"><span>10. Kipas DC 4x4 cm</span><span class="part-badge">Belakang</span></div>
+            <div class="part-item"><span>11. Pompa Celup + Selang</span><span class="part-badge">Misting</span></div>
+            <div class="part-item"><span>12. 2x Nipple Drinker Merah</span><span class="part-badge">Minum</span></div>
         </div>
     </div>
 
@@ -333,16 +332,6 @@
         motorMesh.castShadow = true;
         cageGroup.add(motorMesh);
 
-        // 2x Micro Limit Switch (Ujung A di kiri, Ujung B di kanan)
-        const limitGeom = new THREE.BoxGeometry(0.6, 0.8, 1.2);
-        const limitA = new THREE.Mesh(limitGeom, fanMat);
-        limitA.position.set(-16.2, 8.0, 8.5);
-        cageGroup.add(limitA);
-
-        const limitB = new THREE.Mesh(limitGeom, fanMat);
-        limitB.position.set(14.2, 8.0, 8.5);
-        cageGroup.add(limitB);
-
         // 5. PERALATAN DI DALAM KANDANG (Nipple Drinker & Sensor DHT22)
         // Pipa Air Minum Putih Melintang
         const pipeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 34), pipeWhite);
@@ -490,7 +479,7 @@
                 pos: [0, 52, 2],
                 target: [0, 5, 2],
                 title: "Tampak Atas (Top-Down Layout)",
-                desc: "Memperlihatkan denah jalur rel kereta pakan, Motor DC kuning di kanan, 2 limit switch, pipa nipple drinker, dan tata letak kontroler."
+                desc: "Memperlihatkan denah jalur rel kereta pakan, Motor DC kuning di kanan, pipa nipple drinker, dan tata letak kontroler."
             }
         };
 

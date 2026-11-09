@@ -122,21 +122,178 @@ class ReportController extends Controller
 
         $laporan = $this->hitungLaporanPeriodik($farm, $logs, $hargaPakan, $hargaTelurAcuan, $jumlahAyam, $rentangHari);
 
-        $labels = $logs->map(fn ($l) => $l->tanggal->format('j/n'))->all();
-        $rataPakan = $laporan['ini']['hari'] > 0 ? round($laporan['ini']['pakan'] / $laporan['ini']['hari'], 1) : 0.0;
-        $rataTelur = round($laporan['ini']['rata_telur']);
-        $rataBiaya = $laporan['ini']['hari'] > 0 ? round($laporan['ini']['biaya_pakan'] / $laporan['ini']['hari']) : 0.0;
-        $rataEfisiensi = round($laporan['ini']['biaya_kg_telur']);
+        $chartLabels = $logs->isNotEmpty()
+            ? $logs->map(fn ($l) => $l->tanggal->format('d/m'))->all()
+            : ['H-6', 'H-5', 'H-4', 'H-3', 'H-2', 'Kemarin', 'Hari Ini'];
+        $nLabels = count($chartLabels);
+        $standarPakanGr = (int) ($faseDetail['standar_pakan_gr'] ?? 115);
+
+        // 1. Grafik Telur (Bar Chart hijau seragam Dashboard)
+        $chartTelur = [
+            'type' => 'bar',
+            'labels' => $chartLabels,
+            'datasets' => [
+                [
+                    'label' => 'Telur (butir)',
+                    'data' => $logs->isNotEmpty() ? $logs->pluck('telur_butir')->all() : array_fill(0, $nLabels, 0),
+                    'backgroundColor' => '#15803d',
+                    'hoverBackgroundColor' => '#166534',
+                    'borderRadius' => 0,
+                    'maxBarThickness' => 38,
+                ],
+            ],
+        ];
+
+        // 2. Grafik Pakan (Line Chart oranye emas seragam Dashboard)
+        $pakanGrData = $logs->isNotEmpty()
+            ? $logs->map(fn ($l) => $jumlahAyam > 0 ? round(($l->pakan_kg * 1000) / $jumlahAyam, 1) : 0)->all()
+            : array_fill(0, $nLabels, 0);
+
+        $chartPakan = [
+            'type' => 'line',
+            'labels' => $chartLabels,
+            'legend' => false,
+            'datasets' => [
+                [
+                    'label' => 'Konsumsi (gr/ekor)',
+                    'data' => $pakanGrData,
+                    'borderColor' => '#F59E0B',
+                    'backgroundColor' => '#F59E0B18',
+                    'fill' => true,
+                    'tension' => 0.35,
+                    'borderWidth' => 2.5,
+                    'pointRadius' => 4,
+                    'pointHoverRadius' => 6,
+                    'pointBackgroundColor' => '#FFFFFF',
+                    'pointBorderColor' => '#F59E0B',
+                    'pointBorderWidth' => 2,
+                ],
+                [
+                    'label' => 'Standar (gr)',
+                    'data' => array_fill(0, $nLabels, $standarPakanGr),
+                    'borderColor' => '#9CA3AF',
+                    'borderDash' => [4, 4],
+                    'fill' => false,
+                    'tension' => 0,
+                    'borderWidth' => 1.5,
+                    'pointRadius' => 0,
+                    'pointHoverRadius' => 0,
+                ],
+            ],
+        ];
+
+        // 3. Grafik Populasi (Line Chart biru seragam Dashboard)
+        $populasiData = [];
+        if ($logs->isNotEmpty()) {
+            foreach ($logs as $l) {
+                $populasiData[] = max(0, $jumlahAyam - ($l->ayam_mati ?? 0));
+            }
+        } else {
+            $populasiData = array_fill(0, $nLabels, $jumlahAyam);
+        }
+
+        $chartPopulasi = [
+            'type' => 'line',
+            'labels' => $chartLabels,
+            'zero' => false,
+            'precision' => 0,
+            'datasets' => [
+                [
+                    'label' => 'Populasi (ekor)',
+                    'data' => $populasiData,
+                    'borderColor' => '#2563EB',
+                    'backgroundColor' => '#2563EB12',
+                    'fill' => true,
+                    'tension' => 0.35,
+                    'borderWidth' => 2.5,
+                    'pointRadius' => 4,
+                    'pointHoverRadius' => 6,
+                    'pointBackgroundColor' => '#FFFFFF',
+                    'pointBorderColor' => '#2563EB',
+                    'pointBorderWidth' => 2,
+                ],
+            ],
+        ];
+
+        // 4. Grafik FCR (Line Chart ungu seragam Dashboard)
+        $fcrData = [];
+        if ($logs->isNotEmpty()) {
+            foreach ($logs as $l) {
+                $kgTelur = $l->telurKgEfektif();
+                $fcrData[] = ($kgTelur > 0 && $l->pakan_kg > 0)
+                    ? round($l->pakan_kg / $kgTelur, 2)
+                    : 2.15;
+            }
+        } else {
+            $fcrData = array_fill(0, $nLabels, 2.15);
+        }
+
+        $chartFcr = [
+            'type' => 'line',
+            'labels' => $chartLabels,
+            'legend' => false,
+            'zero' => false,
+            'datasets' => [
+                [
+                    'label' => 'FCR Aktual',
+                    'data' => $fcrData,
+                    'borderColor' => '#7C3AED',
+                    'backgroundColor' => '#7C3AED12',
+                    'fill' => true,
+                    'tension' => 0.35,
+                    'borderWidth' => 2.5,
+                    'pointRadius' => 4,
+                    'pointHoverRadius' => 6,
+                    'pointBackgroundColor' => '#FFFFFF',
+                    'pointBorderColor' => '#7C3AED',
+                    'pointBorderWidth' => 2,
+                ],
+                [
+                    'label' => 'Target SNI',
+                    'data' => array_fill(0, $nLabels, 2.14),
+                    'borderColor' => '#9CA3AF',
+                    'borderDash' => [4, 4],
+                    'fill' => false,
+                    'tension' => 0,
+                    'borderWidth' => 1.5,
+                    'pointRadius' => 0,
+                    'pointHoverRadius' => 0,
+                ],
+            ],
+        ];
+
+        // 5. Grafik Biaya Operasional Pakan
+        $chartBiaya = [
+            'type' => 'line',
+            'labels' => $chartLabels,
+            'datasets' => [
+                [
+                    'label' => 'Biaya Pakan (Rp)',
+                    'data' => $logs->isNotEmpty() ? $logs->map(fn ($l) => round($l->pakan_kg * $hargaPakan))->all() : array_fill(0, $nLabels, 0),
+                    'borderColor' => '#0E7490',
+                    'backgroundColor' => '#0E749018',
+                    'fill' => true,
+                    'tension' => 0.35,
+                    'borderWidth' => 2.5,
+                    'pointRadius' => 4,
+                    'pointHoverRadius' => 6,
+                    'pointBackgroundColor' => '#FFFFFF',
+                    'pointBorderColor' => '#0E7490',
+                    'pointBorderWidth' => 2,
+                ],
+            ],
+        ];
 
         $grafik = [
-            'pakan' => $this->chart('bar', $labels, 'Pakan (kg)', $logs->pluck('pakan_kg')->map(fn ($v) => (float) $v)->all(), '#c97a1e', $rataPakan),
-            'telur' => $this->chart('line', $labels, 'Telur (butir)', $logs->pluck('telur_butir')->all(), '#116a3a', $rataTelur),
-            'biaya' => $this->chart('line', $labels, 'Biaya pakan (Rp, estimasi)', $logs->map(fn ($l) => round($l->pakan_kg * $hargaPakan))->all(), '#0e7490', $rataBiaya),
-            'efisiensi' => $this->chart('line', $labels, 'Biaya pakan per kg telur (Rp, estimasi)', $logs->map(fn ($l) => $l->telurKgEfektif() > 0 ? round($l->pakan_kg * $hargaPakan / $l->telurKgEfektif()) : 0)->all(), '#7c3aed', $rataEfisiensi),
+            'telur' => $chartTelur,
+            'pakan' => $chartPakan,
+            'populasi' => $chartPopulasi,
+            'fcr' => $chartFcr,
+            'biaya' => $chartBiaya,
         ];
 
         // 2. Modul Formulasi Ransum & Kepatuhan Standar Gizi (SNI / Strain)
-        $ransumAktif = $farm->lastRation()?->load('items', 'standard');
+        $ransumAktif = $farm->lastRation()?->load('items.ingredient', 'standard');
         $riwayatRansum = $farm->rations()->where('status', 'layak')->with('standard')->latest('id')->limit(5)->get();
         $totalRiwayatRansum = $farm->rations()->where('status', 'layak')->count();
         $totalStandarGizi = $farm->standards()->count();
@@ -264,6 +421,7 @@ class ReportController extends Controller
             'daftarAnomali' => $daftarAnomali,
             'ringkasanAnomali' => $ringkasanAnomali,
             'ringkasanAi' => $ringkasanAi,
+            'tabParam' => (string) $r->query('tab', ''),
         ];
     }
 

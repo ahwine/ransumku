@@ -2703,18 +2703,6 @@ const IOT_PIN_INFO = {
         fungsi: 'Menggerakkan katrol kereta pakan via D18/D19 (IN1/IN2) dan menyalakan LED Strip DC 5V via D27 (IN3 → OUT3).',
         nilai: () => (document.getElementById('status-feeder-3d') || {}).textContent || '-'
     },
-    'Limit Switch A': {
-        short: 'Limit A (D33)',
-        name: 'Micro Limit Switch Merah KW12 (Pin D33 · Pangkal A)',
-        fungsi: 'Menghentikan motor kereta pakan saat menyentuh batas pangkal lorong kandang (titik A).',
-        nilai: () => (feederPositionX <= FEEDER_LIMIT_A + 0.1 ? 'TERTEKAN (kereta di A)' : 'Terbuka')
-    },
-    'Limit Switch B': {
-        short: 'Limit B (D32)',
-        name: 'Micro Limit Switch Hitam V-156 (Pin D32 · Ujung B)',
-        fungsi: 'Membalik arah motor kereta pakan saat menyentuh batas ujung lorong kandang (titik B).',
-        nilai: () => (feederPositionX >= FEEDER_LIMIT_B - 0.1 ? 'TERTEKAN (kereta di B)' : 'Terbuka')
-    },
     'Tandon & Pompa Sprinkler': {
         short: 'Pompa 5V (D14)',
         name: 'Tandon Air & Pompa Celup Putih 5V (Pin D14 · Relay K2)',
@@ -4956,27 +4944,6 @@ function buildKandang3DScene() {
     const lblMotor = createBadgeSprite('Motor & Driver L298N', '#f59e0b', '');
     lblMotor.position.set(-8.5, 2.95, 0);
     iotLabelsGroup.add(lblMotor);
-
-    // 3. LIMIT SWITCH TITIK A & TITIK B (SENSOR PEMBATAS KERETA PAKAN)
-    // Limit Switch A di Titik Pangkal (x = -7.2)
-    const limA = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.06),
-        new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-    limA.position.set(-7.2, 2.65, 0.44);
-    scene3D.add(limA);
-
-    const lblLimA = createBadgeSprite('Limit Switch A', '#ef4444', '');
-    lblLimA.position.set(-7.2, 2.98, 0.44);
-    iotLabelsGroup.add(lblLimA);
-
-    // Limit Switch B di Titik Ujung (x = 7.2)
-    const limB = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.06),
-        new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-    limB.position.set(7.2, 2.65, 0.44);
-    scene3D.add(limB);
-
-    const lblLimB = createBadgeSprite('Limit Switch B', '#ef4444', '');
-    lblLimB.position.set(7.2, 2.98, 0.44);
-    iotLabelsGroup.add(lblLimB);
 
     // 4. SISTEM PENGGERAK SPRINKLER (TANDON AIR + POMPA DIAFRAGMA 12V + RISER PIPE)
     // Tandon Air Biru (Toren 100 Liter) di Sisi Luar Belakang
