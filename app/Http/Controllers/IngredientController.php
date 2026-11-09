@@ -25,52 +25,19 @@ class IngredientController extends Controller
             ->when($q !== '', fn ($col) => $col->filter(fn ($fi) => str_contains(strtolower($fi->ingredient->nama ?? ''), strtolower($q))))
             ->values();
 
-        // Kebutuhan pakan harian kandang (misal 200 ekor * 0.11 kg = 22 kg)
+        $lastRation = $farm->rations()->where('status', 'layak')->with('items')->latest('id')->first();
         $pakanHarianKg = (float) max(1.0, ($farm->jumlah_ayam * ($farm->konsumsi_per_ekor ?: 0.11)));
 
-        // Ambang batas Safety Stock
-        $stokGudangData = $farmIngredients->map(function ($fi) use ($pakanHarianKg) {
-            $nama = strtolower($fi->ingredient->nama ?? '');
-            $porsiEst = 0.20;
-            if (str_contains($nama, 'jagung') || str_contains($nama, 'menir') || str_contains($nama, 'sorgum')) {
-                $porsiEst = 0.50;
-            } elseif (str_contains($nama, 'konsentrat') || str_contains($nama, 'kedelai') || str_contains($nama, 'ikan')) {
-                $porsiEst = 0.30;
-            } elseif (str_contains($nama, 'dedak') || str_contains($nama, 'bekatul') || str_contains($nama, 'polard')) {
-                $porsiEst = 0.20;
-            } elseif (str_contains($nama, 'kapur') || str_contains($nama, 'kerang') || str_contains($nama, 'grit') || str_contains($nama, 'premix')) {
-                $porsiEst = 0.07;
-            }
-
-            $kebutuhanHarian = max(0.5, round($pakanHarianKg * $porsiEst, 2));
-            $safetyBuffer3Hari = round($kebutuhanHarian * 3, 1);
-            $stok = (float) $fi->stok_kg;
-            $hariTersisa = $kebutuhanHarian > 0 ? round($stok / $kebutuhanHarian, 1) : 0;
-
-            if ($stok <= 0.05) {
-                $status = 'habis';
-                $statusLabel = 'Habis';
-                $badgeClass = 'bg-rose-100 text-rose-800 border-rose-300';
-            } elseif ($stok <= $safetyBuffer3Hari) {
-                $status = 'menipis';
-                $statusLabel = 'Perlu Pesan (Menipis)';
-                $badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
-            } else {
-                $status = 'aman';
-                $statusLabel = 'Stok Aman';
-                $badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-            }
+        $stokGudangData = $farmIngredients->map(function ($fi) use ($farm, $lastRation) {
+            $eval = $farm->evaluasiStokBahan($fi, $lastRation);
 
             return [
                 'fi' => $fi,
-                'stok_kg' => $stok,
+                'stok_kg' => $eval['stok_kg'],
                 'harga' => $fi->harga,
-                'kebutuhan_harian_kg' => $kebutuhanHarian,
-                'safety_buffer_kg' => $safetyBuffer3Hari,
-                'hari_tersisa' => $hariTersisa,
-                'status' => $status,
-                'status_label' => $statusLabel,
-                'badge_class' => $badgeClass,
+                'status' => $eval['status'],
+                'status_label' => $eval['status_label'],
+                'text_class' => $eval['text_class'],
             ];
         });
 
@@ -150,7 +117,7 @@ class IngredientController extends Controller
         $fi->harga_updated_at = now();
         $fi->save();
 
-        return redirect()->route('bahan.index')->with('ok', "Bahan \"{$tpl['label']}\" berhasil ditambahkan ke gudang pakan!");
+        return redirect()->route('bahan.index')->with('ok', "Bahan {$tpl['label']} ditambahkan ke gudang.");
     }
 
     /**
@@ -175,7 +142,7 @@ class IngredientController extends Controller
 
         $fi->update($update);
 
-        return back()->with('ok', "Stok bahan {$fi->ingredient->nama} berhasil diperbarui menjadi {$data['stok_kg']} kg!");
+        return back()->with('ok', "Stok {$fi->ingredient->nama} diperbarui.");
     }
 
     /**
@@ -191,6 +158,6 @@ class IngredientController extends Controller
         $nama = $farmIngredient->ingredient->nama ?? 'Bahan pakan';
         $farmIngredient->delete();
 
-        return redirect()->route('bahan.index')->with('ok', "Bahan \"{$nama}\" berhasil dihapus dari gudang pakan.");
+        return redirect()->route('bahan.index')->with('ok', "Bahan {$nama} dihapus dari gudang.");
     }
 }

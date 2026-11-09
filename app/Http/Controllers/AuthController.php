@@ -82,6 +82,6 @@ class AuthController extends Controller
         $farm = Farm::create($data + ['user_id' => auth()->id()]);
         $boot->setupFarm($farm);
 
-        return redirect()->route('beranda')->with('ok', 'Kandang siap. Silakan isi harga dan stok bahan, lalu hitung ransum.');
+        return redirect()->route('beranda')->with('ok', 'Kandang berhasil disiapkan.');
     }
 }

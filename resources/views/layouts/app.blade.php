@@ -94,8 +94,8 @@
                     <span>Stok Pakan Gudang</span>
                 </div>
                 @if ($kritisStokCount > 0)
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white leading-tight shadow-2xs" title="{{ $kritisStokCount }} bahan di bawah safety stock">
-                        {{ $kritisStokCount }}
+                    <span class="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-xs ring-2 ring-white" title="{{ $kritisStokCount }} bahan pakan menipis / habis">
+                        {{ $kritisStokCount > 9 ? '9+' : $kritisStokCount }}
                     </span>
                 @endif
             </a>

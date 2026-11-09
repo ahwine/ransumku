@@ -103,11 +103,11 @@
 <div id="modal-tambah-kandang" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0 pointer-events-none" role="dialog" aria-modal="true">
     <div class="absolute inset-0" onclick="tutupModal('modal-tambah-kandang')"></div>
 
-    <div data-modal-card class="relative z-10 w-full max-w-xl bg-white rounded-2xl p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
+    <div data-modal-card class="relative z-10 w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
         <div class="flex items-center justify-between pb-3 border-b border-line">
             <div>
-                <h3 class="text-sm md:text-base font-bold text-ink">Input Data Kandang Baru</h3>
-                <p class="text-xs text-muted mt-0.5">Lengkapi data unit kandang baru. Standar nutrisi & template disiapkan otomatis.</p>
+                <h3 class="text-sm md:text-base font-bold text-ink">Tambah Unit Kandang Baru</h3>
+                <p class="text-xs text-muted mt-0.5">Isi nama kandang, populasi, umur ayam saat ini, dan lokasi kandang.</p>
             </div>
             <button type="button" onclick="tutupModal('modal-tambah-kandang')" class="text-muted hover:text-ink transition cursor-pointer p-1" aria-label="Tutup">
                 <span class="material-symbols-outlined text-[20px]">close</span>
@@ -117,6 +117,8 @@
         <form method="POST" action="{{ route('kandang.store') }}" class="space-y-3.5">
             @csrf
             <input type="hidden" name="fase" value="produksi">
+            <input type="hidden" name="tgl_chick_in" value="{{ today()->toDateString() }}">
+
             <div>
                 <label class="lbl">Nama Kandang <span class="text-danger">*</span></label>
                 <input type="text" name="nama" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: Kandang Flamboyan" required autocomplete="off">
@@ -124,11 +126,18 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="lbl">Populasi Awal (Ekor) <span class="text-danger">*</span></label>
+                    <label class="lbl">Populasi Ayam (Ekor) <span class="text-danger">*</span></label>
                     <input type="number" name="jumlah_ayam" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: 200" required>
                 </div>
                 <div>
-                    <label class="lbl">Strain / Jenis Bibit Petelur</label>
+                    <label class="lbl">Umur Ayam Saat Ini (Minggu) <span class="text-danger">*</span></label>
+                    <input type="number" name="umur_awal_minggu" value="20" min="1" max="120" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: 20" required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="lbl">Jenis Bibit (Strain)</label>
                     <select name="strain_ayam" class="field !min-h-10 text-xs font-semibold bg-white cursor-pointer">
                         <option value="Lohmann Brown" {{ old('strain_ayam') === 'Lohmann Brown' ? 'selected' : '' }}>Lohmann Brown</option>
                         <option value="Isa Brown" {{ old('strain_ayam') === 'Isa Brown' ? 'selected' : '' }}>Isa Brown</option>
@@ -138,9 +147,6 @@
                         <option value="Ayam Arab / KUB Petelur" {{ old('strain_ayam') === 'Ayam Arab / KUB Petelur' ? 'selected' : '' }}>Ayam Arab / KUB Petelur</option>
                     </select>
                 </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="lbl flex items-center justify-between">
                         <span>Sentra Lokasi / Kota</span>
@@ -149,20 +155,12 @@
                     @include('partials.dropdown-pilih-kota', ['id' => 'kota-tambah-global', 'value' => old('lokasi_kota', 'Surabaya'), 'presetKota' => $presetKota])
                     <p class="text-[10px] text-muted mt-1 leading-tight">Ditentukan 1x saat buat kandang untuk koordinat mikro & integrasi sensor IoT.</p>
                 </div>
-                <div>
-                    <label class="lbl">Umur Masuk Ayam (Minggu) <span class="text-danger">*</span></label>
-                    <input type="number" name="umur_awal_minggu" value="18" min="1" max="120" class="field !min-h-10 text-xs font-medium" placeholder="Default: 18" required>
-                </div>
             </div>
 
-            <div class="pt-1">
-                <label class="lbl">Tanggal Masuk (Chick-in)</label>
-                <input type="date" name="tgl_chick_in" value="{{ now()->subWeeks(2)->toDateString() }}" max="{{ today()->toDateString() }}" class="field !min-h-10 text-xs font-medium">
-                <p class="text-[11px] text-muted mt-1 flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px] text-brand">info</span>
-                    <span>Sub-fase produksi (Pullet, Awal Bertelur, Puncak, Stabil) terdeteksi otomatis dari umur ayam.</span>
-                </p>
-            </div>
+            <p class="text-[11px] text-muted flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px] text-brand">info</span>
+                <span>Fase produksi (Pullet, Awal Bertelur, Puncak, Pasca Puncak) menyesuaikan umur ayam secara otomatis.</span>
+            </p>
 
             <div class="flex justify-end items-center gap-2 pt-3 border-t border-line">
                 <button type="button" onclick="tutupModal('modal-tambah-kandang')" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold text-ink bg-white hover:bg-surface border border-line transition shadow-2xs cursor-pointer">
@@ -183,11 +181,11 @@
     <div id="modal-edit-kandang-{{ $f->id }}" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0 pointer-events-none" role="dialog" aria-modal="true">
         <div class="absolute inset-0" onclick="tutupModal('modal-edit-kandang-{{ $f->id }}')"></div>
 
-        <div data-modal-card class="relative z-10 w-full max-w-xl bg-white rounded-2xl p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
+        <div data-modal-card class="relative z-10 w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
             <div class="flex items-center justify-between pb-3 border-b border-line">
                 <div>
                     <h3 class="text-sm md:text-base font-bold text-ink">Edit Data: {{ $f->nama }}</h3>
-                    <p class="text-xs text-muted mt-0.5">Perbarui informasi populasi, fase pemeliharaan, atau sentra lokasi.</p>
+                    <p class="text-xs text-muted mt-0.5">Perbarui informasi nama kandang, populasi, umur ayam saat ini, atau lokasi.</p>
                 </div>
                 <button type="button" onclick="tutupModal('modal-edit-kandang-{{ $f->id }}')" class="text-muted hover:text-ink transition cursor-pointer p-1" aria-label="Tutup">
                     <span class="material-symbols-outlined text-[20px]">close</span>
@@ -198,6 +196,7 @@
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="fase" value="{{ $f->fase ?? 'produksi' }}">
+                <input type="hidden" name="tgl_chick_in" value="{{ today()->toDateString() }}">
 
                 <div>
                     <label class="lbl">Nama Kandang <span class="text-danger">*</span></label>
@@ -206,20 +205,24 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="lbl">Populasi (Ekor) <span class="text-danger">*</span></label>
+                        <label class="lbl">Populasi Ayam (Ekor) <span class="text-danger">*</span></label>
                         <input type="number" name="jumlah_ayam" value="{{ $f->jumlah_ayam }}" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" required>
                     </div>
                     <div>
-                        <label class="lbl">Strain / Jenis Bibit Petelur</label>
+                        <label class="lbl">Umur Ayam Saat Ini (Minggu) <span class="text-danger">*</span></label>
+                        <input type="number" name="umur_awal_minggu" value="{{ $f->umurMinggu() }}" min="1" max="120" class="field !min-h-10 text-xs font-medium" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="lbl">Jenis Bibit (Strain)</label>
                         <select name="strain_ayam" class="field !min-h-10 text-xs font-semibold bg-white cursor-pointer">
                             @foreach(['Lohmann Brown', 'Isa Brown', 'Hy-Line Brown', 'Novogen Brown', 'H&N Brown Nick', 'Ayam Arab / KUB Petelur'] as $st)
                                 <option value="{{ $st }}" {{ ($f->strain_ayam ?? 'Lohmann Brown') === $st ? 'selected' : '' }}>{{ $st }}</option>
                             @endforeach
                         </select>
                     </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="lbl flex items-center justify-between">
                             <span>Sentra Lokasi / Kota</span>
@@ -242,20 +245,12 @@
                         <input type="hidden" name="lokasi_kota" value="{{ $f->lokasi_kota }}">
                         <p class="text-[10px] text-muted mt-1 leading-tight">Lokasi fisik kandang bersifat permanen terikat hardware sensor ESP32.</p>
                     </div>
-                    <div>
-                        <label class="lbl">Umur Masuk Ayam (Minggu) <span class="text-danger">*</span></label>
-                        <input type="number" name="umur_awal_minggu" value="{{ $f->umur_awal_minggu ?? 18 }}" min="1" max="120" class="field !min-h-10 text-xs font-medium" required>
-                    </div>
                 </div>
 
-                <div class="pt-1">
-                    <label class="lbl">Tanggal Masuk (Chick-in)</label>
-                    <input type="date" name="tgl_chick_in" value="{{ $f->tgl_chick_in?->toDateString() }}" max="{{ today()->toDateString() }}" class="field !min-h-10 text-xs font-medium">
-                    <p class="text-[11px] text-muted mt-1 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px] text-brand">info</span>
-                        <span>Status saat ini: <strong class="text-brand">{{ $f->faseUmurDetail()['nama'] }} (Mg ke-{{ $f->umurMinggu() }})</strong></span>
-                    </p>
-                </div>
+                <p class="text-[11px] text-muted flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px] text-brand">info</span>
+                    <span>Fase saat ini: <strong class="text-brand">{{ $f->faseUmurDetail()['nama'] }} ({{ $f->umurMinggu() }} Minggu)</strong></span>
+                </p>
 
                 <div class="flex justify-end items-center gap-2 pt-3 border-t border-line">
                     <button type="button" onclick="tutupModal('modal-edit-kandang-{{ $f->id }}')" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold text-ink bg-white hover:bg-surface border border-line transition shadow-2xs cursor-pointer">

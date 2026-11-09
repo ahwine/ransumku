@@ -5722,7 +5722,7 @@ function setKamera3D(tipe) {
     }[tipe] || tipe;
 
     if (typeof window.showToast === 'function') {
-        window.showToast(`Kamera beralih ke mode ${nama}.`, 'info', 'Sudut Kamera 3D');
+        window.showToast(`Kamera: ${nama}.`, 'info', 'Sudut Kamera');
     }
 }
 
@@ -5751,9 +5751,9 @@ function toggleAutoRotate3D() {
 
     if (typeof window.showToast === 'function') {
         window.showToast(
-            controls3D.autoRotate ? 'Kamera 3D berputar otomatis 360° mengelilingi kandang.' : 'Putaran otomatis kamera dinonaktifkan.',
+            controls3D.autoRotate ? 'Putar otomatis 360° aktif.' : 'Putar otomatis dimatikan.',
             'info',
-            'Auto-Putar 360°'
+            'Kamera 3D'
         );
     }
 }
@@ -5772,9 +5772,9 @@ function toggleLabelsIoT3D() {
 
     if (typeof window.showToast === 'function') {
         window.showToast(
-            isLabelsVisible ? 'Pin label komponen IoT (ESP32, L298N, sensor) aktif ditampilkan.' : 'Pin label komponen IoT disembunyikan.',
+            isLabelsVisible ? 'Label komponen IoT ditampilkan.' : 'Label komponen IoT disembunyikan.',
             'info',
-            'Pin Label IoT'
+            'Label IoT'
         );
     }
 }
@@ -5795,13 +5795,13 @@ function toggleSimulasiGerakPakan() {
     if (isFeederRunning3D) {
         updateStatusFeederText(feederDirection3D === 1 ? 'Meluncur MAJU (A ➔ B)' : 'Meluncur MUNDUR (B ➔ A)');
         if (typeof window.showToast === 'function') {
-            window.showToast('Kereta pakan travelling hopper mulai meluncur di rel (Auto-Shuttle A ⇄ B).', 'success', 'Kereta Pakan 3D Aktif');
+            window.showToast('Kereta pakan dijalankan.', 'success', 'Kereta Pakan');
         }
     } else {
         setFeedParticlesVisible(false);
         updateStatusFeederText('Kereta Dihentikan (Pause Manual)');
         if (typeof window.showToast === 'function') {
-            window.showToast('Kereta pakan dihentikan di posisinya saat ini.', 'info', 'Kereta Pakan Dijeda');
+            window.showToast('Kereta pakan dihentikan.', 'info', 'Kereta Pakan');
         }
     }
 }
@@ -5861,9 +5861,9 @@ function toggleUjiCuacaPanas3D() {
 
     if (typeof window.showToast === 'function') {
         if (isManualSimulationHot) {
-            window.showToast('Simulasi cuaca panas aktif: Kipas DC 12V (D26) berputar & Pompa Celup 5V (D14) menyemprot atap.', 'warning', 'Simulasi Cuaca Panas ON');
+            window.showToast('Simulasi cuaca panas diaktifkan.', 'warning', 'Simulasi Cuaca');
         } else {
-            window.showToast('Simulasi cuaca panas dimatikan. Kipas & pompa kembali ke status normal.', 'info', 'Simulasi Cuaca Panas OFF');
+            window.showToast('Simulasi cuaca panas dimatikan.', 'info', 'Simulasi Cuaca');
         }
     }
 }
@@ -5914,9 +5914,9 @@ function toggleLampu3D() {
 
     if (typeof window.showToast === 'function') {
         if (isLampOn3D) {
-            window.showToast('Simulasi LED Strip DC 5V aktif: pencahayaan fotoperiode kandang 3D menyala terang.', 'success', 'Uji LED Strip 5V ON');
+            window.showToast('Simulasi lampu kandang dinyalakan.', 'success', 'Lampu Kandang');
         } else {
-            window.showToast('Simulasi LED Strip DC 5V dimatikan. Lampu kembali mengikuti status Web.', 'info', 'Uji LED Strip 5V OFF');
+            window.showToast('Simulasi lampu kandang dimatikan.', 'info', 'Lampu Kandang');
         }
     }
 }

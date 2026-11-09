@@ -233,7 +233,7 @@ class HomeController extends Controller
      */
     public function updateLokasi(Request $request): RedirectResponse
     {
-        return redirect()->back()->with('err', 'Lokasi sentra kandang bersifat paten dan tidak dapat diubah setelah kandang dibuat karena terhubung dengan hardware IoT/ESP32.');
+        return redirect()->back()->with('err', 'Lokasi kandang bersifat paten.');
     }
 
     /**
@@ -389,8 +389,8 @@ class HomeController extends Controller
         $kontrol['siap'] = (bool) $farm->controller_siap;
 
         $pesan = $statusBaru
-            ? 'Sistem kontroler berhasil DIAKTIFKAN (Status BIRU). Aktuator kandang siap mengeksekusi kendali mikroklimat!'
-            : 'Sistem kontroler DINONAKTIFKAN (Status MERAH). Seluruh aktuator kandang kembali ke mode siaga.';
+            ? 'Sistem kontroler diaktifkan.'
+            : 'Sistem kontroler dinonaktifkan.';
 
         return response()->json([
             'ok' => true,
@@ -418,8 +418,8 @@ class HomeController extends Controller
         $kontrol['siap'] = (bool) $farm->controller_siap;
 
         $pesan = $data['mode'] === 'otomatis'
-            ? 'Mode Kontrol Otomatis diaktifkan. Seluruh aktuator kini dikendalikan penuh secara cerdas oleh AI & biometeorologi THI.'
-            : 'Mode Kontrol Manual diaktifkan. Anda kini dapat mengatur sakelar setiap aktuator secara mandiri.';
+            ? 'Mode otomatis diaktifkan.'
+            : 'Mode manual diaktifkan.';
 
         return response()->json([
             'ok' => true,
@@ -442,12 +442,10 @@ class HomeController extends Controller
         $alat = $data['alat'];
         $kolom = 'relay_' . $alat;
         $settings = $farm->getSettingsKontroler();
-        $otomatisDinonaktifkan = false;
 
         // Matikan mode otomatis pada alat yang diklik manual agar sensor tidak menimpa balik sakelar manual
         if (! empty($settings[$alat]['otomatis'])) {
             $settings[$alat]['otomatis'] = false;
-            $otomatisDinonaktifkan = true;
         }
 
         $farm->update([
@@ -462,9 +460,6 @@ class HomeController extends Controller
         ]);
 
         $pesan = ucfirst($alat) . ' berhasil di-' . ($data['status'] ? 'nyalakan' : 'matikan') . '.';
-        if ($otomatisDinonaktifkan) {
-            $pesan .= ' Mode Otomatisasi dinonaktifkan agar kendali manual tetap paten.';
-        }
 
         return response()->json([
             'ok' => true,
@@ -545,7 +540,7 @@ class HomeController extends Controller
 
         return response()->json([
             'ok' => true,
-            'pesan' => 'Pengaturan otomatisasi alat berhasil disimpan.',
+            'pesan' => 'Pengaturan otomatisasi disimpan.',
             'kontrol' => $kontrol,
         ]);
     }

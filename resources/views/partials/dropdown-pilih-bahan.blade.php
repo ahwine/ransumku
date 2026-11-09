@@ -32,8 +32,8 @@
                 <span class="material-symbols-outlined text-[17px] text-brand">inventory_2</span>
                 <span>Pilih Bahan Pakan</span>
             </div>
-            <span class="text-[10px] font-bold text-brand bg-brand-soft/80 border border-brand/20 px-2.5 py-0.5 rounded-full">
-                {{ count($bahan) }} Bahan Terdaftar
+            <span class="text-[11px] font-medium text-muted">
+                {{ count($bahan) }} bahan
             </span>
         </div>
 
@@ -63,6 +63,11 @@
                 @php 
                     $isSelected = ((int)$val === (int)$b->id); 
                     $searchKeyword = strtolower($b->nama);
+                    $stokItem = isset($bahanStocks) ? ($bahanStocks[$b->id] ?? 0) : 0;
+                    $hargaItem = isset($bahanPrices) ? ($bahanPrices[$b->id] ?? $b->harga_default) : $b->harga_default;
+                    $subInfo = $stokItem > 0
+                        ? ('Stok: ' . number_format((float) $stokItem, 0, ',', '.') . ' kg · Rp ' . number_format((int) $hargaItem, 0, ',', '.') . '/kg')
+                        : ('Belum di gudang · Rp ' . number_format((int) $hargaItem, 0, ',', '.') . '/kg');
                 @endphp
                 <button type="button" 
                         data-dropdown-item
@@ -79,13 +84,12 @@
                                 {{ $b->nama }}
                             </div>
                             <div class="text-[10px] text-muted truncate">
-                                Bahan Baku Pakan
+                                {{ $subInfo }}
                             </div>
                         </div>
                     </div>
-                    <span data-active-badge class="{{ $isSelected ? 'inline-flex' : 'hidden' }} items-center gap-1 text-[10px] font-bold text-brand bg-brand-soft/80 border border-brand/20 px-2 py-0.5 rounded-full shrink-0">
-                        <span class="material-symbols-outlined text-[13px]">check</span>
-                        <span>Aktif</span>
+                    <span data-active-badge class="{{ $isSelected ? 'inline-flex' : 'hidden' }} items-center gap-1 text-[11px] font-bold text-brand shrink-0">
+                        <span class="material-symbols-outlined text-[15px]">check</span>
                     </span>
                     <span data-choose-hint class="{{ $isSelected ? 'hidden' : 'inline-block' }} text-[10px] text-muted font-semibold opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         Pilih
