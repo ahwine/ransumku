@@ -18,45 +18,17 @@
 {{-- ======================================================== --}}
 <div class="block md:hidden space-y-4">
     {{-- Header Halaman Mobile --}}
-    <div>
-        <h1 class="text-xl sm:text-2xl font-black text-ink tracking-tight">Koleksi Resep Ransum</h1>
-        <p class="text-xs text-muted mt-0.5">Resep ransum presisi (Linear Simplex) berbasis SNI dan stok bahan peternakan.</p>
-    </div>
-
-    {{-- Tombol Utama: Racik Ransum Baru Full Width --}}
-    <a href="{{ route('ransum.create') }}" class="w-full bg-[#186b3e] hover:bg-[#125530] text-white font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm shadow-xs transition active:scale-98 cursor-pointer">
-        <span class="material-symbols-outlined text-[19px]">add</span>
-        <span>Racik Ransum Baru</span>
-    </a>
-
-    {{-- Baris Ringkasan KPI Koleksi Resep Mobile (3 Kartu Berdampingan) --}}
-    <div class="grid grid-cols-3 gap-2.5">
-        {{-- Kartu 1: Total Resep --}}
-        <div class="bg-white rounded-lg sm:rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
-            <span class="text-[10px] text-muted uppercase font-bold tracking-wider block">RESEP</span>
-            <div class="mt-1">
-                <span class="text-lg sm:text-xl font-black text-ink">{{ $totalResep }}</span>
-                <span class="text-xs font-normal text-muted ml-0.5">formulasi</span>
-            </div>
+    <div class="flex items-center justify-between gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-black text-ink tracking-tight">Koleksi Resep Ransum</h1>
+            <p class="text-xs text-muted mt-0.5">Formulasi ransum presisi berbasis SNI 8290 dan ketersediaan bahan pakan.</p>
         </div>
-
-        {{-- Kartu 2: Biaya Formulasi Terakhir --}}
-        <div class="bg-white rounded-lg sm:rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
-            <span class="text-[10px] text-muted uppercase font-bold tracking-wider block">BIAYA TERAKHIR</span>
-            <div class="mt-1">
-                <span class="text-lg sm:text-xl font-black text-ink">{{ $latestHarga > 0 ? Fmt::rp($latestHarga) : 'Rp 0' }}</span>
-                <span class="text-xs font-normal text-muted ml-0.5">/kg</span>
-            </div>
-        </div>
-
-        {{-- Kartu 3: Tingkat Kelayakan Nutrisi --}}
-        <div class="bg-white rounded-lg sm:rounded-2xl border border-line/70 p-3 shadow-2xs flex flex-col justify-between">
-            <span class="text-[10px] text-muted uppercase font-bold tracking-wider block">NUTRISI</span>
-            <div class="mt-1">
-                <span class="text-lg sm:text-xl font-black text-ink">{{ $resepLayakCount }}/{{ max(1, $totalResep) }}</span>
-                <span class="text-xs font-normal text-muted ml-0.5">lolos</span>
-            </div>
-        </div>
+        @if ($totalResep > 0)
+            <a href="{{ route('ransum.create') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand hover:bg-brand-dark text-white text-xs font-bold transition shadow-xs shrink-0 cursor-pointer">
+                <span class="material-symbols-outlined text-[17px]">add</span>
+                <span>Racik Baru</span>
+            </a>
+        @endif
     </div>
 
     {{-- Daftar Kartu Resep Ransum Mobile --}}
@@ -176,60 +148,21 @@
 </div>
 
 {{-- ======================================================== --}}
-{{-- B. TAMPILAN DESKTOP (hidden md:block - 100% ASLI e7c0074) --}}
+{{-- B. TAMPILAN DESKTOP                                       --}}
 {{-- ======================================================== --}}
 <div class="hidden md:block space-y-5">
     {{-- Header Halaman Bersih & Humanis --}}
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center justify-between gap-3">
         <div>
-            <h1 class="text-lg sm:text-xl font-black text-ink">Koleksi Resep Ransum</h1>
-            <p class="text-xs text-muted mt-0.5">Koleksi resep formulasi ransum presisi Linear Simplex berbasis SNI dan stok bahan peternakan</p>
+            <h1 class="text-xl sm:text-2xl font-black text-ink tracking-tight">Koleksi Resep Ransum</h1>
+            <p class="text-xs text-muted mt-0.5">Formulasi ransum presisi berbasis standar baku mutu SNI 8290 dan ketersediaan stok kandang.</p>
         </div>
-        <a href="{{ route('ransum.create') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-md hover:shadow-brand/20 transition active:scale-95 cursor-pointer">
-            <span class="material-symbols-outlined text-[17px]">add</span>
-            <span>Racik Ransum Baru</span>
-        </a>
-    </div>
-
-    {{-- Baris Ringkasan KPI Koleksi Resep (Bersih & Minimalis) --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        {{-- Kartu 1: Total Resep Tersimpan --}}
-        <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
-            <span class="text-xs font-bold text-muted uppercase tracking-wider">Koleksi Resep</span>
-            <div>
-                <div class="text-2xl font-black text-ink">
-                    {{ $totalResep }} <span class="text-xs font-normal text-muted">Formulasi</span>
-                </div>
-                <p class="text-[11px] text-muted mt-0.5">Resep ransum tersimpan untuk kandang ini</p>
-            </div>
-        </div>
-
-        {{-- Kartu 2: Biaya Formulasi Terakhir --}}
-        <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
-            <span class="text-xs font-bold text-muted uppercase tracking-wider">Biaya Formulasi Terakhir</span>
-            <div>
-                <div class="text-2xl font-black text-ink">
-                    {{ $latestHarga > 0 ? Fmt::rp($latestHarga) : 'Rp 0' }} <span class="text-xs font-normal text-muted">/kg</span>
-                </div>
-                <p class="text-[11px] text-muted mt-0.5">Estimasi biaya bahan baku per kg ransum</p>
-            </div>
-        </div>
-
-        {{-- Kartu 3: Tingkat Kelayakan Nutrisi --}}
-        <div class="card p-4 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition">
-            <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-bold text-muted uppercase tracking-wider">Tingkat Kelayakan Nutrisi</span>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold {{ $persenLayak >= 100 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
-                    {{ $persenLayak }}% Memenuhi
-                </span>
-            </div>
-            <div>
-                <div class="text-2xl font-black text-ink">
-                    {{ $resepLayakCount }} / {{ $totalResep }} <span class="text-xs font-normal text-muted">Lolos Target</span>
-                </div>
-                <p class="text-[11px] text-muted mt-0.5">Standar kecukupan nutrisi ayam petelur</p>
-            </div>
-        </div>
+        @if ($totalResep > 0)
+            <a href="{{ route('ransum.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-xs hover:shadow-brand/20 transition active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>Racik Ransum Baru</span>
+            </a>
+        @endif
     </div>
 
     {{-- Daftar Kartu Resep Ransum --}}
@@ -246,13 +179,13 @@
                         <span class="text-xs text-muted font-medium">Acuan: {{ $r->namaStandar() }}</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        @if ($r->layak())
-                            <span class="inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
-                                Layak & Memenuhi Target
+                        @if (!empty($r->hasil['stok_dipotong']))
+                            <span class="text-xs font-bold text-emerald-600">
+                                Stok Telah Dipotong
                             </span>
                         @else
-                            <span class="inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs">
-                                Perlu Penyesuaian
+                            <span class="text-xs font-semibold text-muted">
+                                Simulasi (Belum Dipotong)
                             </span>
                         @endif
                     </div>
@@ -265,35 +198,36 @@
                         <div class="text-xl font-black text-ink flex items-baseline gap-1 mt-0.5">
                             <span>{{ $r->layak() ? Fmt::rp($r->biaya_per_kg) : 'Rp -' }}</span>
                             <span class="text-xs font-semibold text-muted">/kg</span>
-                            <span class="tag-est ml-1 font-normal lowercase">est</span>
                         </div>
                     </div>
                     <div class="text-right">
                         <span class="text-xs text-muted block uppercase tracking-wider font-semibold">Volume Racikan</span>
                         <span class="text-sm font-bold text-ink block mt-0.5">
-                            {{ Fmt::num($r->total_kg, 1) }} kg {{ $r->jumlah_hari ? '('.$r->jumlah_hari.' Hari)' : '' }}
+                            {{ Fmt::num($r->total_kg, 0) }} kg {{ $r->jumlah_hari ? '('.$r->jumlah_hari.' Hari)' : '' }}
                         </span>
                     </div>
                 </div>
 
                 @if ($r->layak() && $r->items->isNotEmpty())
-                    {{-- Komposisi Bahan & Visual Bar sebagai Pill Badge --}}
+                    {{-- Komposisi Bahan & Visual Bar --}}
                     <div class="space-y-2.5 pt-1">
-                        <div class="flex h-4 rounded-full overflow-hidden bg-surface-2 p-0.5 border border-line shadow-2xs" aria-hidden="true">
+                        <div class="flex h-3.5 rounded-full overflow-hidden bg-surface-2 p-0.5 border border-line shadow-2xs" aria-hidden="true">
                             @foreach ($r->items as $i => $it)
-                                <span style="width:{{ max(2, $it->persen) }}%;background:{{ $warnaPalet[$i % count($warnaPalet)] }}" 
+                                @php $pTampil = (float) ($it->persen_as_fed ?: $it->persen); @endphp
+                                <span style="width:{{ max(2, $pTampil) }}%;background:{{ $warnaPalet[$i % count($warnaPalet)] }}" 
                                       class="h-full first:rounded-l-full last:rounded-r-full transition-all" 
-                                      title="{{ $it->nama }}: {{ Fmt::num($it->persen, 1) }}%"></span>
+                                      title="{{ $it->nama }}: {{ Fmt::num($pTampil, 1) }}%"></span>
                             @endforeach
                         </div>
 
-                        {{-- Legend Daftar Persentase Bahan (Pill Badges) --}}
-                        <div class="flex flex-wrap items-center gap-2 text-xs text-muted pt-0.5">
+                        {{-- Legend Daftar Persentase Bahan (Bersih Tanpa Pill Badge) --}}
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted pt-0.5">
                             @foreach ($r->items as $i => $it)
-                                <div class="inline-flex items-center gap-2 bg-surface/80 hover:bg-white px-3 py-1 rounded-full border border-line shadow-2xs transition-all">
-                                    <span class="w-2 h-2 rounded-full shrink-0 shadow-2xs" style="background:{{ $warnaPalet[$i % count($warnaPalet)] }}"></span>
-                                    <span class="text-ink font-bold">{{ $it->nama }}</span>
-                                    <span class="text-brand tabular-nums font-bold">{{ Fmt::num($it->persen, 1) }}%</span>
+                                @php $pTampil = (float) ($it->persen_as_fed ?: $it->persen); @endphp
+                                <div class="inline-flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ $warnaPalet[$i % count($warnaPalet)] }}"></span>
+                                    <span class="text-ink font-semibold">{{ $it->nama }}</span>
+                                    <span class="text-brand tabular-nums font-bold">{{ Fmt::num($pTampil, 1) }}%</span>
                                 </div>
                             @endforeach
                         </div>
@@ -317,20 +251,20 @@
                 </div>
             </div>
         @empty
-            {{-- Empty State jika belum ada resep --}}
-            <div class="card p-12 text-center space-y-4 shadow-2xs border border-line flex flex-col items-center justify-center">
-                <div class="w-16 h-16 rounded-2xl bg-surface border border-line flex items-center justify-center text-muted shadow-2xs">
-                    <span class="material-symbols-outlined text-[32px] text-brand">calculate</span>
+            {{-- Empty State jika belum ada resep (Tengah Layar Elegan) --}}
+            <div class="card p-12 text-center space-y-4 shadow-2xs border border-line flex flex-col items-center justify-center my-6">
+                <div class="w-16 h-16 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand shadow-2xs">
+                    <span class="material-symbols-outlined text-[32px]">soup_kitchen</span>
                 </div>
-                <div class="space-y-1 max-w-sm">
-                    <h3 class="text-sm sm:text-base font-bold text-ink">Belum Ada Resep Ransum</h3>
+                <div class="space-y-1.5 max-w-md">
+                    <h3 class="text-base font-black text-ink">Belum Ada Koleksi Resep Ransum</h3>
                     <p class="text-xs text-muted leading-relaxed">
-                        Mulai hitung formulasi campuran pakan termurah dengan target nutrisi presisi SNI menggunakan algoritma Linear Simplex.
+                        Anda belum pernah membuat formula pakan untuk kandang ini. Mulai racik ransum pertama Anda yang hemat biaya dan memenuhi standar baku SNI 8290.
                     </p>
                 </div>
-                <a href="{{ route('ransum.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-md hover:shadow-brand/20 transition active:scale-95 cursor-pointer">
+                <a href="{{ route('ransum.create') }}" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-md hover:shadow-brand/20 transition active:scale-95 cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">add</span>
-                    <span>Racik Ransum Baru Sekarang</span>
+                    <span>Mulai Racik Pakan Pertama</span>
                 </a>
             </div>
         @endforelse

@@ -7,57 +7,46 @@
 @endphp
 
 {{-- Header Halaman Bersih --}}
-<div class="flex items-center gap-3">
-    <a href="{{ route('ransum.index') }}" 
-       class="w-10 h-10 rounded-full bg-white border border-line shadow-2xs hover:bg-surface-2 flex items-center justify-center text-ink transition active:scale-95 shrink-0" 
-       title="Kembali ke Koleksi Resep">
-        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-    </a>
-    <div class="space-y-0.5 min-w-0">
-        <h1 class="text-h-lg font-black tracking-tight text-ink truncate">Hasil Formulasi Ransum</h1>
-        <p class="text-xs text-muted">{{ $ration->created_at->translatedFormat('d F Y, H:i') }} WIB · Acuan: <span class="font-semibold text-ink">{{ $ration->namaStandar() }}</span></p>
+<div class="flex items-center justify-between gap-3 flex-wrap">
+    <div class="flex items-center gap-3">
+        <a href="{{ route('ransum.index') }}" 
+           class="w-10 h-10 rounded-full bg-white border border-line shadow-2xs hover:bg-surface-2 flex items-center justify-center text-ink transition active:scale-95 shrink-0" 
+           title="Kembali ke Koleksi Resep">
+            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        </a>
+        <div class="space-y-0.5 min-w-0">
+            <h1 class="text-h-lg font-black tracking-tight text-ink truncate">Hasil Formulasi Ransum</h1>
+            <p class="text-xs text-muted">{{ $ration->created_at->translatedFormat('d F Y, H:i') }} WIB · Standar Mutu: <span class="font-semibold text-ink">{{ $ration->namaStandar() }}</span></p>
+        </div>
     </div>
+    
+    @if ($ration->layak())
+        @php
+            $stokDipakai = !empty($ration->hasil['stok_dipotong']);
+        @endphp
+        <div class="flex items-center gap-2">
+            @if ($stokDipakai)
+                <span class="text-xs font-bold text-emerald-600">
+                    Stok Gudang Telah Dipotong
+                </span>
+            @else
+                <span class="text-xs font-semibold text-muted">
+                    Simulasi (Belum Dipotong)
+                </span>
+            @endif
+        </div>
+    @endif
 </div>
 
-@if (! $ration->standard)
-    <div class="mt-4 p-3.5 rounded-2xl bg-surface border border-line text-ink flex items-start gap-2.5 text-xs">
-        <span class="material-symbols-outlined text-[20px] text-muted shrink-0 mt-0.5">inventory_2</span>
-        <div class="leading-relaxed">
-            <span>Acuan asal resep ini (<strong>{{ $ration->namaStandar() }}</strong>) sudah dihapus dari katalog aktif. Takaran bahan dan hasil gizi tersimpan tetap utuh; jika menekan <strong>Hitung Ulang</strong>, sistem akan memakai acuan aktif yang tersedia.</span>
-        </div>
-    </div>
-@endif
-
 @if (!empty($unconstrainedParams))
-    <div class="mt-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-2.5 text-xs">
-        <span class="material-symbols-outlined text-[20px] text-amber-700 shrink-0 mt-0.5">warning</span>
-        <div class="space-y-1 leading-relaxed">
-            <strong class="font-bold block">Peringatan Batasan Acuan Gizi</strong>
-            <ul class="list-disc list-inside space-y-0.5">
-                @foreach ($unconstrainedParams as $paramName)
-                    <li>Parameter {{ $paramName }} tidak dibatasi oleh standar ini.</li>
-                @endforeach
-            </ul>
-        </div>
-    </div>
-@endif
-
-{{-- Peringatan Ambang Batas Aman & Gizi --}}
-@if (!empty($keamanan['peringatan']))
-    <div class="mt-4 space-y-2">
-        @foreach ($keamanan['peringatan'] as $pk)
-            <div class="p-3.5 rounded-2xl border flex items-start gap-2.5 text-xs {{ $pk['level'] === 'danger' ? 'bg-danger-soft/80 text-danger-ink border-danger/40' : ($pk['level'] === 'warning' ? 'bg-amber-soft/70 text-amber-ink border-amber/30' : 'bg-brand/10 text-brand-dark border-brand/20') }}">
-                <span class="material-symbols-outlined text-[20px] shrink-0 mt-0.5">{{ $pk['level'] === 'danger' ? 'gpp_bad' : ($pk['level'] === 'warning' ? 'warning' : 'verified_user') }}</span>
-                <div class="leading-relaxed">
-                    <strong class="font-bold">{{ $pk['judul'] }}:</strong> {{ $pk['pesan'] }}
-                </div>
-            </div>
+    <div class="sr-only">
+        @foreach ($unconstrainedParams as $param)
+            <span>Parameter {{ $param }} tidak dibatasi oleh standar ini.</span>
         @endforeach
     </div>
 @endif
 
 @if ($ration->layak())
-    {{-- 1. Hero Action Banner: Status Penerapan & Potong Stok Gudang --}}
     @php
         $stokDipakai = !empty($ration->hasil['stok_dipotong']);
         $tglDiterapkan = $stokDipakai && !empty($ration->hasil['applied_at']) 
@@ -65,68 +54,6 @@
             : null;
         $totalSegarKg = $asFed['total_as_fed_kg'] ?? $ration->total_kg;
     @endphp
-
-    @if (! $stokDipakai)
-        <div class="mt-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-white border-2 border-amber-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-start gap-3.5">
-                <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <span class="material-symbols-outlined text-[24px]">blender</span>
-                </div>
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
-                            📋 Status: Simulasi Racikan
-                        </span>
-                        <span class="text-xs font-bold text-amber-900">Belum Mengurangi Stok Gudang</span>
-                    </div>
-                    <p class="text-xs text-muted leading-relaxed">
-                        Formulasi ini siap dipakai. Jika Anda sudah menimbang & mengaduk pakan sebesar <strong class="text-ink font-bold">{{ Fmt::num($totalSegarKg, 1) }} kg</strong> di mixer kandang, terapkan ke gudang agar stok berkurang otomatis.
-                    </p>
-                </div>
-            </div>
-
-            <div class="shrink-0 pt-2 md:pt-0">
-                <button type="button" 
-                        onclick="bukaModal('modalKonfirmasiTerapkan')"
-                        class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-black text-white bg-brand hover:bg-brand-dark transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer">
-                    <span class="material-symbols-outlined text-[18px]">inventory_2</span>
-                    <span>Campur Pakan & Potong Stok</span>
-                </button>
-            </div>
-        </div>
-    @else
-        <div class="mt-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-white border-2 border-emerald-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-start gap-3.5">
-                <div class="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <span class="material-symbols-outlined text-[24px]">check_circle</span>
-                </div>
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
-                            ✅ Telah Diterapkan ke Gudang
-                        </span>
-                        <span class="text-xs font-bold text-emerald-900">{{ $tglDiterapkan ? "Tercatat pada {$tglDiterapkan} WIB" : 'Stok Terpotong' }}</span>
-                    </div>
-                    <p class="text-xs text-muted leading-relaxed">
-                        Stok bahan baku di gudang telah otomatis dipotong sebesar <strong class="text-ink font-bold">{{ Fmt::num($totalSegarKg, 1) }} kg segar</strong> sesuai takaran timbangan nyata.
-                    </p>
-                </div>
-            </div>
-
-            <div class="shrink-0 pt-2 md:pt-0">
-                <form method="POST" action="{{ route('ransum.batal-terapkan', $ration) }}" 
-                      data-confirm="Batalkan pemotongan stok untuk racikan ini? Jumlah kilogram bahan akan dikembalikan utuh ke stok gudang pakan Anda." 
-                      data-confirm-title="Batalkan Penerapan Racikan" 
-                      data-confirm-btn="Ya, Kembalikan Stok">
-                    @csrf
-                    <button type="submit" class="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-rose-700 hover:text-rose-800 bg-white hover:bg-rose-50 border border-rose-300 transition shadow-2xs active:scale-95 cursor-pointer">
-                        <span class="material-symbols-outlined text-[16px]">undo</span>
-                        <span>Batalkan Pemotongan Stok</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-    @endif
 
     {{-- 2. Baris 3 KPI Minimalis Sejajar (Total Biaya, Harga/kg, Kelayakan) --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-4">
@@ -137,8 +64,7 @@
                 {{ Fmt::rp($ration->total_biaya) }}
             </div>
             <p class="text-xs text-muted pt-0.5">
-                Volume: <strong class="text-ink font-semibold">{{ Fmt::num($ration->total_kg, 1) }} kg</strong>
-                {{ $ration->jumlah_hari ? ' • '.$ration->jumlah_hari.' hari' : '' }}
+                Kebutuhan: <strong class="text-ink font-semibold">{{ $ration->jumlah_hari ? $ration->jumlah_hari.' hari • ' : '' }}{{ Fmt::num($totalSegarKg, 1) }} kg segar</strong> ({{ Fmt::num($ration->total_kg, 0) }} kg BK)
             </p>
         </div>
 
@@ -149,7 +75,7 @@
                 {{ Fmt::rp($ration->biaya_per_kg) }} <span class="text-xs font-semibold text-muted font-sans">/ kg</span>
             </div>
             <p class="text-xs text-muted pt-0.5">
-                Estimasi biaya bahan baku pakan riil
+                Biaya riil pakan segar: <strong class="text-ink font-semibold">{{ Fmt::rp($asFed['biaya_per_kg_as_fed'] ?? $ration->biaya_per_kg) }} / kg</strong>
             </p>
         </div>
 
@@ -195,30 +121,28 @@
                     </div>
                 </div>
 
-                {{-- Visual Stacked Recipe Distribution Bar --}}
-                <div class="space-y-2">
-                    <div class="flex h-3 rounded-full overflow-hidden bg-surface-2 p-0.5 border border-line/60 shadow-2xs" aria-hidden="true">
-                        @foreach ($baris as $i => $b)
-                            <span style="width:{{ $b['persen'] }}%;background:{{ $warna[$i % count($warna)] }}" 
-                                  class="h-full first:rounded-l-full last:rounded-r-full transition-all"
-                                  title="{{ $b['nama'] }}: {{ Fmt::num($b['persen'], 1) }}%"></span>
-                        @endforeach
-                    </div>
-
-                    {{-- Legend Micro-Pills --}}
-                    <div class="flex flex-wrap items-center gap-2 text-xs text-muted pt-0.5">
-                        @foreach ($baris as $i => $b)
-                            <div class="inline-flex items-center gap-1.5 bg-surface/80 hover:bg-white px-2.5 py-0.5 rounded-full border border-line shadow-2xs transition-all text-[11px]">
-                                <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ $warna[$i % count($warna)] }}"></span>
-                                <span class="text-ink font-semibold">{{ $b['nama'] }}</span>
-                                <span class="text-brand tabular-nums font-bold">{{ Fmt::num($b['persen'], 1) }}%</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
                 {{-- Tab 1: Timbangan Segar (As-Fed) --}}
                 <div id="tabAsFedContent" class="space-y-3 pt-1">
+                    {{-- Visual Stacked Recipe Distribution Bar (As-Fed) --}}
+                    <div class="space-y-2 pb-1">
+                        <div class="flex h-3 rounded-full overflow-hidden bg-surface-2 p-0.5 border border-line/60 shadow-2xs" aria-hidden="true">
+                            @foreach ($asFed['items'] as $i => $af)
+                                <span style="width:{{ $af['persen_as_fed'] }}%;background:{{ $warna[$i % count($warna)] }}" 
+                                      class="h-full first:rounded-l-full last:rounded-r-full transition-all"
+                                      title="{{ $af['nama'] }}: {{ Fmt::num($af['persen_as_fed'], 1) }}%"></span>
+                            @endforeach
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted pt-0.5">
+                            @foreach ($asFed['items'] as $i => $af)
+                                <div class="inline-flex items-center gap-1.5 text-[11px]">
+                                    <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ $warna[$i % count($warna)] }}"></span>
+                                    <span class="text-ink font-semibold">{{ $af['nama'] }}</span>
+                                    <span class="text-brand tabular-nums font-bold">{{ Fmt::num($af['persen_as_fed'], 1) }}%</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                     <div class="overflow-x-auto rounded-xl border border-line">
                         <table class="w-full table-fixed text-xs">
                             <colgroup>
@@ -270,6 +194,27 @@
 
                 {{-- Tab 2: Formulasi Kering (BK) --}}
                 <div id="tabBkContent" class="hidden space-y-3 pt-1">
+                    {{-- Visual Stacked Recipe Distribution Bar (BK) --}}
+                    <div class="space-y-2 pb-1">
+                        <div class="flex h-3 rounded-full overflow-hidden bg-surface-2 p-0.5 border border-line/60 shadow-2xs" aria-hidden="true">
+                            @foreach ($baris as $i => $b)
+                                <span style="width:{{ $b['persen'] }}%;background:{{ $warna[$i % count($warna)] }}" 
+                                      class="h-full first:rounded-l-full last:rounded-r-full transition-all"
+                                      title="{{ $b['nama'] }}: {{ Fmt::num($b['persen'], 1) }}%"></span>
+                            @endforeach
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted pt-0.5">
+                            @foreach ($baris as $i => $b)
+                                <div class="inline-flex items-center gap-1.5 text-[11px]">
+                                    <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ $warna[$i % count($warna)] }}"></span>
+                                    <span class="text-ink font-semibold">{{ $b['nama'] }}</span>
+                                    <span class="text-brand tabular-nums font-bold">{{ Fmt::num($b['persen'], 1) }}%</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
                     <div class="overflow-x-auto rounded-xl border border-line">
                         <table class="w-full table-fixed text-xs">
                             <colgroup>
@@ -350,80 +295,163 @@
                 {{-- Bagian 2: Kesiapan Stok Gudang --}}
                 <div class="space-y-3">
                     <div class="py-2.5 border-y border-line/60 flex items-center justify-between">
-                        <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Sisa Stok di Gudang</h2>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Cukup
-                        </span>
+                        <h2 class="text-xs font-bold text-ink uppercase tracking-wider">Ketersediaan Stok Gudang</h2>
+                        @if ($stokDipakai)
+                            <span class="text-xs font-bold text-emerald-600">
+                                Stok Telah Dipotong
+                            </span>
+                        @elseif ($bisaDiterapkan)
+                            <span class="text-xs font-bold text-emerald-600">
+                                Stok Cukup
+                            </span>
+                        @else
+                            <span class="text-xs font-bold text-rose-600">
+                                Stok Kurang
+                            </span>
+                        @endif
                     </div>
 
+                    @if (! $stokDipakai && ! empty($stokKurangList))
+                        <div class="p-3 rounded-xl bg-rose-50/60 border border-rose-200 space-y-1.5">
+                            <span class="text-[11px] font-bold text-rose-900 block flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[15px] text-rose-700">warning</span>
+                                <span>Bahan kurang untuk adukan ini:</span>
+                            </span>
+                            @foreach ($stokKurangList as $sk)
+                                <div class="flex justify-between items-center text-xs text-rose-800">
+                                    <span>{{ $sk['nama'] }}</span>
+                                    <span class="font-bold tabular-nums">kurang {{ Fmt::num($sk['kurang'], 1) }} kg</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <div class="space-y-1 text-xs">
-                        @foreach ($ration->hasil['sisa_stok'] ?? [] as $s)
+                        @foreach ($asFed['items'] ?? $baris as $b)
+                            @php
+                                $fi = $farm->farmIngredients()->where('ingredient_id', $b['id'] ?? null)->first();
+                                $stokGudangReal = (float) ($fi?->stok_kg ?? 0);
+                                $kgDibutuhkanSegar = (float) ($b['kg_as_fed'] ?? $b['kg'] ?? 0);
+                                $sisaTampil = $stokDipakai ? $stokGudangReal : max(0.0, round($stokGudangReal - $kgDibutuhkanSegar, 2));
+                            @endphp
                             <div class="flex justify-between items-center py-2 border-b border-line/20 last:border-0">
-                                <span class="text-muted font-medium">{{ $s['nama'] }}</span>
-                                <span class="tabular-nums font-medium text-ink">sisa {{ Fmt::num($s['sisa_kg'], 1) }} kg</span>
+                                <span class="text-muted font-medium">{{ $b['nama'] }}</span>
+                                <span class="tabular-nums font-medium text-ink">sisa {{ Fmt::num($sisaTampil, 1) }} kg</span>
                             </div>
                         @endforeach
                     </div>
-
-                    @include('ransum._belanja', ['belanja' => $ration->hasil['belanja'] ?? []])
                 </div>
             </section>
         </div>
     </div>
 @else
-    {{-- Tidak layak: pesan ramah, bukan error mentah --}}
-    <section class="mt-4 card space-y-4 border-danger/30 p-5 sm:p-6">
-        <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined icon-fill text-danger text-[32px]">sentiment_neutral</span>
-            <div>
-                <h2 class="text-h-md font-bold text-ink">Ransum Belum Bisa Disusun</h2>
-                <p class="text-xs text-muted">Kombinasi bahan pakan dan batasan nutrisi saat ini belum menemukan titik optimal.</p>
-            </div>
-        </div>
+    {{-- Tidak layak: Tidak disimpan ke Koleksi Resep + Penyesuaian Hari Cepat + Tabel Belanja Bersih --}}
+    <div class="mt-4 space-y-4">
+        <section class="card p-5 sm:p-6 space-y-4 border border-line shadow-2xs">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-line/60">
+                <div class="flex items-start gap-3">
+                    <span class="material-symbols-outlined text-rose-600 text-[28px] shrink-0 mt-0.5">error</span>
+                    <div class="space-y-0.5">
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            <h2 class="text-h-md font-bold text-ink">Ransum Belum Bisa Disusun</h2>
+                            <span class="text-xs font-semibold text-muted">· Tidak disimpan ke Koleksi Resep</span>
+                        </div>
+                        <p class="text-xs text-muted">
+                            Stok bahan di gudang saat ini belum mencukupi untuk menyusun kebutuhan
+                            <strong class="text-ink">{{ $ration->jumlah_hari ? $ration->jumlah_hari.' hari ('.Fmt::num($ration->total_kg, 0).' kg)' : Fmt::num($ration->total_kg, 0).' kg' }}</strong>.
+                        </p>
+                    </div>
+                </div>
 
-        <ul class="space-y-2">
-            @foreach ($ration->pesan ?? [] as $p)
-                <li class="p-3 rounded-2xl bg-danger-soft/50 border border-danger/20 text-danger-ink flex items-start gap-2 text-xs">
-                    <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">priority_high</span>
-                    <span>{{ $p }}</span>
-                </li>
-            @endforeach
-        </ul>
-
-        <div class="p-3.5 rounded-2xl bg-brand/5 border border-brand/20 text-primary flex items-start gap-2.5 text-xs">
-            <span class="material-symbols-outlined text-[20px] text-brand shrink-0 mt-0.5">lightbulb</span>
-            <div class="leading-relaxed">
-                <strong>Saran Solusi:</strong> Tambah variasi bahan pakan (misalnya sumber protein konsentrat atau kalsium tepung kulit kerang), tambah stok gudang, atau kurangi target volume adukan. Lalu tekan Hitung Ulang.
+                {{-- Form Cepat Ubah Jumlah Hari --}}
+                <form method="POST" action="{{ route('ransum.hitung-ulang', $ration) }}" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-surface/70 p-2.5 rounded-2xl border border-line shrink-0">
+                    @csrf
+                    <div class="flex items-center gap-2 px-1">
+                        <label for="ubah_hari_cepat" class="text-xs font-bold text-ink whitespace-nowrap">Ubah Kebutuhan:</label>
+                        <div class="relative flex items-center w-24">
+                            <input id="ubah_hari_cepat"
+                                   name="jumlah_hari"
+                                   type="number"
+                                   min="1"
+                                   max="60"
+                                   value="{{ $hariMaksStok ?? max(1, ($ration->jumlah_hari ?: 3) - 1) }}"
+                                   class="field !min-h-9 !py-1 !pr-11 text-xs font-black text-ink bg-white">
+                            <span class="absolute right-2.5 text-[11px] font-bold text-muted pointer-events-none">hari</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-brand hover:bg-brand-dark text-white text-xs font-bold transition shadow-2xs cursor-pointer whitespace-nowrap">
+                        Hitung Ulang Hari
+                    </button>
+                </form>
             </div>
-        </div>
+
+            @if (!empty($hariMaksStok))
+                <p class="text-xs font-semibold text-emerald-700 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                    <span>Stok gudang Anda saat ini masih mencukupi untuk adukan <strong>{{ $hariMaksStok }} hari</strong>. Klik tombol <strong>Hitung Ulang Hari</strong> di atas untuk langsung menyusunnya.</span>
+                </p>
+            @endif
+
+            <ul class="space-y-2">
+                @foreach ($ration->pesan ?? [] as $p)
+                    <li class="p-3 rounded-xl bg-rose-50/60 border border-rose-200/80 text-rose-900 flex items-start gap-2 text-xs">
+                        <span class="material-symbols-outlined text-[17px] text-rose-600 shrink-0 mt-0.5">info</span>
+                        <span>{{ $p }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
 
         @if (!empty($ration->hasil['ideal']))
-            <div class="p-4 rounded-2xl bg-surface border border-line space-y-2.5">
-                <h3 class="font-bold text-xs text-ink">Jika Anda menambah stok/bahan, resep yang mungkin:</h3>
-                <ul class="text-xs space-y-1.5 divide-y divide-line/60">
-                    @foreach ($ration->hasil['ideal']['items'] as $it)
-                        <li class="flex justify-between items-center pt-1.5 first:pt-0">
-                            <span class="font-medium text-ink">{{ $it['nama'] }} ({{ Fmt::num($it['persen'], 1) }}%)</span>
-                            <span class="tabular-nums font-bold text-ink">{{ Fmt::num($it['kg'], 2) }} kg</span>
-                        </li>
-                    @endforeach
-                </ul>
-                <p class="text-[11px] text-muted pt-1">Estimasi biaya <strong class="text-ink tabular-nums font-bold">{{ Fmt::rp($ration->hasil['ideal']['total_biaya']) }}</strong> bila semua bahan tersedia.</p>
-            </div>
-            @include('ransum._belanja', ['belanja' => $ration->hasil['belanja'] ?? []])
-        @endif
+            <div class="lg:grid lg:grid-cols-12 lg:gap-6 space-y-4 lg:space-y-0 items-start">
+                {{-- Kolom Kiri: Tabel Rekomendasi Belanja Tambahan --}}
+                <div class="lg:col-span-7">
+                    <section class="card p-4 sm:p-5 border border-line shadow-2xs">
+                        @include('ransum._belanja', ['belanja' => $ration->hasil['belanja'] ?? []])
+                    </section>
+                </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-2">
-            <a href="{{ route('ransum.create') }}" class="btn-outline btn-sm rounded-full flex items-center justify-center gap-1.5 py-2.5">
-                <span class="material-symbols-outlined text-[16px]">tune</span>
-                <span>Ubah Bahan & Stok</span>
-            </a>
-            <a href="{{ route('acuan.index') }}" class="btn-outline btn-sm rounded-full flex items-center justify-center gap-1.5 py-2.5">
-                <span class="material-symbols-outlined text-[16px]">fact_check</span>
-                <span>Ubah Acuan Gizi</span>
-            </a>
-        </div>
-    </section>
+                {{-- Kolom Kanan: Tabel Simulasi Resep Jika Stok Terpenuhi --}}
+                <div class="lg:col-span-5">
+                    <section class="card p-4 sm:p-5 space-y-3 border border-line shadow-2xs">
+                        <div>
+                            <h3 class="text-sm font-bold text-ink">Simulasi Resep ({{ $ration->jumlah_hari ? $ration->jumlah_hari.' Hari' : Fmt::num($ration->total_kg, 0).' kg' }})</h3>
+                            <p class="text-xs text-muted">Komposisi pakan segar jika seluruh stok bahan terpenuhi.</p>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-line bg-white">
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr class="text-muted bg-surface/40 border-b border-line text-[11px] uppercase tracking-wider font-semibold">
+                                        <th class="py-2.5 px-3 text-left">Bahan Pakan</th>
+                                        <th class="py-2.5 px-2 text-center">Proporsi</th>
+                                        <th class="py-2.5 px-3 text-right">Takaran</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-line/50">
+                                    @foreach ($ration->hasil['ideal']['items'] as $it)
+                                        <tr>
+                                            <td class="py-2.5 px-3 font-semibold text-ink">{{ $it['nama'] }}</td>
+                                            <td class="py-2.5 px-2 text-center tabular-nums text-muted">{{ Fmt::num($it['persen'], 1) }}%</td>
+                                            <td class="py-2.5 px-3 text-right tabular-nums font-bold text-ink">{{ Fmt::num($it['kg'], 2) }} kg</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="bg-surface-2/60 border-t-2 border-line font-bold text-ink">
+                                        <td class="py-2.5 px-3 text-left" colspan="2">Estimasi Biaya Total</td>
+                                        <td class="py-2.5 px-3 text-right tabular-nums text-brand font-black">
+                                            {{ Fmt::rp($ration->hasil['ideal']['total_biaya']) }}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        @endif
+    </div>
 @endif
 
 <p class="text-[11px] text-muted flex items-center gap-1.5 mt-4">
@@ -456,29 +484,61 @@
     </section>
 @endif
 
-{{-- Bottom Action Buttons --}}
-<div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 pb-8">
-    <form method="POST" action="{{ route('ransum.jelaskan', $ration) }}" class="w-full">
-        @csrf
-        <button id="btn-jelaskan" 
-                class="btn-amber w-full rounded-full py-3 flex items-center justify-center gap-1.5 text-xs font-bold shadow-2xs hover:shadow-md transition active:scale-95 cursor-pointer">
-            <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-            <span>Jelaskan hasil ini</span>
-        </button>
-    </form>
-    <form method="POST" action="{{ route('ransum.hitung-ulang', $ration) }}" class="w-full">
-        @csrf
-        <button id="btn-hitung-ulang" 
-                class="btn-primary w-full rounded-full py-3 flex items-center justify-center gap-1.5 text-xs font-bold shadow-2xs hover:shadow-brand/20 transition active:scale-95 cursor-pointer">
-            <span class="material-symbols-outlined text-[18px]">refresh</span>
-            <span>Hitung Ulang</span>
-        </button>
-    </form>
+{{-- Bottom Action Bar: Bersih, Tegas, Tanpa Bloat --}}
+<div class="mt-8 pt-5 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 pb-12">
     <a href="{{ route('ransum.create') }}" 
-       class="btn-outline w-full rounded-full py-3 flex items-center justify-center gap-1.5 text-xs font-bold shadow-2xs hover:bg-surface-2 transition active:scale-95 text-center">
-        <span class="material-symbols-outlined text-[18px]">edit</span>
-        <span>Ubah harga/stok</span>
+       class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-line bg-white hover:bg-surface-2 text-ink text-xs font-bold transition shadow-2xs active:scale-95 cursor-pointer">
+        <span class="material-symbols-outlined text-[17px]">arrow_back</span>
+        <span>Racik Resep Lain</span>
     </a>
+
+    <div class="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+        @if ($ration->layak())
+            @if (! $stokDipakai)
+                @if ($bisaDiterapkan)
+                    <button type="button" 
+                            onclick="bukaModal('modalKonfirmasiTerapkan')"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-black text-white bg-brand hover:bg-brand-dark transition shadow-md hover:shadow-brand/20 active:scale-95 cursor-pointer">
+                        <span class="material-symbols-outlined text-[19px]">blender</span>
+                        <span>Campur Pakan & Kurangi Stok Gudang</span>
+                    </button>
+                @else
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <button type="button" 
+                                disabled
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs font-bold text-muted bg-surface-2 border border-line cursor-not-allowed opacity-80"
+                                title="Stok bahan di gudang tidak mencukupi untuk adukan ini">
+                            <span class="material-symbols-outlined text-[18px]">lock</span>
+                            <span>Stok Gudang Kurang (Tidak Bisa Potong)</span>
+                        </button>
+                        <a href="{{ route('bahan.index') }}" 
+                           class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold text-brand bg-brand/10 hover:bg-brand/20 transition shrink-0 cursor-pointer"
+                           title="Tambah stok bahan di gudang pakan">
+                            <span class="material-symbols-outlined text-[17px]">add_shopping_cart</span>
+                            <span>Beli Bahan</span>
+                        </a>
+                    </div>
+                @endif
+            @else
+                <form method="POST" action="{{ route('ransum.batal-terapkan', $ration) }}" 
+                      data-confirm="Batalkan penerapan formula ini? Seluruh stok pakan akan dikembalikan utuh ke gudang Anda." 
+                      data-confirm-title="Batalkan Penerapan Racikan" 
+                      data-confirm-btn="Ya, Kembalikan Stok">
+                    @csrf
+                    <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold text-rose-700 hover:text-rose-800 bg-white hover:bg-rose-50 border border-rose-200 transition shadow-2xs active:scale-95 cursor-pointer">
+                        <span class="material-symbols-outlined text-[17px]">undo</span>
+                        <span>Batalkan Pemotongan Stok</span>
+                    </button>
+                </form>
+            @endif
+        @else
+            <a href="{{ route('bahan.index') }}" 
+               class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-2xs active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined text-[17px]">inventory_2</span>
+                <span>Buka Gudang & Tambah Stok</span>
+            </a>
+        @endif
+    </div>
 </div>
 
 {{-- MODAL KONFIRMASI CAMPUR PAKAN & POTONG STOK GUDANG (CENTERED) --}}

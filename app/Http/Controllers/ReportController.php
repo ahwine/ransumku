@@ -137,8 +137,8 @@ class ReportController extends Controller
 
         // 2. Modul Formulasi Ransum & Kepatuhan Standar Gizi (SNI / Strain)
         $ransumAktif = $farm->lastRation()?->load('items', 'standard');
-        $riwayatRansum = $farm->rations()->with('standard')->latest('id')->limit(5)->get();
-        $totalRiwayatRansum = $farm->rations()->count();
+        $riwayatRansum = $farm->rations()->where('status', 'layak')->with('standard')->latest('id')->limit(5)->get();
+        $totalRiwayatRansum = $farm->rations()->where('status', 'layak')->count();
         $totalStandarGizi = $farm->standards()->count();
 
         // 3. Modul Gudang Stok Bahan Baku & Audit Pembelian Pakan

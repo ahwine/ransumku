@@ -23,21 +23,30 @@ class RationCalculator
     {
         $fis = $farm->farmIngredients()->with('ingredient')->where('aktif', true)->get();
 
-        $bahan = $fis->map(fn ($fi) => [
-            'id' => $fi->ingredient_id,
-            'nama' => $fi->ingredient->nama,
-            'harga' => (float) $fi->harga,
-            'stok' => (float) $fi->stok_kg,
-            'protein' => (float) $fi->ingredient->protein,
-            'kalsium' => (float) $fi->ingredient->kalsium,
-            'fosfor' => (float) $fi->ingredient->fosfor,
-            'serat' => (float) $fi->ingredient->serat,
-            'energi' => (float) $fi->ingredient->energi,
-            'bk' => (float) ($fi->ingredient->bk ?? 88.0),
-            'min_persen' => $fi->min_persen !== null ? (float) $fi->min_persen : (float) ($fi->ingredient->min_persen ?? 0.0),
-            'max_persen' => $fi->max_persen !== null ? (float) $fi->max_persen : (float) ($fi->ingredient->max_persen ?? 100.0),
-            'catatan_keamanan' => $fi->ingredient->catatan_keamanan,
-        ])->values()->all();
+        $bahan = $fis->map(function ($fi) {
+            $bk = (float) ($fi->ingredient->bk ?? 88.0);
+            $stokSegar = (float) $fi->stok_kg;
+            // Konversi stok fisik segar di gudang (As-Fed) menjadi batas stok Bahan Kering (BK)
+            // agar hasil optimasi saat dikonversi kembali ke Timbangan Segar tidak pernah melebihi stok gudang.
+            $stokBk = round($stokSegar * (max(1.0, $bk) / 100.0), 4);
+
+            return [
+                'id' => $fi->ingredient_id,
+                'nama' => $fi->ingredient->nama,
+                'harga' => (float) $fi->harga,
+                'stok' => $stokBk,
+                'stok_segar' => $stokSegar,
+                'protein' => (float) $fi->ingredient->protein,
+                'kalsium' => (float) $fi->ingredient->kalsium,
+                'fosfor' => (float) $fi->ingredient->fosfor,
+                'serat' => (float) $fi->ingredient->serat,
+                'energi' => (float) $fi->ingredient->energi,
+                'bk' => $bk,
+                'min_persen' => $fi->min_persen !== null ? (float) $fi->min_persen : (float) ($fi->ingredient->min_persen ?? 0.0),
+                'max_persen' => $fi->max_persen !== null ? (float) $fi->max_persen : (float) ($fi->ingredient->max_persen ?? 100.0),
+                'catatan_keamanan' => $fi->ingredient->catatan_keamanan,
+            ];
+        })->values()->all();
 
         $target = $std->toTarget();
 
@@ -49,17 +58,38 @@ class RationCalculator
 
         $stokMap = collect($bahan)->keyBy('id');
         $belanja = [];
+        $idealAsFed = $ideal['feasible'] ? $this->converter->convertToAsFed($ideal['items']) : null;
+        $idealAsFedMap = isset($idealAsFed['items']) ? collect($idealAsFed['items'])->keyBy('nama') : collect();
+
         if ($ideal['feasible']) {
             foreach ($ideal['items'] as $it) {
-                $kurang = $it['kg'] - ($stokMap[$it['id']]['stok'] ?? 0);
+                $af = $idealAsFedMap->get($it['nama']);
+                $kebutuhanSegar = round((float) ($af['kg_as_fed'] ?? $it['kg']), 2);
+                $stokAda = round((float) ($stokMap[$it['id']]['stok_segar'] ?? $stokMap[$it['id']]['stok'] ?? 0), 2);
+                $kurang = round($kebutuhanSegar - $stokAda, 2);
                 if ($kurang > 0.05) {
                     $belanja[] = [
                         'nama' => $it['nama'],
-                        'kekurangan_kg' => round($kurang, 2),
+                        'stok_ada' => $stokAda,
+                        'kebutuhan_kg' => $kebutuhanSegar,
+                        'kekurangan_kg' => $kurang,
+                        'harga_satuan' => (int) round((float) $it['harga']),
                         'biaya' => (int) round($kurang * $it['harga']),
                     ];
                 }
             }
+        }
+
+        $pesanFinal = $hasil['pesan'];
+        if (! $hasil['feasible'] && $ideal['feasible'] && ! empty($belanja)) {
+            $rincianKurang = collect($belanja)->map(function ($b) {
+                $kurangStr = rtrim(rtrim(number_format($b['kekurangan_kg'], 2, ',', '.'), '0'), ',');
+                $butuhStr = rtrim(rtrim(number_format($b['kebutuhan_kg'], 2, ',', '.'), '0'), ',');
+                $adaStr = rtrim(rtrim(number_format($b['stok_ada'], 2, ',', '.'), '0'), ',');
+
+                return "{$b['nama']} kurang {$kurangStr} kg (butuh {$butuhStr} kg segar, stok gudang {$adaStr} kg)";
+            })->implode('; ');
+            $pesanFinal = ["Stok bahan pakan di gudang belum mencukupi takaran segar: {$rincianKurang}."];
         }
 
         $data = [
@@ -67,7 +97,7 @@ class RationCalculator
             'total_kg' => $totalKg,
             'jumlah_hari' => $hari,
             'status' => $hasil['feasible'] ? 'layak' : 'tidak_layak',
-            'pesan' => $hasil['pesan'],
+            'pesan' => $pesanFinal,
         ];
 
         $detail = [
@@ -83,12 +113,21 @@ class RationCalculator
             $data['total_biaya'] = (int) round($hasil['total_biaya']);
             $data['biaya_per_kg'] = (int) round($hasil['biaya_per_kg']);
             $detail['gizi'] = $this->cekGizi($hasil['gizi'], $target);
-            $detail['sisa_stok'] = collect($hasil['items'])->map(fn ($it) => [
-                'nama' => $it['nama'],
-                'sisa_kg' => round(($stokMap[$it['id']]['stok'] ?? 0) - $it['kg'], 2),
-            ])->all();
 
             $asFed = $this->converter->convertToAsFed($hasil['items']);
+            $asFedMap = collect($asFed['items'] ?? [])->keyBy('nama');
+
+            // Hitung sisa stok gudang menggunakan bobot timbangan segar (As-Fed) riil
+            $detail['sisa_stok'] = collect($hasil['items'])->map(function ($it) use ($stokMap, $asFedMap) {
+                $af = $asFedMap->get($it['nama']);
+                $kgSegar = (float) ($af['kg_as_fed'] ?? $it['kg']);
+                $stokAwal = (float) ($stokMap[$it['id']]['stok_segar'] ?? $stokMap[$it['id']]['stok'] ?? 0);
+                return [
+                    'nama' => $it['nama'],
+                    'sisa_kg' => max(0.0, round($stokAwal - $kgSegar, 2)),
+                ];
+            })->all();
+
             $safety = $this->safetyValidator->validate($hasil['items'], $hasil['gizi'], $target);
 
             $detail['as_fed'] = $asFed;
@@ -96,14 +135,25 @@ class RationCalculator
         } elseif ($ideal['feasible']) {
             $detail['ideal'] = [
                 'total_biaya' => (int) round($ideal['total_biaya']),
-                'items' => array_map(fn ($i) => [
-                    'nama' => $i['nama'], 'kg' => round($i['kg'], 2), 'persen' => round($i['persen'], 2),
-                ], $ideal['items']),
+                'total_as_fed_kg' => (float) ($idealAsFed['total_as_fed_kg'] ?? $totalKg),
+                'items' => array_map(function ($i) use ($idealAsFedMap) {
+                    $af = $idealAsFedMap->get($i['nama']);
+                    return [
+                        'nama' => $i['nama'],
+                        'kg' => round((float) ($af['kg_as_fed'] ?? $i['kg']), 2),
+                        'kg_bk' => round((float) $i['kg'], 2),
+                        'persen' => round((float) ($af['persen_as_fed'] ?? $i['persen']), 1),
+                        'persen_bk' => round((float) $i['persen'], 1),
+                    ];
+                }, $ideal['items']),
             ];
         }
         $data['hasil'] = $detail;
 
         return DB::transaction(function () use ($farm, $data, $hasil, $asFed) {
+            // Jangan biarkan percobaan yang belum bisa disusun menumpuk di database
+            $farm->rations()->where('status', 'tidak_layak')->delete();
+
             $ration = $farm->rations()->create($data);
             $asFedMap = isset($asFed['items']) ? collect($asFed['items'])->keyBy('nama') : collect();
             foreach ($hasil['items'] as $it) {

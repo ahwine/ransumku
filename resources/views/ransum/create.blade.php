@@ -27,7 +27,7 @@
                         <h2 class="text-h-sm font-bold text-ink">Bahan Pakan di Gudang</h2>
                         <p class="text-xs text-muted">Centang bahan yang siap digunakan dalam adukan racikan kali ini.</p>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-surface-2 text-ink border border-line shadow-2xs">
+                    <span class="text-xs font-bold text-brand">
                         {{ count($fis) }} Bahan Tersedia
                     </span>
                 </div>
@@ -91,57 +91,39 @@
                                            class="w-4 h-4 rounded text-brand focus:ring-brand/20 accent-brand cursor-pointer" 
                                            @checked($isAktif)>
                                     <span class="text-sm font-bold text-ink truncate">{{ $fi->ingredient->nama }}</span>
-                                    <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand/10 text-brand shrink-0">
-                                        BK {{ Fmt::num($fi->ingredient->bk ?? 88, 0) }}%
+                                    <span class="text-xs font-medium text-muted shrink-0">
+                                        BK {{ Fmt::num($fi->ingredient->bk ?? 88, 0) }}%{{ ($fi->max_persen ?? $fi->ingredient->max_persen ?? 100) < 100 ? ' · Maks '.Fmt::num($fi->max_persen ?? $fi->ingredient->max_persen, 0).'%' : '' }}
                                     </span>
-                                    @if (($fi->max_persen ?? $fi->ingredient->max_persen ?? 100) < 100)
-                                        <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-soft/80 text-amber-ink border border-amber/20 shrink-0">
-                                            Maks {{ Fmt::num($fi->max_persen ?? $fi->ingredient->max_persen, 0) }}%
-                                        </span>
-                                    @endif
                                 </label>
-                                <span class="text-[11px] font-semibold {{ $fi->hargaUsang() ? 'text-danger font-bold' : 'text-muted' }}">
+                                <span class="text-[11px] font-medium text-muted">
                                     {{ $fi->harga_updated_at ? 'diperbarui '.$fi->harga_updated_at->diffForHumans() : 'harga acuan baku' }}
                                 </span>
                             </div>
 
                             {{-- Grid: Ketersediaan Stok Gudang (Read-Only) & Harga Beli Satuan --}}
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                                {{-- Kolom 1: Ketersediaan Stok Gudang (Read-Only Status Box) --}}
-                                <div class="rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between {{ $isHabis ? 'bg-rose-50/80 border-rose-200' : ($isMenipis ? 'bg-amber-50/80 border-amber-200' : 'bg-surface-2/60 border-line/70') }}">
-                                    <div class="flex items-center justify-between gap-1 mb-1">
-                                        <span class="text-[10px] uppercase font-bold tracking-wider text-muted">Stok Gudang</span>
-                                        @if ($isHabis)
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-                                                <span>Habis</span>
-                                            </span>
-                                        @elseif ($isMenipis)
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                                                <span>Menipis</span>
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                                                <span>Tersedia</span>
-                                            </span>
-                                        @endif
-                                    </div>
+                                {{-- Kolom 1: Stok di Gudang (Tampilan Bersih Selaras dengan Harga) --}}
+                                <div class="flex flex-col justify-between">
                                     <div>
-                                        <div class="text-sm sm:text-base font-extrabold text-ink tabular-nums">
-                                            {{ Fmt::num($stok, 1) }} <span class="text-xs font-semibold text-muted">kg</span>
+                                        <label class="lbl text-[11px]">Stok Tersimpan di Gudang</label>
+                                        <div class="relative flex items-center">
+                                            <input type="text" 
+                                                   readonly 
+                                                   tabindex="-1"
+                                                   class="field bg-white border-line font-bold text-ink cursor-default !pr-10" 
+                                                   value="{{ Fmt::num($stok, 1) }}">
+                                            <span class="absolute right-3.5 text-xs font-normal text-muted pointer-events-none select-none">kg</span>
                                         </div>
-                                        <span class="text-[10px] text-muted block mt-0.5 truncate">
-                                            @if ($isHabis)
-                                                Persediaan kosong · Tambah di menu Stok Gudang
-                                            @elseif ($isMenipis)
-                                                Mendekati batas aman 3 hari kandang
-                                            @else
-                                                Mencukupi kebutuhan adukan racikan
-                                            @endif
-                                        </span>
                                     </div>
+                                    <span class="text-[10px] text-muted block mt-1 truncate">
+                                        @if ($isHabis)
+                                            <span class="text-rose-600 font-bold">Stok habis di gudang</span>
+                                        @elseif ($isMenipis)
+                                            <span class="text-amber-700 font-medium">Stok menipis (&le; 3 hari)</span>
+                                        @else
+                                            <span>Mencukupi kebutuhan adukan</span>
+                                        @endif
+                                    </span>
                                 </div>
 
                                 {{-- Kolom 2: Harga Beli Satuan (Terkini) --}}
@@ -244,55 +226,31 @@
 
         {{-- KOLOM KANAN: Parameter Optimasi & Action Button --}}
         <div class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-24">
-            {{-- 1. Jumlah Campuran --}}
+            {{-- 1. Jumlah Kebutuhan Pakan (Berdasarkan Hari) --}}
+            <input type="hidden" name="mode" value="hari">
             <section class="card space-y-3.5 p-4 sm:p-5">
                 <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[20px] text-brand">scale</span>
-                    <h2 class="text-h-sm font-bold text-ink">Jumlah Campuran</h2>
+                    <span class="material-symbols-outlined text-[20px] text-brand">calendar_month</span>
+                    <h2 class="text-h-sm font-bold text-ink">Jumlah Kebutuhan Pakan</h2>
                 </div>
 
-                {{-- Segmented Pill Mode Switcher --}}
-                <div class="grid grid-cols-2 gap-1 p-1 rounded-full bg-surface-2 border border-line/60">
-                    @foreach (['kg' => 'Langsung kg', 'hari' => 'Berdasarkan hari'] as $v => $l)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="mode" value="{{ $v }}" class="peer sr-only" @checked(old('mode', 'kg') === $v)>
-                            <span class="block text-center py-2 rounded-full text-xs font-bold text-muted transition-all peer-checked:bg-white peer-checked:text-brand peer-checked:shadow-2xs select-none">{{ $l }}</span>
-                        </label>
-                    @endforeach
-                </div>
-
-                {{-- Mode Langsung Kg --}}
-                <div data-mode="kg" class="space-y-1.5">
-                    <label class="lbl text-[11px]" for="total_kg">Target Volume Campuran (kg)</label>
-                    <div class="relative flex items-center">
-                        <input id="total_kg" 
-                               name="total_kg" 
-                               type="number" 
-                               min="1" 
-                               step="0.5" 
-                               inputmode="decimal" 
-                               class="field !pr-10 font-bold text-ink" 
-                               value="{{ old('total_kg', 40) }}">
-                        <span class="absolute right-3.5 text-xs font-bold text-muted pointer-events-none select-none">kg</span>
-                    </div>
-                </div>
-
-                {{-- Mode Berdasarkan Hari --}}
-                <div data-mode="hari" class="hidden space-y-3">
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <div>
-                            <label class="lbl text-[11px]" for="jumlah_hari">Jumlah Hari</label>
-                            <div class="relative flex items-center">
-                                <input id="jumlah_hari" 
-                                       name="jumlah_hari" 
-                                       type="number" 
-                                       min="1" 
-                                       inputmode="numeric" 
-                                       class="field !pr-12 font-semibold text-ink" 
-                                       value="{{ old('jumlah_hari', 7) }}">
-                                <span class="absolute right-3 text-[11px] font-bold text-muted pointer-events-none select-none">hari</span>
-                            </div>
+                <div class="space-y-3">
+                    <div class="space-y-1.5">
+                        <label class="lbl text-[11px]" for="jumlah_hari">Lama Kebutuhan Pakan (Hari)</label>
+                        <div class="relative flex items-center">
+                            <input id="jumlah_hari" 
+                                   name="jumlah_hari" 
+                                   type="number" 
+                                   min="1" 
+                                   max="60"
+                                   inputmode="numeric" 
+                                   class="field !pr-14 font-black text-ink text-sm" 
+                                   value="{{ old('jumlah_hari', 3) }}">
+                            <span class="absolute right-3.5 text-xs font-bold text-muted pointer-events-none select-none">hari</span>
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5 pt-1">
                         <div>
                             <label class="lbl text-[11px]" for="jumlah_ayam">Jumlah Ayam</label>
                             <div class="relative flex items-center">
@@ -301,32 +259,30 @@
                                        type="number" 
                                        min="1" 
                                        inputmode="numeric" 
-                                       class="field !pr-12 font-semibold text-ink" 
+                                       class="field !pr-12 font-semibold text-ink text-xs" 
                                        value="{{ old('jumlah_ayam', $farm->jumlah_ayam) }}">
                                 <span class="absolute right-3 text-[11px] font-bold text-muted pointer-events-none select-none">ekor</span>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <label class="lbl text-[11px]" for="konsumsi">
-                            <span>Konsumsi / ekor / hari</span>
-                            <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-2 text-muted border border-line">estimasi</span>
-                        </label>
-                        <div class="relative flex items-center">
-                            <input id="konsumsi" 
-                                   name="konsumsi" 
-                                   type="number" 
-                                   min="0.01" 
-                                   max="1" 
-                                   step="0.005" 
-                                   inputmode="decimal" 
-                                   class="field !pr-12 font-semibold text-ink" 
-                                   value="{{ old('konsumsi', (float) $konsumsi) }}">
-                            <span class="absolute right-3 text-[11px] font-bold text-muted pointer-events-none select-none">kg</span>
+                        <div>
+                            <label class="lbl text-[11px]" for="konsumsi">Porsi / Ekor</label>
+                            <div class="relative flex items-center">
+                                <input id="konsumsi" 
+                                       name="konsumsi" 
+                                       type="number" 
+                                       min="0.01" 
+                                       max="1" 
+                                       step="0.005" 
+                                       inputmode="decimal" 
+                                       class="field !pr-12 font-semibold text-ink text-xs" 
+                                       value="{{ old('konsumsi', (float) ($konsumsi ?: 0.11)) }}">
+                                <span class="absolute right-3 text-[11px] font-bold text-muted pointer-events-none select-none">kg</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="rounded-2xl bg-brand/5 border border-brand/20 p-3 flex items-center justify-between">
-                        <span class="text-xs text-ink font-semibold">Perkiraan total:</span>
+
+                    <div class="rounded-xl bg-brand/5 border border-brand/20 p-3 flex items-center justify-between">
+                        <span class="text-xs text-ink font-semibold">Estimasi Total Pakan:</span>
                         <span class="text-sm font-extrabold text-brand"><strong id="total_hari" class="font-black text-base">0</strong> kg</span>
                     </div>
                 </div>
@@ -335,19 +291,12 @@
             {{-- 2. Acuan Gizi Standar Resmi (Terkunci Otomatis) --}}
             <input type="hidden" name="standard_id" value="{{ $defaultStandardId }}">
             <section class="card space-y-3 p-4 sm:p-5 border border-line shadow-2xs">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 grid place-items-center shrink-0">
-                            <span class="material-symbols-outlined text-[18px]">verified</span>
-                        </span>
-                        <div>
-                            <h2 class="text-xs font-black uppercase tracking-wider text-ink">Standar Nutrisi Target</h2>
-                            <p class="text-[11px] text-muted">Baku Mutu Nasional Ayam Petelur Fapet UGM / SNI</p>
-                        </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px] text-brand shrink-0">verified</span>
+                    <div>
+                        <h2 class="text-xs font-black uppercase tracking-wider text-ink">Standar Nutrisi Target</h2>
+                        <p class="text-[11px] text-muted">Baku Mutu Nasional Ayam Petelur Fapet UGM / SNI</p>
                     </div>
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                        Otomatis
-                    </span>
                 </div>
 
                 @if ($targetStandard)
