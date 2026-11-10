@@ -327,18 +327,6 @@
                 $stokKg = max(0.0, (float)$d['stok_kg']);
                 $isHabis = $d['status'] === 'habis' || $stokKg <= 0.05;
                 $isMenipis = !$isHabis && ($d['status'] === 'menipis' || $stokKg <= $safetyKg || (float)$d['hari_tersisa'] <= 3.0);
-
-                if ($isHabis) {
-                    $barPercent = 5;
-                    $barColor = 'bg-[#dc2626]';
-                } elseif ($isMenipis) {
-                    $barPercent = min(50, max(8, round(($stokKg / $safetyKg) * 50, 1)));
-                    $barColor = 'bg-[#d97706]';
-                } else {
-                    $extraRatio = min(1.0, ($stokKg - $safetyKg) / max(1.0, $safetyKg * 3.0));
-                    $barPercent = min(82, round(50 + ($extraRatio * 32), 1));
-                    $barColor = 'bg-[#185a36]';
-                }
             @endphp
             <div class="bg-white rounded-2xl border border-[#e2e8e4] p-4 shadow-2xs space-y-3 relative overflow-hidden" 
                  data-stok-card 
@@ -373,24 +361,13 @@
                     </div>
                 </div>
 
-                {{-- Ketahanan Hari & Progress Bar --}}
+                {{-- Ketahanan Hari & Keterangan Stok --}}
                 <div class="space-y-1.5 pt-0.5">
                     <div class="flex items-baseline gap-1.5">
                         <span class="text-2xl font-black text-ink tracking-tight tabular-nums">
                             {{ Fmt::num($d['hari_tersisa'], $d['hari_tersisa'] == round($d['hari_tersisa']) ? 0 : 1) }}
                         </span>
                         <span class="text-xs font-bold text-ink">hari lagi</span>
-                    </div>
-
-                    {{-- Progress Bar Horizontal dengan Garis Marker Hitam Tepat di Ujung Bar (Tidak Penuh) --}}
-                    <div class="relative w-full py-1">
-                        <div class="w-full h-2 rounded-full bg-[#e5e7eb] overflow-hidden flex">
-                            <div class="h-full {{ $barColor }} transition-all duration-300" style="width: {{ $barPercent }}%;"></div>
-                        </div>
-                        {{-- Marker Hitam Vertikal Posisi Tepat di Ujung Bar --}}
-                        <div class="absolute top-1/2 -translate-y-1/2 w-[2px] h-3.5 bg-black z-10 pointer-events-none rounded-full" 
-                             style="left: {{ min(98, max(2, $barPercent)) }}%; transform: translate(-50%, -50%);" 
-                             title="Level stok saat ini: {{ $d['hari_tersisa'] }} hari"></div>
                     </div>
 
                     {{-- Keterangan Stok & Batas Aman --}}
