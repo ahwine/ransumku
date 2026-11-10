@@ -53,13 +53,17 @@ class IngredientController extends Controller
                 $badgeClass = 'bg-rose-100 text-rose-800 border-rose-300';
             } elseif ($stok <= $safetyBuffer3Hari) {
                 $status = 'menipis';
-                $statusLabel = 'Perlu Pesan (Menipis)';
-                $badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                $statusLabel = 'Hampir batas';
+                $badgeClass = 'bg-[#fef3c7] text-[#92400e] border-[#fed7aa]';
             } else {
                 $status = 'aman';
-                $statusLabel = 'Stok Aman';
-                $badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                $statusLabel = 'Aman';
+                $badgeClass = 'bg-[#d1fae5] text-[#065f46] border-[#a7f3d0]';
             }
+
+            $catalog = FarmBootstrap::getMasterBahanCatalog();
+            $catEntry = $catalog[$fi->ingredient->nama ?? ''] ?? null;
+            $subKategori = trim((string) str_replace(['Sumber ', 'sumber '], '', $catEntry['kategori'] ?? 'Bahan baku'));
 
             return [
                 'fi' => $fi,
@@ -71,11 +75,19 @@ class IngredientController extends Controller
                 'status' => $status,
                 'status_label' => $statusLabel,
                 'badge_class' => $badgeClass,
+                'sub_kategori' => $subKategori,
             ];
         });
 
+        // Urutkan default berdasarkan ketahanan hari tersisa paling sedikit (paling cepat habis)
+        $stokGudangData = $stokGudangData->sortBy('hari_tersisa')->values();
+        $bahanTerendah = $stokGudangData->first();
+
         $totalStokKg = $stokGudangData->sum('stok_kg');
         $totalNilaiRp = $stokGudangData->sum(fn ($d) => $d['stok_kg'] * $d['harga']);
+        $totalNilaiSingkat = $totalNilaiRp >= 1_000_000
+            ? 'Rp ' . round($totalNilaiRp / 1_000_000, 1) . 'jt'
+            : ($totalNilaiRp >= 1_000 ? 'Rp ' . round($totalNilaiRp / 1_000, 0) . 'rb' : 'Rp ' . number_format($totalNilaiRp, 0, ',', '.'));
         $kritisCount = $stokGudangData->whereIn('status', ['habis', 'menipis'])->count();
 
         // Katalog Master untuk Dropdown Tambah Bahan
@@ -88,8 +100,10 @@ class IngredientController extends Controller
             'farm',
             'q',
             'stokGudangData',
+            'bahanTerendah',
             'totalStokKg',
             'totalNilaiRp',
+            'totalNilaiSingkat',
             'kritisCount',
             'pakanHarianKg',
             'masterCatalog',

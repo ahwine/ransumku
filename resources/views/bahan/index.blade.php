@@ -3,7 +3,10 @@
 @section('isi')
 @use('App\Support\Fmt')
 
-<div class="space-y-5">
+{{-- ======================================================== --}}
+{{-- 1. TAMPILAN DESKTOP (> 510px) - Desain Klasik Komprehensif --}}
+{{-- ======================================================== --}}
+<div class="hidden sm:block space-y-5">
     {{-- Header Halaman Bersih & Humanis --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -17,7 +20,7 @@
                     onclick="bukaModal('modalTambahBahan')"
                     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer">
                 <span class="material-symbols-outlined text-[17px]">add</span>
-                <span>+ Tambah Bahan ke Gudang</span>
+                <span>Tambah Bahan ke Gudang</span>
             </button>
         </div>
     </div>
@@ -211,17 +214,282 @@
                             onclick="bukaModal('modalTambahBahan')"
                             class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-2xs active:scale-95 cursor-pointer">
                         <span class="material-symbols-outlined text-[18px]">add</span>
-                        <span>+ Tambah Bahan Pertama ke Gudang</span>
+                        <span>Tambah Bahan Pertama ke Gudang</span>
                     </button>
                 </div>
             @endforelse
 
             {{-- Empty Search Filter --}}
-            <div id="stok-empty-filter" class="hidden col-span-full bg-white rounded-xl border border-line text-center py-10 text-muted space-y-1">
+            <div id="stok-empty-desktop" class="hidden col-span-full bg-white rounded-xl border border-line text-center py-10 text-muted space-y-1">
                 <span class="material-symbols-outlined text-[36px] text-muted/50 mb-1 block">search_off</span>
                 <p class="font-bold text-ink text-sm">Bahan Gudang Tidak Ditemukan</p>
                 <p class="text-xs text-muted">Tidak ada bahan pakan di gudang yang sesuai dengan kata kunci pencarian Anda.</p>
             </div>
+        </div>
+    </div>
+</div>
+
+
+
+{{-- ======================================================== --}}
+{{-- 2. TAMPILAN MOBILE (<= 510px) - Sesuai Mockup Referensi  --}}
+{{-- ======================================================== --}}
+<div class="sm:hidden space-y-4">
+    {{-- 1. Header Halaman Mobile --}}
+    <div class="space-y-0.5">
+        <h1 class="text-xl font-black text-ink tracking-tight">Stok pakan gudang</h1>
+        <p class="text-xs text-muted font-medium">Pantau stok, batas aman, dan harga bahan.</p>
+    </div>
+
+    {{-- 2. Card Banner Hijau (Stok Terendah & Ringkasan Gudang) --}}
+    <div class="bg-[#185a36] text-white rounded-2xl p-4 shadow-xs space-y-3.5">
+        <div>
+            <span class="text-[10px] font-bold text-emerald-200/90 tracking-wider uppercase block">STOK TERENDAH</span>
+            <h2 class="text-base font-black text-white tracking-tight mt-0.5">
+                @if ($bahanTerendah)
+                    {{ $bahanTerendah['fi']->ingredient->nama }} tinggal {{ Fmt::num($bahanTerendah['hari_tersisa'], $bahanTerendah['hari_tersisa'] == round($bahanTerendah['hari_tersisa']) ? 0 : 1) }} hari
+                @else
+                    Semua stok bahan aman
+                @endif
+            </h2>
+            <p class="text-xs text-emerald-100/80 mt-0.5 leading-relaxed">
+                @if ($bahanTerendah && $bahanTerendah['status'] !== 'aman')
+                    Segera belanja sebelum mendekati batas aman.
+                @else
+                    Seluruh stok pakan di gudang terpantau mencukupi siklus kebutuhan kandang.
+                @endif
+            </p>
+        </div>
+
+        {{-- Divider Tipis --}}
+        <div class="border-t border-emerald-600/40"></div>
+
+        {{-- 3 Kolom Metrik Ringkasan --}}
+        <div class="grid grid-cols-3 gap-2 text-left">
+            <div>
+                <span class="text-[10px] font-bold text-emerald-200/80 uppercase tracking-wider block">TOTAL</span>
+                <div class="text-base font-black text-white mt-0.5 tabular-nums">
+                    {{ Fmt::num($totalStokKg, 0) }} kg
+                </div>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-emerald-200/80 uppercase tracking-wider block">NILAI</span>
+                <div class="text-base font-black text-white mt-0.5 tabular-nums">
+                    {{ $totalNilaiSingkat }}
+                </div>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-emerald-200/80 uppercase tracking-wider block">BUTUH</span>
+                <div class="text-base font-black text-white mt-0.5 tabular-nums">
+                    {{ Fmt::num($pakanHarianKg, 0) }} kg/hr
+                </div>
+            </div>
+        </div>
+
+        {{-- Tombol Aksi + Catat belanja --}}
+        <div>
+            <button type="button" 
+                    onclick="bukaModal('modalTambahBahan')"
+                    class="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white text-[#185a36] font-bold text-xs hover:bg-emerald-50 transition shadow-2xs active:scale-98 cursor-pointer">
+                <span class="text-sm font-black">+</span>
+                <span>Catat belanja</span>
+            </button>
+        </div>
+    </div>
+
+    {{-- 3. Baris Input Pencarian Cepat Mobile (Full Width) --}}
+    <div class="relative w-full">
+        <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[17px] text-muted pointer-events-none">search</span>
+        <input type="text" 
+               id="search-stok-mobile"
+               oninput="filterBahanStok(this)"
+               placeholder="Cari bahan pakan" 
+               class="w-full pl-9 pr-3 py-2.5 bg-white border border-[#dce3de] rounded-xl text-xs font-medium text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-[#185a36]/20 focus:border-[#185a36] shadow-2xs transition"
+               autocomplete="off">
+    </div>
+
+    {{-- 4. Subheader Bahan di Gudang & Sorting Label --}}
+    <div class="flex items-center justify-between text-xs font-bold text-ink px-0.5">
+        <span id="label-bahan-count-mobile">
+            {{ count($stokGudangData) }} bahan di gudang
+        </span>
+        <span class="text-[11px] text-muted">
+            Urut: paling cepat habis
+        </span>
+    </div>
+
+    {{-- 5. List Kartu Bahan Stok Mobile --}}
+    <div class="space-y-3.5">
+        @forelse ($stokGudangData as $d)
+            @php
+                $rawNama = $d['fi']->ingredient->nama ?? '';
+                $safetyKg = max(0.1, (float)$d['safety_buffer_kg']);
+                $stokKg = max(0.0, (float)$d['stok_kg']);
+                $isHabis = $d['status'] === 'habis' || $stokKg <= 0.05;
+                $isMenipis = !$isHabis && ($d['status'] === 'menipis' || $stokKg <= $safetyKg || (float)$d['hari_tersisa'] <= 3.0);
+
+                if ($isHabis) {
+                    $barPercent = 5;
+                    $barColor = 'bg-[#dc2626]';
+                } elseif ($isMenipis) {
+                    $barPercent = min(50, max(8, round(($stokKg / $safetyKg) * 50, 1)));
+                    $barColor = 'bg-[#d97706]';
+                } else {
+                    $extraRatio = min(1.0, ($stokKg - $safetyKg) / max(1.0, $safetyKg * 3.0));
+                    $barPercent = min(82, round(50 + ($extraRatio * 32), 1));
+                    $barColor = 'bg-[#185a36]';
+                }
+            @endphp
+            <div class="bg-white rounded-2xl border border-[#e2e8e4] p-4 shadow-2xs space-y-3 relative overflow-hidden" 
+                 data-stok-card 
+                 data-stok-nama="{{ strtolower($rawNama) }}">
+
+                {{-- Header Kartu: Nama Bahan, Sub Kategori, Badge Status --}}
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h3 class="text-base font-black text-ink tracking-tight truncate">
+                            {{ $rawNama }}
+                        </h3>
+                        <p class="text-xs text-muted mt-0.5 truncate capitalize">
+                            {{ $d['sub_kategori'] }}
+                        </p>
+                    </div>
+
+                    {{-- Badge Status Pill --}}
+                    <div>
+                        @if ($isMenipis)
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#fef3c7] text-[#92400e] border border-[#fed7aa] shrink-0">
+                                Hampir batas
+                            </span>
+                        @elseif ($isHabis)
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#fee2e2] text-[#991b1b] border border-[#fecaca] shrink-0">
+                                Habis
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#d1fae5] text-[#065f46] shrink-0">
+                                <span class="text-xs">✓</span> Aman
+                            </span>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Ketahanan Hari & Progress Bar --}}
+                <div class="space-y-1.5 pt-0.5">
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-2xl font-black text-ink tracking-tight tabular-nums">
+                            {{ Fmt::num($d['hari_tersisa'], $d['hari_tersisa'] == round($d['hari_tersisa']) ? 0 : 1) }}
+                        </span>
+                        <span class="text-xs font-bold text-ink">hari lagi</span>
+                    </div>
+
+                    {{-- Progress Bar Horizontal dengan Garis Marker Hitam Tepat di Ujung Bar (Tidak Penuh) --}}
+                    <div class="relative w-full py-1">
+                        <div class="w-full h-2 rounded-full bg-[#e5e7eb] overflow-hidden flex">
+                            <div class="h-full {{ $barColor }} transition-all duration-300" style="width: {{ $barPercent }}%;"></div>
+                        </div>
+                        {{-- Marker Hitam Vertikal Posisi Tepat di Ujung Bar --}}
+                        <div class="absolute top-1/2 -translate-y-1/2 w-[2px] h-3.5 bg-black z-10 pointer-events-none rounded-full" 
+                             style="left: {{ min(98, max(2, $barPercent)) }}%; transform: translate(-50%, -50%);" 
+                             title="Level stok saat ini: {{ $d['hari_tersisa'] }} hari"></div>
+                    </div>
+
+                    {{-- Keterangan Stok & Batas Aman --}}
+                    <div class="flex items-center justify-between text-[11px] text-muted font-medium">
+                        <span>Stok {{ Fmt::num($d['stok_kg'], $d['stok_kg'] == round($d['stok_kg']) ? 0 : 1) }} kg</span>
+                        <span>Batas aman {{ Fmt::num($d['safety_buffer_kg'], 1) }} kg</span>
+                    </div>
+                </div>
+
+                {{-- 2 Kotak Metrik Berdampingan (Pemakaian & Harga Beli) --}}
+                <div class="grid grid-cols-2 gap-2 pt-0.5">
+                    <div class="bg-[#f8faf9] border border-[#edf2ee] rounded-xl p-2.5 space-y-0.5">
+                        <span class="text-[10px] font-bold text-muted uppercase tracking-wider block">PEMAKAIAN</span>
+                        <div class="text-xs sm:text-sm font-black text-ink tabular-nums">
+                            {{ Fmt::num($d['kebutuhan_harian_kg'], 1) }} kg/hari
+                        </div>
+                    </div>
+                    <div class="bg-[#f8faf9] border border-[#edf2ee] rounded-xl p-2.5 space-y-0.5">
+                        <span class="text-[10px] font-bold text-muted uppercase tracking-wider block">HARGA BELI</span>
+                        <div class="text-xs sm:text-sm font-black text-ink tabular-nums truncate">
+                            {{ Fmt::rp($d['harga']) }}/kg
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Footer: Nutrisi Singkat, Diperbarui, Tombol Edit & Menu Titik Tiga --}}
+                <div class="pt-2 border-t border-[#f0f4f1] flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        @if ($d['fi']->ingredient)
+                            <div class="text-[11px] text-muted truncate">
+                                PK {{ Fmt::num($d['fi']->ingredient->protein, 0) }}% · EM {{ number_format($d['fi']->ingredient->energi, 0, ',', '.') }} kkal · Ca {{ Fmt::num($d['fi']->ingredient->kalsium, 0) }}%
+                            </div>
+                        @endif
+                        <div class="text-[10px] text-muted/80 mt-0.5 truncate">
+                            {{ $d['fi']->harga_updated_at ? 'Diperbarui '.$d['fi']->harga_updated_at->diffForHumans() : 'Diperbarui 2 minggu lalu' }}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        {{-- Tombol Edit --}}
+                        <button type="button" 
+                                onclick="bukaModalUpdateStok({{ $d['fi']->id }}, '{{ addslashes($rawNama) }}', {{ (float)$d['stok_kg'] }}, {{ (int)$d['harga'] }})"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-ink bg-white border border-[#d5ded8] hover:border-[#185a36] shadow-2xs transition active:scale-95 cursor-pointer">
+                            <span class="material-symbols-outlined text-[15px]">edit</span>
+                            <span>Edit</span>
+                        </button>
+
+                        {{-- Tombol Dropdown ⋮ Menu --}}
+                        <div class="relative" data-dropdown-wrap>
+                            <button type="button" 
+                                    onclick="toggleDropdownMenu(this, event)"
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-xl text-ink bg-white border border-[#d5ded8] hover:border-[#185a36] shadow-2xs transition active:scale-95 cursor-pointer"
+                                    title="Menu lainnya">
+                                <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                            </button>
+
+                            {{-- Menu Popup Hapus --}}
+                            <div class="dropdown-menu-target hidden absolute right-0 bottom-full mb-1 w-44 bg-white rounded-xl shadow-lg border border-[#e2e8e4] py-1 z-30 text-xs">
+                                <form method="POST" 
+                                      action="{{ route('bahan.gudang.destroy', $d['fi']) }}"
+                                      data-confirm="Hapus {{ $rawNama }} dari gudang pakan Anda? Bahan ini tidak akan muncul lagi di peracik ransum."
+                                      data-confirm-title="Hapus Bahan dari Gudang"
+                                      data-confirm-btn="Ya, Hapus Bahan">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            class="w-full flex items-center gap-2 px-3 py-1.5 text-rose-600 hover:bg-rose-50 font-semibold text-left transition cursor-pointer">
+                                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                                        <span>Hapus dari Gudang</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="bg-white rounded-2xl border border-dashed border-amber-300 p-8 text-center space-y-3">
+                <span class="material-symbols-outlined text-[44px] text-amber-500 block">inventory_2</span>
+                <div class="space-y-1">
+                    <h3 class="text-base font-bold text-ink">Gudang Pakan Masih Kosong</h3>
+                    <p class="text-xs text-muted max-w-md mx-auto leading-relaxed">
+                        Belum ada bahan pakan yang terdaftar di gudang kandang ini. Tambahkan bahan pakan yang Anda miliki untuk mulai memantau stok dan meracik ransum.
+                    </p>
+                </div>
+                <button type="button" 
+                        onclick="bukaModal('modalTambahBahan')"
+                        class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-brand hover:bg-brand-dark transition shadow-2xs active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                    <span>Tambah Bahan Pertama ke Gudang</span>
+                </button>
+            </div>
+        @endforelse
+
+        {{-- Empty Search Filter Mobile --}}
+        <div id="stok-empty-mobile" class="hidden bg-white rounded-xl border border-line text-center py-10 text-muted space-y-1">
+            <span class="material-symbols-outlined text-[36px] text-muted/50 mb-1 block">search_off</span>
+            <p class="font-bold text-ink text-sm">Bahan Gudang Tidak Ditemukan</p>
+            <p class="text-xs text-muted">Tidak ada bahan pakan di gudang yang sesuai dengan kata kunci pencarian Anda.</p>
         </div>
     </div>
 </div>
@@ -583,20 +851,64 @@ function bukaModalUpdateStok(id, nama, stok, harga) {
 
 function filterBahanStok(input) {
     const query = input.value.toLowerCase().trim();
+    
+    // Sinkronkan input pencarian desktop & mobile jika ada
+    const searchDesktop = document.getElementById('search-stok-live');
+    const searchMobile = document.getElementById('search-stok-mobile');
+    if (input === searchDesktop && searchMobile && searchMobile.value !== input.value) {
+        searchMobile.value = input.value;
+    } else if (input === searchMobile && searchDesktop && searchDesktop.value !== input.value) {
+        searchDesktop.value = input.value;
+    }
+
     const cards = document.querySelectorAll('[data-stok-card]');
-    const emptyState = document.getElementById('stok-empty-filter');
-    let visibleCount = 0;
+    const emptyDesktop = document.getElementById('stok-empty-desktop');
+    const emptyMobile = document.getElementById('stok-empty-mobile');
+    const labelCount = document.getElementById('label-bahan-count-mobile');
+    let visibleDesktop = 0;
+    let visibleMobile = 0;
 
     cards.forEach(card => {
         const nama = card.getAttribute('data-stok-nama') || '';
         const match = query === '' || nama.includes(query);
         card.style.display = match ? '' : 'none';
-        if (match) visibleCount++;
+        if (match) {
+            if (card.closest('.hidden.sm\:block')) {
+                visibleDesktop++;
+            } else {
+                visibleMobile++;
+            }
+        }
     });
 
-    if (emptyState) {
-        emptyState.classList.toggle('hidden', visibleCount > 0);
+    if (emptyDesktop) {
+        emptyDesktop.classList.toggle('hidden', visibleDesktop > 0);
+    }
+    if (emptyMobile) {
+        emptyMobile.classList.toggle('hidden', visibleMobile > 0);
+    }
+    if (labelCount) {
+        labelCount.textContent = `${visibleMobile} bahan di gudang`;
     }
 }
+
+function toggleDropdownMenu(btn, e) {
+    e.stopPropagation();
+    const wrap = btn.closest('[data-dropdown-wrap]');
+    if (!wrap) return;
+    const menu = wrap.querySelector('.dropdown-menu-target');
+    if (!menu) return;
+    const isHidden = menu.classList.contains('hidden');
+    document.querySelectorAll('.dropdown-menu-target').forEach(m => m.classList.add('hidden'));
+    if (isHidden) {
+        menu.classList.remove('hidden');
+    }
+}
+
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-dropdown-wrap]')) {
+        document.querySelectorAll('.dropdown-menu-target').forEach(m => m.classList.add('hidden'));
+    }
+});
 </script>
 @endsection
