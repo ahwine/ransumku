@@ -344,7 +344,7 @@ class RationController extends Controller
         $this->own($ration);
         $farm = $this->farm();
         $std = $ration->standard;
-        $pesan = 'Dihitung ulang dengan harga dan stok terbaru.';
+        $pesan = 'Ransum berhasil dihitung ulang.';
 
         if (! $std) {
             $std = app(NutrientStandardService::class)->getRecommendedStandard($farm)
@@ -353,18 +353,18 @@ class RationController extends Controller
 
             if (! $std) {
                 return redirect()->route('ransum.show', $ration)->withErrors([
-                    'standard_id' => 'Tidak ada acuan gizi aktif untuk menghitung ulang ransum ini.',
+                    'standard_id' => 'Tidak ada acuan gizi aktif.',
                 ]);
             }
 
-            $pesan = "Acuan lama sudah tidak ada di katalog aktif; dihitung ulang memakai acuan \"{$std->nama}\" dengan harga dan stok terbaru.";
+            $pesan = 'Ransum dihitung ulang dengan acuan baru.';
         }
 
         $hari = $r->filled('jumlah_hari') ? max(1, min(365, (int) $r->input('jumlah_hari'))) : $ration->jumlah_hari;
         if ($r->filled('jumlah_hari')) {
             $pakanHarian = max(1.0, (float) ($farm->jumlah_ayam * ($farm->konsumsi_per_ekor ?: 0.11)));
             $totalKg = round($hari * $pakanHarian, 2);
-            $pesan = "Formula dihitung ulang untuk kebutuhan {$hari} hari ({$totalKg} kg).";
+            $pesan = "Ransum dihitung ulang ({$hari} hari).";
         } else {
             $totalKg = (float) $ration->total_kg;
         }
@@ -391,16 +391,15 @@ class RationController extends Controller
         $farm = $this->farm();
 
         if (! $ration->layak()) {
-            return back()->withErrors(['terapkan' => 'Ransum tidak layak nutrisi tidak dapat diterapkan ke gudang.']);
+            return back()->withErrors(['terapkan' => 'Ransum tidak layak diterapkan.']);
         }
 
         $hasil = $ration->hasil ?? [];
         if (! empty($hasil['stok_dipotong'])) {
-            return back()->with('info', 'Ransum ini sudah pernah diterapkan ke gudang pakan.');
+            return back()->with('info', 'Ransum sudah diterapkan.');
         }
 
         $items = $ration->items;
-        $dipotong = [];
 
         foreach ($items as $it) {
             $kgKurang = round((float) ($it->kg_as_fed ?? $it->kg), 2);
@@ -422,7 +421,6 @@ class RationController extends Controller
                 $stokAwal = (float) $fi->stok_kg;
                 $stokAkhir = max(0.0, round($stokAwal - $kgKurang, 2));
                 $fi->update(['stok_kg' => $stokAkhir]);
-                $dipotong[] = "{$it->nama} (-" . Fmt::num($kgKurang, 2) . " kg)";
             }
         }
 
@@ -430,7 +428,7 @@ class RationController extends Controller
         $hasil['applied_at'] = now()->toIso8601String();
         $ration->update(['hasil' => $hasil]);
 
-        return back()->with('ok', 'Racikan pakan berhasil diterapkan! Stok gudang telah dipotong otomatis: ' . implode(', ', $dipotong));
+        return back()->with('ok', 'Ransum diterapkan & stok gudang dipotong.');
     }
 
     /**
@@ -443,7 +441,7 @@ class RationController extends Controller
 
         $hasil = $ration->hasil ?? [];
         if (empty($hasil['stok_dipotong'])) {
-            return back()->with('info', 'Ransum ini belum pernah diterapkan.');
+            return back()->with('info', 'Ransum belum pernah diterapkan.');
         }
 
         $items = $ration->items;
@@ -470,7 +468,7 @@ class RationController extends Controller
         unset($hasil['stok_dipotong'], $hasil['applied_at']);
         $ration->update(['hasil' => $hasil]);
 
-        return back()->with('ok', 'Penerapan racikan dibatalkan. Stok gudang berhasil dikembalikan.');
+        return back()->with('ok', 'Penerapan dibatalkan & stok dikembalikan.');
     }
 
     public function destroy(Ration $ration)

@@ -100,14 +100,18 @@
 {{-- ======================================================== --}}
 {{-- 2. MODAL TAMBAH KANDANG BARU                             --}}
 {{-- ======================================================== --}}
+@php
+    $daftarStrain = ['Lohmann Brown', 'Isa Brown', 'Hy-Line Brown', 'Novogen Brown', 'H&N Brown Nick', 'Ayam Arab / KUB Petelur'];
+    $strainTambah = old('strain_ayam', 'Lohmann Brown');
+@endphp
 <div id="modal-tambah-kandang" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0 pointer-events-none" role="dialog" aria-modal="true">
     <div class="absolute inset-0" onclick="tutupModal('modal-tambah-kandang')"></div>
 
-    <div data-modal-card class="relative z-10 w-full max-w-xl bg-white rounded-2xl p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
+    <div data-modal-card class="relative z-10 w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 overflow-visible">
         <div class="flex items-center justify-between pb-3 border-b border-line">
             <div>
-                <h3 class="text-sm md:text-base font-bold text-ink">Input Data Kandang Baru</h3>
-                <p class="text-xs text-muted mt-0.5">Lengkapi data unit kandang baru. Standar nutrisi & template disiapkan otomatis.</p>
+                <h3 class="text-sm md:text-base font-bold text-ink">Tambah Unit Kandang Baru</h3>
+                <p class="text-xs text-muted mt-0.5">Isi nama kandang, populasi, umur ayam saat ini, dan lokasi kandang.</p>
             </div>
             <button type="button" onclick="tutupModal('modal-tambah-kandang')" class="text-muted hover:text-ink transition cursor-pointer p-1" aria-label="Tutup">
                 <span class="material-symbols-outlined text-[20px]">close</span>
@@ -117,6 +121,8 @@
         <form method="POST" action="{{ route('kandang.store') }}" class="space-y-3.5">
             @csrf
             <input type="hidden" name="fase" value="produksi">
+            <input type="hidden" name="tgl_chick_in" value="{{ today()->toDateString() }}">
+
             <div>
                 <label class="lbl">Nama Kandang <span class="text-danger">*</span></label>
                 <input type="text" name="nama" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: Kandang Flamboyan" required autocomplete="off">
@@ -124,45 +130,51 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="lbl">Populasi Awal (Ekor) <span class="text-danger">*</span></label>
+                    <label class="lbl">Populasi Ayam (Ekor) <span class="text-danger">*</span></label>
                     <input type="number" name="jumlah_ayam" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: 200" required>
                 </div>
                 <div>
-                    <label class="lbl">Strain / Jenis Bibit Petelur</label>
-                    <select name="strain_ayam" class="field !min-h-10 text-xs font-semibold bg-white cursor-pointer">
-                        <option value="Lohmann Brown" {{ old('strain_ayam') === 'Lohmann Brown' ? 'selected' : '' }}>Lohmann Brown</option>
-                        <option value="Isa Brown" {{ old('strain_ayam') === 'Isa Brown' ? 'selected' : '' }}>Isa Brown</option>
-                        <option value="Hy-Line Brown" {{ old('strain_ayam') === 'Hy-Line Brown' ? 'selected' : '' }}>Hy-Line Brown</option>
-                        <option value="Novogen Brown" {{ old('strain_ayam') === 'Novogen Brown' ? 'selected' : '' }}>Novogen Brown</option>
-                        <option value="H&N Brown Nick" {{ old('strain_ayam') === 'H&N Brown Nick' ? 'selected' : '' }}>H&N Brown Nick</option>
-                        <option value="Ayam Arab / KUB Petelur" {{ old('strain_ayam') === 'Ayam Arab / KUB Petelur' ? 'selected' : '' }}>Ayam Arab / KUB Petelur</option>
-                    </select>
+                    <label class="lbl">Umur Ayam Saat Ini (Minggu) <span class="text-danger">*</span></label>
+                    <input type="number" name="umur_awal_minggu" min="1" max="120" class="field !min-h-10 text-xs font-medium" placeholder="Contoh: 20" required>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="lbl flex items-center justify-between">
-                        <span>Sentra Lokasi / Kota</span>
-                        <span class="text-[10px] text-brand font-bold bg-brand/10 px-1.5 py-0.5 rounded">Paten ESP32</span>
-                    </label>
-                    @include('partials.dropdown-pilih-kota', ['id' => 'kota-tambah-global', 'value' => old('lokasi_kota', 'Surabaya'), 'presetKota' => $presetKota])
-                    <p class="text-[10px] text-muted mt-1 leading-tight">Ditentukan 1x saat buat kandang untuk koordinat mikro & integrasi sensor IoT.</p>
+                    <label class="lbl">Jenis Bibit (Strain)</label>
+                    <div class="relative inline-block w-full text-left custom-dropdown-container z-30" id="strain-tambah-global">
+                        <input type="hidden" name="strain_ayam" value="{{ $strainTambah }}" class="dropdown-hidden-input">
+                        <button type="button"
+                                onclick="toggleCustomDropdown('strain-tambah-global', event)"
+                                class="dropdown-trigger flex items-center justify-between w-full min-h-10 px-3.5 py-2 bg-white border border-line rounded-lg text-xs font-medium text-ink shadow-2xs hover:border-brand/40 focus:border-brand focus:ring-2 focus:ring-brand/15 transition cursor-pointer text-left">
+                            <span class="font-medium text-xs text-ink truncate dropdown-selected-label">{{ $strainTambah }}</span>
+                            <span class="material-symbols-outlined text-[16px] text-muted transition-transform duration-200 dropdown-caret shrink-0">expand_more</span>
+                        </button>
+                        <div class="dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full rounded-xl bg-white border border-line shadow-2xl p-1.5 z-50 select-none custom-dropdown-menu space-y-0.5">
+                            @foreach ($daftarStrain as $st)
+                                @php $isStSelected = ($strainTambah === $st); @endphp
+                                <button type="button"
+                                        data-city-item
+                                        onclick="selectCustomDropdownKotaInput('strain-tambah-global', '{{ $st }}', '{{ $st }}', '')"
+                                        class="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-all cursor-pointer group {{ $isStSelected ? 'bg-surface font-bold text-brand' : 'hover:bg-surface/80 text-ink font-medium' }}">
+                                    <span class="truncate {{ $isStSelected ? 'text-brand font-bold' : 'text-ink font-medium group-hover:text-brand' }}">{{ $st }}</span>
+                                    <span data-active-badge class="{{ $isStSelected ? 'inline-block' : 'hidden' }} text-xs font-bold text-brand shrink-0">Dipilih</span>
+                                    <span data-choose-hint class="{{ $isStSelected ? 'hidden' : 'inline-block' }} text-[11px] text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0">Pilih</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
                 <div>
-                    <label class="lbl">Umur Masuk Ayam (Minggu) <span class="text-danger">*</span></label>
-                    <input type="number" name="umur_awal_minggu" value="18" min="1" max="120" class="field !min-h-10 text-xs font-medium" placeholder="Default: 18" required>
+                    <label class="lbl">Sentra Lokasi / Kota</label>
+                    @include('partials.dropdown-pilih-kota', ['id' => 'kota-tambah-global', 'value' => old('lokasi_kota', 'Surabaya'), 'presetKota' => $presetKota])
                 </div>
             </div>
 
-            <div class="pt-1">
-                <label class="lbl">Tanggal Masuk (Chick-in)</label>
-                <input type="date" name="tgl_chick_in" value="{{ now()->subWeeks(2)->toDateString() }}" max="{{ today()->toDateString() }}" class="field !min-h-10 text-xs font-medium">
-                <p class="text-[11px] text-muted mt-1 flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px] text-brand">info</span>
-                    <span>Sub-fase produksi (Pullet, Awal Bertelur, Puncak, Stabil) terdeteksi otomatis dari umur ayam.</span>
-                </p>
-            </div>
+            <p class="text-[11px] text-muted flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px] text-brand shrink-0">info</span>
+                <span>Fase produksi menyesuaikan umur ayam secara otomatis.</span>
+            </p>
 
             <div class="flex justify-end items-center gap-2 pt-3 border-t border-line">
                 <button type="button" onclick="tutupModal('modal-tambah-kandang')" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold text-ink bg-white hover:bg-surface border border-line transition shadow-2xs cursor-pointer">
@@ -180,14 +192,17 @@
 {{-- 3. MODAL EDIT KANDANG (DEDICATED PER USER FARM)          --}}
 {{-- ======================================================== --}}
 @foreach ($userFarms as $f)
+    @php
+        $strainEdit = $f->strain_ayam ?? 'Lohmann Brown';
+    @endphp
     <div id="modal-edit-kandang-{{ $f->id }}" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0 pointer-events-none" role="dialog" aria-modal="true">
         <div class="absolute inset-0" onclick="tutupModal('modal-edit-kandang-{{ $f->id }}')"></div>
 
-        <div data-modal-card class="relative z-10 w-full max-w-xl bg-white rounded-2xl p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 max-h-[92vh] overflow-y-auto">
+        <div data-modal-card class="relative z-10 w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl border border-line transform transition-all duration-200 scale-95 opacity-0 space-y-4 overflow-visible">
             <div class="flex items-center justify-between pb-3 border-b border-line">
                 <div>
                     <h3 class="text-sm md:text-base font-bold text-ink">Edit Data: {{ $f->nama }}</h3>
-                    <p class="text-xs text-muted mt-0.5">Perbarui informasi populasi, fase pemeliharaan, atau sentra lokasi.</p>
+                    <p class="text-xs text-muted mt-0.5">Perbarui nama kandang, populasi, umur ayam saat ini, atau jenis bibit.</p>
                 </div>
                 <button type="button" onclick="tutupModal('modal-edit-kandang-{{ $f->id }}')" class="text-muted hover:text-ink transition cursor-pointer p-1" aria-label="Tutup">
                     <span class="material-symbols-outlined text-[20px]">close</span>
@@ -198,6 +213,7 @@
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="fase" value="{{ $f->fase ?? 'produksi' }}">
+                <input type="hidden" name="tgl_chick_in" value="{{ today()->toDateString() }}">
 
                 <div>
                     <label class="lbl">Nama Kandang <span class="text-danger">*</span></label>
@@ -206,56 +222,60 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="lbl">Populasi (Ekor) <span class="text-danger">*</span></label>
+                        <label class="lbl">Populasi Ayam (Ekor) <span class="text-danger">*</span></label>
                         <input type="number" name="jumlah_ayam" value="{{ $f->jumlah_ayam }}" min="1" max="1000000" class="field !min-h-10 text-xs font-medium" required>
                     </div>
                     <div>
-                        <label class="lbl">Strain / Jenis Bibit Petelur</label>
-                        <select name="strain_ayam" class="field !min-h-10 text-xs font-semibold bg-white cursor-pointer">
-                            @foreach(['Lohmann Brown', 'Isa Brown', 'Hy-Line Brown', 'Novogen Brown', 'H&N Brown Nick', 'Ayam Arab / KUB Petelur'] as $st)
-                                <option value="{{ $st }}" {{ ($f->strain_ayam ?? 'Lohmann Brown') === $st ? 'selected' : '' }}>{{ $st }}</option>
-                            @endforeach
-                        </select>
+                        <label class="lbl">Umur Ayam Saat Ini (Minggu) <span class="text-danger">*</span></label>
+                        <input type="number" name="umur_awal_minggu" value="{{ $f->umurMinggu() }}" min="1" max="120" class="field !min-h-10 text-xs font-medium" required>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="lbl flex items-center justify-between">
-                            <span>Sentra Lokasi / Kota</span>
-                            <span class="text-[10px] text-slate-600 font-bold bg-slate-100 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                <span class="material-symbols-outlined text-[12px]">lock</span> Paten
-                            </span>
-                        </label>
+                        <label class="lbl">Jenis Bibit (Strain)</label>
+                        <div class="relative inline-block w-full text-left custom-dropdown-container z-30" id="strain-edit-{{ $f->id }}">
+                            <input type="hidden" name="strain_ayam" value="{{ $strainEdit }}" class="dropdown-hidden-input">
+                            <button type="button"
+                                    onclick="toggleCustomDropdown('strain-edit-{{ $f->id }}', event)"
+                                    class="dropdown-trigger flex items-center justify-between w-full min-h-10 px-3.5 py-2 bg-white border border-line rounded-lg text-xs font-medium text-ink shadow-2xs hover:border-brand/40 focus:border-brand focus:ring-2 focus:ring-brand/15 transition cursor-pointer text-left">
+                                <span class="font-medium text-xs text-ink truncate dropdown-selected-label">{{ $strainEdit }}</span>
+                                <span class="material-symbols-outlined text-[16px] text-muted transition-transform duration-200 dropdown-caret shrink-0">expand_more</span>
+                            </button>
+                            <div class="dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full rounded-xl bg-white border border-line shadow-2xl p-1.5 z-50 select-none custom-dropdown-menu space-y-0.5">
+                                @foreach ($daftarStrain as $st)
+                                    @php $isStSelected = ($strainEdit === $st); @endphp
+                                    <button type="button"
+                                            data-city-item
+                                            onclick="selectCustomDropdownKotaInput('strain-edit-{{ $f->id }}', '{{ $st }}', '{{ $st }}', '')"
+                                            class="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-all cursor-pointer group {{ $isStSelected ? 'bg-surface font-bold text-brand' : 'hover:bg-surface/80 text-ink font-medium' }}">
+                                        <span class="truncate {{ $isStSelected ? 'text-brand font-bold' : 'text-ink font-medium group-hover:text-brand' }}">{{ $st }}</span>
+                                        <span data-active-badge class="{{ $isStSelected ? 'inline-block' : 'hidden' }} text-xs font-bold text-brand shrink-0">Dipilih</span>
+                                        <span data-choose-hint class="{{ $isStSelected ? 'hidden' : 'inline-block' }} text-[11px] text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0">Pilih</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="lbl">Sentra Lokasi / Kota</label>
                         @php
                             $presetKotaItem = $presetKota[$f->lokasi_kota ?? 'Blitar'] ?? null;
                             $namaKotaLocked = $presetKotaItem['nama'] ?? ($f->lokasi_kota ?? 'Blitar');
                             $provKotaLocked = $presetKotaItem['provinsi'] ?? 'Jawa Timur';
                         @endphp
-                        <div class="field !min-h-10 text-xs font-semibold text-ink bg-slate-100/90 border border-slate-200 cursor-not-allowed flex items-center justify-between px-3">
-                            <div class="flex items-center gap-1.5 truncate">
-                                <span class="material-symbols-outlined text-[15px] text-muted">location_on</span>
-                                <span>{{ $namaKotaLocked }}, {{ $provKotaLocked }}</span>
-                            </div>
-                            <span class="material-symbols-outlined text-[14px] text-muted">lock</span>
+                        <div class="field !min-h-10 text-xs font-medium text-muted bg-surface border border-line cursor-not-allowed flex items-center justify-between px-3">
+                            <span class="truncate">{{ $namaKotaLocked }} ({{ $provKotaLocked }})</span>
+                            <span class="material-symbols-outlined text-[14px] text-muted shrink-0">lock</span>
                         </div>
                         <input type="hidden" name="lokasi_kota" value="{{ $f->lokasi_kota }}">
-                        <p class="text-[10px] text-muted mt-1 leading-tight">Lokasi fisik kandang bersifat permanen terikat hardware sensor ESP32.</p>
-                    </div>
-                    <div>
-                        <label class="lbl">Umur Masuk Ayam (Minggu) <span class="text-danger">*</span></label>
-                        <input type="number" name="umur_awal_minggu" value="{{ $f->umur_awal_minggu ?? 18 }}" min="1" max="120" class="field !min-h-10 text-xs font-medium" required>
                     </div>
                 </div>
 
-                <div class="pt-1">
-                    <label class="lbl">Tanggal Masuk (Chick-in)</label>
-                    <input type="date" name="tgl_chick_in" value="{{ $f->tgl_chick_in?->toDateString() }}" max="{{ today()->toDateString() }}" class="field !min-h-10 text-xs font-medium">
-                    <p class="text-[11px] text-muted mt-1 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px] text-brand">info</span>
-                        <span>Status saat ini: <strong class="text-brand">{{ $f->faseUmurDetail()['nama'] }} (Mg ke-{{ $f->umurMinggu() }})</strong></span>
-                    </p>
-                </div>
+                <p class="text-[11px] text-muted flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px] text-brand shrink-0">info</span>
+                    <span>Fase saat ini: <strong class="text-brand">{{ $f->faseUmurDetail()['nama'] }} ({{ $f->umurMinggu() }} Minggu)</strong></span>
+                </p>
 
                 <div class="flex justify-end items-center gap-2 pt-3 border-t border-line">
                     <button type="button" onclick="tutupModal('modal-edit-kandang-{{ $f->id }}')" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold text-ink bg-white hover:bg-surface border border-line transition shadow-2xs cursor-pointer">

@@ -14,9 +14,9 @@ use App\Models\NutrientStandard;
  */
 class FarmBootstrap
 {
-    public const SUMBER = 'Tabel Komposisi Pakan Fapet UGM & Balitnak';
+    public const SUMBER = 'Hartadi dkk. (Tabel Komposisi Pakan untuk Indonesia, UGM Press) & NRC (1994)';
 
-    public const CATATAN = 'Standar nutrisi resmi bahan baku pakan ayam petelur tropis.';
+    public const CATATAN = 'Komposisi rata-rata bahan baku pakan unggas berdasarkan Tabel Komposisi Pakan untuk Indonesia (UGM Press), NRC (1994), dan SNI Bahan Pakan.';
 
     /** nama, protein, kalsium, fosfor, serat, energi, harga, stok demo, aktif, bk, min_persen, max_persen, catatan_keamanan */
     public static function templates(): array

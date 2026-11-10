@@ -167,10 +167,17 @@ class Farm extends Model
         return $this->memoizedLastRation;
     }
 
-    /** Estimasi biaya pakan per kg: dari ransum terakhir, atau 0 bila belum ada. */
+    /** Estimasi biaya pakan per kg: dari ransum terakhir, atau rata-rata harga bahan aktif bila belum ada. */
     public function hargaPakanPerKg(): float
     {
-        return (float) ($this->lastRation()?->biaya_per_kg ?? 0);
+        $last = $this->lastRation();
+        if ($last && (float) $last->biaya_per_kg > 0) {
+            return (float) $last->biaya_per_kg;
+        }
+
+        $avg = (float) $this->farmIngredients()->where('aktif', true)->avg('harga');
+
+        return $avg > 0 ? round($avg) : 6700.0;
     }
 
     /** Tanggal pembaruan harga paling lama di antara bahan aktif (untuk peringatan > 7 hari). */
@@ -181,10 +188,55 @@ class Farm extends Model
     }
 
     /**
-     * Ringkasan stok gudang pakan dan deteksi bahan di bawah safety stock (kebutuhan 3 hari).
-     * Dilengkapi request-level memoization agar tidak dieksekusi berulang dalam satu halaman.
+     * Evaluasi status ketersediaan satu bahan di gudang berdasarkan resep ransum terakhir (jika ada).
      *
-     * @return array{total_kg: float, kritis_count: int, kritis_items: array<string>}
+     * @return array{stok_kg: float, status: string, status_label: string, text_class: string}
+     */
+    public function evaluasiStokBahan(FarmIngredient $fi, ?Ration $lastRation = null): array
+    {
+        $stok = round((float) $fi->stok_kg, 2);
+        $pakanHarianKg = (float) max(1.0, ($this->jumlah_ayam * ($this->konsumsi_per_ekor ?: 0.11)));
+
+        $ambangMenipis = 5.0;
+        if ($lastRation && $lastRation->total_kg > 0) {
+            $item = $lastRation->items->firstWhere('ingredient_id', $fi->ingredient_id);
+            if ($item) {
+                $hariRansum = max(1.0, (float) $lastRation->total_kg / $pakanHarianKg);
+                $pakaiSegarHarian = ((float) ($item->kg_as_fed ?: $item->kg)) / $hariRansum;
+                $ambangMenipis = max(2.0, round($pakaiSegarHarian * 2, 1));
+            }
+        }
+
+        if ($stok <= 0.05) {
+            return [
+                'stok_kg' => $stok,
+                'status' => 'habis',
+                'status_label' => 'Stok Habis',
+                'text_class' => 'text-rose-600',
+            ];
+        }
+
+        if ($stok <= $ambangMenipis) {
+            return [
+                'stok_kg' => $stok,
+                'status' => 'menipis',
+                'status_label' => 'Stok Menipis',
+                'text_class' => 'text-amber-600',
+            ];
+        }
+
+        return [
+            'stok_kg' => $stok,
+            'status' => 'aman',
+            'status_label' => 'Stok Tersedia',
+            'text_class' => 'text-brand',
+        ];
+    }
+
+    /**
+     * Ringkasan stok gudang pakan dan deteksi bahan yang menipis atau habis.
+     *
+     * @return array{total_kg: float, kritis_count: int, kritis_items: array<int, string>, kritis_details: array<int, array{nama: string, stok_kg: float, status: string, status_label: string}>}
      */
     public function ringkasanStokGudang(): array
     {
@@ -192,33 +244,26 @@ class Farm extends Model
             return $this->memoizedRingkasanStok;
         }
 
-        $pakanHarianKg = (float) max(1.0, ($this->jumlah_ayam * ($this->konsumsi_per_ekor ?: 0.11)));
         $farmIngredients = $this->farmIngredients()->with('ingredient')->where('aktif', true)->get();
+        $lastRation = $this->rations()->where('status', 'layak')->with('items')->latest('id')->first();
 
         $totalKg = 0.0;
         $kritisItems = [];
+        $kritisDetails = [];
 
         foreach ($farmIngredients as $fi) {
-            $stok = (float) $fi->stok_kg;
-            $totalKg += $stok;
-            $nama = strtolower($fi->ingredient->nama ?? '');
+            $eval = $this->evaluasiStokBahan($fi, $lastRation);
+            $totalKg += $eval['stok_kg'];
 
-            $porsiEst = 0.20;
-            if (str_contains($nama, 'jagung') || str_contains($nama, 'menir') || str_contains($nama, 'sorgum')) {
-                $porsiEst = 0.50;
-            } elseif (str_contains($nama, 'konsentrat') || str_contains($nama, 'kedelai') || str_contains($nama, 'ikan')) {
-                $porsiEst = 0.30;
-            } elseif (str_contains($nama, 'dedak') || str_contains($nama, 'bekatul') || str_contains($nama, 'polard')) {
-                $porsiEst = 0.20;
-            } elseif (str_contains($nama, 'kapur') || str_contains($nama, 'kerang') || str_contains($nama, 'grit') || str_contains($nama, 'premix')) {
-                $porsiEst = 0.07;
-            }
-
-            $kebutuhanHarian = max(0.5, round($pakanHarianKg * $porsiEst, 2));
-            $safetyBuffer3Hari = round($kebutuhanHarian * 3, 1);
-
-            if ($stok <= $safetyBuffer3Hari) {
-                $kritisItems[] = $fi->ingredient->nama ?? 'Bahan';
+            if (in_array($eval['status'], ['habis', 'menipis'], true)) {
+                $namaBahan = $fi->ingredient->nama ?? 'Bahan';
+                $kritisItems[] = $namaBahan;
+                $kritisDetails[] = [
+                    'nama' => $namaBahan,
+                    'stok_kg' => $eval['stok_kg'],
+                    'status' => $eval['status'],
+                    'status_label' => $eval['status_label'],
+                ];
             }
         }
 
@@ -226,6 +271,7 @@ class Farm extends Model
             'total_kg' => round($totalKg, 2),
             'kritis_count' => count($kritisItems),
             'kritis_items' => $kritisItems,
+            'kritis_details' => $kritisDetails,
         ];
     }
 }

@@ -60,8 +60,11 @@ class LogController extends Controller
             ]];
         });
 
-        $beli = $farm->purchases()->with('ingredient')->latest('tanggal')->latest('id')->limit(8)->get();
-        $bahan = $farm->ingredients()->orderBy('nama')->get();
+        $beli = $farm->purchases()->with('ingredient')->latest('tanggal')->latest('id')->limit(10)->get();
+        $activeIngIds = $farm->farmIngredients()->where('aktif', true)->pluck('ingredient_id')->toArray();
+        $bahan = $farm->ingredients()->get()->sortBy(function ($ing) use ($activeIngIds) {
+            return (in_array($ing->id, $activeIngIds, true) ? '0_' : '1_') . $ing->nama;
+        })->values();
         $selisihTotal = $beli->sum(fn ($p) => ($p->harga_nyata - $p->harga_estimasi) * $p->kg);
 
         return view('catatan.index', compact('farm', 'form', 'isEdit', 'riwayat', 'allLogs', 'yesterdayLog', 'existingLogs', 'beli', 'bahan', 'selisihTotal', 'harga', 'jumlahAyam', 'filterPeriode', 'cariTanggal'));
@@ -90,7 +93,7 @@ class LogController extends Controller
 
         $detector->evaluate($this->farm());
 
-        return redirect()->route('catatan.index', ['tab' => 'form'])->with('ok', 'Catatan harian berhasil disimpan!');
+        return redirect()->route('catatan.index', ['tab' => 'form'])->with('ok', 'Catatan harian disimpan.');
     }
 
     public function destroy(DailyLog $log): RedirectResponse
@@ -122,16 +125,17 @@ class LogController extends Controller
             'tanggal' => $data['tanggal'],
         ]);
 
-        $msg = 'Pembelian bahan berhasil dicatat!';
+        $msg = 'Pembelian pakan dicatat.';
         if ($r->boolean('tambah_stok')) {
             $farmIng = $farm->farmIngredients()->where('ingredient_id', $ing->id)->first();
             if ($farmIng) {
                 $farmIng->increment('stok_kg', $data['kg']);
                 $farmIng->update([
+                    'aktif' => true,
                     'harga' => $data['harga_nyata'],
                     'harga_updated_at' => now(),
                 ]);
-                $msg = 'Pembelian dicatat & stok gudang berhasil ditambahkan!';
+                $msg = 'Pembelian dicatat & stok diperbarui.';
             }
         }
 

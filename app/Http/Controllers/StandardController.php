@@ -37,19 +37,19 @@ class StandardController extends Controller
     public function sync(Request $r): RedirectResponse
     {
         $farm = $this->farm();
-        $count = $this->standardService->syncOfficialStandards($farm);
+        $this->standardService->syncOfficialStandards($farm);
 
-        return redirect()->route('acuan.index')->with('ok', "Sinkronisasi selesai. {$count} entri katalog acuan gizi telah diperbarui.");
+        return redirect()->route('acuan.index')->with('ok', 'Acuan gizi berhasil disinkronkan.');
     }
 
     public function create(): RedirectResponse
     {
-        return redirect()->route('acuan.index')->with('info', 'Pilih salah satu entri berstatus belum terverifikasi pada katalog jika ingin melengkapi angkanya.');
+        return redirect()->route('acuan.index')->with('info', 'Pilih acuan untuk diubah.');
     }
 
     public function store(): RedirectResponse
     {
-        return redirect()->route('acuan.index')->with('info', 'Gunakan fitur ubah pada entri yang belum terverifikasi untuk melengkapi data.');
+        return redirect()->route('acuan.index')->with('info', 'Pilih acuan untuk diubah.');
     }
 
     public function edit(NutrientStandard $standard): View|RedirectResponse
@@ -57,7 +57,7 @@ class StandardController extends Controller
         $this->own($standard);
 
         if ($standard->verified) {
-            return redirect()->route('acuan.index')->with('info', 'Standar yang sudah terverifikasi dikunci agar tetap sesuai dokumen sumber.');
+            return redirect()->route('acuan.index')->with('info', 'Acuan resmi terkunci.');
         }
 
         return view('acuan.form', [
@@ -70,7 +70,7 @@ class StandardController extends Controller
         $this->own($standard);
 
         if ($standard->verified) {
-            return redirect()->route('acuan.index')->with('info', 'Standar yang sudah terverifikasi dikunci agar tetap sesuai dokumen sumber.');
+            return redirect()->route('acuan.index')->with('info', 'Acuan resmi terkunci.');
         }
 
         $data = $r->validate([
@@ -127,7 +127,7 @@ class StandardController extends Controller
             'verified' => $r->boolean('verified'),
         ]);
 
-        return redirect()->route('acuan.index')->with('ok', "Data acuan \"{$standard->nama}\" berhasil diperbarui.");
+        return redirect()->route('acuan.index')->with('ok', 'Data acuan diperbarui.');
     }
 
     public function destroy(NutrientStandard $standard): RedirectResponse
@@ -135,12 +135,12 @@ class StandardController extends Controller
         $this->own($standard);
 
         if ($standard->verified || $standard->is_resmi) {
-            return redirect()->route('acuan.index')->with('info', 'Entri katalog acuan gizi tidak dapat dihapus.');
+            return redirect()->route('acuan.index')->with('info', 'Acuan resmi tidak dapat dihapus.');
         }
 
         $this->standardService->archiveStandardOnRations($standard);
         $standard->delete();
 
-        return redirect()->route('acuan.index')->with('ok', 'Acuan gizi berhasil dihapus.');
+        return redirect()->route('acuan.index')->with('ok', 'Acuan gizi dihapus.');
     }
 }

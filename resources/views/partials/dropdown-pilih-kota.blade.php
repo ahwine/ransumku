@@ -26,14 +26,14 @@
     </button>
 
     {{-- Custom Dropdown Card (Sleek, Langsung Menampilkan Pencarian & Opsi Kota di Atas) --}}
-    <div class="dropdown-menu hidden absolute left-0 right-0 top-full mt-1.5 w-full rounded-xl bg-white border border-line shadow-2xl p-2 z-50 select-none custom-dropdown-menu">
+    <div class="dropdown-menu hidden absolute right-0 top-full mt-1.5 w-full sm:min-w-[260px] rounded-xl bg-white border border-line shadow-2xl p-2 z-50 select-none custom-dropdown-menu">
         {{-- Input Pencarian Langsung di Paling Atas (Tanpa Header / Tab Berbelit) --}}
         <div class="relative flex items-center mb-1.5">
             <span class="material-symbols-outlined absolute left-2.5 text-[16px] text-muted pointer-events-none">search</span>
             <input type="text"
                    data-dropdown-search
                    oninput="filterDropdownKota(this, '{{ $idDropdown }}')"
-                   placeholder="Ketik nama kota atau provinsi..."
+                   placeholder="Cari kota atau provinsi..."
                    class="w-full pl-8 pr-7 py-1.5 bg-surface border border-line/80 rounded-lg text-xs text-ink placeholder:text-muted focus:outline-none focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand transition"
                    autocomplete="off">
             <button type="button" 
@@ -58,14 +58,10 @@
                         data-search-text="{{ $searchKeyword }}"
                         data-city-wilayah="{{ $p['wilayah'] ?? '' }}"
                         onclick="selectCustomDropdownKotaInput('{{ $idDropdown }}', '{{ $k }}', '{{ addslashes($p['nama']) }}', '({{ addslashes($p['provinsi']) }})')" 
-                        class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-all cursor-pointer group {{ $isSelected ? 'bg-surface font-bold text-brand' : 'hover:bg-surface/80 text-ink font-medium' }}">
-                    <div class="min-w-0 pr-2">
-                        <span class="text-xs leading-snug {{ $isSelected ? 'text-brand font-bold' : 'text-ink font-medium group-hover:text-brand' }}">
-                            {{ $p['nama'] }}
-                        </span>
-                        <span class="text-[11px] text-muted font-normal ml-1">
-                            ({{ $p['provinsi'] }})
-                        </span>
+                        class="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-all cursor-pointer group {{ $isSelected ? 'bg-surface font-bold text-brand' : 'hover:bg-surface/80 text-ink font-medium' }}">
+                    <div class="min-w-0 flex-1 truncate">
+                        <span class="text-xs leading-snug {{ $isSelected ? 'text-brand font-bold' : 'text-ink font-medium group-hover:text-brand' }}">{{ $p['nama'] }}</span>
+                        <span class="text-[11px] text-muted font-normal ml-0.5">({{ $p['provinsi'] }})</span>
                     </div>
                     <span data-active-badge class="{{ $isSelected ? 'inline-block' : 'hidden' }} text-xs font-bold text-brand shrink-0">
                         Dipilih

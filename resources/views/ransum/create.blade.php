@@ -295,7 +295,7 @@
                     <span class="material-symbols-outlined text-[20px] text-brand shrink-0">verified</span>
                     <div>
                         <h2 class="text-xs font-black uppercase tracking-wider text-ink">Standar Nutrisi Target</h2>
-                        <p class="text-[11px] text-muted">Baku Mutu Nasional Ayam Petelur Fapet UGM / SNI</p>
+                        <p class="text-[11px] text-muted">SNI 8290-5 (BSN) — Pakan Ayam Ras Petelur Layer</p>
                     </div>
                 </div>
 
@@ -314,14 +314,20 @@
                             <strong class="text-ink font-bold">{{ $targetStandard->formatKalsium() }}</strong>
                         </div>
                         <div class="flex justify-between items-center text-muted">
-                            <span>Fosfor Tersedia (P):</span>
+                            <span>Fosfor (P):</span>
                             <strong class="text-ink font-bold">{{ $targetStandard->formatFosfor() }}</strong>
                         </div>
+                        @if ($targetStandard->serat_max !== null)
+                            <div class="flex justify-between items-center text-muted">
+                                <span>Serat Kasar (SK):</span>
+                                <strong class="text-ink font-bold">{{ $targetStandard->formatSerat() }}</strong>
+                            </div>
+                        @endif
                     </div>
                 @endif
 
                 <p class="text-[11px] text-muted leading-relaxed">
-                    Sistem otomatis mengoptimasi formulasi ransum agar memenuhi seluruh kebutuhan nutrisi baku ayam petelur fase aktif kandang Anda tanpa perlu memilih manual.
+                    Acuan baku mutu pakan ayam ras petelur masa produksi (Badan Standardisasi Nasional, SNI 8290-5).
                 </p>
             </section>
 

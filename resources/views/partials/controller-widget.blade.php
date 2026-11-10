@@ -342,10 +342,10 @@ async function ubahSakelar(alat, statusBaru) {
             if (typeof window.showToast === 'function') {
                 try {
                     const labelAlat = {
-                        'kipas': 'Kipas Sirkulasi 12V (D26)',
-                        'misting': 'Pompa Celup Putih 5V (D14)',
-                        'lampu': 'Lampu LED Strip 5V (D27)',
-                        'pakan': 'Motor Kereta Pakan L298N (D18/D19)'
+                        'kipas': 'Kipas Sirkulasi',
+                        'misting': 'Pompa Misting',
+                        'lampu': 'Lampu Kandang',
+                        'pakan': 'Kereta Pakan'
                     }[alat] || alat.toUpperCase();
                     window.showToast(data.pesan || `${labelAlat} berhasil di-${statusBaru ? 'nyalakan' : 'matikan'}.`, 'success', labelAlat);
                 } catch (_) {}
@@ -360,7 +360,7 @@ async function ubahSakelar(alat, statusBaru) {
         }
         if (typeof window.showToast === 'function') {
             try {
-                window.showToast('Gagal mengirim perintah sakelar. Silakan coba kembali.', 'error', 'Kendala Sakelar');
+                window.showToast('Gagal mengubah sakelar.', 'error', 'Gagal');
             } catch (_) {}
         }
     } finally {
@@ -431,7 +431,7 @@ async function simpanSemuaSetting(e) {
         if (data && data.ok) {
             if (data.kontrol) updateControllerUI(data.kontrol, true);
             if (typeof window.showToast === 'function') {
-                window.showToast(data.pesan || 'Konfigurasi otomatisasi kandang berhasil diperbarui.', 'success', 'Pengaturan Tersimpan');
+                window.showToast(data.pesan || 'Pengaturan otomatisasi disimpan.', 'success', 'Berhasil');
             }
         } else {
             throw new Error(data.message || 'Gagal menyimpan pengaturan');
@@ -439,7 +439,7 @@ async function simpanSemuaSetting(e) {
     } catch (err) {
         console.error('Gagal simpan setting:', err);
         if (typeof window.showToast === 'function') {
-            window.showToast('Gagal menyimpan pengaturan otomatisasi. Periksa koneksi internet Anda.', 'error', 'Gagal Simpan');
+            window.showToast('Gagal menyimpan pengaturan.', 'error', 'Gagal');
         }
     } finally {
         if (btn) {

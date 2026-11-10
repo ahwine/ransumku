@@ -18,7 +18,13 @@ class FarmController extends Controller
     public function index(): View
     {
         $user = auth()->user();
-        $farms = $user->farms()->withCount(['logs', 'rations'])->orderBy('id')->get();
+        $farms = $user->farms()
+            ->withCount([
+                'logs',
+                'rations' => fn ($q) => $q->where('status', 'layak'),
+            ])
+            ->orderBy('id')
+            ->get();
         $activeFarm = $this->farm();
         $presetKota = WeatherService::PRESET_KOTA;
 
@@ -53,6 +59,9 @@ class FarmController extends Controller
         if (empty($validated['lokasi_kota'])) {
             $validated['lokasi_kota'] = 'Surabaya';
         }
+        if (! empty($validated['umur_awal_minggu']) && empty($validated['tgl_chick_in'])) {
+            $validated['tgl_chick_in'] = today()->toDateString();
+        }
 
         if (isset(WeatherService::PRESET_KOTA[$validated['lokasi_kota']])) {
             $preset = WeatherService::PRESET_KOTA[$validated['lokasi_kota']];
@@ -66,7 +75,7 @@ class FarmController extends Controller
         // Langsung aktifkan kandang baru
         session(['active_farm_id' => $farm->id]);
 
-        return redirect()->route('beranda')->with('ok', "Kandang \"{$farm->nama}\" berhasil ditambahkan dan langsung aktif!");
+        return redirect()->route('beranda')->with('ok', "Kandang {$farm->nama} berhasil ditambahkan.");
     }
 
     /**
@@ -102,13 +111,16 @@ class FarmController extends Controller
         ]);
 
         $validated['fase'] = $validated['fase'] ?? 'produksi';
+        if (! empty($validated['umur_awal_minggu']) && empty($validated['tgl_chick_in'])) {
+            $validated['tgl_chick_in'] = today()->toDateString();
+        }
 
         // Lokasi kota bersifat paten terikat hardware ESP32, tidak boleh diubah setelah pembuatan kandang
         unset($validated['lokasi_kota'], $validated['latitude'], $validated['longitude']);
 
         $farm->update($validated);
 
-        return redirect()->back()->with('ok', "Data kandang \"{$farm->nama}\" berhasil diperbarui!");
+        return redirect()->back()->with('ok', 'Data kandang diperbarui.');
     }
 
     /**
@@ -119,7 +131,7 @@ class FarmController extends Controller
         abort_unless($farm->user_id === auth()->id(), 403, 'Akses ditolak.');
 
         if (auth()->user()->farms()->count() <= 1) {
-            return redirect()->back()->withErrors(['hapus' => 'Tidak dapat menghapus kandang. Anda harus memiliki minimal satu kandang aktif.']);
+            return redirect()->back()->withErrors(['hapus' => 'Minimal harus ada satu kandang aktif.']);
         }
 
         $namaHapus = $farm->nama;
@@ -131,7 +143,7 @@ class FarmController extends Controller
             session()->forget('active_farm_id');
         }
 
-        return redirect()->route('kandang.index')->with('ok', "Kandang \"{$namaHapus}\" berhasil dihapus.");
+        return redirect()->route('kandang.index')->with('ok', "Kandang {$namaHapus} dihapus.");
     }
 
     /**
@@ -163,6 +175,6 @@ class FarmController extends Controller
 
         $user->update($updateData);
 
-        return redirect()->back()->with('ok', 'Profil peternak berhasil diperbarui!');
+        return redirect()->back()->with('ok', 'Profil berhasil diperbarui.');
     }
 }
