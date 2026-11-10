@@ -138,13 +138,18 @@ class HomeController extends Controller
         ];
 
         $populasiData = [];
+        $matiData = [];
         if ($logs->isNotEmpty()) {
             foreach ($logs as $l) {
                 $populasiData[] = max(0, $farm->jumlah_ayam - ($l->ayam_mati ?? 0));
+                $matiData[] = (int) ($l->ayam_mati ?? 0);
             }
         } else {
             $populasiData = array_fill(0, count($chartLabels), $farm->jumlah_ayam);
+            $matiData = array_fill(0, count($chartLabels), 0);
         }
+
+        $totalMati7Hari = $logs->isNotEmpty() ? (int) $logs->sum('ayam_mati') : (int) $totalMatiIni;
 
         $chartPopulasi = [
             'type' => 'line',
@@ -165,6 +170,22 @@ class HomeController extends Controller
                     'pointBackgroundColor' => '#FFFFFF',
                     'pointBorderColor' => '#2563EB',
                     'pointBorderWidth' => 2,
+                ],
+            ],
+        ];
+
+        $chartMati = [
+            'type' => 'bar',
+            'labels' => $chartLabels,
+            'precision' => 0,
+            'datasets' => [
+                [
+                    'label' => 'Mortalitas (ekor)',
+                    'data' => $matiData,
+                    'backgroundColor' => '#E11D48',
+                    'hoverBackgroundColor' => '#BE123C',
+                    'borderRadius' => 4,
+                    'maxBarThickness' => 32,
                 ],
             ],
         ];
@@ -221,8 +242,8 @@ class HomeController extends Controller
             'farm', 'logs', 'hariIni', 'ration', 'biayaKgTelur', 'alerts', 'hargaUsangHari',
             'totalTelurIni', 'totalTelurKgIni', 'rataGrTelur', 'hdPersen', 'telurUtuh', 'telurBentes',
             'deltaTelur', 'standarPakanGr', 'totalPakanIni', 'gramPerEkor', 'totalMatiIni',
-            'eggMass', 'fcr', 'chartTelur', 'chartPakan', 'chartPopulasi', 'chartFcr',
-            'weather', 'presetKota',
+            'eggMass', 'fcr', 'chartTelur', 'chartPakan', 'chartPopulasi', 'chartMati', 'chartFcr',
+            'totalMati7Hari', 'weather', 'presetKota',
             'hargaTelurKg', 'estPendapatanTelur', 'biayaPakanHariIni', 'estMarginKotor', 'estMarginPerKgTelur',
             'stokGudang'
         ));

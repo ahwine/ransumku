@@ -593,6 +593,8 @@ function triggerBerandaOrchestration() {
                 animateBukuBar(chart, 50, durasiBar);
             } else if (chartName === 'populasi') {
                 animateBukuLine(chart, 150, durasiLine);
+            } else if (chartName === 'kematian') {
+                animateBukuBar(chart, 150, durasiBar);
             } else if (chartName === 'pakan') {
                 animateBukuLine(chart, 260, durasiLine);
             } else if (chartName === 'fcr') {
@@ -707,6 +709,51 @@ window.addEventListener('resize', () => {
     }, 200);
 });
 
+// Toggle View Grafik Populasi vs Kematian (Beranda Dashboard Mobile & Desktop)
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-populasi-view]');
+    if (!btn) return;
+    const viewName = btn.dataset.populasiView;
+    const card = btn.closest('.stat-card-fadein, [data-panel="populasi"], .p-5, .p-6') || document;
+
+    // Toggle button styles
+    card.querySelectorAll('[data-populasi-view]').forEach((b) => {
+        const isMatch = b.dataset.populasiView === viewName;
+        b.classList.toggle('bg-white', isMatch);
+        b.classList.toggle('shadow-2xs', isMatch);
+        b.classList.toggle('text-blue-700', isMatch && viewName === 'populasi');
+        b.classList.toggle('text-rose-700', isMatch && viewName === 'kematian');
+        b.classList.toggle('font-black', isMatch);
+        b.classList.toggle('text-muted', !isMatch);
+        b.classList.toggle('font-medium', !isMatch);
+    });
+
+    // Toggle chart containers
+    card.querySelectorAll('[data-populasi-chart-container]').forEach((cnt) => {
+        const isTarget = cnt.dataset.populasiChartContainer === viewName;
+        cnt.classList.toggle('hidden', !isTarget);
+        if (isTarget) {
+            const canvas = cnt.querySelector('canvas[data-chart]');
+            if (canvas) {
+                const chart = initSingleChart(canvas);
+                if (chart) {
+                    chart.resize();
+                    if (viewName === 'kematian') {
+                        animateBukuBar(chart, 30, 450);
+                    } else {
+                        animateBukuLine(chart, 30, 650);
+                    }
+                }
+            }
+        }
+    });
+
+    // Toggle legend
+    card.querySelectorAll('[data-populasi-legend]').forEach((lg) => {
+        lg.classList.toggle('hidden', lg.dataset.populasiLegend !== viewName);
+    });
+});
+
 // Apple-style Sliding Segmented Tabs ([data-tabs])
 function initSlidingTabs() {
     const tabGroups = document.querySelectorAll('[data-tabs]');
@@ -755,7 +802,14 @@ function initSlidingTabs() {
             }
         };
 
-        const activeBtn = buttons.find((b) => b.classList.contains('active-tab')) ||
+        let paramTab = null;
+        try {
+            const url = new URL(window.location.href);
+            paramTab = url.searchParams.get('tab');
+        } catch (e) {}
+
+        const activeBtn = (paramTab ? buttons.find((b) => b.dataset.tab === paramTab) : null) ||
+            buttons.find((b) => b.classList.contains('active-tab')) ||
             buttons.find((b) => b.classList.contains('bg-white')) ||
             buttons.find((b) => b.classList.contains('bg-brand')) ||
             buttons[0];
@@ -830,7 +884,9 @@ function initSlidingTabs() {
             }
 
             if (typeof window.__triggerBerandaAnimation === 'function') {
-                const berandaInPanel = group.querySelector(`[data-panel="${tabId}"] [data-beranda-grafik-container]`);
+                const berandaInPanel = group.querySelector(`[data-panel="${tabId}"] [data-beranda-grafik-container]`) ||
+                    group.querySelector(`[data-panel="${tabId}"][data-beranda-grafik-container]`) ||
+                    group.querySelector(`[data-panel="${tabId}"] canvas[data-chart]`);
                 if (berandaInPanel) {
                     setTimeout(() => {
                         window.__triggerBerandaAnimation();

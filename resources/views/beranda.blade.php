@@ -186,229 +186,296 @@
             </div>
         @endif
 
-        {{-- 4. Section Peringatan Dini & Anomali --}}
+        {{-- 4. Section Peringatan Dini & Anomali (Sleek & Compact) --}}
         @if ($alerts->count() > 0)
-            <div class="space-y-2.5 pt-1">
+            <div class="space-y-2 pt-0.5">
                 <div class="flex items-center justify-between px-1">
-                    <h2 class="text-base font-black text-ink">Peringatan Dini & Anomali</h2>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">
+                    <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[17px] text-rose-600">notifications_active</span>
+                        <h2 class="text-xs font-black text-ink uppercase tracking-wider">Peringatan Dini & Anomali</h2>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
                         {{ $alerts->count() }} isu
                     </span>
                 </div>
 
-                <div class="space-y-2.5">
+                <div class="space-y-2">
                     @foreach ($alerts->take(3) as $alert)
                         @php
                             $isWarning = $alert->level === 'warning' || $alert->level === 'danger';
                         @endphp
-                        <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 shadow-2xs space-y-2.5">
+                        <div class="bg-white rounded-xl border border-line/70 p-3 shadow-2xs space-y-1.5 border-l-4 {{ $isWarning ? 'border-l-amber-500' : 'border-l-rose-500' }}">
                             <div class="flex items-center justify-between text-xs">
-                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold {{ $isWarning ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800' }}">
-                                    <span class="material-symbols-outlined text-[14px]">{{ $isWarning ? 'warning' : 'dangerous' }}</span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold {{ $isWarning ? 'bg-amber-100 text-amber-900' : 'bg-rose-100 text-rose-900' }}">
+                                    <span class="material-symbols-outlined text-[13px]">{{ $isWarning ? 'warning' : 'dangerous' }}</span>
                                     <span>{{ $isWarning ? 'Perhatian' : 'Waspada' }}</span>
                                 </span>
-                                <span class="text-muted text-xs">{{ $alert->tanggal_data->translatedFormat('j M Y') }}</span>
+                                <span class="text-muted text-[11px] font-medium">{{ $alert->tanggal_data->translatedFormat('j M Y') }}</span>
                             </div>
                             <p class="text-xs text-ink/85 leading-relaxed font-normal">
                                 {{ $alert->pesan }}
                             </p>
-                            <a href="{{ route('asisten.index', ['tanya' => 'Bagaimana solusi mengatasi: ' . $alert->pesan]) }}" class="w-full border border-line/80 bg-white hover:bg-surface text-[#116a3a] font-bold py-2 px-3 rounded-md sm:rounded-lg flex items-center justify-center gap-1.5 text-xs transition active:scale-98 cursor-pointer">
-                                <span>Konsultasi solusi</span>
-                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                            </a>
+                            <div class="pt-0.5 flex justify-end">
+                                <a href="{{ route('asisten.index', ['tanya' => 'Bagaimana solusi mengatasi: ' . $alert->pesan]) }}" class="inline-flex items-center gap-1 text-[11px] font-bold text-brand hover:text-brand-dark hover:underline">
+                                    <span>Konsultasi solusi</span>
+                                    <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                                </a>
+                            </div>
                         </div>
                     @endforeach
                 </div>
 
-                <div class="px-1 pt-0.5">
-                    <a href="{{ route('asisten.index', ['tab' => 'peringatan']) }}" class="text-xs font-bold text-[#116a3a] hover:underline flex items-center gap-1">
+                <div class="px-1 pt-0.5 flex justify-end">
+                    <a href="{{ route('asisten.index', ['tab' => 'peringatan']) }}" class="text-[11px] font-bold text-brand hover:underline flex items-center gap-1">
                         <span>Lihat riwayat peringatan</span>
-                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                        <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
                     </a>
                 </div>
             </div>
         @endif
 
-        {{-- 5. Section STATISTIK 7 HARI TERAKHIR (4 Kartu Stacked Sesuai Gambar 1) --}}
-        <div class="pt-3 space-y-3" data-beranda-grafik-container>
-            <h2 class="text-xs font-bold text-muted uppercase tracking-wider px-1">STATISTIK 7 HARI TERAKHIR</h2>
+        {{-- 5. Section STATISTIK 7 HARI TERAKHIR (Segmented Tab Switcher Mobile-First) --}}
+        <div class="pt-2 space-y-2.5" data-tabs>
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-xs font-bold text-muted uppercase tracking-wider">STATISTIK 7 HARI TERAKHIR</h2>
+                <span class="text-[10px] font-semibold text-brand">Pilih Tab Metrik</span>
+            </div>
 
-            {{-- Kartu 1: PRODUKSI TELUR --}}
+            {{-- Segmented Tab Switcher: 4 Kolom di Mobile --}}
+            <div data-tab-nav class="grid grid-cols-4 gap-1 p-1 bg-surface-2/90 rounded-xl border border-line/60 shadow-2xs select-none relative">
+                <button type="button" data-tab="telur" class="relative z-10 py-2 px-1 rounded-lg text-xs font-black transition-colors duration-200 flex flex-col items-center justify-center gap-0.5 text-[#0f3d26] active-tab cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px] text-emerald-700">egg</span>
+                    <span class="text-[11px] font-bold">Telur</span>
+                </button>
+                <button type="button" data-tab="populasi" class="relative z-10 py-2 px-1 rounded-lg text-xs font-bold transition-colors duration-200 flex flex-col items-center justify-center gap-0.5 text-ink/75 hover:text-ink cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px] text-blue-600">groups</span>
+                    <span class="text-[11px] font-bold">Populasi</span>
+                </button>
+                <button type="button" data-tab="pakan" class="relative z-10 py-2 px-1 rounded-lg text-xs font-bold transition-colors duration-200 flex flex-col items-center justify-center gap-0.5 text-ink/75 hover:text-ink cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px] text-amber-600">grain</span>
+                    <span class="text-[11px] font-bold">Pakan</span>
+                </button>
+                <button type="button" data-tab="fcr" class="relative z-10 py-2 px-1 rounded-lg text-xs font-bold transition-colors duration-200 flex flex-col items-center justify-center gap-0.5 text-ink/75 hover:text-ink cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px] text-purple-600">query_stats</span>
+                    <span class="text-[11px] font-bold">FCR</span>
+                </button>
+            </div>
+
+            {{-- Panel 1: PRODUKSI TELUR --}}
             @php
                 $hdVal = $hdPersen > 0 ? $hdPersen : 85.0;
             @endphp
-            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">PRODUKSI TELUR</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0 whitespace-nowrap">
-                        {{ $hdVal }}% Hen-Day
-                    </span>
-                </div>
-                <div>
-                    <div class="text-2xl font-black text-ink whitespace-nowrap">
-                        {{ Fmt::num($totalTelurIni > 0 ? $totalTelurIni : 148, 0) }} <span class="text-xs font-normal text-muted">butir</span>
+            <div data-panel="telur" data-beranda-grafik-container class="tab-panel-enter">
+                <div class="bg-white rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">PRODUKSI TELUR</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0 whitespace-nowrap">
+                            {{ $hdVal }}% Hen-Day
+                        </span>
                     </div>
-                    <div class="text-xs font-bold text-emerald-700 mt-0.5 whitespace-nowrap">
-                        ↑ {{ $deltaTelur ? abs($deltaTelur) : '2,1' }}% vs kemarin
+                    <div>
+                        <div class="text-2xl font-black text-ink whitespace-nowrap">
+                            {{ Fmt::num($totalTelurIni > 0 ? $totalTelurIni : 148, 0) }} <span class="text-xs font-normal text-muted">butir</span>
+                        </div>
+                        <div class="text-xs font-bold text-emerald-700 mt-0.5 whitespace-nowrap">
+                            ↑ {{ $deltaTelur ? abs($deltaTelur) : '2,1' }}% vs kemarin
+                        </div>
                     </div>
-                </div>
-                {{-- 2 Mini Stat Pills --}}
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BOBOT TELUR</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni : 9.2, 1) }} kg</strong>
+                    {{-- 2 Mini Stat Pills --}}
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BOBOT TELUR</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($totalTelurKgIni > 0 ? $totalTelurKgIni : 9.2, 1) }} kg</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">RATA-RATA (7 HARI)</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($totalTelurIni > 0 ? round($logs->avg('telur_butir')) : 144, 0) }} btr</strong>
+                        </div>
                     </div>
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">RATA-RATA (7 HARI)</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($totalTelurIni > 0 ? round($logs->avg('telur_butir')) : 144, 0) }} btr</strong>
+                    {{-- Canvas Grafik Telur --}}
+                    <div class="h-48 pt-1">
+                        <canvas data-chart='@json($chartTelur)' data-chart-name="telur" aria-label="Grafik produksi telur"></canvas>
                     </div>
-                </div>
-                {{-- Canvas Grafik Telur --}}
-                <div class="h-44 pt-1">
-                    <canvas data-chart='@json($chartTelur)' data-chart-name="telur" aria-label="Grafik produksi telur"></canvas>
-                </div>
-                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap">
-                    <span class="w-3 h-0.5 bg-[#2F6B3A] inline-block shrink-0"></span>
-                    <span class="whitespace-nowrap">Produksi harian</span>
+                    <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap">
+                        <span class="w-3 h-0.5 bg-[#2F6B3A] inline-block shrink-0"></span>
+                        <span class="whitespace-nowrap">Produksi harian</span>
+                    </div>
                 </div>
             </div>
 
-            {{-- Kartu 2: POPULASI AYAM --}}
+            {{-- Panel 2: POPULASI AYAM & GRAFIK KEMATIAN --}}
             @php
                 $survivalRate = max(0, 100 - round(($totalMatiIni / max(1, $farm->jumlah_ayam ?? 200)) * 100, 1));
             @endphp
-            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">POPULASI AYAM</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0 whitespace-nowrap">
-                        {{ $survivalRate }}% bertahan
-                    </span>
-                </div>
-                <div>
-                    <div class="text-2xl font-black text-ink whitespace-nowrap">
-                        {{ Fmt::num(max(0, ($farm->jumlah_ayam ?? 200) - $totalMatiIni), 0) }} <span class="text-xs font-normal text-muted">ekor aktif</span>
+            <div data-panel="populasi" data-beranda-grafik-container class="hidden">
+                <div class="bg-white rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">POPULASI AYAM</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e2f0e8] text-[#116a3a] shrink-0 whitespace-nowrap">
+                            {{ $survivalRate }}% bertahan
+                        </span>
                     </div>
-                    <div class="text-xs font-bold text-emerald-700 mt-0.5 whitespace-nowrap">
-                        ✓ {{ $totalMatiIni }} kematian hari ini
+                    <div>
+                        <div class="text-2xl font-black text-ink whitespace-nowrap">
+                            {{ Fmt::num(max(0, ($farm->jumlah_ayam ?? 200) - $totalMatiIni), 0) }} <span class="text-xs font-normal text-muted">ekor aktif</span>
+                        </div>
+                        <div class="text-xs font-bold {{ $totalMatiIni > 0 ? 'text-rose-600' : 'text-emerald-700' }} mt-0.5 whitespace-nowrap">
+                            {{ $totalMatiIni > 0 ? '⚠️ ' . $totalMatiIni . ' kematian hari ini' : '✓ 0 kematian hari ini' }}
+                        </div>
+                        <p class="text-xs text-muted font-medium mt-1 truncate whitespace-nowrap">
+                            Minggu ke-{{ $umurMinggu }} · {{ $faseDetail['nama'] }}
+                        </p>
                     </div>
-                    <p class="text-xs text-muted font-medium mt-1 truncate whitespace-nowrap">
-                        Minggu ke-{{ $umurMinggu }} · {{ $faseDetail['nama'] }}
-                    </p>
-                </div>
-                {{-- 2 Mini Stat Pills --}}
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">TERCATAT</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($farm->jumlah_ayam ?? 200, 0) }}</strong>
+                    {{-- 4 Mini Stat Pills (2x2 Grid) --}}
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">TERCATAT</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ Fmt::num($farm->jumlah_ayam ?? 200, 0) }}</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">AYAM HIDUP</span>
+                            <strong class="text-blue-700 font-bold text-sm whitespace-nowrap">{{ max(0, ($farm->jumlah_ayam ?? 200) - $totalMatiIni) }}</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">MATI 7 HARI</span>
+                            <strong class="{{ ($totalMati7Hari ?? $totalMatiIni) > 0 ? 'text-rose-600' : 'text-ink' }} font-bold text-sm whitespace-nowrap">{{ $totalMati7Hari ?? $totalMatiIni }} ekor</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">MORTALITAS</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ round(($totalMatiIni / max(1, $farm->jumlah_ayam ?? 200)) * 100, 1) }}%</strong>
+                        </div>
                     </div>
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">MORTALITAS</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ round(($totalMatiIni / max(1, $farm->jumlah_ayam ?? 200)) * 100, 1) }}%</strong>
+
+                    {{-- Switcher Tampilan Grafik: Populasi Hidup vs Mortalitas Harian --}}
+                    <div class="pt-1 flex items-center justify-between border-t border-line/40">
+                        <div class="flex items-center gap-1 p-0.5 bg-surface-2 rounded-lg border border-line/50 text-[11px]">
+                            <button type="button" data-populasi-view="populasi" class="px-2.5 py-1 rounded-md transition-all bg-white shadow-2xs text-blue-700 font-black cursor-pointer">
+                                Populasi Hidup
+                            </button>
+                            <button type="button" data-populasi-view="kematian" class="px-2.5 py-1 rounded-md transition-all text-muted hover:text-ink font-medium cursor-pointer">
+                                Mortalitas Harian
+                            </button>
+                        </div>
                     </div>
-                </div>
-                {{-- Canvas Grafik Populasi --}}
-                <div class="h-44 pt-1">
-                    <canvas data-chart='@json($chartPopulasi)' data-chart-name="populasi" aria-label="Grafik populasi ayam"></canvas>
-                </div>
-                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap">
-                    <span class="w-3 h-0.5 bg-[#0284c7] inline-block shrink-0"></span>
-                    <span class="whitespace-nowrap">Jumlah ayam hidup</span>
+
+                    {{-- Canvas Grafik Populasi --}}
+                    <div data-populasi-chart-container="populasi" class="h-48 pt-1">
+                        <canvas data-chart='@json($chartPopulasi)' data-chart-name="populasi" aria-label="Grafik populasi ayam"></canvas>
+                    </div>
+
+                    {{-- Canvas Grafik Kematian (Mortalitas) --}}
+                    <div data-populasi-chart-container="kematian" class="h-48 pt-1 hidden">
+                        <canvas data-chart='@json($chartMati)' data-chart-name="kematian" aria-label="Grafik kematian ayam"></canvas>
+                    </div>
+
+                    <div data-populasi-legend="populasi" class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap">
+                        <span class="w-3 h-0.5 bg-[#0284c7] inline-block shrink-0"></span>
+                        <span class="whitespace-nowrap">Jumlah ayam hidup (ekor)</span>
+                    </div>
+                    <div data-populasi-legend="kematian" class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap hidden">
+                        <span class="w-3 h-2 bg-[#E11D48] rounded-xs inline-block shrink-0"></span>
+                        <span class="whitespace-nowrap">Ayam mati per hari (ekor)</span>
+                    </div>
                 </div>
             </div>
 
-            {{-- Kartu 3: KONSUMSI PAKAN --}}
+            {{-- Panel 3: KONSUMSI PAKAN --}}
             @php
                 $diffGr = round($gramPerEkor - $standarPakanGr);
             @endphp
-            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">KONSUMSI PAKAN</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shrink-0 whitespace-nowrap">
-                        Standar: {{ $standarPakanGr }} g/ekor
-                    </span>
-                </div>
-                <div>
-                    <div class="text-2xl font-black text-ink whitespace-nowrap">
-                        {{ Fmt::num($totalPakanIni > 0 ? $totalPakanIni : 27, 0) }} <span class="text-xs font-normal text-muted">kg/hari</span>
+            <div data-panel="pakan" data-beranda-grafik-container class="hidden">
+                <div class="bg-white rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">KONSUMSI PAKAN</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shrink-0 whitespace-nowrap">
+                            Standar: {{ $standarPakanGr }} g/ekor
+                        </span>
                     </div>
-                    <div class="text-xs font-bold text-amber-700 mt-0.5 whitespace-nowrap">
-                        {{ $diffGr >= 0 ? '↑' : '↓' }} {{ abs($diffGr) }} g di atas standar
+                    <div>
+                        <div class="text-2xl font-black text-ink whitespace-nowrap">
+                            {{ Fmt::num($totalPakanIni > 0 ? $totalPakanIni : 27, 0) }} <span class="text-xs font-normal text-muted">kg/hari</span>
+                        </div>
+                        <div class="text-xs font-bold text-amber-700 mt-0.5 whitespace-nowrap">
+                            {{ $diffGr >= 0 ? '↑' : '↓' }} {{ abs($diffGr) }} g di atas standar
+                        </div>
                     </div>
-                </div>
-                {{-- 4 Mini Stat Pills (2x2 Grid) --}}
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">ASUPAN/EKOR/HARI</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $gramPerEkor > 0 ? round($gramPerEkor) : 135 }} g</strong>
+                    {{-- 4 Mini Stat Pills (2x2 Grid) --}}
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">ASUPAN/EKOR/HARI</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $gramPerEkor > 0 ? round($gramPerEkor) : 135 }} g</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">STANDAR SNI</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $standarPakanGr }} g</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">SELISIH</span>
+                            <strong class="text-amber-700 font-bold text-sm whitespace-nowrap">{{ $diffGr >= 0 ? '+' : '' }}{{ $diffGr }} g</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BIAYA RANSUM</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $ration ? Fmt::rp($ration->biaya_per_kg) : 'Rp 7.627' }}/kg</strong>
+                        </div>
                     </div>
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">STANDAR SNI</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $standarPakanGr }} g</strong>
+                    {{-- Canvas Grafik Pakan --}}
+                    <div class="h-48 pt-1">
+                        <canvas data-chart='@json($chartPakan)' data-chart-name="pakan" aria-label="Grafik konsumsi pakan"></canvas>
                     </div>
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">SELISIH</span>
-                        <strong class="text-amber-700 font-bold text-sm whitespace-nowrap">{{ $diffGr >= 0 ? '+' : '' }}{{ $diffGr }} g</strong>
+                    <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-3 whitespace-nowrap">
+                        <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 bg-[#ca8a04] inline-block shrink-0"></span> Konsumsi (g/ekor)</span>
+                        <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 border-t border-dashed border-slate-400 inline-block shrink-0"></span> Standar</span>
                     </div>
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BIAYA RANSUM</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $ration ? Fmt::rp($ration->biaya_per_kg) : 'Rp 7.627' }}/kg</strong>
-                    </div>
-                </div>
-                {{-- Canvas Grafik Pakan --}}
-                <div class="h-44 pt-1">
-                    <canvas data-chart='@json($chartPakan)' data-chart-name="pakan" aria-label="Grafik konsumsi pakan"></canvas>
-                </div>
-                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-3 whitespace-nowrap">
-                    <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 bg-[#ca8a04] inline-block shrink-0"></span> Konsumsi (g/ekor)</span>
-                    <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 border-t border-dashed border-slate-400 inline-block shrink-0"></span> Standar</span>
                 </div>
             </div>
 
-            {{-- Kartu 4: EFISIENSI & FCR --}}
+            {{-- Panel 4: EFISIENSI & FCR --}}
             @php
                 $fcrIsHigh = $fcr > 2.2;
             @endphp
-            <div class="bg-white rounded-lg sm:rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">EFISIENSI & FCR</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap {{ $fcrIsHigh ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
-                        {{ $fcrIsHigh ? 'FCR Tinggi' : 'FCR Efisien' }}
-                    </span>
-                </div>
-                <div>
-                    <div class="text-2xl font-black text-ink whitespace-nowrap">
-                        {{ $fcr > 0 ? number_format($fcr, 2, ',', '.') : '2,94' }} <span class="text-xs font-normal text-muted">FCR aktual</span>
+            <div data-panel="fcr" data-beranda-grafik-container class="hidden">
+                <div class="bg-white rounded-xl border border-line/70 p-4 sm:p-5 shadow-2xs space-y-3 stat-card-fadein">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-black text-ink uppercase tracking-wider shrink-0 whitespace-nowrap">EFISIENSI & FCR</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 whitespace-nowrap {{ $fcrIsHigh ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
+                            {{ $fcrIsHigh ? 'FCR Tinggi' : 'FCR Efisien' }}
+                        </span>
                     </div>
-                    <div class="text-xs font-semibold text-muted mt-0.5 whitespace-nowrap">
-                        Target SNI: 2,14
+                    <div>
+                        <div class="text-2xl font-black text-ink whitespace-nowrap">
+                            {{ $fcr > 0 ? number_format($fcr, 2, ',', '.') : '2,94' }} <span class="text-xs font-normal text-muted">FCR aktual</span>
+                        </div>
+                        <div class="text-xs font-semibold text-muted mt-0.5 whitespace-nowrap">
+                            Target SNI: 2,14
+                        </div>
                     </div>
-                </div>
-                {{-- 4 Mini Stat Pills (2x2 Grid) --}}
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">EGG MASS</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $eggMass > 0 ? Fmt::num($eggMass, 1) : '45,9' }} g</strong>
+                    {{-- 4 Mini Stat Pills (2x2 Grid) --}}
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">EGG MASS</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap">{{ $eggMass > 0 ? Fmt::num($eggMass, 1) : '45,9' }} g</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BIAYA/KG TELUR</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $biayaKgTelur ? Fmt::rp($biayaKgTelur) : 'Rp 22.142' }}</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">PAKAN SAAT INI</span>
+                            <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $ration ? Fmt::rp($ration->biaya_per_kg) : 'Rp 7.627' }}/kg</strong>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-surface/80 border border-line/60">
+                            <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">MARGIN KOTOR/KG</span>
+                            <strong class="text-emerald-700 font-bold text-sm whitespace-nowrap truncate block">{{ ($estMarginPerKgTelur ?? 5558) >= 0 ? '+' : '' }}{{ Fmt::rp($estMarginPerKgTelur ?? 5558) }}</strong>
+                        </div>
                     </div>
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">BIAYA/KG TELUR</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $biayaKgTelur ? Fmt::rp($biayaKgTelur) : 'Rp 22.142' }}</strong>
+                    {{-- Canvas Grafik FCR --}}
+                    <div class="h-48 pt-1">
+                        <canvas data-chart='@json($chartFcr)' data-chart-name="fcr" aria-label="Grafik tren FCR"></canvas>
                     </div>
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">PAKAN SAAT INI</span>
-                        <strong class="text-ink font-bold text-sm whitespace-nowrap truncate block">{{ $ration ? Fmt::rp($ration->biaya_per_kg) : 'Rp 7.627' }}/kg</strong>
+                    <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-3 whitespace-nowrap">
+                        <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 bg-[#7c3aed] inline-block shrink-0"></span> FCR aktual</span>
+                        <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 border-t border-dashed border-slate-400 inline-block shrink-0"></span> Standar SNI (2,14)</span>
                     </div>
-                    <div class="p-2.5 rounded-md sm:rounded-lg bg-surface-2/60 border border-line/60">
-                        <span class="text-[10px] text-muted uppercase font-bold block mb-0.5 whitespace-nowrap truncate">MARGIN KOTOR/KG</span>
-                        <strong class="text-emerald-700 font-bold text-sm whitespace-nowrap truncate block">{{ ($estMarginPerKgTelur ?? 5558) >= 0 ? '+' : '' }}{{ Fmt::rp($estMarginPerKgTelur ?? 5558) }}</strong>
-                    </div>
-                </div>
-                {{-- Canvas Grafik FCR --}}
-                <div class="h-44 pt-1">
-                    <canvas data-chart='@json($chartFcr)' data-chart-name="fcr" aria-label="Grafik tren FCR"></canvas>
-                </div>
-                <div class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-3 whitespace-nowrap">
-                    <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 bg-[#7c3aed] inline-block shrink-0"></span> FCR aktual</span>
-                    <span class="flex items-center gap-1.5 shrink-0 whitespace-nowrap"><span class="w-3 h-0.5 border-t border-dashed border-slate-400 inline-block shrink-0"></span> Standar SNI (2,14)</span>
                 </div>
             </div>
         </div>
@@ -634,9 +701,35 @@
                     </div>
                 </div>
 
+                {{-- Switcher Tampilan Grafik Desktop: Populasi Hidup vs Mortalitas Harian --}}
+                <div class="pt-1 flex items-center justify-between">
+                    <div class="flex items-center gap-1 p-0.5 bg-surface-2 rounded-lg border border-line/50 text-[11px]">
+                        <button type="button" data-populasi-view="populasi" class="px-2.5 py-0.5 rounded-md transition-all bg-white shadow-2xs text-blue-700 font-black cursor-pointer">
+                            Populasi Hidup
+                        </button>
+                        <button type="button" data-populasi-view="kematian" class="px-2.5 py-0.5 rounded-md transition-all text-muted hover:text-ink font-medium cursor-pointer">
+                            Mortalitas Harian
+                        </button>
+                    </div>
+                </div>
+
                 {{-- Grafik Populasi 7 Hari --}}
-                <div class="h-44 pt-1">
+                <div data-populasi-chart-container="populasi" class="h-44 pt-1">
                     <canvas data-chart='@json($chartPopulasi)' data-chart-name="populasi" aria-label="Grafik populasi ayam"></canvas>
+                </div>
+
+                {{-- Grafik Kematian 7 Hari (Desktop) --}}
+                <div data-populasi-chart-container="kematian" class="h-44 pt-1 hidden">
+                    <canvas data-chart='@json($chartMati)' data-chart-name="kematian" aria-label="Grafik kematian ayam"></canvas>
+                </div>
+
+                <div data-populasi-legend="populasi" class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap">
+                    <span class="w-3 h-0.5 bg-[#0284c7] inline-block shrink-0"></span>
+                    <span class="whitespace-nowrap">Jumlah ayam hidup (ekor)</span>
+                </div>
+                <div data-populasi-legend="kematian" class="text-[11px] text-muted pt-1 border-t border-line/40 flex items-center gap-1.5 whitespace-nowrap hidden">
+                    <span class="w-3 h-2 bg-[#E11D48] rounded-xs inline-block shrink-0"></span>
+                    <span class="whitespace-nowrap">Ayam mati per hari (ekor)</span>
                 </div>
             </div>
 
