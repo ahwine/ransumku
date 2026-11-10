@@ -100,175 +100,183 @@
                             </a>
                         </div>
 
-                        {{-- Quick Fill dari Catatan Kemarin (Sesuai Mockup Foto 1) --}}
+                        {{-- Quick Fill dari Catatan Kemarin (Sleek 1-Row Compact) --}}
                         @if ($yesterdayLog)
-                        <div class="p-4 sm:p-5 rounded-md sm:rounded-xl bg-[#f2f7f4] border border-[#d7e6dc] space-y-3.5 transition-all">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-[#e3eee6] border border-[#d2e3d7]">
-                                        <span class="material-symbols-outlined text-[24px] text-[#0f3d26]">calendar_today</span>
-                                    </div>
-                                    <div class="min-w-0 space-y-0.5">
-                                        <h3 class="text-base font-extrabold text-[#0f3d26] leading-tight">Catatan Kemarin</h3>
-                                        <p class="text-xs sm:text-sm font-semibold text-[#0f3d26] leading-tight">
-                                            {{ Fmt::num($yesterdayLog->pakan_kg, 1) }} kg pakan &nbsp;·&nbsp; {{ Fmt::num($yesterdayLog->telur_butir, 0) }} butir telur
+                        <div class="p-2.5 sm:p-3 rounded-xl bg-[#f2f7f4] border border-[#d7e6dc] transition-all">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="material-symbols-outlined text-[18px] text-[#0f3d26] shrink-0">history</span>
+                                    <div class="min-w-0">
+                                        <span class="text-[10px] text-[#567263] font-bold block uppercase leading-none">Kemarin ({{ $yesterdayLog->tanggal->translatedFormat('d M') }})</span>
+                                        <p class="text-xs font-bold text-[#1f7a4a] leading-tight truncate mt-0.5">
+                                            {{ Fmt::num($yesterdayLog->pakan_kg, 1) }} kg pakan &nbsp;·&nbsp; {{ Fmt::num($yesterdayLog->telur_butir, 0) }} btr
                                         </p>
                                     </div>
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-[#e3eee6] text-[#0f3d26] shrink-0 border border-[#d2e3d7]/60">
-                                    {{ $yesterdayLog->tanggal->translatedFormat('d M') }}
-                                </span>
+                                <button type="button" id="btn-quick-fill"
+                                        data-pakan="{{ (float) $yesterdayLog->pakan_kg }}"
+                                        data-telur="{{ (int) $yesterdayLog->telur_butir }}"
+                                        data-berat="{{ $yesterdayLog->telur_kg !== null ? (float) $yesterdayLog->telur_kg : '' }}"
+                                        class="py-1.5 px-3 rounded-lg text-xs font-bold text-white bg-[#115e37] hover:bg-[#0d4a2b] active:scale-95 transition shadow-2xs flex items-center gap-1 cursor-pointer shrink-0">
+                                    <span class="material-symbols-outlined text-[16px] text-white icon-fill">bolt</span>
+                                    <span>Salin</span>
+                                </button>
                             </div>
-                            <button type="button" id="btn-quick-fill"
-                                    data-pakan="{{ (float) $yesterdayLog->pakan_kg }}"
-                                    data-telur="{{ (int) $yesterdayLog->telur_butir }}"
-                                    data-berat="{{ $yesterdayLog->telur_kg !== null ? (float) $yesterdayLog->telur_kg : '' }}"
-                                    class="w-full py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-[#115e37] hover:bg-[#0d4a2b] active:scale-[0.99] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer">
-                                <span class="material-symbols-outlined text-[20px] text-white icon-fill">bolt</span>
-                                <span>Salin Angka Kemarin</span>
-                            </button>
                         </div>
                         @endif
 
-                        {{-- Form Inputs Stack --}}
-                        <div class="space-y-3.5">
+                        {{-- Form Inputs Stack (Compact 2-Column Grid) --}}
+                        <div class="space-y-3">
                             {{-- Field 1: Tanggal Pencatatan --}}
                             <div>
-                                <div class="flex items-center justify-between mb-1.5 min-h-[20px]">
-                                    <label class="block text-xs font-bold text-[#0f3d26]" for="tanggal">Tanggal Pencatatan</label>
-                                </div>
+                                <label class="block text-xs font-bold text-[#0f3d26] mb-1" for="tanggal">Tanggal Pencatatan</label>
                                 <div class="relative cursor-pointer" onclick="const inp = document.getElementById('tanggal'); if (inp) { try { inp.showPicker(); } catch(e) { inp.focus(); } }">
                                     <input id="tanggal" name="tanggal" type="date" value="{{ old('tanggal', $form->tanggal->toDateString()) }}" max="{{ today()->toDateString() }}"
                                            onclick="try { this.showPicker(); } catch(e) {}"
-                                           class="mobile-date-picker-input w-full h-11 rounded-xl bg-white px-3.5 pr-10 text-sm font-bold text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" style="border: 1px solid #d9e6dd;" required>
-                                    <div id="tanggal-display" class="w-full h-11 rounded-xl bg-white px-3.5 pr-10 text-sm font-bold text-[#0f3d26] flex items-center pointer-events-none" style="border: 1px solid #d9e6dd;">
+                                           class="mobile-date-picker-input w-full h-10 rounded-xl bg-white px-3.5 pr-10 text-xs sm:text-sm font-bold text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none cursor-pointer opacity-0 absolute inset-0 z-10" style="border: 1px solid #d9e6dd;" required>
+                                    <div id="tanggal-display" class="w-full h-10 rounded-xl bg-white px-3.5 pr-10 text-xs sm:text-sm font-bold text-[#0f3d26] flex items-center pointer-events-none" style="border: 1px solid #d9e6dd;">
                                         {{ $form->tanggal->translatedFormat('j F Y') }}
                                     </div>
                                     <span class="absolute right-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-[18px] pointer-events-none z-20" style="color: #1f7a4a;">calendar_today</span>
                                 </div>
                             </div>
 
-                            {{-- Field 2: Pakan Terpakai --}}
-                            <div>
-                                <div class="flex items-center justify-between mb-1.5 min-h-[20px]">
-                                    <label class="block text-xs font-bold text-[#0f3d26]" for="pakan_kg">Pakan Terpakai (kg)</label>
+                            {{-- Baris 2 (2 Kolom): Pakan Terpakai & Ayam Mati --}}
+                            <div class="grid grid-cols-2 gap-2.5">
+                                {{-- Field 2: Pakan Terpakai --}}
+                                <div>
+                                    <label class="block text-xs font-bold text-[#0f3d26] mb-1 truncate" for="pakan_kg">Pakan (kg) *</label>
+                                    <div class="relative">
+                                        <input id="pakan_kg" name="pakan_kg" type="number" step="0.1" min="0" class="w-full h-10 rounded-xl bg-white px-3 pr-8 text-xs sm:text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('pakan_kg', $isEdit ? (float) $form->pakan_kg : '') }}" required placeholder="Contoh: 22">
+                                        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">kg</span>
+                                    </div>
                                 </div>
-                                <div class="relative">
-                                    <input id="pakan_kg" name="pakan_kg" type="number" step="0.1" min="0" class="w-full h-11 rounded-xl bg-white px-3.5 pr-10 text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('pakan_kg', $isEdit ? (float) $form->pakan_kg : '') }}" required placeholder="Contoh: 22">
-                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">kg</span>
+
+                                {{-- Field 5: Ayam Mati --}}
+                                <div>
+                                    <label class="block text-xs font-bold text-[#0f3d26] mb-1 truncate" for="ayam_mati">Ayam Mati (ekor)</label>
+                                    <div class="relative">
+                                        <input id="ayam_mati" name="ayam_mati" type="number" min="0" class="w-full h-10 rounded-xl bg-white px-3 pr-10 text-xs sm:text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('ayam_mati', $isEdit ? $form->ayam_mati : '') }}" placeholder="0">
+                                        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">ekor</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {{-- Field 3: Jumlah Telur --}}
-                            <div class="relative">
-                                <div class="flex items-center justify-between mb-1.5 min-h-[20px]">
-                                    <label class="block text-xs font-bold text-[#0f3d26]" for="telur_butir">Jumlah Telur (butir)</label>
-                                    <button type="button" id="btn-toggle-rak-calc" class="inline-flex items-center gap-1 text-xs font-bold cursor-pointer" style="color: #1f7a4a;">
-                                        <span class="material-symbols-outlined text-[16px]">grid_view</span>
-                                        <span>Hitung per Rak (30)</span>
-                                    </button>
-                                </div>
+                            {{-- Baris 3 (2 Kolom): Jumlah Telur & Total Berat Telur --}}
+                            <div class="grid grid-cols-2 gap-2.5">
+                                {{-- Field 3: Jumlah Telur --}}
                                 <div class="relative">
-                                    <input id="telur_butir" name="telur_butir" type="number" min="0" class="w-full h-11 rounded-xl bg-white px-3.5 pr-14 text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('telur_butir', $isEdit ? $form->telur_butir : '') }}" required placeholder="Contoh: 180">
-                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">butir</span>
-                                </div>
-
-                                {{-- Popover Mini Kalkulator Rak Telur --}}
-                                <div id="popover-calc-rak" class="hidden absolute top-full left-0 right-0 z-30 mt-1.5 p-3.5 rounded-xl bg-white border border-[#1f7a4a]/30 shadow-xl space-y-2.5">
-                                    <div class="flex items-center justify-between pb-1.5 border-b border-[#eef4f0] text-xs">
-                                        <span class="font-bold text-[#0f3d26] flex items-center gap-1.5">
-                                            <span class="material-symbols-outlined text-[#1f7a4a] text-[18px]">calculate</span>
-                                            Kalkulator Rak Telur
-                                        </span>
-                                        <span class="text-[10px] text-[#567263] font-semibold">1 Rak = 30 butir</span>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2 text-xs">
-                                        <div>
-                                            <label class="block text-[11px] text-[#567263] font-semibold mb-1" for="calc_rak_input">Jumlah Rak</label>
-                                            <div class="relative">
-                                                <input type="number" id="calc_rak_input" min="0" step="1" placeholder="0" class="w-full h-9 px-3 pr-8 rounded-xl bg-surface border border-[#d9e6dd] text-xs font-bold text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none">
-                                                <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-[#567263] font-medium pointer-events-none">rak</span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label class="block text-[11px] text-[#567263] font-semibold mb-1" for="calc_sisa_input">Sisa Butir</label>
-                                            <div class="relative">
-                                                <input type="number" id="calc_sisa_input" min="0" step="1" placeholder="0" class="w-full h-9 px-3 pr-8 rounded-xl bg-surface border border-[#d9e6dd] text-xs font-bold text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none">
-                                                <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-[#567263] font-medium pointer-events-none">btr</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/70 flex items-center justify-between text-xs">
-                                        <span class="text-emerald-900 text-xs font-medium">Hasil Total:</span>
-                                        <strong id="calc_rak_total_preview" class="text-sm font-black text-emerald-800">0 butir</strong>
-                                    </div>
-
-                                    <div class="flex items-center justify-end gap-2 pt-1">
-                                        <button type="button" id="btn-cancel-rak-calc" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-[#567263] hover:text-[#0f3d26] hover:bg-[#f4f8f5] transition cursor-pointer">
-                                            Batal
-                                        </button>
-                                        <button type="button" id="btn-apply-rak-calc" class="px-3.5 py-1.5 rounded-xl bg-[#1f7a4a] hover:bg-[#18643c] text-white text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer">
-                                            Terapkan ke Form
+                                    <div class="flex items-center justify-between mb-1 min-h-[18px]">
+                                        <label class="block text-xs font-bold text-[#0f3d26] truncate" for="telur_butir">Telur (butir) *</label>
+                                        <button type="button" id="btn-toggle-rak-calc" class="inline-flex items-center gap-0.5 text-[10px] font-bold cursor-pointer hover:underline shrink-0" style="color: #1f7a4a;" title="Hitung per Rak (30 butir)">
+                                            <span class="material-symbols-outlined text-[13px]">grid_view</span>
+                                            <span>Rak (30)</span>
                                         </button>
                                     </div>
+                                    <div class="relative">
+                                        <input id="telur_butir" name="telur_butir" type="number" min="0" class="w-full h-10 rounded-xl bg-white px-3 pr-9 text-xs sm:text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('telur_butir', $isEdit ? $form->telur_butir : '') }}" required placeholder="Contoh: 180">
+                                        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">btr</span>
+                                    </div>
+
+                                    {{-- Popover Mini Kalkulator Rak Telur --}}
+                                    <div id="popover-calc-rak" class="hidden absolute top-full left-0 right-[-100%] z-40 mt-1.5 p-3 rounded-xl bg-white border border-[#1f7a4a]/30 shadow-xl space-y-2">
+                                        <div class="flex items-center justify-between pb-1 border-b border-[#eef4f0] text-xs">
+                                            <span class="font-bold text-[#0f3d26] flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[#1f7a4a] text-[16px]">calculate</span>
+                                                Kalkulator Rak
+                                            </span>
+                                            <span class="text-[10px] text-[#567263] font-semibold">1 Rak = 30 btr</span>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                <label class="block text-[10px] text-[#567263] font-semibold mb-0.5" for="calc_rak_input">Jumlah Rak</label>
+                                                <div class="relative">
+                                                    <input type="number" id="calc_rak_input" min="0" step="1" placeholder="0" class="w-full h-8 px-2.5 pr-7 rounded-lg bg-surface border border-[#d9e6dd] text-xs font-bold text-[#0f3d26] focus:border-[#1f7a4a] outline-none">
+                                                    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#567263] pointer-events-none">rak</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] text-[#567263] font-semibold mb-0.5" for="calc_sisa_input">Sisa Butir</label>
+                                                <div class="relative">
+                                                    <input type="number" id="calc_sisa_input" min="0" step="1" placeholder="0" class="w-full h-8 px-2.5 pr-7 rounded-lg bg-surface border border-[#d9e6dd] text-xs font-bold text-[#0f3d26] focus:border-[#1f7a4a] outline-none">
+                                                    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#567263] pointer-events-none">btr</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="p-2 rounded-lg bg-emerald-50 border border-emerald-200/70 flex items-center justify-between text-xs">
+                                            <span class="text-emerald-900 text-[11px] font-medium">Hasil:</span>
+                                            <strong id="calc_rak_total_preview" class="text-xs font-black text-emerald-800">0 butir</strong>
+                                        </div>
+
+                                        <div class="flex items-center justify-end gap-1.5 pt-0.5">
+                                            <button type="button" id="btn-cancel-rak-calc" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-[#567263] hover:text-[#0f3d26] cursor-pointer">
+                                                Batal
+                                            </button>
+                                            <button type="button" id="btn-apply-rak-calc" class="px-3 py-1 rounded-lg bg-[#1f7a4a] text-white text-xs font-bold shadow-2xs cursor-pointer">
+                                                Terapkan
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Field 4: Total Berat Telur --}}
+                                <div>
+                                    <div class="flex items-center justify-between mb-1 min-h-[18px]">
+                                        <label class="block text-xs font-bold text-[#0f3d26] truncate" for="telur_kg">Berat Telur</label>
+                                        <button type="button" id="btn-calc-egg-weight" class="text-[10px] text-[#567263] hover:text-[#1f7a4a] hover:underline font-semibold cursor-pointer shrink-0" title="Hitung estimasi ~62g per butir">
+                                            ~62g/btr
+                                        </button>
+                                    </div>
+                                    <div class="relative">
+                                        <input id="telur_kg" name="telur_kg" type="number" step="0.1" min="0" class="w-full h-10 rounded-xl bg-white px-3 pr-8 text-xs sm:text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('telur_kg', $form->telur_kg) }}" placeholder="Opsional">
+                                        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">kg</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {{-- Field 4: Total Berat Telur --}}
-                            <div>
-                                <div class="flex items-center justify-between mb-1.5 min-h-[20px]">
-                                    <label class="block text-xs font-bold text-[#0f3d26]" for="telur_kg">Total Berat Telur (kg)</label>
-                                    <button type="button" id="btn-calc-egg-weight" class="text-xs text-[#567263] hover:text-[#1f7a4a] hover:underline font-medium cursor-pointer">
-                                        Hitung ~62g/butir
-                                    </button>
-                                </div>
-                                <div class="relative">
-                                    <input id="telur_kg" name="telur_kg" type="number" step="0.1" min="0" class="w-full h-11 rounded-xl bg-white px-3.5 pr-10 text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('telur_kg', $form->telur_kg) }}" placeholder="Opsional">
-                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">kg</span>
-                                </div>
-                            </div>
+                            {{-- Accordion Collapsible: Biaya Tambahan & Catatan Gejala (Opsional) --}}
+                            @php
+                                $hasExtra = ($isEdit && $form->biaya_lain > 0) || old('biaya_lain') || old('catatan') || ($isEdit && $form->catatan);
+                            @endphp
+                            <details class="group pt-1 select-none" {{ $hasExtra ? 'open' : '' }}>
+                                <summary class="flex items-center justify-between text-xs font-bold text-[#567263] hover:text-[#0f3d26] cursor-pointer py-1.5 px-2 rounded-lg bg-surface/60 hover:bg-surface border border-line/50 transition">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[16px] text-[#1f7a4a]">post_add</span>
+                                        <span>+ Biaya Lain & Catatan (Opsional)</span>
+                                    </span>
+                                    <span class="material-symbols-outlined text-[16px] transition-transform duration-200 group-open:rotate-180 text-muted">expand_more</span>
+                                </summary>
+                                <div class="space-y-2.5 pt-2 px-0.5">
+                                    {{-- Field 6: Biaya Tambahan Lainnya (opsional) --}}
+                                    <div>
+                                        <label class="block text-xs font-bold text-[#0f3d26] mb-1" for="biaya_lain">Biaya Tambahan Lainnya</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">Rp</span>
+                                            <input id="biaya_lain" name="biaya_lain" type="number" min="0" step="500" class="w-full h-10 rounded-xl bg-white pl-8 pr-3 text-xs sm:text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('biaya_lain', ($isEdit && $form->biaya_lain > 0) ? $form->biaya_lain : '') }}" placeholder="0">
+                                        </div>
+                                    </div>
 
-                            {{-- Field 5: Ayam Mati --}}
-                            <div>
-                                <div class="flex items-center justify-between mb-1.5 min-h-[20px]">
-                                    <label class="block text-xs font-bold text-[#0f3d26]" for="ayam_mati">Ayam Mati (ekor)</label>
+                                    {{-- Catatan Gejala / Kondisi --}}
+                                    <div>
+                                        <label class="block text-xs font-bold text-[#0f3d26] mb-1" for="catatan">Catatan Kondisi Kandang / Gejala Ayam</label>
+                                        <textarea id="catatan" name="catatan" rows="2" class="w-full rounded-xl bg-white p-2.5 text-xs font-medium text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" placeholder="Contoh: Cuaca panas terik, ayam minum lebih banyak...">{{ old('catatan', $form->catatan) }}</textarea>
+                                    </div>
                                 </div>
-                                <div class="relative">
-                                    <input id="ayam_mati" name="ayam_mati" type="number" min="0" class="w-full h-11 rounded-xl bg-white px-3.5 pr-12 text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('ayam_mati', $isEdit ? $form->ayam_mati : '') }}" placeholder="0">
-                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">ekor</span>
-                                </div>
-                            </div>
-
-                            {{-- Field 6: Biaya Tambahan Lainnya (opsional) --}}
-                            <div>
-                                <div class="flex items-center justify-between mb-1.5 min-h-[20px]">
-                                    <label class="block text-xs font-bold text-[#0f3d26]" for="biaya_lain">Biaya Tambahan Lainnya</label>
-                                </div>
-                                <div class="relative">
-                                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#567263] pointer-events-none">Rp</span>
-                                    <input id="biaya_lain" name="biaya_lain" type="number" min="0" step="500" class="w-full h-11 rounded-xl bg-white pl-9 pr-3.5 text-sm font-bold text-[#0f3d26] placeholder:text-[#889f92] placeholder:font-medium focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" value="{{ old('biaya_lain', ($isEdit && $form->biaya_lain > 0) ? $form->biaya_lain : '') }}" placeholder="0">
-                                </div>
-                            </div>
-
-                            {{-- Catatan Gejala / Kondisi (Desktop only) --}}
-                            <div class="hidden md:block">
-                                <label class="block text-xs font-bold text-[#0f3d26] mb-1.5" for="catatan">Catatan Kondisi Kandang / Gejala Ayam</label>
-                                <textarea id="catatan" name="catatan" rows="2" class="w-full rounded-xl bg-white p-3 text-xs font-medium text-[#0f3d26] focus:border-[#1f7a4a] focus:ring-1 focus:ring-[#1f7a4a] outline-none" style="border: 1px solid #d9e6dd; color: #0f3d26;" placeholder="Contoh: Cuaca panas terik, ayam minum lebih banyak dari biasanya...">{{ old('catatan', $form->catatan) }}</textarea>
-                            </div>
+                            </details>
                         </div>
 
-                        {{-- Notice Banner (Image 1 style) --}}
-                        <div class="p-3 rounded-xl flex items-center gap-3" style="background-color: #eef6f0; border: none;">
-                            <span class="material-symbols-outlined text-[20px] shrink-0" style="color: #1f7a4a;">segment</span>
-                            <p class="text-xs text-[#567263] leading-snug">
+                        {{-- Notice Banner Ringkas --}}
+                        <div class="p-2.5 rounded-xl flex items-center gap-2" style="background-color: #eef6f0; border: none;">
+                            <span class="material-symbols-outlined text-[18px] shrink-0" style="color: #1f7a4a;">info</span>
+                            <p class="text-[11px] text-[#567263] leading-snug">
                                 Standar pakan <strong class="font-bold text-[#0f3d26]">110–120 g/ekor/hari</strong>. Kalkulasi otomatis.
                             </p>
                         </div>
                     </div>
 
-                    {{-- CTA Button (Image 1 style) --}}
-                    <button type="submit" class="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm shadow-xs transition active:scale-[0.99] flex items-center justify-center cursor-pointer mt-2" style="background-color: #1f7a4a; color: #ffffff; border: none;">
+                    {{-- CTA Button --}}
+                    <button type="submit" class="w-full py-3 px-4 rounded-xl text-white font-bold text-sm shadow-xs transition active:scale-[0.99] flex items-center justify-center cursor-pointer mt-1" style="background-color: #1f7a4a; color: #ffffff; border: none;">
                         <span id="btn-submit-text">{{ $isEdit ? 'Perbarui Catatan' : 'Simpan Catatan' }}</span>
                     </button>
                 </form>
